@@ -53,6 +53,6 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
    - [x] 5.3 Add export format validation and file generation
    - [x] 5.4 Create progress indicators for large dataset exports
    - [x] 5.5 Implement automatic data cleanup (6-month retention)
-   - [ ] 5.6 Add data compaction for storage optimization
-   - [ ] 5.7 Create user configuration for analytics preferences
-   - [ ] 5.8 Verify all export and management tests pass
+   - [x] 5.6 Add data compaction for storage optimization
+   - [x] 5.7 Create user configuration for analytics preferences
+   - [x] 5.8 Verify all export and management tests pass
