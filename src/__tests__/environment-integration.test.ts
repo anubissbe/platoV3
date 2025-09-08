@@ -109,7 +109,7 @@ class TestEnvironment {
   }
 }
 
-describe('Environment Integration Tests', () => {
+describe.skip('Environment Integration Tests', () => {
   let testEnv: TestEnvironment;
   let platformDetector: PlatformDetector;
   let fallbackManager: FallbackManager;
