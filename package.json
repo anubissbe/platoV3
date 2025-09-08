@@ -3,7 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Terminal coding assistant CLI compatible with Claude Code UX, backed by GitHub Copilot (GitHub Models API).",
+  "description": "Terminal coding assistant CLI compatible with Claude Code UX, backed by GitLab Duo and Copilot APIs.",
+  "repository": {
+    "type": "git",
+    "url": "https://git.euraika.net/Bert/plato.git"
+  },
+  "homepage": "https://git.euraika.net/Bert/plato",
+  "bugs": {
+    "url": "https://git.euraika.net/Bert/plato/-/issues"
+  },
   "bin": {
     "plato": "dist/cli.js"
   },

@@ -35,9 +35,9 @@ export const SLASH_COMMANDS: SlashCommand[] = [
   { name: '/keydebug', summary: 'Capture next key raw bytes (debug)' },
   { name: '/apply-mode', summary: 'Auto-apply patches: [auto|off]' },
   { name: '/ide', summary: 'Connect to IDE for file awareness and linter warnings' },
-  { name: '/install-github-app', summary: 'Install GitHub app for automatic PR reviews' },
+  { name: '/install-gitlab-app', summary: 'Configure GitLab integrations for automatic MR reviews' },
   { name: '/terminal-setup', summary: 'Fix terminal configuration (Shift+Enter, key bindings)' },
-  { name: '/bug', summary: 'Report bug - opens Plato GitHub issues page' },
+  { name: '/bug', summary: 'Report bug - opens Plato GitLab issues page' },
 ];
 
 export const SLASH_MAP = new Map(SLASH_COMMANDS.map(c => [c.name, c] as const));

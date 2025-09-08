@@ -488,8 +488,8 @@ export function App() {
       return;
     }
 
-    if (command === '/install-github-app') {
-      await handleInstallGithubAppCommand();
+    if (command === '/install-gitlab-app') {
+      await handleInstallGitlabAppCommand();
       return;
     }
 
@@ -612,11 +612,11 @@ export function App() {
 
     if (command === '/upgrade') {
       setLines(prev => prev.concat(
-        'GitHub Copilot Plans:',
+        'GitLab Duo Plans:',
         '  Individual: $10/month',
         '  Business: $19/user/month',
         '  Enterprise: Contact sales',
-        'Visit: https://github.com/features/copilot'
+        'Visit: https://docs.gitlab.com/ee/subscriptions/gitlab_duo_pro/'
       ));
       return;
     }
@@ -751,24 +751,24 @@ export function App() {
     }
   };
 
-  // GitHub app installation command handler
-  const handleInstallGithubAppCommand = async () => {
+  // GitLab app installation command handler
+  const handleInstallGitlabAppCommand = async () => {
     try {
-      const url = 'https://github.com/apps/plato-ai-assistant/installations/new';
-      setLines(prev => prev.concat(`🚀 Opening GitHub app installation...`));
+      const url = 'https://git.euraika.net/Bert/plato/-/settings/integrations';
+      setLines(prev => prev.concat(`🚀 Opening GitLab integrations...`));
       
       // Try to open URL (this would require importing 'open' package)
       try {
         const open = await import('open');
         await open.default(url);
-        setLines(prev => prev.concat(`✅ Opened browser to install Plato GitHub app`));
-        setLines(prev => prev.concat(`   After installation, Plato will automatically review your PRs`));
+        setLines(prev => prev.concat(`✅ Opened browser to configure GitLab integrations`));
+        setLines(prev => prev.concat(`   Configure integrations to enable automatic MR reviews`));
       } catch {
         setLines(prev => prev.concat(`📋 Please visit: ${url}`));
-        setLines(prev => prev.concat(`   Install the Plato GitHub app to enable automatic PR reviews`));
+        setLines(prev => prev.concat(`   Configure GitLab integrations to enable automatic MR reviews`));
       }
     } catch (e: any) {
-      setLines(prev => prev.concat(`❌ GitHub app installation failed: ${e?.message || e}`));
+      setLines(prev => prev.concat(`❌ GitLab integration setup failed: ${e?.message || e}`));
     }
   };
 
@@ -945,7 +945,7 @@ export function App() {
   // Login command handler
   const handleLoginCommand = async (args: string) => {
     try {
-      setLines(prev => prev.concat('🔐 Initiating GitHub Copilot login...'));
+      setLines(prev => prev.concat('🔐 Initiating Copilot login...'));
       const { loginCopilot } = await import('../providers/copilot.js');
       await loginCopilot();
       setLines(prev => prev.concat('✅ Login successful'));
@@ -1179,8 +1179,8 @@ export function App() {
   // Bug report command handler
   const handleBugCommand = async (description?: string) => {
     try {
-      const url = 'https://github.com/plato-ai/plato/issues/new';
-      setLines(prev => prev.concat(`🐛 Opening Plato GitHub issues...`));
+      const url = 'https://git.euraika.net/Bert/plato/-/issues/new';
+      setLines(prev => prev.concat(`🐛 Opening Plato GitLab issues...`));
       
       if (description) {
         setLines(prev => prev.concat(`📝 Bug description: "${description}"`));
@@ -1732,7 +1732,7 @@ export async function runTui() {
     console.error('  • Using the CLI commands directly:');
     console.error('    npx tsx src/cli.ts login');
     console.error('    npx tsx src/cli.ts status');
-    console.error('\n📚 For more info: https://github.com/vadimdemedes/ink/#israwmodesupported');
+    console.error('\n📚 For more info: https://docs.gitlab.com/ee/user/project/repository/');
     process.exit(1);
   }
 
@@ -1750,7 +1750,7 @@ export async function runTui() {
       console.error('  • Using the CLI commands directly:');
       console.error('    npx tsx src/cli.ts login');
       console.error('    npx tsx src/cli.ts status');
-      console.error('\n📚 For more info: https://github.com/vadimdemedes/ink/#israwmodesupported');
+      console.error('\n📚 For more info: https://docs.gitlab.com/ee/user/project/repository/');
     } else {
       console.error('❌ Application error:', error.message);
     }
