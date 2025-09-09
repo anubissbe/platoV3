@@ -63,6 +63,9 @@ export interface ToolEvent {
   data?: any;
   timestamp: number;
   sequence: number;
+  bytesRead?: number;
+  totalBytes?: number;
+  progress?: number;
 }
 
 /**

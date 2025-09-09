@@ -3,8 +3,8 @@
  * Implements file reading with encoding detection, line range support, and Claude Code compatibility
  */
 
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { EventEmitter } from 'events';
 import { 
   NativeTool, 
@@ -46,6 +46,25 @@ export class ReadTool extends EventEmitter implements NativeTool {
     let bytesRead = 0;
 
     try {
+      // Validate inputs
+      if (args.startLine !== undefined && args.startLine < 1) {
+        throw new ToolError(
+          ErrorClass.VALIDATION,
+          'INVALID_LINE_RANGE',
+          'startLine must be >= 1',
+          { startLine: args.startLine }
+        );
+      }
+      
+      if (args.endLine !== undefined && args.endLine < 1) {
+        throw new ToolError(
+          ErrorClass.VALIDATION,
+          'INVALID_LINE_RANGE',
+          'endLine must be >= 1',
+          { endLine: args.endLine }
+        );
+      }
+      
       // Validate and normalize path
       const normalizedPath = await this.validatePath(args.path);
       
@@ -155,12 +174,63 @@ export class ReadTool extends EventEmitter implements NativeTool {
     try {
       yield {
         type: 'metadata',
-            bytesRead, 
-            totalBytes: stats.size, 
-            progress: bytesRead / stats.size,
-            timestamp: Date.now(),
-            sequence: sequence++
-          };
+        data: { executionId, tool: 'read', path: args.path },
+        timestamp: Date.now(),
+        sequence: sequence++
+      };
+
+      // Validate and normalize path
+      const normalizedPath = await this.validatePath(args.path);
+      
+      // Check file stats
+      const stats = await fs.stat(normalizedPath);
+      if (!stats.isFile()) {
+        throw new ToolError(
+          ErrorClass.VALIDATION,
+          'NOT_A_FILE',
+          `Path is not a file: ${args.path}`
+        );
+      }
+
+      // For large files, stream the reading process
+      const chunkSize = 64 * 1024; // 64KB chunks
+      if (stats.size > chunkSize) {
+        yield {
+          type: 'progress',
+          data: { stage: 'reading', totalBytes: stats.size },
+          timestamp: Date.now(),
+          sequence: sequence++
+        };
+
+        const fileHandle = await fs.open(normalizedPath, 'r');
+        const chunks: Buffer[] = [];
+        let bytesRead = 0;
+
+        try {
+          for (let offset = 0; offset < stats.size; offset += chunkSize) {
+            const buffer = Buffer.alloc(Math.min(chunkSize, stats.size - offset));
+            const result = await fileHandle.read(buffer, 0, buffer.length, offset);
+            const chunk = buffer.subarray(0, result.bytesRead);
+            chunks.push(chunk);
+            bytesRead += result.bytesRead;
+
+            yield {
+              type: 'progress',
+              data: { 
+                stage: 'reading',
+                bytesRead, 
+                totalBytes: stats.size, 
+                progress: bytesRead / stats.size 
+              },
+              bytesRead,
+              totalBytes: stats.size,
+              progress: bytesRead / stats.size,
+              timestamp: Date.now(),
+              sequence: sequence++
+            };
+          }
+        } finally {
+          await fileHandle.close();
         }
 
         // Combine chunks and process
@@ -186,33 +256,40 @@ export class ReadTool extends EventEmitter implements NativeTool {
           timestamp: Date.now(),
           sequence: sequence++
         };
+      } else {
+        // Small file, read directly
+        const buffer = await fs.readFile(normalizedPath);
+        const encodingInfo = await this.detectEncoding(buffer, args.encoding, args.forceText);
+        
+        let content: string;
+        if (encodingInfo.isBinary && !args.forceText) {
+          content = buffer.toString('base64');
+        } else {
+          content = buffer.toString(encodingInfo.encoding as BufferEncoding);
+        }
 
-      } finally {
-        await fileHandle.close();
+        yield {
+          type: 'complete',
+          data: {
+            success: true,
+            content,
+            encoding: encodingInfo.encoding,
+            isBinary: encodingInfo.isBinary,
+            size: stats.size
+          },
+          timestamp: Date.now(),
+          sequence: sequence++
+        };
       }
 
     } catch (error) {
       yield {
         type: 'error',
-            bytesRead, 
-            totalBytes: stats.size, 
-            progress: bytesRead / stats.size,
-        outOfRange: true
-      });
+        data: { error: (error as Error).message },
+        timestamp: Date.now(),
+        sequence: sequence++
+      };
     }
-
-    // Extract lines (convert to 0-based indexing)
-    const startIndex = startLine - 1;
-    const endIndex = Math.min(endLine - 1, totalLines - 1);
-    const selectedLines = lines.slice(startIndex, endIndex + 1);
-
-    return this.createResponse(true, {
-      ...baseResponse,
-      content: selectedLines.join('\n'),
-      totalLines,
-      requestedRange: { start: startLine, end: endLine },
-      outOfRange: false
-    });
   }
 
   private createResponse(success: boolean, data: Partial<ReadToolResponse> = {}): ReadToolResponse {
@@ -264,6 +341,140 @@ export class ReadTool extends EventEmitter implements NativeTool {
       default:
         return ErrorClass.PERMANENT;
     }
+  }
+
+  private async validatePath(inputPath: string): Promise<string> {
+    // Resolve to absolute path
+    const absolutePath = path.resolve(this.workspaceRoot, inputPath);
+    
+    // Check for path traversal
+    if (!absolutePath.startsWith(this.workspaceRoot)) {
+      throw new ToolError(
+        ErrorClass.PERMISSION,
+        'PATH_TRAVERSAL',
+        'Path traversal not allowed',
+        { path: inputPath, resolved: absolutePath }
+      );
+    }
+
+    // Resolve symlinks to their targets
+    try {
+      const realPath = await fs.realpath(absolutePath);
+      
+      // Ensure resolved symlink is still within workspace
+      if (!realPath.startsWith(this.workspaceRoot)) {
+        throw new ToolError(
+          ErrorClass.PERMISSION,
+          'SYMLINK_TRAVERSAL',
+          'Symlink points outside workspace',
+          { path: inputPath, symlink: absolutePath, target: realPath }
+        );
+      }
+      
+      return realPath;
+    } catch (error) {
+      // If realpath fails (file doesn't exist), return the original path
+      // This allows proper error handling in the main execute method
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return absolutePath;
+      }
+      throw error;
+    }
+  }
+
+  private isBinaryContent(buffer: Buffer): boolean {
+    // Check for binary file signatures
+    for (const signature of BINARY_SIGNATURES) {
+      if (buffer.length >= signature.length) {
+        const match = signature.every((byte, index) => buffer[index] === byte);
+        if (match) return true;
+      }
+    }
+
+    // Check for null bytes (common in binary files)
+    const sampleSize = Math.min(buffer.length, 8192);
+    for (let i = 0; i < sampleSize; i++) {
+      if (buffer[i] === 0) return true;
+    }
+
+    return false;
+  }
+
+  private async detectEncoding(buffer: Buffer, requestedEncoding?: string, forceText?: boolean): Promise<{
+    encoding: string;
+    detectedEncoding?: string;
+    isBinary: boolean;
+  }> {
+    // Check if binary first
+    const isBinary = !forceText && this.isBinaryContent(buffer);
+    
+    if (isBinary) {
+      return { encoding: 'binary', isBinary: true };
+    }
+
+    // Check for BOM markers
+    if (buffer.length >= 3 && 
+        buffer[0] === UTF8_BOM[0] && 
+        buffer[1] === UTF8_BOM[1] && 
+        buffer[2] === UTF8_BOM[2]) {
+      return { encoding: 'utf8', detectedEncoding: 'utf8-bom', isBinary: false };
+    }
+
+    if (buffer.length >= 2) {
+      if (buffer[0] === UTF16_LE_BOM[0] && buffer[1] === UTF16_LE_BOM[1]) {
+        return { encoding: 'utf16le', detectedEncoding: 'utf16le-bom', isBinary: false };
+      }
+      if (buffer[0] === UTF16_BE_BOM[0] && buffer[1] === UTF16_BE_BOM[1]) {
+        return { encoding: 'utf16be', detectedEncoding: 'utf16be-bom', isBinary: false };
+      }
+    }
+
+    // Use requested encoding or default to utf8
+    const encoding = requestedEncoding || 'utf8';
+    return { encoding, detectedEncoding: encoding, isBinary: false };
+  }
+
+  private handleLineRange(content: string, args: ReadToolArgs, baseResponse: Partial<ReadToolResponse>): ReadToolResponse {
+    const lines = content.split('\n');
+    const totalLines = lines.length;
+    
+    // Handle line range extraction
+    const startLine = args.startLine || 1;
+    const endLine = args.endLine || totalLines;
+    
+    // Validate line numbers (must be >= 1)
+    if (startLine < 1 || endLine < 1) {
+      throw new ToolError(
+        ErrorClass.VALIDATION,
+        'INVALID_LINE_RANGE',
+        'Line numbers must be >= 1',
+        { startLine, endLine }
+      );
+    }
+    
+    // Check if range is valid
+    if (startLine > totalLines || endLine < startLine) {
+      return this.createResponse(true, {
+        ...baseResponse,
+        content: '',
+        totalLines,
+        requestedRange: { start: startLine, end: endLine },
+        outOfRange: true
+      });
+    }
+
+    // Extract lines (convert to 0-based indexing)
+    const startIndex = startLine - 1;
+    const endIndex = Math.min(endLine - 1, totalLines - 1);
+    const selectedLines = lines.slice(startIndex, endIndex + 1);
+
+    return this.createResponse(true, {
+      ...baseResponse,
+      content: selectedLines.join('\n'),
+      totalLines,
+      requestedRange: { start: startLine, end: endLine },
+      outOfRange: false
+    });
   }
 
   private emitTelemetry(success: boolean, duration: number, bytesRead: number = 0, error?: any): void {
