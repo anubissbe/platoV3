@@ -88,7 +88,6 @@ export const PermissionFeedback: React.FC<PermissionFeedbackProps> = ({
       borderStyle="round"
       borderColor={getColor()}
       paddingX={1}
-      opacity={fadeOut ? 0.5 : 1}
     >
       <Text color={getColor()} bold>
         {getIcon()}
