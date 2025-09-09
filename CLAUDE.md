@@ -39,7 +39,7 @@ npm run claude:capabilities
 ## CLI Direct Usage (Bypassing TUI)
 
 ```bash
-npx tsx src/cli.ts login                      # Login to GitHub Copilot
+npx tsx src/cli.ts login                      # Login to Copilot
 npx tsx src/cli.ts logout                     # Logout and clear credentials  
 npx tsx src/cli.ts config get                 # Show configuration
 npx tsx src/cli.ts config set <key> <value>   # Set config value
@@ -103,7 +103,7 @@ The assistant emits tool requests via strict JSON blocks:
 ## Key Slash Commands
 
 - `/doctor` - Diagnose setup and connectivity (verify binaries and Copilot)
-- `/login` - GitHub Copilot device flow authentication
+- `/login` - Copilot device flow authentication
 - `/logout` - Clear credentials
 - `/status` - Show current configuration and auth status
 - `/model` - List and switch between available models
@@ -179,7 +179,7 @@ For end-to-end testing, follow `docs/verification.md`:
 - Session auto-saves to `.plato/session.json` for `/resume` functionality
 - Memory auto-saves with 30-second intervals by default
 - The TUI falls back to compatible input handling in WSL/Docker environments
-- Copilot headers are properly set for GitHub Models API compatibility
+- Copilot headers are properly set for GitLab Duo and API compatibility
 
 ## Error Handling Patterns
 

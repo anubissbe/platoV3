@@ -11,12 +11,12 @@ Status: v1.0.0 - Production Ready with Enhanced TUI Experience
 
 ## 🚀 Overview
 
-Plato is an advanced AI-powered terminal coding assistant that provides a Claude Code–compatible experience with enhanced visual features, accessibility, and performance optimizations. It seamlessly integrates with GitHub Copilot while offering a modern, responsive terminal user interface.
+Plato is an advanced AI-powered terminal coding assistant that provides a Claude Code–compatible experience with enhanced visual features, accessibility, and performance optimizations. It seamlessly integrates with GitLab Duo and Copilot APIs while offering a modern, responsive terminal user interface.
 
 ### ✨ Key Features
 
 - **Enhanced TUI Experience**: Multi-panel layouts, visual indicators, and smooth animations
-- **AI Integration**: GitHub Copilot authentication with multiple model support
+- **AI Integration**: GitLab Duo and Copilot authentication with multiple model support
 - **Tool Bridge System**: MCP (Model Context Protocol) server integration for extended capabilities
 - **Smart Memory**: Persistent conversation memory with intelligent compaction
 - **Accessibility First**: Full WCAG 2.1 AA compliance with screen reader support
@@ -52,7 +52,7 @@ npm run dev
 
 ### Initial Setup
 1. **Start Plato**: `npm run dev`
-2. **Authenticate**: Run `/login` in the TUI for GitHub Copilot authentication
+2. **Authenticate**: Run `/login` in the TUI for Copilot authentication
 3. **Verify Setup**: Run `/doctor` to check system status
 4. **Start Chatting**: Simply type your message and press Enter
 

@@ -2,6 +2,10 @@ import { chatCompletions, chatStream } from '../providers/chat_fallback.js';
 import { dryRunApply, apply as applyPatch } from '../tools/patch.js';
 import { reviewPatch } from '../policies/security.js';
 import { checkPermission } from '../tools/permissions.js';
+import { PermissionManager } from '../permissions/PermissionManager.js';
+import { ProfileManager } from '../permissions/ProfileManager.js';
+import { AuditLogger } from '../permissions/AuditLogger.js';
+import { PermissionQuery } from '../permissions/types.js';
 import { runHooks } from '../tools/hooks.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -171,6 +175,11 @@ const semanticAnalyzer = new SemanticAnalyzer();
 
 // Analytics service instance
 let analyticsService: AnalyticsService | null = null;
+
+// Advanced Permission System instances
+let permissionManager: PermissionManager | null = null;
+let profileManager: ProfileManager | null = null;
+let auditLogger: AuditLogger | null = null;
 
 // Current session ID for cost tracking
 let currentSessionId: string = generateSessionId();
@@ -423,6 +432,38 @@ async function ensureContextPersistenceManager(): Promise<ContextPersistenceMana
     });
   }
   return contextPersistenceManager;
+}
+
+// Initialize advanced permission system on first use
+async function ensurePermissionManager(): Promise<PermissionManager> {
+  if (!permissionManager) {
+    // Initialize profile manager
+    if (!profileManager) {
+      profileManager = new ProfileManager();
+      // ProfileManager doesn't have initialize method
+    }
+
+    // Initialize audit logger
+    if (!auditLogger) {
+      auditLogger = new AuditLogger({
+        logDirectory: '.plato/audit',
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        maxArchiveFiles: 10,
+        enableIndexing: true,
+        enableRetentionPolicies: true,
+      });
+      await auditLogger.initialize();
+    }
+
+    // Initialize permission manager
+    permissionManager = new PermissionManager({
+      profileManager,
+      auditLogger,
+      configPath: '.plato/permissions.yml',
+    });
+    await permissionManager.initialize();
+  }
+  return permissionManager;
 }
 
 export const orchestrator = {
@@ -1450,6 +1491,58 @@ export const orchestrator = {
     } catch (error) {
       console.warn('Failed to initialize session cost analytics:', error);
     }
+  },
+
+  /**
+   * Advanced Permission System Integration
+   */
+  async getPermissionManager(): Promise<PermissionManager> {
+    return await ensurePermissionManager();
+  },
+
+  async getProfileManager(): Promise<ProfileManager> {
+    await ensurePermissionManager(); // Ensures profileManager is initialized
+    return profileManager!;
+  },
+
+  async getCurrentPermissionProfile(): Promise<any> {
+    const profileMgr = await this.getProfileManager();
+    return profileMgr.getCurrentProfile();
+  },
+
+  async switchPermissionProfile(profileName: string): Promise<void> {
+    const profileMgr = await this.getProfileManager();
+    await profileMgr.switchProfile(profileName);
+  },
+
+  async getPermissionStatistics(): Promise<any> {
+    await ensurePermissionManager(); // Ensures auditLogger is initialized
+    if (auditLogger) {
+      return await auditLogger.getStatistics();
+    }
+    return null;
+  },
+
+  /**
+   * Cleanup permission system resources
+   */
+  async cleanupPermissionSystem(): Promise<void> {
+    try {
+      if (permissionManager) {
+        await permissionManager.cleanup?.();
+        permissionManager = null;
+      }
+      if (auditLogger) {
+        await auditLogger.cleanup?.();
+        auditLogger = null;
+      }
+      if (profileManager) {
+        // ProfileManager doesn't have cleanup method
+        profileManager = null;
+      }
+    } catch (error) {
+      console.warn('Error during permission system cleanup:', error);
+    }
   }
 };
 
@@ -1538,8 +1631,52 @@ async function maybeBridgeTool(content: string, onEvent?: (e: OrchestratorEvent)
     return;
   }
   const { server, name, input = {} } = toolCall.tool_call;
-  const decision = await checkPermission({ tool: 'mcp', command: `${server}:${name}` });
-  if (decision !== 'allow') { onEvent?.({ type: 'info', message: `Tool call requires permission: ${server}:${name} => ${decision}` }); return; }
+  
+  // Enhanced permission check using advanced permission system
+  try {
+    const permissionMgr = await ensurePermissionManager();
+    const query: PermissionQuery = {
+      tool: 'mcp_call',
+      server,
+      action: name,
+      arguments: input,
+      context: {
+        source: 'system' as const,
+        workspace_path: process.cwd(),
+        environment: {
+          node_env: process.env.NODE_ENV,
+          platform: process.platform,
+          node_version: process.version,
+        },
+        correlation_id: currentSessionId,
+      },
+    };
+
+    const result = await permissionMgr.checkPermission(query);
+    
+    if (result.action === 'deny') {
+      const message = `Tool call denied: ${server}:${name} - ${result.reason || 'Policy violation'}`;
+      onEvent?.({ type: 'info', message });
+      return;
+    } else if (result.action === 'confirm') {
+      // For now, treat prompts as denials in non-interactive mode
+      // TODO: Implement interactive prompting in TUI
+      const message = `Tool call requires confirmation: ${server}:${name} - ${result.reason || 'Manual approval required'}`;
+      onEvent?.({ type: 'info', message });
+      return;
+    }
+    
+    // Log successful permission check
+    onEvent?.({ type: 'info', message: `Permission granted for ${server}:${name}` });
+  } catch (error) {
+    // Fallback to legacy permission system if advanced system fails
+    console.warn('Advanced permission system failed, falling back to legacy:', error);
+    const decision = await checkPermission({ tool: 'mcp', command: `${server}:${name}` });
+    if (decision !== 'allow') { 
+      onEvent?.({ type: 'info', message: `Tool call requires permission: ${server}:${name} => ${decision}` }); 
+      return; 
+    }
+  }
   
   // Emit tool start event
   emitToolStart(name, server, input);

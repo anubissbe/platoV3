@@ -122,7 +122,12 @@ async function deleteCreds() {
   if (kt) {
     try { await kt.deletePassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT); } catch {}
   }
-  await fs.rm(CREDS_FILE, { force: true });
+  try {
+    await fs.unlink(CREDS_FILE);
+  } catch (e: any) {
+    // Ignore if file doesn't exist
+    if (e.code !== 'ENOENT') throw e;
+  }
 }
 
 async function tryKeytar(): Promise<null | { getPassword: Function; setPassword: Function; deletePassword: Function }>{

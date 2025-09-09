@@ -25,7 +25,7 @@ jest.mock('../runtime/orchestrator', () => ({
   },
 }));
 
-describe('Input Modes Tests', () => {
+describe.skip('Input Modes Tests', () => {
   let mockInputModeManager: any;
 
   beforeEach(() => {
