@@ -24,32 +24,212 @@ afterAll(() => {
 process.env.NODE_ENV = 'test';
 process.env.PLATO_TEST_MODE = 'true';
 
-// Setup fs mocks with proper implementations
+// Setup fs mocks with ACTUAL implementations for tool tests
 import { tmpdir } from 'os';
 import path from 'path';
+import * as realFs from 'fs/promises';
+import fs from 'fs';
 
-// Mock fs/promises with actual implementations where needed
-jest.mock('fs/promises', () => ({
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-  mkdir: jest.fn(),
-  access: jest.fn(),
-  readdir: jest.fn(),
-  stat: jest.fn(),
-  unlink: jest.fn(),
-  rmdir: jest.fn(),
-  rename: jest.fn(),
-  copyFile: jest.fn(),
-  appendFile: jest.fn(),
-  realpath: jest.fn(),
-  mkdtemp: jest.fn(async (prefix: string) => {
-    const tempPath = path.join(tmpdir(), `${prefix}${Math.random().toString(36).substr(2, 9)}`);
-    // Actually create the directory for tests that chdir into it
-    const fs = require('fs');
-    fs.mkdirSync(tempPath, { recursive: true });
-    return tempPath;
-  }),
-}));
+// Create a virtual file system for tests
+const mockFiles = new Map<string, Buffer>();
+const mockStats = new Map<string, any>();
+let mockTempDirs = new Set<string>();
+
+// Mock fs/promises with selective real implementations
+jest.mock('fs/promises', () => {
+  const originalFs = jest.requireActual('fs/promises');
+  
+  return {
+    readFile: jest.fn().mockImplementation(async (filePath: string, options?: any) => {
+      const normalizedPath = path.resolve(filePath);
+      
+      // Check if it's a mock file first
+      if (mockFiles.has(normalizedPath)) {
+        const buffer = mockFiles.get(normalizedPath)!;
+        if (options && typeof options === 'string') {
+          return buffer.toString(options as BufferEncoding);
+        }
+        if (options && options.encoding) {
+          return buffer.toString(options.encoding);
+        }
+        return buffer;
+      }
+      
+      // For temp directories created by tests, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir)) {
+          return originalFs.readFile(filePath, options);
+        }
+      }
+      
+      // Default: throw ENOENT
+      const error = new Error(`ENOENT: no such file or directory, open '${filePath}'`) as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      error.errno = -2;
+      error.syscall = 'open';
+      error.path = filePath;
+      throw error;
+    }),
+    
+    writeFile: jest.fn().mockImplementation(async (filePath: string, data: any, options?: any) => {
+      const normalizedPath = path.resolve(filePath);
+      
+      // For temp directories, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir)) {
+          return originalFs.writeFile(filePath, data, options);
+        }
+      }
+      
+      // Store in mock files
+      const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data.toString(), options?.encoding || 'utf8');
+      mockFiles.set(normalizedPath, buffer);
+      
+      // Mock the stats
+      mockStats.set(normalizedPath, {
+        isFile: () => true,
+        isDirectory: () => false,
+        size: buffer.length,
+        mtime: new Date(),
+        ctime: new Date(),
+        atime: new Date(),
+      });
+    }),
+    
+    stat: jest.fn().mockImplementation(async (filePath: string) => {
+      const normalizedPath = path.resolve(filePath);
+      
+      // Check mock files first
+      if (mockStats.has(normalizedPath)) {
+        return mockStats.get(normalizedPath);
+      }
+      
+      // For temp directories, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir)) {
+          return originalFs.stat(filePath);
+        }
+      }
+      
+      // Default: throw ENOENT
+      const error = new Error(`ENOENT: no such file or directory, stat '${filePath}'`) as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      error.errno = -2;
+      error.syscall = 'stat';
+      error.path = filePath;
+      throw error;
+    }),
+    
+    realpath: jest.fn().mockImplementation(async (filePath: string) => {
+      const normalizedPath = path.resolve(filePath);
+      
+      // Check if file exists in mocks
+      if (mockFiles.has(normalizedPath)) {
+        return normalizedPath;
+      }
+      
+      // For temp directories, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir)) {
+          return originalFs.realpath(filePath);
+        }
+      }
+      
+      // Default: throw ENOENT
+      const error = new Error(`ENOENT: no such file or directory, realpath '${filePath}'`) as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      error.errno = -2;
+      error.syscall = 'realpath';
+      error.path = filePath;
+      throw error;
+    }),
+    
+    mkdtemp: jest.fn().mockImplementation(async (prefix: string) => {
+      const tempPath = path.join(tmpdir(), `${prefix}${Math.random().toString(36).substr(2, 9)}`);
+      
+      // Actually create the directory
+      await originalFs.mkdir(tempPath, { recursive: true });
+      mockTempDirs.add(tempPath);
+      
+      return tempPath;
+    }),
+    
+    mkdir: jest.fn().mockImplementation(async (dirPath: string, options?: any) => {
+      const normalizedPath = path.resolve(dirPath);
+      
+      // For temp directories, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir)) {
+          return originalFs.mkdir(dirPath, options);
+        }
+      }
+      
+      // Mock the directory
+      mockStats.set(normalizedPath, {
+        isFile: () => false,
+        isDirectory: () => true,
+        size: 0,
+        mtime: new Date(),
+        ctime: new Date(),
+        atime: new Date(),
+      });
+    }),
+    
+    rmdir: jest.fn().mockImplementation(async (dirPath: string, options?: any) => {
+      const normalizedPath = path.resolve(dirPath);
+      
+      // For temp directories, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir) || normalizedPath === tempDir) {
+          mockTempDirs.delete(tempDir);
+          return originalFs.rmdir ? originalFs.rmdir(dirPath, options) : originalFs.rm(dirPath, { recursive: true, force: true });
+        }
+      }
+      
+      // Remove from mocks
+      mockStats.delete(normalizedPath);
+      for (const key of mockFiles.keys()) {
+        if (key.startsWith(normalizedPath)) {
+          mockFiles.delete(key);
+          mockStats.delete(key);
+        }
+      }
+    }),
+    
+    access: jest.fn().mockImplementation(async (filePath: string) => {
+      const normalizedPath = path.resolve(filePath);
+      
+      // Check mock files
+      if (mockFiles.has(normalizedPath) || mockStats.has(normalizedPath)) {
+        return; // Access OK
+      }
+      
+      // For temp directories, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir)) {
+          return originalFs.access(filePath);
+        }
+      }
+      
+      // Default: throw ENOENT
+      const error = new Error(`ENOENT: no such file or directory, access '${filePath}'`) as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      error.errno = -2;
+      error.syscall = 'access';
+      error.path = filePath;
+      throw error;
+    }),
+    
+    readdir: originalFs.readdir,
+    unlink: originalFs.unlink,
+    rename: originalFs.rename,
+    copyFile: originalFs.copyFile,
+    appendFile: originalFs.appendFile,
+    symlink: originalFs.symlink,
+    chmod: originalFs.chmod,
+    open: originalFs.open,
+  };
+});
 
 // Mock execa for command execution
 jest.mock('execa', () => ({
