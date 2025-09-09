@@ -169,8 +169,8 @@ export interface EditToolArgs {
   delete?: boolean;
   
   // Pattern-based editing
-  pattern?: string | RegExp;
-  replacement?: string;
+  pattern?: string | RegExp | Buffer;
+  replacement?: string | Buffer;
   regex?: boolean;
   replaceFirst?: boolean;
   replaceAll?: boolean;

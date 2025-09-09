@@ -33,8 +33,10 @@
     "test:ci": "jest --ci --coverage --maxWorkers=2"
   },
   "dependencies": {
+    "@types/diff": "^7.0.2",
     "@types/react": "^19.1.12",
     "cross-fetch": "^4.0.0",
+    "diff": "^8.0.2",
     "eventsource-parser": "^1.1.2",
     "execa": "^9.6.0",
     "fast-glob": "^3.3.3",

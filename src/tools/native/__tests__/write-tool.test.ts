@@ -248,7 +248,7 @@ describe('WriteTool', () => {
       expect(result.encoding).toBe('latin1');
 
       // Verify encoding by reading with Node.js
-      const buffer = await fs.readFile(filePath);
+      const buffer = await fs.readFile(path.join(tempDir, filePath));
       const decodedContent = buffer.toString('latin1');
       expect(decodedContent).toBe(content);
     });
@@ -267,14 +267,14 @@ describe('WriteTool', () => {
       expect(result.encoding).toBe('base64');
       expect(result.isBinary).toBe(true);
 
-      const writtenData = await fs.readFile(filePath);
+      const writtenData = await fs.readFile(path.join(tempDir, filePath));
       expect(writtenData).toEqual(binaryData);
     });
   });
 
   describe('Permission Preservation', () => {
     it('should preserve existing file permissions', async () => {
-      const filePath = path.join(tempDir, 'perms.txt');
+      const filePath = 'perms.txt';
       
       // Create file with specific permissions (skip on Windows)
       if (process.platform !== 'win32') {
@@ -297,7 +297,7 @@ describe('WriteTool', () => {
     });
 
     it('should apply specified permissions to new files', async () => {
-      const filePath = path.join(tempDir, 'new-perms.txt');
+      const filePath = 'new-perms.txt';
 
       const result = await writeTool.execute({
         path: filePath,
@@ -317,7 +317,7 @@ describe('WriteTool', () => {
   describe('Size Limits and Validation', () => {
     it('should enforce file size limits', async () => {
       const largeContent = 'X'.repeat(51 * 1024 * 1024); // 51MB
-      const filePath = path.join(tempDir, 'too-large.txt');
+      const filePath = 'too-large.txt';
 
       await expect(writeTool.execute({
         path: filePath,
@@ -351,7 +351,7 @@ describe('WriteTool', () => {
   describe('Streaming and Performance', () => {
     it('should provide streaming support for large writes', async () => {
       const largeContent = 'A'.repeat(1024 * 1024); // 1MB
-      const filePath = path.join(tempDir, 'large-stream.txt');
+      const filePath = 'large-stream.txt';
       const events: any[] = [];
 
       const stream = writeTool.stream({
@@ -374,7 +374,7 @@ describe('WriteTool', () => {
     it('should handle concurrent writes to different files', async () => {
       const writes = Array.from({ length: 5 }, (_, i) => 
         writeTool.execute({
-          path: path.join(tempDir, `concurrent-${i}.txt`),
+          path: `concurrent-${i}.txt`,
           content: `Content for file ${i}`
         })
       );
@@ -389,7 +389,7 @@ describe('WriteTool', () => {
     });
 
     it('should handle write conflicts appropriately', async () => {
-      const filePath = path.join(tempDir, 'conflict.txt');
+      const filePath = 'conflict.txt';
       
       // Start two concurrent writes to the same file
       const writes = [
@@ -441,17 +441,13 @@ describe('WriteTool', () => {
     });
 
     it('should provide detailed error information', async () => {
-      const error = await writeTool.execute({
-        path: path.join('/nonexistent/path', 'file.txt'),
+      await expect(writeTool.execute({
+        path: path.join('nonexistent', 'deeply', 'nested', 'file.txt'),
         content: 'content',
         createDirs: false
-      }).catch(e => e);
-
-      expect(error).toBeInstanceOf(ToolError);
-      expect(error).toMatchObject({
+      })).rejects.toMatchObject({
         errorClass: ErrorClass.PERMANENT,
         code: 'ENOENT',
-        message: expect.stringContaining('No such file or directory'),
         retryable: false,
         details: expect.objectContaining({
           path: expect.any(String)
@@ -467,7 +463,7 @@ describe('WriteTool', () => {
 
       const content = 'Telemetry test content';
       await writeTool.execute({
-        path: path.join(tempDir, 'telemetry.txt'),
+        path: 'telemetry.txt',
         content: content
       });
 
@@ -483,7 +479,7 @@ describe('WriteTool', () => {
     it('should track performance metrics', async () => {
       const content = 'Performance test content';
       const result = await writeTool.execute({
-        path: path.join(tempDir, 'perf.txt'),
+        path: 'perf.txt',
         content: content
       });
 

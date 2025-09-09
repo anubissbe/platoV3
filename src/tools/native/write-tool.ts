@@ -66,6 +66,22 @@ export class WriteTool extends EventEmitter implements NativeTool {
       let dirsCreated: string[] = [];
       if (args.createDirs) {
         dirsCreated = await this.createParentDirectories(normalizedPath);
+      } else {
+        // Check if parent directory exists when not creating directories
+        const parentDir = path.dirname(normalizedPath);
+        try {
+          await fs.access(parentDir);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            throw new ToolError(
+              ErrorClass.PERMANENT,
+              'ENOENT',
+              `Parent directory does not exist: ${parentDir}`,
+              { path: args.path, parentDir }
+            );
+          }
+          throw error;
+        }
       }
 
       // Check if file exists for overwrite detection

@@ -14,8 +14,8 @@ describe('EditTool', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    editTool = new EditTool();
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'plato-edit-test-'));
+    editTool = new EditTool(tempDir);
 
     // Create test files with various content patterns
     const testFiles = {
@@ -32,13 +32,13 @@ describe('EditTool', () => {
 
   afterEach(async () => {
     if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
+      await fs.rmdir(tempDir, { recursive: true });
     }
   });
 
   describe('Line-based Editing', () => {
     it('should replace single line by line number', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -50,13 +50,13 @@ describe('EditTool', () => {
       expect(result.changes).toBe(1);
       expect(result.linesModified).toEqual([2]);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       const lines = content.split('\n');
       expect(lines[1]).toBe('This is the updated line 2');
     });
 
     it('should replace multiple lines by range', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -69,14 +69,14 @@ describe('EditTool', () => {
       expect(result.changes).toBe(1);
       expect(result.linesModified).toEqual([2, 3]);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       const lines = content.split('\n');
       expect(lines[1]).toBe('Combined line 2 and 3');
       expect(lines).toHaveLength(3); // Original 4 lines, replaced 2 with 1
     });
 
     it('should insert new lines', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -88,14 +88,14 @@ describe('EditTool', () => {
       expect(result.changes).toBe(1);
       expect(result.linesAdded).toBe(1);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       const lines = content.split('\n');
       expect(lines[2]).toBe('New inserted line');
       expect(lines).toHaveLength(5); // Original 4 + 1 inserted
     });
 
     it('should delete lines', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -108,21 +108,21 @@ describe('EditTool', () => {
       expect(result.changes).toBe(1);
       expect(result.linesDeleted).toBe(2);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       const lines = content.split('\n');
       expect(lines).toHaveLength(2); // Original 4 - 2 deleted
       expect(lines[1]).toBe('Final line');
     });
 
     it('should handle out-of-range line numbers gracefully', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       await expect(editTool.execute({
         path: filePath,
         lineNumber: 10,
         replacement: 'Out of range'
       })).rejects.toMatchObject({
-        class: ErrorClass.VALIDATION,
+        errorClass: ErrorClass.VALIDATION,
         code: 'LINE_OUT_OF_RANGE'
       });
     });
@@ -130,7 +130,7 @@ describe('EditTool', () => {
 
   describe('Pattern-based Editing', () => {
     it('should replace first occurrence of string pattern', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -143,13 +143,13 @@ describe('EditTool', () => {
       expect(result.changes).toBe(1);
       expect(result.matchCount).toBe(1);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       expect(content).toContain('This is row 2'); // First 'line' replaced
       expect(content).toContain('Line 3'); // Second 'line' unchanged
     });
 
     it('should replace all occurrences of string pattern', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -163,14 +163,14 @@ describe('EditTool', () => {
       expect(result.changes).toBeGreaterThan(1);
       expect(result.matchCount).toBeGreaterThan(1);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       expect(content).toContain('This is row 2');
       expect(content).toContain('row 3 with data');
       expect(content).toContain('Final row');
     });
 
     it('should support regular expressions', async () => {
-      const filePath = path.join(tempDir, 'code.js');
+      const filePath = 'code.js';
       
       const result = await editTool.execute({
         path: filePath,
@@ -182,12 +182,12 @@ describe('EditTool', () => {
       expect(result.success).toBe(true);
       expect(result.changes).toBe(1);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       expect(content).toContain('console.warn("Hello, " + name)');
     });
 
     it('should support capture groups in replacements', async () => {
-      const filePath = path.join(tempDir, 'config.json');
+      const filePath = 'config.json';
       
       const result = await editTool.execute({
         path: filePath,
@@ -199,12 +199,12 @@ describe('EditTool', () => {
       expect(result.success).toBe(true);
       expect(result.changes).toBe(1);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       expect(content).toContain('"version": "1.0.0-beta"');
     });
 
     it('should handle complex multiline patterns', async () => {
-      const filePath = path.join(tempDir, 'multiline.txt');
+      const filePath = 'multiline.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -217,14 +217,14 @@ describe('EditTool', () => {
       expect(result.success).toBe(true);
       expect(result.changes).toBe(1);
 
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       expect(content).toContain('Modified second paragraph\nwith updated content');
     });
   });
 
   describe('Diff Generation', () => {
     it('should generate unified diff for changes', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -241,7 +241,7 @@ describe('EditTool', () => {
     });
 
     it('should include context lines in diff', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -257,7 +257,7 @@ describe('EditTool', () => {
     });
 
     it('should generate diff for multiple changes', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       const result = await editTool.execute({
         path: filePath,
@@ -270,13 +270,13 @@ describe('EditTool', () => {
 
       expect(result.success).toBe(true);
       expect(result.diff).toBeDefined();
-      expect(result.diff.split('@@')).toHaveLength(3); // Header + 2 change hunks
+      expect(result.diff?.split('@@')).toHaveLength(3); // Header + 2 change hunks
     });
 
     it('should handle binary files in diff generation', async () => {
-      const binaryPath = path.join(tempDir, 'binary.dat');
+      const binaryPath = 'binary.dat';
       const binaryData = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A]);
-      await fs.writeFile(binaryPath, binaryData);
+      await fs.writeFile(path.join(tempDir, binaryPath), binaryData);
 
       const result = await editTool.execute({
         path: binaryPath,
@@ -293,9 +293,9 @@ describe('EditTool', () => {
 
   describe('Conflict Detection', () => {
     it('should detect concurrent modifications', async () => {
-      const filePath = path.join(tempDir, 'concurrent.txt');
+      const filePath = 'concurrent.txt';
       const originalContent = 'Original content\nLine 2\nLine 3';
-      await fs.writeFile(filePath, originalContent);
+      await fs.writeFile(path.join(tempDir, filePath), originalContent);
 
       // Simulate concurrent modification by changing file between reads
       const originalReadFile = fs.readFile;
@@ -308,7 +308,7 @@ describe('EditTool', () => {
         if (readCount === 1 && path.toString().includes('concurrent.txt')) {
           // Simulate file change by another process
           await originalReadFile.call(fs, filePath, 'utf8').then(content => 
-            originalReadFile.call(fs, filePath.replace('concurrent.txt', 'concurrent.txt.bak'), content)
+            fs.writeFile(filePath.replace('concurrent.txt', 'concurrent.txt.bak'), content)
           );
           await fs.writeFile(path as string, 'Modified by someone else\nLine 2\nLine 3');
           return originalReadFile.call(fs, path, options);
@@ -322,7 +322,7 @@ describe('EditTool', () => {
         replacement: 'My modification',
         detectConflicts: true
       })).rejects.toMatchObject({
-        class: ErrorClass.VALIDATION,
+        errorClass: ErrorClass.VALIDATION,
         code: 'CONCURRENT_MODIFICATION'
       });
 
@@ -330,7 +330,7 @@ describe('EditTool', () => {
     });
 
     it('should handle merge conflicts gracefully', async () => {
-      const filePath = path.join(tempDir, 'merge-conflict.txt');
+      const filePath = 'merge-conflict.txt';
       const conflictContent = `Line 1
 <<<<<<< HEAD
 My change
@@ -339,14 +339,14 @@ Their change
 >>>>>>> branch
 Line 4`;
 
-      await fs.writeFile(filePath, conflictContent);
+      await fs.writeFile(path.join(tempDir, filePath), conflictContent);
 
       await expect(editTool.execute({
         path: filePath,
         pattern: 'Line 1',
         replacement: 'Updated Line 1'
       })).rejects.toMatchObject({
-        class: ErrorClass.VALIDATION,
+        errorClass: ErrorClass.VALIDATION,
         code: 'MERGE_CONFLICT_DETECTED'
       });
     });
@@ -354,9 +354,9 @@ Line 4`;
 
   describe('Atomic Operations and Backup', () => {
     it('should perform atomic edits with backup', async () => {
-      const filePath = path.join(tempDir, 'atomic.txt');
+      const filePath = 'atomic.txt';
       const originalContent = 'Original content for atomic edit';
-      await fs.writeFile(filePath, originalContent);
+      await fs.writeFile(path.join(tempDir, filePath), originalContent);
 
       const result = await editTool.execute({
         path: filePath,
@@ -381,9 +381,9 @@ Line 4`;
     });
 
     it('should rollback on atomic edit failure', async () => {
-      const filePath = path.join(tempDir, 'atomic-fail.txt');
+      const filePath = 'atomic-fail.txt';
       const originalContent = 'Original content';
-      await fs.writeFile(filePath, originalContent);
+      await fs.writeFile(path.join(tempDir, filePath), originalContent);
 
       // Mock a failure during write
       const originalWriteFile = fs.writeFile;
@@ -402,7 +402,7 @@ Line 4`;
       })).rejects.toThrow();
 
       // Verify original content is preserved
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       expect(content).toBe(originalContent);
 
       (fs.writeFile as jest.Mock).mockRestore();
@@ -411,9 +411,9 @@ Line 4`;
 
   describe('Performance and Large Files', () => {
     it('should handle large files efficiently', async () => {
-      const largePath = path.join(tempDir, 'large.txt');
+      const largePath = 'large.txt';
       const largeContent = Array.from({ length: 10000 }, (_, i) => `Line ${i + 1}`).join('\n');
-      await fs.writeFile(largePath, largeContent);
+      await fs.writeFile(path.join(tempDir, largePath), largeContent);
 
       const start = Date.now();
       const result = await editTool.execute({
@@ -429,9 +429,9 @@ Line 4`;
     });
 
     it('should stream progress for large edit operations', async () => {
-      const largePath = path.join(tempDir, 'stream-large.txt');
+      const largePath = 'stream-large.txt';
       const largeContent = Array.from({ length: 1000 }, (_, i) => `Line ${i + 1} with pattern`).join('\n');
-      await fs.writeFile(largePath, largeContent);
+      await fs.writeFile(path.join(tempDir, largePath), largeContent);
 
       const events: any[] = [];
       const stream = editTool.stream({
@@ -452,7 +452,7 @@ Line 4`;
 
     it('should respect memory limits for large files', async () => {
       // Create a file larger than memory limit
-      const hugePath = path.join(tempDir, 'huge.txt');
+      const hugePath = 'huge.txt';
       // Simulate by mocking file size check
       jest.spyOn(fs, 'stat').mockResolvedValueOnce({
         size: 200 * 1024 * 1024, // 200MB
@@ -464,7 +464,7 @@ Line 4`;
         pattern: 'test',
         replacement: 'updated'
       })).rejects.toMatchObject({
-        class: ErrorClass.VALIDATION,
+        errorClass: ErrorClass.VALIDATION,
         code: 'FILE_TOO_LARGE'
       });
 
@@ -479,31 +479,31 @@ Line 4`;
         pattern: 'test',
         replacement: 'malicious'
       })).rejects.toMatchObject({
-        class: ErrorClass.PERMISSION,
+        errorClass: ErrorClass.PERMISSION,
         code: 'PATH_TRAVERSAL'
       });
     });
 
     it('should handle permission errors gracefully', async () => {
-      const restrictedPath = path.join(tempDir, 'readonly.txt');
-      await fs.writeFile(restrictedPath, 'readonly content');
+      const restrictedPath = 'readonly.txt';
+      await fs.writeFile(path.join(tempDir, restrictedPath), 'readonly content');
       
       if (process.platform !== 'win32') {
-        await fs.chmod(restrictedPath, 0o444); // Read-only
+        await fs.chmod(path.join(tempDir, restrictedPath), 0o444); // Read-only
 
         await expect(editTool.execute({
           path: restrictedPath,
           pattern: 'readonly',
           replacement: 'modified'
         })).rejects.toMatchObject({
-          class: ErrorClass.PERMISSION,
+          errorClass: ErrorClass.PERMISSION,
           code: 'EACCES'
         });
       }
     });
 
     it('should validate pattern syntax for regex', async () => {
-      const filePath = path.join(tempDir, 'simple.txt');
+      const filePath = 'simple.txt';
       
       await expect(editTool.execute({
         path: filePath,
@@ -511,7 +511,7 @@ Line 4`;
         replacement: 'test',
         regex: true
       })).rejects.toMatchObject({
-        class: ErrorClass.VALIDATION,
+        errorClass: ErrorClass.VALIDATION,
         code: 'INVALID_REGEX'
       });
     });
@@ -523,7 +523,7 @@ Line 4`;
       editTool.on('telemetry', (event) => telemetryEvents.push(event));
 
       await editTool.execute({
-        path: path.join(tempDir, 'simple.txt'),
+        path: 'simple.txt',
         pattern: 'line',
         replacement: 'row'
       });
@@ -539,7 +539,7 @@ Line 4`;
 
     it('should track detailed edit metrics', async () => {
       const result = await editTool.execute({
-        path: path.join(tempDir, 'simple.txt'),
+        path: 'simple.txt',
         pattern: 'line',
         replacement: 'row',
         replaceAll: true,
