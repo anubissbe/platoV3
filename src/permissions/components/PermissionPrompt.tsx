@@ -270,7 +270,9 @@ export const PermissionPrompt: React.FC<PermissionPromptProps> = ({
             </Text>
           )}
         </Box>
-        <Text dimColor marginTop={1}>Use arrow keys to navigate, Enter to select, ESC to cancel</Text>
+        <Box paddingTop={1}>
+          <Text dimColor>Use arrow keys to navigate, Enter to select, ESC to cancel</Text>
+        </Box>
       </Box>
     );
   }

@@ -86,9 +86,12 @@ export interface ProfileChangeEvent {
 // Permission query and result types
 export interface PermissionQuery {
   tool: string;
+  server?: string;
+  action?: string;
   operation?: string;
   path?: string;
   command?: string;
+  arguments?: any;
   context?: AuditContext;
   timestamp?: number;
   metadata?: Record<string, any>;

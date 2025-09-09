@@ -179,9 +179,9 @@ export const PermissionPrompt: React.FC<PermissionPromptProps> = ({
           <Box marginLeft={2}>
             <Text color="gray">Timestamp: {new Date().toLocaleString()}</Text>
           </Box>
-          {query.context?.currentBranch && (
+          {query.context?.git_context?.branch && (
             <Box marginLeft={2}>
-              <Text color="gray">Git Branch: {query.context.currentBranch}</Text>
+              <Text color="gray">Git Branch: {query.context.git_context.branch}</Text>
             </Box>
           )}
         </Box>

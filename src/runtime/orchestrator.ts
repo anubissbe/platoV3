@@ -440,7 +440,7 @@ async function ensurePermissionManager(): Promise<PermissionManager> {
     // Initialize profile manager
     if (!profileManager) {
       profileManager = new ProfileManager();
-      await profileManager.initialize();
+      // ProfileManager doesn't have initialize method
     }
 
     // Initialize audit logger
@@ -1537,7 +1537,7 @@ export const orchestrator = {
         auditLogger = null;
       }
       if (profileManager) {
-        await profileManager.cleanup?.();
+        // ProfileManager doesn't have cleanup method
         profileManager = null;
       }
     } catch (error) {
@@ -1641,10 +1641,14 @@ async function maybeBridgeTool(content: string, onEvent?: (e: OrchestratorEvent)
       action: name,
       arguments: input,
       context: {
-        user_id: 'default-user',
-        session_id: currentSessionId,
-        timestamp: new Date(),
+        source: 'system' as const,
         workspace_path: process.cwd(),
+        environment: {
+          node_env: process.env.NODE_ENV,
+          platform: process.platform,
+          node_version: process.version,
+        },
+        correlation_id: currentSessionId,
       },
     };
 
@@ -1654,7 +1658,7 @@ async function maybeBridgeTool(content: string, onEvent?: (e: OrchestratorEvent)
       const message = `Tool call denied: ${server}:${name} - ${result.reason || 'Policy violation'}`;
       onEvent?.({ type: 'info', message });
       return;
-    } else if (result.action === 'prompt') {
+    } else if (result.action === 'confirm') {
       // For now, treat prompts as denials in non-interactive mode
       // TODO: Implement interactive prompting in TUI
       const message = `Tool call requires confirmation: ${server}:${name} - ${result.reason || 'Manual approval required'}`;

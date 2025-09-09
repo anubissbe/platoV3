@@ -37,7 +37,7 @@ export const PermissionDashboard: React.FC<PermissionDashboardProps> = ({
 
   useEffect(() => {
     // Load initial data
-    setProfiles(profileManager.getProfiles());
+    setProfiles(profileManager.getAllProfiles());
     setCurrentProfile(profileManager.getCurrentProfile());
     
     // Subscribe to profile changes
@@ -60,7 +60,7 @@ export const PermissionDashboard: React.FC<PermissionDashboardProps> = ({
       });
       
       // Load recent logs
-      auditLogger.search({ limit: 10 }).then(entries => {
+      auditLogger.searchEntries({ limit: 10 }).then((entries: any) => {
         setRecentLogs(entries);
       });
     }
@@ -125,13 +125,15 @@ export const PermissionDashboard: React.FC<PermissionDashboardProps> = ({
             {profile === currentProfile ? '▶ ' : '  '}
             {profile.name}
           </Text>
-          <Text dimColor marginLeft={4}>
-            {profile.description}
-          </Text>
+          <Box paddingLeft={2}>
+            <Text dimColor>{profile.description}</Text>
+          </Box>
         </Box>
       ))}
       {profiles.length === 0 && (
-        <Text dimColor marginTop={1}>No profiles configured</Text>
+        <Box paddingTop={1}>
+          <Text dimColor>No profiles configured</Text>
+        </Box>
       )}
     </Box>
   );
@@ -146,17 +148,19 @@ export const PermissionDashboard: React.FC<PermissionDashboardProps> = ({
         {rules.map((rule, index) => (
           <Box key={index} marginTop={1} flexDirection="column">
             <Text>
-              {rule.pattern} → {rule.action}
+              {rule.match.tool || rule.match.path || rule.match.command || 'Unknown'} → {rule.action}
             </Text>
             {rule.priority && (
-              <Text dimColor marginLeft={2}>
-                Priority: {rule.priority}
-              </Text>
+              <Box paddingLeft={1}>
+                <Text dimColor>Priority: {rule.priority}</Text>
+              </Box>
             )}
           </Box>
         ))}
         {rules.length === 0 && (
-          <Text dimColor marginTop={1}>No rules defined</Text>
+          <Box paddingTop={1}>
+            <Text dimColor>No rules defined</Text>
+          </Box>
         )}
       </Box>
     );
@@ -168,17 +172,19 @@ export const PermissionDashboard: React.FC<PermissionDashboardProps> = ({
       {recentLogs.map((entry, index) => (
         <Box key={index} marginTop={1} flexDirection="column">
           <Text>
-            [{new Date(entry.timestamp).toLocaleTimeString()}] {entry.tool} - {entry.result.action}
+            [{new Date(entry.timestamp).toLocaleTimeString()}] {entry.query.tool} - {entry.result.action}
           </Text>
-          {entry.path && (
-            <Text dimColor marginLeft={2}>
-              Path: {entry.path}
-            </Text>
+          {entry.query.path && (
+            <Box paddingLeft={1}>
+              <Text dimColor>Path: {entry.query.path}</Text>
+            </Box>
           )}
         </Box>
       ))}
       {recentLogs.length === 0 && (
-        <Text dimColor marginTop={1}>No recent audit entries</Text>
+        <Box paddingTop={1}>
+          <Text dimColor>No recent audit entries</Text>
+        </Box>
       )}
     </Box>
   );

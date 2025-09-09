@@ -63,23 +63,23 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
         
         // Process raw statistics into display format
         const processedStats: PermissionStatistics = {
-          totalDecisions: rawStats.totalDecisions || 0,
-          allowed: rawStats.allowed || 0,
-          denied: rawStats.denied || 0,
-          prompted: rawStats.prompted || 0,
-          elevated: rawStats.elevated || 0,
-          cacheHits: rawStats.cacheHits || 0,
-          cacheMisses: rawStats.cacheMisses || 0,
-          averageResponseTime: rawStats.averageResponseTime || 0,
-          toolUsage: rawStats.toolUsage || {},
-          profileUsage: rawStats.profileUsage || {},
-          riskDistribution: rawStats.riskDistribution || {
+          totalDecisions: (rawStats as any).totalEntries || 0,
+          allowed: (rawStats as any).actionCounts?.allow || 0,
+          denied: (rawStats as any).actionCounts?.deny || 0,
+          prompted: (rawStats as any).actionCounts?.confirm || 0,
+          elevated: 0, // Not available in AuditStatistics
+          cacheHits: 0, // Not available in AuditStatistics  
+          cacheMisses: 0, // Not available in AuditStatistics
+          averageResponseTime: 0, // Not available in AuditStatistics
+          toolUsage: (rawStats as any).toolCounts || {},
+          profileUsage: {}, // Not available in AuditStatistics
+          riskDistribution: {
             low: 0,
             medium: 0,
             high: 0,
             critical: 0,
           },
-          timeDistribution: rawStats.timeDistribution || {
+          timeDistribution: {
             lastHour: 0,
             last24Hours: 0,
             last7Days: 0,

@@ -18,7 +18,7 @@ let mcpPermissionManager: PermissionManager | null = null;
 async function ensureMCPPermissionSystem(): Promise<PermissionManager> {
   if (!mcpPermissionManager) {
     const profileManager = new ProfileManager();
-    await profileManager.initialize();
+    // ProfileManager doesn't have initialize method
     
     const auditLogger = new AuditLogger({
       logDirectory: '.plato/audit/mcp',
@@ -53,10 +53,14 @@ async function checkMCPPermission(
       action: operation,
       arguments: toolName ? { tool: toolName, input } : undefined,
       context: {
-        user_id: 'mcp-user',
-        session_id: 'mcp-session',
-        timestamp: new Date(),
+        source: 'system' as const,
         workspace_path: process.cwd(),
+        environment: {
+          node_env: process.env.NODE_ENV,
+          platform: process.platform,
+          node_version: process.version,
+        },
+        correlation_id: 'mcp-' + Date.now(),
       },
     };
 

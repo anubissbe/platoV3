@@ -181,7 +181,7 @@ export class RuleEngine {
           break;
         
         case 'environment':
-          if (!this.evaluateEnvironmentCondition(condition.value, query.context)) {
+          if (!this.evaluateEnvironmentCondition(condition.value, this.convertToPermissionContext(query.context))) {
             return false;
           }
           break;
@@ -221,6 +221,21 @@ export class RuleEngine {
   /**
    * Evaluate environment variable conditions
    */
+  private convertToPermissionContext(auditContext?: any): PermissionContext | undefined {
+    if (!auditContext) return undefined;
+    
+    return {
+      workingDirectory: auditContext.workspace_path || auditContext.workingDirectory || process.cwd(),
+      timestamp: new Date(),
+      environment: auditContext.environment || {},
+      currentBranch: auditContext.git_context?.branch,
+      gitRepository: auditContext.git_context ? {
+        root: auditContext.git_context.repository || '',
+        remotes: []
+      } : undefined
+    };
+  }
+
   private evaluateEnvironmentCondition(envCondition: { key: string; value: string }, context?: PermissionContext): boolean {
     // Check context environment first, then fall back to process.env
     const envValue = context?.environment?.[envCondition.key] ?? process.env[envCondition.key];

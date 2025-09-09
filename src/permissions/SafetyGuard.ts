@@ -55,8 +55,8 @@ export class SafetyGuard extends EventEmitter {
    */
   isProtectedPath(filePath: string): boolean {
     const normalized = path.normalize(filePath);
-    return SafetyGuard.PROTECTED_PATHS.some(protected => 
-      normalized.startsWith(protected) || normalized === protected
+    return SafetyGuard.PROTECTED_PATHS.some(protectedPath => 
+      normalized.startsWith(protectedPath) || normalized === protectedPath
     );
   }
 
@@ -160,7 +160,9 @@ export class SafetyGuard extends EventEmitter {
     // Limit snapshot storage
     if (this.snapshots.size >= this.MAX_SNAPSHOTS) {
       const firstKey = this.snapshots.keys().next().value;
-      this.snapshots.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.snapshots.delete(firstKey);
+      }
     }
 
     this.snapshots.set(id, {

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { ProfileManager } from '../ProfileManager';
-import { PermissionManager } from '../PermissionManager';
+import { PermissionManager } from '../PermissionManager.js';
 
 export interface KeyboardShortcutsProps {
   profileManager: ProfileManager;
@@ -59,14 +59,14 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
   });
 
   const handleProfileSwitch = () => {
-    const profiles = profileManager.getProfiles();
+    const profiles = profileManager.getAllProfiles();
     const currentProfile = profileManager.getCurrentProfile();
     
     if (profiles.length === 0) return;
     
     // Find current profile index
     const currentIndex = currentProfile 
-      ? profiles.findIndex(p => p.name === currentProfile.name)
+      ? profiles.findIndex((p: any) => p.name === currentProfile.name)
       : -1;
     
     // Switch to next profile (cycle)
