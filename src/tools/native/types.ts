@@ -66,6 +66,7 @@ export interface ToolEvent {
   bytesRead?: number;
   totalBytes?: number;
   progress?: number;
+  success?: boolean;
 }
 
 /**

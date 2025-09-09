@@ -97,12 +97,12 @@ describe('WriteTool', () => {
 
   describe('Atomic Write Operations', () => {
     it('should perform atomic writes with backup', async () => {
-      const filePath = path.join(tempDir, 'atomic.txt');
+      const filePath = 'atomic.txt';
       const originalContent = 'Original atomic content';
       const newContent = 'New atomic content';
 
       // Create original file
-      await fs.writeFile(filePath, originalContent);
+      await fs.writeFile(path.join(tempDir, filePath), originalContent);
 
       const result = await writeTool.execute({
         path: filePath,
@@ -127,11 +127,11 @@ describe('WriteTool', () => {
     });
 
     it('should handle atomic write failures gracefully', async () => {
-      const filePath = path.join(tempDir, 'atomic-fail.txt');
+      const filePath = 'atomic-fail.txt';
       const originalContent = 'Original content';
 
       // Create original file
-      await fs.writeFile(filePath, originalContent);
+      await fs.writeFile(path.join(tempDir, filePath), originalContent);
 
       // Mock a failure scenario by making the directory read-only (skip on Windows)
       if (process.platform !== 'win32') {
@@ -142,7 +142,7 @@ describe('WriteTool', () => {
           content: 'New content',
           atomic: true
         })).rejects.toMatchObject({
-          class: ErrorClass.PERMISSION
+          errorClass: ErrorClass.PERMISSION
         });
 
         // Verify original file is unchanged
@@ -155,7 +155,7 @@ describe('WriteTool', () => {
     });
 
     it('should clean up temporary files on successful atomic write', async () => {
-      const filePath = path.join(tempDir, 'atomic-cleanup.txt');
+      const filePath = 'atomic-cleanup.txt';
       const content = 'Atomic write with cleanup';
 
       const result = await writeTool.execute({
@@ -176,7 +176,7 @@ describe('WriteTool', () => {
 
   describe('Directory Creation', () => {
     it('should create parent directories automatically', async () => {
-      const filePath = path.join(tempDir, 'nested', 'deep', 'directory', 'file.txt');
+      const filePath = path.join('nested', 'deep', 'directory', 'file.txt');
       const content = 'File in nested directory';
 
       const result = await writeTool.execute({
@@ -199,7 +199,7 @@ describe('WriteTool', () => {
 
     it('should handle existing directories correctly', async () => {
       const nestedDir = path.join(tempDir, 'existing', 'nested');
-      const filePath = path.join(nestedDir, 'file.txt');
+      const filePath = path.join('existing', 'nested', 'file.txt');
       
       // Pre-create some directories
       await fs.mkdir(path.join(tempDir, 'existing'), { recursive: true });
@@ -215,7 +215,7 @@ describe('WriteTool', () => {
     });
 
     it('should fail when directories cannot be created', async () => {
-      const filePath = path.join(tempDir, 'readonly', 'file.txt');
+      const filePath = path.join('readonly', 'file.txt');
       
       // Create readonly directory (skip on Windows)
       if (process.platform !== 'win32') {
@@ -227,7 +227,7 @@ describe('WriteTool', () => {
           content: 'Should fail',
           createDirs: true
         })).rejects.toMatchObject({
-          class: ErrorClass.PERMISSION
+          errorClass: ErrorClass.PERMISSION
         });
       }
     });
@@ -236,7 +236,7 @@ describe('WriteTool', () => {
   describe('Encoding Support', () => {
     it('should write with specified encoding', async () => {
       const content = 'Café with açaí';
-      const filePath = path.join(tempDir, 'latin1.txt');
+      const filePath = 'latin1.txt';
 
       const result = await writeTool.execute({
         path: filePath,
@@ -255,7 +255,7 @@ describe('WriteTool', () => {
 
     it('should handle binary data correctly', async () => {
       const binaryData = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
-      const filePath = path.join(tempDir, 'binary.png');
+      const filePath = 'binary.png';
 
       const result = await writeTool.execute({
         path: filePath,
@@ -278,8 +278,8 @@ describe('WriteTool', () => {
       
       // Create file with specific permissions (skip on Windows)
       if (process.platform !== 'win32') {
-        await fs.writeFile(filePath, 'original');
-        await fs.chmod(filePath, 0o644);
+        await fs.writeFile(path.join(tempDir, filePath), 'original');
+        await fs.chmod(path.join(tempDir, filePath), 0o644);
 
         const originalStats = await fs.stat(path.join(tempDir, filePath));
         
@@ -323,7 +323,7 @@ describe('WriteTool', () => {
         path: filePath,
         content: largeContent
       })).rejects.toMatchObject({
-        class: ErrorClass.VALIDATION,
+        errorClass: ErrorClass.VALIDATION,
         code: 'FILE_TOO_LARGE',
         retryable: false
       });
@@ -334,7 +334,7 @@ describe('WriteTool', () => {
         path: '',
         content: 'content'
       })).rejects.toMatchObject({
-        class: ErrorClass.VALIDATION,
+        errorClass: ErrorClass.VALIDATION,
         code: 'INVALID_PATH'
       });
 
@@ -342,7 +342,7 @@ describe('WriteTool', () => {
         path: '../../../etc/shadow',
         content: 'malicious'
       })).rejects.toMatchObject({
-        class: ErrorClass.PERMISSION,
+        errorClass: ErrorClass.PERMISSION,
         code: 'PATH_TRAVERSAL'
       });
     });
@@ -428,10 +428,10 @@ describe('WriteTool', () => {
       jest.spyOn(fs, 'writeFile').mockRejectedValueOnce(mockError);
 
       await expect(writeTool.execute({
-        path: path.join(tempDir, 'disk-full.txt'),
+        path: 'disk-full.txt',
         content: 'This should fail'
       })).rejects.toMatchObject({
-        class: ErrorClass.TRANSIENT,
+        errorClass: ErrorClass.TRANSIENT,
         code: 'ENOSPC',
         retryable: true
       });
@@ -449,7 +449,7 @@ describe('WriteTool', () => {
 
       expect(error).toBeInstanceOf(ToolError);
       expect(error).toMatchObject({
-        class: ErrorClass.PERMANENT,
+        errorClass: ErrorClass.PERMANENT,
         code: 'ENOENT',
         message: expect.stringContaining('No such file or directory'),
         retryable: false,

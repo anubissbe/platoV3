@@ -198,6 +198,9 @@ export class ReadTool extends EventEmitter implements NativeTool {
         yield {
           type: 'progress',
           data: { stage: 'reading', totalBytes: stats.size },
+          bytesRead: 0,
+          totalBytes: stats.size,
+          progress: 0,
           timestamp: Date.now(),
           sequence: sequence++
         };
@@ -452,8 +455,18 @@ export class ReadTool extends EventEmitter implements NativeTool {
       );
     }
     
+    // Validate that startLine <= endLine
+    if (startLine > endLine) {
+      throw new ToolError(
+        ErrorClass.VALIDATION,
+        'INVALID_LINE_RANGE',
+        'Start line must be <= end line',
+        { startLine, endLine }
+      );
+    }
+    
     // Check if range is valid
-    if (startLine > totalLines || endLine < startLine) {
+    if (startLine > totalLines) {
       return this.createResponse(true, {
         ...baseResponse,
         content: '',

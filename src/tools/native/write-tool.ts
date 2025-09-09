@@ -3,8 +3,8 @@
  * Implements file writing with atomic operations, directory creation, and Claude Code compatibility
  */
 
-import fs from 'fs/promises';
-import path from 'path';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import crypto from 'crypto';
 import { EventEmitter } from 'events';
 import {
@@ -231,6 +231,7 @@ export class WriteTool extends EventEmitter implements NativeTool {
           encoding,
           path: normalizedPath
         },
+        success: true,
         timestamp: Date.now(),
         sequence: sequence++
       };
@@ -246,7 +247,7 @@ export class WriteTool extends EventEmitter implements NativeTool {
   }
 
   private validateArgs(args: WriteToolArgs): void {
-    if (!args.path || typeof args.path !== 'string') {
+    if (!args.path || typeof args.path !== 'string' || args.path.trim() === '') {
       throw new ToolError(
         ErrorClass.VALIDATION,
         'INVALID_PATH',
@@ -272,8 +273,13 @@ export class WriteTool extends EventEmitter implements NativeTool {
   }
 
   private async validatePath(inputPath: string): Promise<string> {
-    // Resolve to absolute path
-    const absolutePath = path.resolve(this.workspaceRoot, inputPath);
+    // Handle both relative and absolute paths correctly
+    let absolutePath: string;
+    if (path.isAbsolute(inputPath)) {
+      absolutePath = inputPath;
+    } else {
+      absolutePath = path.resolve(this.workspaceRoot, inputPath);
+    }
     
     // Check for path traversal
     if (!absolutePath.startsWith(this.workspaceRoot)) {
