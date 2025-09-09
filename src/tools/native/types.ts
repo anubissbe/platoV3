@@ -209,8 +209,9 @@ export interface EditToolMetrics extends ToolMetrics {
 // ============================================================================
 
 export interface ListToolArgs {
-  path: string;
+  path?: string;
   recursive?: boolean;
+  pattern?: string;
   glob?: string;
   includeHidden?: boolean;
   sortBy?: 'name' | 'size' | 'modified' | 'type';
@@ -224,11 +225,10 @@ export interface FileInfo {
   path: string;
   type: 'file' | 'directory' | 'symlink' | 'other';
   size?: number;
-  modified?: string;
-  created?: string;
+  modified?: Date;
+  created?: Date;
   permissions?: string;
-  owner?: string;
-  group?: string;
+  depth?: number;
 }
 
 export interface ListToolResponse extends BaseToolResponse {
@@ -237,10 +237,14 @@ export interface ListToolResponse extends BaseToolResponse {
   totalFiles?: number;
   totalDirectories?: number;
   totalSize?: number;
+  truncated?: boolean;
+  resolvedPath?: string;
   metrics?: ListToolMetrics;
 }
 
 export interface ListToolMetrics extends ToolMetrics {
+  itemsProcessed: number;
+  throughput: number;
   filesScanned: number;
   directoriesScanned: number;
   filterTime: number;

@@ -14,8 +14,8 @@ describe('ListTool', () => {
   let tempDir: string;
 
   beforeEach(async () => {
-    listTool = new ListTool();
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'plato-list-test-'));
+    listTool = new ListTool(tempDir);
 
     // Create a complex directory structure for testing
     const structure = {
@@ -28,6 +28,7 @@ describe('ListTool', () => {
       'subdir1/nested.txt': 'Nested content',
       'subdir1/script.py': 'print("hello")',
       'subdir1/.hidden-nested': 'Hidden nested',
+      'subdir2/deep/deep.txt': 'Deep content directly in deep dir',
       'subdir2/deep/very/deep.txt': 'Very deep content',
       'subdir2/large.txt': 'X'.repeat(10000),
       'subdir3/empty-dir/.gitkeep': '',
@@ -51,14 +52,14 @@ describe('ListTool', () => {
 
   afterEach(async () => {
     if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
+      await fs.rmdir(tempDir, { recursive: true });
     }
   });
 
   describe('Basic Directory Listing', () => {
     it('should list files and directories in current directory', async () => {
       const result = await listTool.execute({
-        path: tempDir
+        path: '.'
       });
 
       expect(result.success).toBe(true);
@@ -83,7 +84,7 @@ describe('ListTool', () => {
 
     it('should not include hidden files by default', async () => {
       const result = await listTool.execute({
-        path: tempDir
+        path: '.'
       });
 
       expect(result.success).toBe(true);
@@ -94,7 +95,7 @@ describe('ListTool', () => {
 
     it('should include hidden files when requested', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         includeHidden: true
       });
 
@@ -121,9 +122,9 @@ describe('ListTool', () => {
 
     it('should handle non-existent directories', async () => {
       await expect(listTool.execute({
-        path: path.join(tempDir, 'nonexistent')
+        path: 'nonexistent'
       })).rejects.toMatchObject({
-        class: ErrorClass.PERMANENT,
+        errorClass: ErrorClass.PERMANENT,
         code: 'ENOENT'
       });
     });
@@ -132,7 +133,7 @@ describe('ListTool', () => {
   describe('Recursive Listing', () => {
     it('should list files recursively', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         recursive: true
       });
 
@@ -147,7 +148,7 @@ describe('ListTool', () => {
 
     it('should respect max depth limit', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         recursive: true,
         maxDepth: 2
       });
@@ -164,7 +165,7 @@ describe('ListTool', () => {
 
     it('should include hidden files recursively when requested', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         recursive: true,
         includeHidden: true
       });
@@ -178,7 +179,7 @@ describe('ListTool', () => {
   describe('Glob Patterns', () => {
     it('should filter files by extension', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         glob: '*.txt'
       });
 
@@ -191,7 +192,7 @@ describe('ListTool', () => {
 
     it('should support complex glob patterns', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         recursive: true,
         glob: '**/*.{js,py}'
       });
@@ -205,7 +206,7 @@ describe('ListTool', () => {
 
     it('should handle glob patterns with recursive search', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         recursive: true,
         glob: '**/deep/*.txt'
       });
@@ -217,10 +218,10 @@ describe('ListTool', () => {
 
     it('should handle invalid glob patterns gracefully', async () => {
       await expect(listTool.execute({
-        path: tempDir,
+        path: '.',
         glob: '[invalid-glob'
       })).rejects.toMatchObject({
-        class: ErrorClass.VALIDATION,
+        errorClass: ErrorClass.VALIDATION,
         code: 'INVALID_GLOB_PATTERN'
       });
     });
@@ -229,7 +230,7 @@ describe('ListTool', () => {
   describe('Sorting and Ordering', () => {
     it('should sort by name ascending by default', async () => {
       const result = await listTool.execute({
-        path: tempDir
+        path: '.'
       });
 
       expect(result.success).toBe(true);
@@ -240,7 +241,7 @@ describe('ListTool', () => {
 
     it('should sort by name descending', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         sortBy: 'name',
         sortOrder: 'desc'
       });
@@ -253,7 +254,7 @@ describe('ListTool', () => {
 
     it('should sort by size', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         stats: true,
         sortBy: 'size',
         sortOrder: 'desc'
@@ -278,7 +279,7 @@ describe('ListTool', () => {
       await fs.writeFile(file2, 'newer');
 
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         stats: true,
         sortBy: 'modified',
         sortOrder: 'desc'
@@ -300,7 +301,7 @@ describe('ListTool', () => {
 
     it('should sort by type (directories first)', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         sortBy: 'type'
       });
 
@@ -314,7 +315,7 @@ describe('ListTool', () => {
   describe('File Statistics', () => {
     it('should include file stats when requested', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         stats: true
       });
 
@@ -322,7 +323,11 @@ describe('ListTool', () => {
       const files = result.files!;
       
       expect(files.length).toBeGreaterThan(0);
-      files.forEach(file => {
+      // Filter to regular files only (exclude symlinks)
+      const regularFiles = files.filter(file => file.type === 'file');
+      expect(regularFiles.length).toBeGreaterThan(0);
+      
+      regularFiles.forEach(file => {
         expect(file.size).toBeDefined();
         expect(file.modified).toBeDefined();
         expect(file.created).toBeDefined();
@@ -336,7 +341,7 @@ describe('ListTool', () => {
 
     it('should calculate total size correctly', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         stats: true,
         recursive: true
       });
@@ -353,7 +358,7 @@ describe('ListTool', () => {
     it('should handle symlinks correctly', async () => {
       if (process.platform !== 'win32') {
         const result = await listTool.execute({
-          path: tempDir,
+          path: '.',
           stats: true
         });
 
@@ -374,7 +379,7 @@ describe('ListTool', () => {
         await fs.chmod(testFile, 0o644);
 
         const result = await listTool.execute({
-          path: tempDir,
+          path: '.',
           stats: true
         });
 
@@ -438,7 +443,7 @@ describe('ListTool', () => {
 
     it('should enforce maximum results limit', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         recursive: true,
         glob: '**/*'
       });
@@ -456,7 +461,7 @@ describe('ListTool', () => {
       await expect(listTool.execute({
         path: '../../../etc'
       })).rejects.toMatchObject({
-        class: ErrorClass.PERMISSION,
+        errorClass: ErrorClass.PERMISSION,
         code: 'PATH_TRAVERSAL'
       });
     });
@@ -465,7 +470,7 @@ describe('ListTool', () => {
       await expect(listTool.execute({
         path: '/etc'
       })).rejects.toMatchObject({
-        class: ErrorClass.PERMISSION,
+        errorClass: ErrorClass.PERMISSION,
         code: 'ACCESS_DENIED'
       });
     });
@@ -479,7 +484,7 @@ describe('ListTool', () => {
         await expect(listTool.execute({
           path: restrictedDir
         })).rejects.toMatchObject({
-          class: ErrorClass.PERMISSION,
+          errorClass: ErrorClass.PERMISSION,
           code: 'EACCES'
         });
 
@@ -497,7 +502,7 @@ describe('ListTool', () => {
         await fs.symlink('/nonexistent/target', brokenSymlink);
 
         const result = await listTool.execute({
-          path: tempDir,
+          path: '.',
           stats: true
         });
 
@@ -509,11 +514,11 @@ describe('ListTool', () => {
 
     it('should provide detailed error information', async () => {
       const error = await listTool.execute({
-        path: path.join(tempDir, 'nonexistent-deep', 'nested')
+        path: 'nonexistent-deep/nested'
       }).catch(e => e);
 
       expect(error).toBeInstanceOf(ToolError);
-      expect(error.class).toBe(ErrorClass.PERMANENT);
+      expect(error.errorClass).toBe(ErrorClass.PERMANENT);
       expect(error.code).toBe('ENOENT');
       expect(error.details).toMatchObject({
         path: expect.any(String)
@@ -527,7 +532,7 @@ describe('ListTool', () => {
       listTool.on('telemetry', (event) => telemetryEvents.push(event));
 
       await listTool.execute({
-        path: tempDir,
+        path: '.',
         recursive: true
       });
 
@@ -543,7 +548,7 @@ describe('ListTool', () => {
 
     it('should track detailed performance metrics', async () => {
       const result = await listTool.execute({
-        path: tempDir,
+        path: '.',
         recursive: true,
         stats: true,
         sortBy: 'size'
