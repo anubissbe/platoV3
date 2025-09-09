@@ -54,6 +54,32 @@ export type Config = {
     pulseOnUpdate?: boolean;
     showSpinner?: boolean;
   };
+  permissions?: {
+    enabled?: boolean;
+    activeProfile?: string;
+    defaultAction?: 'allow' | 'deny' | 'prompt';
+    uiEnabled?: boolean;
+    showProfileIndicator?: boolean;
+    profilePath?: string;
+    auditPath?: string;
+    mcpPermissionsPath?: string;
+    globalRules?: Array<{
+      pattern: string;
+      action: 'allow' | 'deny' | 'prompt';
+      priority?: number;
+    }>;
+    protectedPaths?: string[];
+    safeMode?: boolean;
+    emergencyStop?: boolean;
+    autoSwitchProfiles?: boolean;
+    interactivePrompts?: boolean;
+    auditSettings?: {
+      enabled?: boolean;
+      maxLogSize?: number;
+      maxLogFiles?: number;
+      retentionDays?: number;
+    };
+  };
 };
 
 const HOME = os.homedir();
@@ -83,6 +109,33 @@ export async function loadConfig(): Promise<Config> {
   if (!cached.editing) cached.editing = { autoApply: 'on' };
   if (!cached.context) cached.context = { roots: [process.cwd()], selected: [] };
   if (!cached.toolCallPreset) cached.toolCallPreset = { enabled: true, strictOnly: true };
+  
+  // Initialize permission system defaults
+  if (!cached.permissions) {
+    cached.permissions = {
+      enabled: true,
+      activeProfile: 'development',
+      defaultAction: 'prompt',
+      uiEnabled: true,
+      showProfileIndicator: true,
+      profilePath: '.plato/permissions.yml',
+      auditPath: '.plato/audit',
+      mcpPermissionsPath: '.plato/mcp-permissions.yml',
+      globalRules: [],
+      protectedPaths: ['/etc', '/sys', '/proc', '/boot'],
+      safeMode: false,
+      emergencyStop: false,
+      autoSwitchProfiles: true,
+      interactivePrompts: true,
+      auditSettings: {
+        enabled: true,
+        maxLogSize: 10 * 1024 * 1024, // 10MB
+        maxLogFiles: 10,
+        retentionDays: 30,
+      },
+    };
+  }
+  
   return cached;
 }
 
@@ -91,15 +144,25 @@ export async function setConfigValue(key: string, value: string): Promise<void> 
   let parsedValue: any = value;
   
   // Boolean fields
-  if (['telemetry', 'vimMode', 'autoApply'].includes(key)) {
+  if (['telemetry', 'vimMode', 'autoApply', 'permissions.enabled', 'permissions.uiEnabled', 
+       'permissions.showProfileIndicator', 'permissions.safeMode', 'permissions.emergencyStop',
+       'permissions.autoSwitchProfiles', 'permissions.interactivePrompts'].includes(key)) {
     parsedValue = value === 'true' || value === 'on';
   }
   // Number fields
-  else if (['port', 'timeout', 'maxRetries'].includes(key)) {
+  else if (['port', 'timeout', 'maxRetries', 'permissions.auditSettings.maxLogSize',
+            'permissions.auditSettings.maxLogFiles', 'permissions.auditSettings.retentionDays'].includes(key)) {
     parsedValue = Number(value);
     if (isNaN(parsedValue)) {
       throw new Error(`Invalid value for ${key}: expected number`);
     }
+  }
+  // Permission action validation
+  else if (['permissions.defaultAction'].includes(key)) {
+    if (!['allow', 'deny', 'prompt'].includes(value)) {
+      throw new Error(`Invalid value for ${key}: expected 'allow', 'deny', or 'prompt'`);
+    }
+    parsedValue = value;
   }
   // JSON fields
   else if (['toolCallPreset', 'statusline', 'editing'].includes(key)) {
@@ -167,4 +230,105 @@ async function readYamlSafe(file: string) {
 
 export function paths() {
   return { GLOBAL_DIR, GLOBAL_CFG, PROJECT_DIR, PROJECT_CFG };
+}
+
+/**
+ * Permission system configuration helpers
+ */
+export async function getPermissionConfig(): Promise<Config['permissions']> {
+  const config = await loadConfig();
+  return config.permissions!;
+}
+
+export async function setPermissionConfig(permissions: Partial<Config['permissions']>): Promise<void> {
+  const config = await loadConfig();
+  config.permissions = { ...config.permissions!, ...permissions };
+  await saveConfig(config);
+}
+
+export async function getPermissionPath(type: 'profile' | 'audit' | 'mcp'): Promise<string> {
+  const config = await loadConfig();
+  const permissions = config.permissions!;
+  
+  switch (type) {
+    case 'profile':
+      return path.resolve(permissions.profilePath || '.plato/permissions.yml');
+    case 'audit':
+      return path.resolve(permissions.auditPath || '.plato/audit');
+    case 'mcp':
+      return path.resolve(permissions.mcpPermissionsPath || '.plato/mcp-permissions.yml');
+    default:
+      throw new Error(`Unknown permission path type: ${type}`);
+  }
+}
+
+export async function isPermissionSystemEnabled(): Promise<boolean> {
+  const config = await loadConfig();
+  return config.permissions?.enabled !== false;
+}
+
+export async function getActivePermissionProfile(): Promise<string> {
+  const config = await loadConfig();
+  return config.permissions?.activeProfile || 'development';
+}
+
+export async function setActivePermissionProfile(profileName: string): Promise<void> {
+  await setConfigValue('permissions.activeProfile', profileName);
+}
+
+export async function getDefaultPermissionAction(): Promise<'allow' | 'deny' | 'prompt'> {
+  const config = await loadConfig();
+  return config.permissions?.defaultAction || 'prompt';
+}
+
+export async function isPermissionUIEnabled(): Promise<boolean> {
+  const config = await loadConfig();
+  return config.permissions?.uiEnabled !== false;
+}
+
+export async function shouldShowProfileIndicator(): Promise<boolean> {
+  const config = await loadConfig();
+  return config.permissions?.showProfileIndicator !== false;
+}
+
+export async function isPermissionSafeMode(): Promise<boolean> {
+  const config = await loadConfig();
+  return config.permissions?.safeMode === true;
+}
+
+export async function setPermissionSafeMode(enabled: boolean): Promise<void> {
+  await setConfigValue('permissions.safeMode', enabled.toString());
+}
+
+export async function shouldAutoSwitchProfiles(): Promise<boolean> {
+  const config = await loadConfig();
+  return config.permissions?.autoSwitchProfiles !== false;
+}
+
+export async function areInteractivePromptsEnabled(): Promise<boolean> {
+  const config = await loadConfig();
+  return config.permissions?.interactivePrompts !== false;
+}
+
+export async function getProtectedPaths(): Promise<string[]> {
+  const config = await loadConfig();
+  return config.permissions?.protectedPaths || ['/etc', '/sys', '/proc', '/boot'];
+}
+
+export async function addProtectedPath(pathToProtect: string): Promise<void> {
+  const config = await loadConfig();
+  const protectedPaths = config.permissions?.protectedPaths || [];
+  if (!protectedPaths.includes(pathToProtect)) {
+    protectedPaths.push(pathToProtect);
+    config.permissions = { ...config.permissions!, protectedPaths };
+    await saveConfig(config);
+  }
+}
+
+export async function removeProtectedPath(pathToRemove: string): Promise<void> {
+  const config = await loadConfig();
+  const protectedPaths = config.permissions?.protectedPaths || [];
+  const filtered = protectedPaths.filter(p => p !== pathToRemove);
+  config.permissions = { ...config.permissions!, protectedPaths: filtered };
+  await saveConfig(config);
 }
