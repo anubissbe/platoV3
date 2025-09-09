@@ -89,7 +89,9 @@ export interface PermissionQuery {
   operation?: string;
   path?: string;
   command?: string;
-  context?: PermissionContext;
+  context?: AuditContext;
+  timestamp?: number;
+  metadata?: Record<string, any>;
 }
 
 export interface PermissionResult {
@@ -329,4 +331,18 @@ export class ProfileError extends Error {
     super(message);
     this.name = 'ProfileError';
   }
+}
+
+// Risk assessment types for permission prompts
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+
+// Permission decision with extended metadata
+export interface PermissionDecision {
+  action: 'allow' | 'deny';
+  permanent: boolean;
+  timestamp: number;
+  reason?: string;
+  elevate?: boolean;
+  duration?: number; // For temporary elevation in milliseconds
+  metadata?: Record<string, any>;
 }
