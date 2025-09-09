@@ -7,29 +7,29 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 
 ## Tasks
 
-### 1. Core Permission Profile System
+### 1. Core Permission Profile System ✅
 Build the foundation for profile-based permissions with automatic context detection and switching.
 
-- [ ] 1.1 Write comprehensive unit tests for ProfileManager class with context detection
-- [ ] 1.2 Implement ProfileManager with automatic profile switching based on git/env context
-- [ ] 1.3 Create profile activation rules with branch patterns and environment detection
-- [ ] 1.4 Build profile inheritance system with global → project → profile cascading
-- [ ] 1.5 Add profile validation and conflict resolution mechanisms
-- [ ] 1.6 Implement profile persistence and loading from YAML configuration
-- [ ] 1.7 Create profile switching UI with keyboard shortcuts (Ctrl+P)
-- [ ] 1.8 Verify all profile system tests pass with context switching scenarios
+- [x] 1.1 Write comprehensive unit tests for ProfileManager class with context detection
+- [x] 1.2 Implement ProfileManager with automatic profile switching based on git/env context
+- [x] 1.3 Create profile activation rules with branch patterns and environment detection
+- [x] 1.4 Build profile inheritance system with global → project → profile cascading
+- [x] 1.5 Add profile validation and conflict resolution mechanisms
+- [x] 1.6 Implement profile persistence and loading from YAML configuration
+- [x] 1.7 Create profile switching UI with keyboard shortcuts (Ctrl+P)
+- [x] 1.8 Verify all profile system tests pass with context switching scenarios
 
-### 2. Advanced Rule Engine
+### 2. Advanced Rule Engine ✅
 Develop the enhanced rule processing system with priority-based evaluation and pattern matching.
 
-- [ ] 2.1 Write tests for enhanced RuleEngine with priority and pattern matching
-- [ ] 2.2 Extend Rule type to support priority, expiration, and conditional logic
-- [ ] 2.3 Implement advanced pattern matching with regex and glob combinations
-- [ ] 2.4 Create rule compilation and caching system for performance
-- [ ] 2.5 Build multi-stage rule evaluation pipeline with conflict resolution
-- [ ] 2.6 Add rule inheritance and override mechanisms
-- [ ] 2.7 Implement hot-reload capability for rule changes without restart
-- [ ] 2.8 Verify all rule engine tests pass with complex pattern scenarios
+- [x] 2.1 Write tests for enhanced RuleEngine with priority and pattern matching
+- [x] 2.2 Extend Rule type to support priority, expiration, and conditional logic
+- [x] 2.3 Implement advanced pattern matching with regex and glob combinations
+- [x] 2.4 Create rule compilation and caching system for performance
+- [x] 2.5 Build multi-stage rule evaluation pipeline with conflict resolution
+- [x] 2.6 Add rule inheritance and override mechanisms
+- [x] 2.7 Implement hot-reload capability for rule changes without restart
+- [x] 2.8 Verify all rule engine tests pass with complex pattern scenarios
 
 ### 3. Audit Logging Infrastructure ✅
 Create comprehensive audit logging system with persistence and search capabilities.
@@ -55,17 +55,17 @@ Build rich interactive prompts for sensitive operations with clear explanations.
 - [x] 4.7 Add operation preview showing what will be executed
 - [x] 4.8 Verify all confirmation UI tests pass with various scenarios
 
-### 5. Safety Features and Guards
+### 5. Safety Features and Guards ✅
 Implement protective mechanisms to prevent dangerous operations and enable rollback.
 
-- [ ] 5.1 Write tests for SafetyGuard with protected paths and validation
-- [ ] 5.2 Create protected path registry with hardcoded critical paths
-- [ ] 5.3 Implement operation validation with pre-flight checks
-- [ ] 5.4 Build rate limiting system per tool/operation type
-- [ ] 5.5 Add operation snapshot capability for potential rollback
-- [ ] 5.6 Create dangerous pattern detection (rm -rf, DROP TABLE, etc.)
-- [ ] 5.7 Implement automatic rollback on permission violations
-- [ ] 5.8 Verify all safety feature tests pass with dangerous scenarios
+- [x] 5.1 Write tests for SafetyGuard with protected paths and validation
+- [x] 5.2 Create protected path registry with hardcoded critical paths
+- [x] 5.3 Implement operation validation with pre-flight checks
+- [x] 5.4 Build rate limiting system per tool/operation type
+- [x] 5.5 Add operation snapshot capability for potential rollback
+- [x] 5.6 Create dangerous pattern detection (rm -rf, DROP TABLE, etc.)
+- [x] 5.7 Implement automatic rollback on permission violations
+- [x] 5.8 Verify all safety feature tests pass with dangerous scenarios
 
 ### 6. UI Integration and Dashboard
 Integrate permissions into the TUI with status indicators and management dashboard.
