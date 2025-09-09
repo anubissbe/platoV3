@@ -325,7 +325,7 @@ export class EditTool extends EventEmitter implements NativeTool {
 
     if (args.insertAfterLine !== undefined) {
       // Insert new line(s)
-      if (args.insertAfterLine < 0 || args.insertAfterLine >= lines.length) {
+      if (args.insertAfterLine < 0 || args.insertAfterLine > lines.length) {
         throw new ToolError(
           ErrorClass.VALIDATION,
           'LINE_OUT_OF_RANGE',
@@ -336,7 +336,7 @@ export class EditTool extends EventEmitter implements NativeTool {
       
       const replacementStr = typeof args.replacement === 'string' ? args.replacement : args.replacement?.toString() || '';
       const newLines = replacementStr ? replacementStr.split('\n') : [''];
-      lines.splice(args.insertAfterLine + 1, 0, ...newLines);
+      lines.splice(args.insertAfterLine, 0, ...newLines);
       linesAdded = newLines.length;
       changes = 1;
       
@@ -427,8 +427,23 @@ export class EditTool extends EventEmitter implements NativeTool {
       
       pattern = new RegExp(args.pattern, flags);
     } else if (args.pattern instanceof RegExp) {
-      // Use provided regex
-      pattern = args.pattern;
+      // Use provided regex - modify flags if needed
+      const existingFlags = args.pattern.flags;
+      const needsGlobal = args.replaceAll && !existingFlags.includes('g');
+      const needsInsensitive = args.caseInsensitive && !existingFlags.includes('i');
+      const needsMultiline = args.multiline && !existingFlags.includes('m');
+      
+      if (needsGlobal || needsInsensitive || needsMultiline) {
+        const flags = [
+          existingFlags,
+          needsGlobal ? 'g' : '',
+          needsInsensitive ? 'i' : '',
+          needsMultiline ? 'm' : ''
+        ].join('');
+        pattern = new RegExp(args.pattern.source, flags);
+      } else {
+        pattern = args.pattern;
+      }
     } else {
       // Create regex from string literal
       const escapedPattern = String(args.pattern).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -440,9 +455,19 @@ export class EditTool extends EventEmitter implements NativeTool {
       pattern = new RegExp(escapedPattern, flags);
     }
 
-    // Count matches
-    const matches = textContent.match(pattern);
-    const matchCount = matches ? matches.length : 0;
+    // Count matches - for capture groups we need to check differently
+    let matchCount = 0;
+    let tempString = textContent;
+    let match: RegExpExecArray | null;
+    
+    if (pattern.global) {
+      const matches = textContent.match(pattern);
+      matchCount = matches ? matches.length : 0;
+    } else {
+      // For non-global patterns, match() returns the first match array
+      const match = textContent.match(pattern);
+      matchCount = match ? 1 : 0;
+    }
     
     if (matchCount === 0) {
       return {
@@ -455,9 +480,11 @@ export class EditTool extends EventEmitter implements NativeTool {
     // Perform replacement
     let editedContent: string;
     const replacementStr = typeof args.replacement === 'string' ? args.replacement : '';
-    if (args.replaceFirst && !pattern.global) {
-      // Replace only first occurrence
-      editedContent = textContent.replace(pattern, replacementStr);
+    
+    if (args.replaceFirst && pattern.global) {
+      // Need to remove global flag for first-only replacement
+      const firstOnlyPattern = new RegExp(pattern.source, pattern.flags.replace('g', ''));
+      editedContent = textContent.replace(firstOnlyPattern, replacementStr);
     } else {
       // Replace based on pattern flags
       editedContent = textContent.replace(pattern, replacementStr);
@@ -465,7 +492,7 @@ export class EditTool extends EventEmitter implements NativeTool {
 
     return {
       content: editedContent,
-      changes: editedContent !== textContent ? 1 : 0,
+      changes: matchCount,
       matchCount
     };
   }

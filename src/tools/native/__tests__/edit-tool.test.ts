@@ -301,17 +301,19 @@ describe('EditTool', () => {
       const originalReadFile = fs.readFile;
       let readCount = 0;
       jest.spyOn(fs, 'readFile').mockImplementation(async (path: any, options?: any) => {
-        if (readCount === 0 && path.toString().includes('concurrent.txt')) {
-          readCount++;
-          return originalContent;
-        }
-        if (readCount === 1 && path.toString().includes('concurrent.txt')) {
-          // Simulate file change by another process
-          await originalReadFile.call(fs, filePath, 'utf8').then(content => 
-            fs.writeFile(filePath.replace('concurrent.txt', 'concurrent.txt.bak'), content)
-          );
-          await fs.writeFile(path as string, 'Modified by someone else\nLine 2\nLine 3');
-          return originalReadFile.call(fs, path, options);
+        const pathStr = path.toString();
+        if (pathStr.includes('concurrent.txt') && !pathStr.includes('.bak')) {
+          if (readCount === 0) {
+            readCount++;
+            return originalContent;
+          }
+          if (readCount === 1) {
+            readCount++; // Prevent further modifications
+            // Simulate file change by another process
+            const modifiedContent = 'Modified by someone else\nLine 2\nLine 3';
+            await fs.writeFile(path as string, modifiedContent);
+            return modifiedContent;
+          }
         }
         return originalReadFile.call(fs, path, options);
       });
@@ -370,7 +372,7 @@ Line 4`;
       expect(result.backupPath).toBeDefined();
 
       // Verify new content
-      const newContent = await fs.readFile(filePath, 'utf8');
+      const newContent = await fs.readFile(path.join(tempDir, filePath), 'utf8');
       expect(newContent).toBe('Updated content for atomic edit');
 
       // Verify backup
