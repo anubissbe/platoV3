@@ -25,6 +25,9 @@ export interface CostMetric {
   /** Number of tokens in the generated output */
   outputTokens: number;
   
+  /** Total tokens (input + output) */
+  totalTokens: number;
+  
   /** Calculated cost in USD for this interaction */
   cost: number;
   
@@ -36,6 +39,32 @@ export interface CostMetric {
   
   /** Duration of the interaction in milliseconds */
   duration: number;
+  
+  /** Additional metadata */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Date range for filtering
+ */
+export interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+/**
+ * Export format options
+ */
+export type ExportFormat = 'json' | 'csv';
+
+/**
+ * Most expensive session information
+ */
+export interface ExpensiveSession {
+  sessionId: string;
+  cost: number;
+  tokens: number;
+  timestamp: Date;
 }
 
 /**
@@ -51,6 +80,9 @@ export interface AnalyticsSummary {
   
   /** End of the period (Unix timestamp in milliseconds) */
   endDate: number;
+  
+  /** Date range for this summary */
+  dateRange: DateRange;
   
   /** Total cost for all interactions in this period */
   totalCost: number;
@@ -71,6 +103,15 @@ export interface AnalyticsSummary {
     /** Total tokens for this model */
     tokens: number;
   }>;
+  
+  /** Cost breakdown by provider */
+  costByProvider: Record<string, number>;
+  
+  /** Cost breakdown by model */
+  costByModel: Record<string, number>;
+  
+  /** Most expensive session information */
+  mostExpensiveSession?: ExpensiveSession;
 }
 
 /**
@@ -122,19 +163,12 @@ export interface TokenPricing {
 export type ProviderPricing = Record<string, TokenPricing>;
 
 /**
- * Analytics export format options
- */
-export type ExportFormat = 'csv' | 'json';
-
-/**
- * Date range for analytics queries and exports
- */
-export type DateRange = [number, number];
-
-/**
  * Analytics query options for filtering and grouping data
  */
 export interface AnalyticsQueryOptions {
+  /** Date range for the query */
+  dateRange?: DateRange;
+  
   /** Start date for the query (Unix timestamp) */
   startDate?: number;
   
