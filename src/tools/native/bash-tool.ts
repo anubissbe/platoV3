@@ -161,6 +161,7 @@ export class BashTool extends EventEmitter implements NativeTool {
   async *stream(args: BashToolArgs): AsyncGenerator<ToolEvent> {
     const executionId = `bash-stream-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     let sequence = 0;
+    let internalSequence = 1000; // Use separate counter for internal telemetry events
 
     try {
       // Emit start metadata
@@ -234,7 +235,7 @@ export class BashTool extends EventEmitter implements NativeTool {
               data: outputChunk.toString('utf8'),
               bytesRead: outputChunk.length,
               timestamp: Date.now(),
-              sequence: sequence++
+              sequence: internalSequence++
             });
           }
           
@@ -251,7 +252,7 @@ export class BashTool extends EventEmitter implements NativeTool {
                 data: completeLines,
                 bytesRead: completeLines.length,
                 timestamp: Date.now(),
-                sequence: sequence++
+                sequence: internalSequence++
               });
             }
             
@@ -267,7 +268,7 @@ export class BashTool extends EventEmitter implements NativeTool {
               data: stdoutBuffer.toString('utf8'),
               bytesRead: stdoutBuffer.length,
               timestamp: Date.now(),
-              sequence: sequence++
+              sequence: internalSequence++
             });
           }
         });
@@ -293,7 +294,7 @@ export class BashTool extends EventEmitter implements NativeTool {
               data: outputChunk.toString('utf8'),
               bytesRead: outputChunk.length,
               timestamp: Date.now(),
-              sequence: sequence++
+              sequence: internalSequence++
             });
           }
           
@@ -310,7 +311,7 @@ export class BashTool extends EventEmitter implements NativeTool {
                 data: completeLines,
                 bytesRead: completeLines.length,
                 timestamp: Date.now(),
-                sequence: sequence++
+                sequence: internalSequence++
               });
             }
             
@@ -326,7 +327,7 @@ export class BashTool extends EventEmitter implements NativeTool {
               data: stderrBuffer.toString('utf8'),
               bytesRead: stderrBuffer.length,
               timestamp: Date.now(),
-              sequence: sequence++
+              sequence: internalSequence++
             });
           }
         });
@@ -362,7 +363,7 @@ export class BashTool extends EventEmitter implements NativeTool {
               bytesRead: execution.stdoutBytes + execution.stderrBytes,
               progress: undefined, // Can't determine progress for arbitrary commands
               timestamp: Date.now(),
-              sequence: sequence++
+              sequence: internalSequence++
             });
           } catch (error) {
             // Memory monitoring failed, continue without it
