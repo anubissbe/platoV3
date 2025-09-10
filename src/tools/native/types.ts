@@ -34,6 +34,10 @@ export class ToolError extends Error {
   get retryable(): boolean {
     return this.errorClass === ErrorClass.TRANSIENT;
   }
+
+  get class(): ErrorClass {
+    return this.errorClass;
+  }
 }
 
 /**
