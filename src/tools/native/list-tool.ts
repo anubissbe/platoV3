@@ -114,18 +114,16 @@ export class ListTool extends EventEmitter implements NativeTool {
       }
       const sortTime = Date.now() - sortStartTime;
 
-      // Calculate total size if stats are requested
-      let totalSize = 0;
-      if (args.stats) {
-        totalSize = filteredFiles.reduce((sum, file) => sum + (file.size || 0), 0);
-      }
+      // Calculate total size - always calculate for Claude Code parity
+      const totalSize = filteredFiles.reduce((sum, file) => sum + (file.size || 0), 0);
 
       return this.createResponse(true, {
         files: filteredFiles,
         directories: filteredDirs,
         totalFiles: filteredFiles.length,
         totalDirectories: filteredDirs.length,
-        totalSize: args.stats ? totalSize : undefined,
+        totalSize,  // Always include totalSize for Claude Code parity
+        truncated: false,  // Add truncated field defaulting to false
         resolvedPath: normalizedPath,
         metrics: this.createMetrics(startTime, itemsProcessed, files.length, directories.length, filterTime, sortTime)
       });
@@ -267,16 +265,16 @@ export class ListTool extends EventEmitter implements NativeTool {
           path: itemPath,
           type: stats.isSymbolicLink() ? 'symlink' : (stats.isDirectory() ? 'directory' : 'file'),
           size: stats.size,
-          modified: stats.mtime,
-          created: stats.birthtime,
+          modified: new Date(stats.mtime),
+          created: new Date(stats.birthtime),
           permissions: this.formatPermissions(stats.mode, stats.isDirectory())
         };
 
         // Include stats if requested
         if (args.stats) {
           entry.size = stats.size;
-          entry.modified = stats.mtime;
-          entry.created = stats.birthtime;
+          entry.modified = new Date(stats.mtime);
+          entry.created = new Date(stats.birthtime);
           entry.permissions = this.formatPermissions(stats.mode, entry.type === 'directory');
         }
 
@@ -327,16 +325,16 @@ export class ListTool extends EventEmitter implements NativeTool {
           type: stats.isSymbolicLink() ? 'symlink' : (stats.isDirectory() ? 'directory' : 'file'),
           depth: currentDepth,
           size: stats.size,
-          modified: stats.mtime,
-          created: stats.birthtime,
+          modified: new Date(stats.mtime),
+          created: new Date(stats.birthtime),
           permissions: this.formatPermissions(stats.mode, stats.isDirectory())
         };
 
         // Include stats if requested
         if (args.stats) {
           entry.size = stats.size;
-          entry.modified = stats.mtime;
-          entry.created = stats.birthtime;
+          entry.modified = new Date(stats.mtime);
+          entry.created = new Date(stats.birthtime);
           entry.permissions = this.formatPermissions(stats.mode, entry.type === 'directory');
         }
 
@@ -499,8 +497,7 @@ export class ListTool extends EventEmitter implements NativeTool {
   }
 
   private formatPermissions(mode: number, isDirectory: boolean): string {
-    // Convert numeric mode to Unix-style permission string
-    const type = isDirectory ? 'd' : '-';
+    // Convert numeric mode to Unix-style permission string (Claude Code expects 9 chars only)
     const permissions = [
       // Owner permissions
       (mode & 0o400) ? 'r' : '-',
@@ -516,7 +513,7 @@ export class ListTool extends EventEmitter implements NativeTool {
       (mode & 0o001) ? 'x' : '-'
     ].join('');
     
-    return type + permissions;
+    return permissions;
   }
 
   private emitTelemetry(success: boolean, duration: number, itemsProcessed: number = 0, error?: any, filesFound?: number, directoriesFound?: number): void {

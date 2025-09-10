@@ -334,7 +334,9 @@ export class WriteTool extends EventEmitter implements NativeTool {
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
           await fs.mkdir(currentPath);
-          dirsCreated.push(currentPath);
+          // Store relative path for Claude Code compatibility
+          const relativePath = path.relative(this.workspaceRoot, currentPath);
+          dirsCreated.push(relativePath);
         } else {
           throw error;
         }

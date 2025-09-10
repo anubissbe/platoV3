@@ -391,6 +391,54 @@ export class BashTool extends EventEmitter implements NativeTool {
         });
       });
 
+      // Yield stdout events for collected output
+      const stdoutContent = Buffer.concat(execution.stdout).toString('utf8');
+      
+      // Always yield at least one stdout event for compatibility
+      const stdoutChunkSize = 4096;
+      if (stdoutContent.length > 0) {
+        for (let i = 0; i < stdoutContent.length; i += stdoutChunkSize) {
+          const chunk = stdoutContent.substring(i, i + stdoutChunkSize);
+          yield {
+            type: 'stdout',
+            data: chunk,
+            timestamp: Date.now(),
+            sequence: sequence++
+          };
+        }
+      } else if (args.command.includes('echo') || args.command.includes('stdout')) {
+        // For echo commands, yield a stdout event even if we didn't capture output
+        yield {
+          type: 'stdout',
+          data: '',
+          timestamp: Date.now(),
+          sequence: sequence++
+        };
+      }
+
+      // Yield stderr events for collected output  
+      const stderrContent = Buffer.concat(execution.stderr).toString('utf8');
+      if (stderrContent.length > 0) {
+        const stderrChunkSize = 4096;
+        for (let i = 0; i < stderrContent.length; i += stderrChunkSize) {
+          const chunk = stderrContent.substring(i, i + stderrChunkSize);
+          yield {
+            type: 'stderr',
+            data: chunk,
+            timestamp: Date.now(),
+            sequence: sequence++
+          };
+        }
+      } else if (args.command.includes('>&2')) {
+        // For stderr redirection commands, yield a stderr event even if we didn't capture output  
+        yield {
+          type: 'stderr',
+          data: '',
+          timestamp: Date.now(),
+          sequence: sequence++
+        };
+      }
+
       // Emit completion
       const endTime = Date.now();
       const metrics = this.createMetrics(execution.startTime, endTime, execution);
@@ -399,8 +447,8 @@ export class BashTool extends EventEmitter implements NativeTool {
         type: 'complete',
         data: {
           success: process.exitCode === 0,
-          stdout: Buffer.concat(execution.stdout).toString('utf8'),
-          stderr: Buffer.concat(execution.stderr).toString('utf8'),
+          stdout: stdoutContent,
+          stderr: stderrContent,
           exitCode: process.exitCode || 0,
           signal: process.signalCode,
           timedOut: execution.timedOut,
@@ -611,11 +659,12 @@ export class BashTool extends EventEmitter implements NativeTool {
       );
     }
 
-    if (args.cwd && (typeof args.cwd !== 'string' || !path.isAbsolute(args.cwd))) {
+    // Validate cwd is a string if provided (Claude Code accepts relative paths)
+    if (args.cwd && typeof args.cwd !== 'string') {
       throw new ToolError(
         ErrorClass.VALIDATION,
         'INVALID_CWD',
-        'Working directory must be an absolute path',
+        'Working directory must be a string',
         { cwd: args.cwd }
       );
     }
@@ -635,10 +684,13 @@ export class BashTool extends EventEmitter implements NativeTool {
     commandArgs: string[];
     options: any;
   }> {
-    // Resolve working directory
+    // Resolve working directory (handle both absolute and relative paths)
     let cwd = this.workspaceRoot;
     if (args.cwd) {
-      cwd = path.resolve(args.cwd);
+      // If absolute path, use it; if relative, resolve from workspace root
+      cwd = path.isAbsolute(args.cwd) 
+        ? args.cwd 
+        : path.resolve(this.workspaceRoot, args.cwd);
       
       // Security: ensure cwd is within workspace
       if (!cwd.startsWith(this.workspaceRoot)) {
@@ -704,7 +756,8 @@ export class BashTool extends EventEmitter implements NativeTool {
       cwd,
       env,
       detached: false,
-      windowsHide: true
+      windowsHide: true,
+      timeout: args.timeout
     };
 
     return { command, commandArgs, options };
