@@ -20,6 +20,7 @@ export class CopilotProvider {
         "x-ms-model": model,
       },
       body: JSON.stringify({
+        model: model,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         temperature: 0.2,
       }),
@@ -46,6 +47,7 @@ export class CopilotProvider {
         "x-ms-model": model,
       },
       body: JSON.stringify({
+        model: model,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         temperature: 0.2,
         stream: true,
