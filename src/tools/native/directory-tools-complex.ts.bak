@@ -1,0 +1,737 @@
+/**
+ * Directory Tools - Native implementation
+ * Implements Mkdir, Delete, and Move/Rename operations with Claude Code compatibility
+ */
+
+import fs from 'fs/promises';
+import path from 'path';
+import { EventEmitter } from 'events';
+import { ToolError, ErrorClass, NativeTool, BaseToolResponse, DirectoryToolResponse } from './types.js';
+import { PathValidator } from './path-validator.js';
+import { SecurityManager } from './security-manager.js';
+import { ResourceManager } from './resource-manager.js';
+
+// Mkdir Tool Interfaces
+interface MkdirArguments {
+  path: string;
+  recursive?: boolean;
+  permissions?: number;
+}
+
+interface MkdirResponse extends DirectoryToolResponse {
+  created: boolean;
+  path: string;
+  permissions?: string;
+}
+
+// Delete Tool Interfaces
+interface DeleteArguments {
+  path: string;
+  recursive?: boolean;
+  force?: boolean;
+  confirm?: boolean;
+}
+
+interface DeleteResponse extends DirectoryToolResponse {
+  deleted: boolean;
+  itemsAffected: number;
+  size?: number;
+}
+
+// Move Tool Interfaces
+interface MoveArguments {
+  source: string;
+  destination: string;
+  overwrite?: boolean;
+  preserveMetadata?: boolean;
+}
+
+interface MoveResponse extends DirectoryToolResponse {
+  moved: boolean;
+  oldPath: string;
+  newPath: string;
+  overwritten: boolean;
+}
+
+/**
+ * MkdirTool - Directory creation with recursive support
+ */
+export class MkdirTool extends EventEmitter implements NativeTool {
+  private pathValidator: PathValidator;
+  private securityManager: SecurityManager;
+  private resourceManager: ResourceManager;
+
+  constructor(workspaceRoot: string = process.cwd()) {
+    super();
+    this.pathValidator = new PathValidator(workspaceRoot);
+    this.securityManager = new SecurityManager(workspaceRoot);
+    this.resourceManager = new ResourceManager({
+      maxFileSize: 100 * 1024 * 1024,
+      maxMemoryUsage: 512 * 1024 * 1024,
+      maxCpuTime: 30000,
+      maxOpenFiles: 100,
+      maxDirectoryDepth: 50,
+      maxGlobResults: 10000,
+      maxConcurrentOperations: 10,
+      operationTimeout: 30000
+    });
+  }
+
+  async execute(args: MkdirArguments): Promise<MkdirResponse> {
+    const startTime = Date.now();
+    
+    try {
+      // Path validation and security checks
+      const pathResult = await this.pathValidator.normalizePath(args.path);
+      if (!pathResult.success) {
+        throw new ToolError(
+          ErrorClass.VALIDATION,
+          'INVALID_PATH', 
+          pathResult.error?.message || 'Path validation failed',
+          pathResult.error
+        );
+      }
+      const validatedPath = pathResult.normalizedPath!;
+      
+      const securityResult = await this.securityManager.validateWorkspaceAccess(validatedPath);
+      if (!securityResult.allowed) {
+        throw new ToolError(
+          ErrorClass.PERMISSION,
+          'WORKSPACE_ACCESS_DENIED',
+          securityResult.reason || 'Workspace access denied',
+          { path: validatedPath, severity: securityResult.severity }
+        );
+      }
+
+      let created = false;
+      let actualPermissions: number | undefined;
+
+      try {
+        // Check if directory already exists
+        const stats = await fs.stat(validatedPath);
+        if (stats.isDirectory()) {
+          created = false;
+          actualPermissions = stats.mode & 0o777;
+        } else {
+          throw new ToolError(
+            ErrorClass.VALIDATION,
+            'FILE_EXISTS',
+            `Path exists but is not a directory: ${validatedPath}`,
+            { path: validatedPath, operation: 'mkdir' }
+          );
+        }
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          // Directory doesn't exist, create it
+          const options: any = {};
+          
+          if (args.recursive) {
+            options.recursive = true;
+          }
+          
+          if (args.permissions !== undefined) {
+            options.mode = args.permissions;
+            actualPermissions = args.permissions;
+          }
+
+          await fs.mkdir(validatedPath, options);
+          created = true;
+        } else if (error instanceof ToolError) {
+          throw error;
+        } else {
+          // Handle other filesystem errors
+          throw this.classifyError(error, { path: validatedPath, operation: 'mkdir' });
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      
+      // Emit telemetry
+      this.emit('telemetry', {
+        tool: 'mkdir',
+        success: true,
+        duration,
+        created,
+        path: validatedPath,
+        permissions: actualPermissions
+      });
+
+      return {
+        success: true,
+        created,
+        path: validatedPath,
+        permissions: actualPermissions ? `0o${actualPermissions.toString(8)}` : undefined
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      
+      this.emit('telemetry', {
+        tool: 'mkdir',
+        success: false,
+        duration,
+        error: error instanceof ToolError ? error : this.classifyError(error, { path: args.path, operation: 'mkdir' })
+      });
+
+      throw error instanceof ToolError ? error : this.classifyError(error, { path: args.path, operation: 'mkdir' });
+    }
+  }
+
+  private classifyError(error: any, context: any): ToolError {
+    if (error.code === 'ENOENT') {
+      return new ToolError(
+        ErrorClass.PERMANENT,
+        'ENOENT',
+        `Parent directory does not exist: ${context.path}`,
+        context
+      );
+    } else if (error.code === 'EACCES') {
+      return new ToolError(
+        ErrorClass.PERMISSION,
+        'EACCES',
+        `Permission denied: ${context.path}`,
+        context
+      );
+    } else if (error.code === 'EEXIST') {
+      return new ToolError(
+        ErrorClass.VALIDATION,
+        'EEXIST',
+        `File already exists: ${context.path}`,
+        context
+      );
+    }
+
+    return new ToolError(
+      ErrorClass.PERMANENT,
+      error.code || 'UNKNOWN',
+      error.message || 'Unknown directory creation error',
+      false,
+      context
+    );
+  }
+}
+
+/**
+ * DeleteTool - File and directory deletion with safety checks
+ */
+export class DeleteTool extends EventEmitter implements NativeTool {
+  private pathValidator: PathValidator;
+  private securityManager: SecurityManager;
+  private resourceManager: ResourceManager;
+
+  constructor(workspaceRoot: string = process.cwd()) {
+    super();
+    this.pathValidator = new PathValidator(workspaceRoot);
+    this.securityManager = new SecurityManager(workspaceRoot);
+    this.resourceManager = new ResourceManager({
+      maxFileSize: 100 * 1024 * 1024,
+      maxMemoryUsage: 512 * 1024 * 1024,
+      maxCpuTime: 30000,
+      maxOpenFiles: 100,
+      maxDirectoryDepth: 50,
+      maxGlobResults: 10000,
+      maxConcurrentOperations: 10,
+      operationTimeout: 30000
+    });
+  }
+
+  async execute(args: DeleteArguments): Promise<DeleteResponse> {
+    const startTime = Date.now();
+    
+    try {
+      // Path validation and security checks
+      const pathResult = await this.pathValidator.normalizePath(args.path);
+      if (!pathResult.success) {
+        throw new ToolError(
+          ErrorClass.VALIDATION,
+          'INVALID_PATH', 
+          pathResult.error?.message || 'Path validation failed',
+          pathResult.error
+        );
+      }
+      const validatedPath = pathResult.normalizedPath!;
+      
+      const securityResult = await this.securityManager.validateWorkspaceAccess(validatedPath);
+      if (!securityResult.allowed) {
+        throw new ToolError(
+          ErrorClass.PERMISSION,
+          'WORKSPACE_ACCESS_DENIED',
+          securityResult.reason || 'Workspace access denied',
+          { path: validatedPath, severity: securityResult.severity }
+        );
+      }
+
+      // Safety checks for dangerous operations
+      if (!args.confirm && this.isDangerousOperation(validatedPath, args)) {
+        return {
+          success: false,
+          deleted: false,
+          itemsAffected: 0
+        };
+      }
+
+      let deleted = false;
+      let itemsAffected = 0;
+      let totalSize = 0;
+
+      try {
+        const stats = await fs.stat(validatedPath);
+        
+        if (stats.isDirectory()) {
+          if (!args.recursive) {
+            // Check if directory is empty
+            const entries = await fs.readdir(validatedPath);
+            if (entries.length > 0) {
+              throw new ToolError(
+                ErrorClass.VALIDATION,
+                'DIRECTORY_NOT_EMPTY',
+                `Directory is not empty: ${validatedPath}`,
+                        { path: validatedPath, operation: 'delete' }
+              );
+            }
+          }
+          
+          // Count items before deletion
+          if (args.recursive) {
+            const count = await this.countDirectoryItems(validatedPath);
+            itemsAffected = count.items;
+            totalSize = count.size;
+          } else {
+            itemsAffected = 1;
+          }
+
+          await fs.rm(validatedPath, { recursive: args.recursive, force: args.force });
+          deleted = true;
+        } else {
+          // File deletion
+          itemsAffected = 1;
+          totalSize = stats.size;
+          await fs.unlink(validatedPath);
+          deleted = true;
+        }
+
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          if (args.force) {
+            // Force mode - treat missing file as success
+            deleted = false;
+            itemsAffected = 0;
+          } else {
+            throw new ToolError(
+              ErrorClass.PERMANENT,
+              'ENOENT',
+              `Path does not exist: ${validatedPath}`,
+                    { path: validatedPath, operation: 'delete' }
+            );
+          }
+        } else if (error instanceof ToolError) {
+          throw error;
+        } else {
+          throw this.classifyDeleteError(error, { path: validatedPath, operation: 'delete' });
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      
+      // Emit telemetry
+      this.emit('telemetry', {
+        tool: 'delete',
+        success: true,
+        duration,
+        deleted,
+        itemsAffected,
+        size: totalSize
+      });
+
+      return {
+        success: true,
+        deleted,
+        itemsAffected,
+        size: totalSize
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      
+      this.emit('telemetry', {
+        tool: 'delete',
+        success: false,
+        duration,
+        error: error instanceof ToolError ? error : this.classifyDeleteError(error, { path: args.path, operation: 'delete' })
+      });
+
+      throw error instanceof ToolError ? error : this.classifyDeleteError(error, { path: args.path, operation: 'delete' });
+    }
+  }
+
+  // Streaming support for progress tracking
+  async* stream(args: DeleteArguments): AsyncGenerator<any> {
+    yield { type: 'start', path: args.path };
+
+    try {
+      const pathResult = await this.pathValidator.normalizePath(args.path);
+      if (!pathResult.success) {
+        yield { type: 'error', message: 'Invalid path: ' + (pathResult.error?.message || 'Path validation failed') };
+        return;
+      }
+      const validatedPath = pathResult.normalizedPath!;
+      
+      // Safety check
+      if (!args.confirm && this.isDangerousOperation(validatedPath, args)) {
+        yield { type: 'error', message: 'Operation requires confirmation' };
+        return;
+      }
+
+      const stats = await fs.stat(validatedPath);
+      let itemsProcessed = 0;
+      let totalItems = 1;
+
+      if (stats.isDirectory() && args.recursive) {
+        const count = await this.countDirectoryItems(validatedPath);
+        totalItems = count.items;
+      }
+
+      // Delete with progress updates
+      if (stats.isDirectory() && args.recursive && totalItems > 10) {
+        // For large deletions, provide progress updates
+        yield { type: 'progress', processed: 0, total: totalItems };
+        
+        // Delete individual items with progress
+        await this.deleteWithProgress(validatedPath, (processed) => {
+          return { type: 'progress', processed, total: totalItems };
+        });
+      } else {
+        // Simple deletion
+        await fs.rm(validatedPath, { recursive: args.recursive, force: args.force });
+      }
+
+      yield { type: 'complete', deleted: true, itemsAffected: totalItems };
+
+    } catch (error: any) {
+      yield { type: 'error', error: error instanceof ToolError ? error : this.classifyDeleteError(error, { path: args.path, operation: 'delete' }) };
+    }
+  }
+
+  private async countDirectoryItems(dirPath: string): Promise<{ items: number; size: number }> {
+    let items = 0;
+    let size = 0;
+
+    try {
+      const entries = await fs.readdir(dirPath, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        items++;
+        const fullPath = path.join(dirPath, entry.name);
+        
+        if (entry.isDirectory()) {
+          const subCount = await this.countDirectoryItems(fullPath);
+          items += subCount.items;
+          size += subCount.size;
+        } else {
+          const stats = await fs.stat(fullPath);
+          size += stats.size;
+        }
+      }
+    } catch (error) {
+      // Ignore counting errors
+    }
+
+    return { items, size };
+  }
+
+  private async deleteWithProgress(dirPath: string, onProgress: (processed: number) => any): Promise<void> {
+    // For simplicity, we'll just use the regular deletion for now
+    // In a full implementation, this would track individual file deletions
+    await fs.rm(dirPath, { recursive: true, force: true });
+  }
+
+  private isDangerousOperation(path: string, args: DeleteArguments): boolean {
+    // Consider operations dangerous if:
+    // 1. Deleting large directory trees without explicit confirmation
+    // 2. Deleting system directories
+    // 3. Recursive deletion without confirmation
+    
+    if (args.recursive && !args.confirm) {
+      return true;
+    }
+
+    // Additional safety checks could be added here
+    return false;
+  }
+
+  private classifyDeleteError(error: any, context: any): ToolError {
+    if (error.code === 'ENOENT') {
+      return new ToolError(
+        ErrorClass.PERMANENT,
+        'ENOENT',
+        `Path does not exist: ${context.path}`,
+        context
+      );
+    } else if (error.code === 'EACCES') {
+      return new ToolError(
+        ErrorClass.PERMISSION,
+        'EACCES',
+        `Permission denied: ${context.path}`,
+        context
+      );
+    } else if (error.code === 'ENOTEMPTY') {
+      return new ToolError(
+        ErrorClass.VALIDATION,
+        'DIRECTORY_NOT_EMPTY',
+        `Directory not empty: ${context.path}`,
+        context
+      );
+    }
+
+    return new ToolError(
+      ErrorClass.PERMANENT,
+      error.code || 'UNKNOWN',
+      error.message || 'Unknown deletion error',
+      false,
+      context
+    );
+  }
+}
+
+/**
+ * MoveTool - File and directory move/rename operations
+ */
+export class MoveTool extends EventEmitter implements NativeTool {
+  private pathValidator: PathValidator;
+  private securityManager: SecurityManager;
+  private resourceManager: ResourceManager;
+
+  constructor(workspaceRoot: string = process.cwd()) {
+    super();
+    this.pathValidator = new PathValidator(workspaceRoot);
+    this.securityManager = new SecurityManager(workspaceRoot);
+    this.resourceManager = new ResourceManager({
+      maxFileSize: 100 * 1024 * 1024,
+      maxMemoryUsage: 512 * 1024 * 1024,
+      maxCpuTime: 30000,
+      maxOpenFiles: 100,
+      maxDirectoryDepth: 50,
+      maxGlobResults: 10000,
+      maxConcurrentOperations: 10,
+      operationTimeout: 30000
+    });
+  }
+
+  async execute(args: MoveArguments): Promise<MoveResponse> {
+    const startTime = Date.now();
+    
+    try {
+      // Path validation and security checks
+      const sourcePathResult = await this.pathValidator.normalizePath(args.source);
+      if (!sourcePathResult.success) {
+        throw new ToolError(
+          ErrorClass.VALIDATION,
+          'INVALID_SOURCE_PATH', 
+          sourcePathResult.error?.message || 'Source path validation failed',
+          sourcePathResult.error
+        );
+      }
+      const validatedSource = sourcePathResult.normalizedPath!;
+      
+      const destPathResult = await this.pathValidator.normalizePath(args.destination);
+      if (!destPathResult.success) {
+        throw new ToolError(
+          ErrorClass.VALIDATION,
+          'INVALID_DEST_PATH', 
+          destPathResult.error?.message || 'Destination path validation failed',
+          destPathResult.error
+        );
+      }
+      const validatedDest = destPathResult.normalizedPath!;
+      
+      const sourceSecurityResult = await this.securityManager.validateWorkspaceAccess(validatedSource);
+      if (!sourceSecurityResult.allowed) {
+        throw new ToolError(
+          ErrorClass.PERMISSION,
+          'SOURCE_ACCESS_DENIED',
+          sourceSecurityResult.reason || 'Source access denied',
+          { path: validatedSource, severity: sourceSecurityResult.severity }
+        );
+      }
+      
+      const destSecurityResult = await this.securityManager.validateWorkspaceAccess(path.dirname(validatedDest));
+      if (!destSecurityResult.allowed) {
+        throw new ToolError(
+          ErrorClass.PERMISSION,
+          'DEST_ACCESS_DENIED',
+          destSecurityResult.reason || 'Destination directory access denied',
+          { path: validatedDest, severity: destSecurityResult.severity }
+        );
+      }
+
+      // Check if source exists
+      let sourceStats;
+      try {
+        sourceStats = await fs.stat(validatedSource);
+      } catch (error: any) {
+        if (error.code === 'ENOENT') {
+          throw new ToolError(
+            ErrorClass.PERMANENT,
+            'ENOENT',
+            `Source path does not exist: ${validatedSource}`,
+                { source: validatedSource, destination: validatedDest, operation: 'move' }
+          );
+        }
+        throw error;
+      }
+
+      // Check if destination exists
+      let destExists = false;
+      try {
+        await fs.stat(validatedDest);
+        destExists = true;
+        
+        if (!args.overwrite) {
+          throw new ToolError(
+            ErrorClass.VALIDATION,
+            'DESTINATION_EXISTS',
+            `Destination already exists: ${validatedDest}`,
+                { source: validatedSource, destination: validatedDest, operation: 'move' }
+          );
+        }
+      } catch (error: any) {
+        if (error.code !== 'ENOENT') {
+          throw error instanceof ToolError ? error : this.classifyMoveError(error, { source: validatedSource, destination: validatedDest, operation: 'move' });
+        }
+      }
+
+      // Perform the move operation
+      let moved = false;
+      let overwritten = false;
+
+      try {
+        // Try atomic rename first
+        await fs.rename(validatedSource, validatedDest);
+        moved = true;
+        overwritten = destExists;
+
+      } catch (error: any) {
+        if (error.code === 'EXDEV') {
+          // Cross-device move - need to copy then delete
+          moved = await this.crossDeviceMove(validatedSource, validatedDest, args.preserveMetadata);
+          overwritten = destExists;
+        } else {
+          throw this.classifyMoveError(error, { source: validatedSource, destination: validatedDest, operation: 'move' });
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      
+      // Emit telemetry
+      this.emit('telemetry', {
+        tool: 'move',
+        success: true,
+        duration,
+        moved,
+        overwritten,
+        source: validatedSource,
+        destination: validatedDest
+      });
+
+      return {
+        success: true,
+        moved,
+        oldPath: validatedSource,
+        newPath: validatedDest,
+        overwritten
+      };
+
+    } catch (error: any) {
+      const duration = Date.now() - startTime;
+      
+      this.emit('telemetry', {
+        tool: 'move',
+        success: false,
+        duration,
+        error: error instanceof ToolError ? error : this.classifyMoveError(error, { source: args.source, destination: args.destination, operation: 'move' })
+      });
+
+      throw error instanceof ToolError ? error : this.classifyMoveError(error, { source: args.source, destination: args.destination, operation: 'move' });
+    }
+  }
+
+  private async crossDeviceMove(source: string, destination: string, preserveMetadata?: boolean): Promise<boolean> {
+    try {
+      // Copy the file/directory
+      await fs.cp(source, destination, { 
+        recursive: true, 
+        preserveTimestamps: preserveMetadata 
+      });
+
+      // If metadata preservation is requested and supported
+      if (preserveMetadata && process.platform !== 'win32') {
+        try {
+          const stats = await fs.stat(source);
+          await fs.utimes(destination, stats.atime, stats.mtime);
+          await fs.chmod(destination, stats.mode);
+        } catch (error) {
+          // Metadata preservation failed, but the copy succeeded
+          // Continue with deletion
+        }
+      }
+
+      // Delete the source
+      const stats = await fs.stat(source);
+      if (stats.isDirectory()) {
+        await fs.rm(source, { recursive: true });
+      } else {
+        await fs.unlink(source);
+      }
+
+      return true;
+    } catch (error: any) {
+      // If copying failed, clean up partial destination
+      try {
+        await fs.rm(destination, { recursive: true, force: true });
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+      throw error;
+    }
+  }
+
+  private classifyMoveError(error: any, context: any): ToolError {
+    if (error.code === 'ENOENT') {
+      return new ToolError(
+        ErrorClass.PERMANENT,
+        'ENOENT',
+        `Source path does not exist: ${context.source}`,
+        context
+      );
+    } else if (error.code === 'EACCES') {
+      return new ToolError(
+        ErrorClass.PERMISSION,
+        'EACCES',
+        `Permission denied for move operation`,
+        context
+      );
+    } else if (error.code === 'EEXIST') {
+      return new ToolError(
+        ErrorClass.VALIDATION,
+        'DESTINATION_EXISTS',
+        `Destination already exists: ${context.destination}`,
+        context
+      );
+    } else if (error.code === 'EXDEV') {
+      return new ToolError(
+        ErrorClass.TRANSIENT,
+        'EXDEV',
+        'Cross-device move operation failed',
+        context
+      );
+    }
+
+    return new ToolError(
+      ErrorClass.PERMANENT,
+      error.code || 'UNKNOWN',
+      error.message || 'Unknown move error',
+      false,
+      context
+    );
+  }
+}

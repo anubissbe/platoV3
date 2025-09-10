@@ -46,7 +46,20 @@ describe('SearchTool', () => {
 
   afterEach(async () => {
     if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
+      // Use rmdir for Node.js compatibility, fallback to rm if available
+      try {
+        await fs.rm(tempDir, { recursive: true, force: true });
+      } catch (error: any) {
+        if (error.code === 'ENOENT') return; // Already deleted
+        // Fallback to rmdir for older Node.js versions
+        try {
+          await fs.rmdir(tempDir, { recursive: true });
+        } catch (rmError: any) {
+          if (rmError.code !== 'ENOENT') {
+            console.warn('Failed to cleanup temp directory:', rmError.message);
+          }
+        }
+      }
     }
   });
 
