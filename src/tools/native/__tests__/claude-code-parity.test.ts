@@ -41,7 +41,7 @@ const CLAUDE_CODE_REFERENCE_RESPONSES = {
       resolvedPath: "/workspace/test.txt",
       success: true,
       metrics: {
-        duration: 42,
+        duration: expect.any(Number),
         startTime: expect.any(Number),
         endTime: expect.any(Number),
         readTime: expect.any(Number),
@@ -223,6 +223,9 @@ describe('Claude Code Parity Tests', () => {
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'parity-test-'));
     
+    // Create test file for ENOTDIR test
+    await fs.writeFile(path.join(tempDir, 'not-a-directory.txt'), 'test content');
+    
     readTool = new ReadTool(tempDir);
     writeTool = new WriteTool(tempDir);
     listTool = new ListTool(tempDir);
@@ -359,7 +362,7 @@ describe('Claude Code Parity Tests', () => {
       const result = await listTool.execute({ path: '.' }) as ListToolResponse;
 
       expect(result).toMatchObject(CLAUDE_CODE_REFERENCE_RESPONSES.list.success);
-      expect(result.files).toHaveLength(2);
+      expect(result.files).toHaveLength(3);
       expect(result.directories).toHaveLength(1);
     });
 

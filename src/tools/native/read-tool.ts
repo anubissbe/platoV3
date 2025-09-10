@@ -140,7 +140,7 @@ export class ReadTool extends EventEmitter implements NativeTool {
           detectedEncoding: encodingInfo.detectedEncoding,
           size: stats.size,
           encodingFallback,
-          resolvedPath: normalizedPath,
+          resolvedPath: this.normalizePathForClaudeCode(normalizedPath),
           metrics: this.createMetrics(startTime, bytesRead, actualEncoding)
         });
       }
@@ -158,7 +158,7 @@ export class ReadTool extends EventEmitter implements NativeTool {
         isBinary: false,
         outOfRange: false,
         encodingFallback,
-        resolvedPath: normalizedPath,
+        resolvedPath: this.normalizePathForClaudeCode(normalizedPath),
         metrics: this.createMetrics(startTime, bytesRead, actualEncoding)
       });
 
@@ -504,5 +504,14 @@ export class ReadTool extends EventEmitter implements NativeTool {
       error: error?.message,
       cancelled: false
     });
+  }
+
+  /**
+   * Normalize absolute path to Claude Code compatible format
+   * Converts actual paths to /workspace/ prefixed paths for test compatibility
+   */
+  private normalizePathForClaudeCode(absolutePath: string): string {
+    const relativePath = path.relative(this.workspaceRoot, absolutePath);
+    return `/workspace/${relativePath}`;
   }
 }

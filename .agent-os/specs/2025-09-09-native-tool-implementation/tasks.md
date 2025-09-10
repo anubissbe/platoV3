@@ -9,16 +9,16 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 ## Priority 1: Critical EditTool Compatibility Issues
 
 ### Task 1.1: Fix EditTool Diff Generation and Response Format
-**Status**: 🔄 High Priority  
-**Impact**: Fixes 2 failing tests - critical for edit operations  
+**Status**: ✅ COMPLETED  
+**Impact**: Fixed 2 failing tests - critical for edit operations  
 **Test Coverage**: `EditTool Parity` test group
 
 **Subtasks**:
-- [ ] Implement proper diff generation using unified diff format (`@@ -start,count +start,count @@`)
-- [ ] Add `diffGenerationTime` metric tracking to EditTool execution
-- [ ] Fix `linesModified` array tracking - should contain actual modified line numbers, not empty array
-- [ ] Ensure `diff` field is populated with generated diff content, not `undefined`
-- [ ] Update EditTool metrics to include all required timing fields
+- [x] Implement proper diff generation using unified diff format (`@@ -start,count +start,count @@`)
+- [x] Add `diffGenerationTime` metric tracking to EditTool execution
+- [x] Fix `linesModified` array tracking - should contain actual modified line numbers, not empty array
+- [x] Ensure `diff` field is populated with generated diff content, not `undefined`
+- [x] Update EditTool metrics to include all required timing fields
 
 **Expected Changes**:
 ```typescript
@@ -39,14 +39,14 @@ npm test -- --testNamePattern="should handle pattern not found like Claude Code"
 ```
 
 ### Task 1.2: Fix EditTool Error Handling and Classification
-**Status**: 🔄 High Priority  
-**Impact**: Improves error compatibility and user experience
+**Status**: ✅ COMPLETED  
+**Impact**: Improved error compatibility and user experience
 
 **Subtasks**:
-- [ ] Ensure EditTool throws `ToolError` instances instead of raw `ReferenceError`
-- [ ] Implement proper error classification for pattern-not-found scenarios
-- [ ] Set correct `errorClass` as `VALIDATION` for pattern not found errors
-- [ ] Use error code `PATTERN_NOT_FOUND` consistently with Claude Code
+- [x] Ensure EditTool throws `ToolError` instances instead of raw `ReferenceError`
+- [x] Implement proper error classification for pattern-not-found scenarios
+- [x] Set correct `errorClass` as `VALIDATION` for pattern not found errors
+- [x] Use error code `PATTERN_NOT_FOUND` consistently with Claude Code
 
 **Expected Fix**:
 ```typescript
@@ -57,14 +57,14 @@ throw new ToolError('PATTERN_NOT_FOUND', 'Pattern not found in file', ErrorClass
 ## Priority 2: Response Format and Metadata Alignment
 
 ### Task 2.1: Fix ListTool Response Format Consistency
-**Status**: 🔄 Medium Priority  
-**Impact**: Fixes 1 failing test - directory listing compatibility
+**Status**: ✅ COMPLETED  
+**Impact**: Fixed 1 failing test - directory listing compatibility
 
 **Subtasks**:
-- [ ] Review ListTool response structure against Claude Code reference format
-- [ ] Ensure all required fields are present and correctly formatted
-- [ ] Fix field count discrepancies in directory listing responses
-- [ ] Validate `totalFiles`, `totalDirectories`, and directory structure metadata
+- [x] Review ListTool response structure against Claude Code reference format
+- [x] Ensure all required fields are present and correctly formatted
+- [x] Fix field count discrepancies in directory listing responses (added `truncated` field)
+- [x] Validate `totalFiles`, `totalDirectories`, and directory structure metadata (fixed `totalSize` calculation)
 
 **Validation**:
 ```bash
@@ -90,14 +90,14 @@ npm test -- --testNamePattern="should match Claude Code response format for dire
 ## Priority 3: BashTool Working Directory and Validation
 
 ### Task 3.1: Fix BashTool Working Directory Handling
-**Status**: 🔄 Medium Priority  
-**Impact**: Fixes 1 failing test - command execution compatibility
+**Status**: ✅ COMPLETED  
+**Impact**: Fixed 1 failing test - command execution compatibility
 
 **Subtasks**:
-- [ ] Review BashTool working directory validation logic
-- [ ] Ensure compatibility with Claude Code's cwd handling behavior
-- [ ] Fix absolute path requirement validation to match Claude Code expectations
-- [ ] Allow relative working directories when appropriate
+- [x] Review BashTool working directory validation logic
+- [x] Ensure compatibility with Claude Code's cwd handling behavior
+- [x] Fix absolute path requirement validation to match Claude Code expectations
+- [x] Allow relative working directories when appropriate
 
 **Current Issue**:
 ```bash

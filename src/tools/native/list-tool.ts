@@ -55,9 +55,9 @@ export class ListTool extends EventEmitter implements NativeTool {
 
       if (!stats.isDirectory()) {
         throw new ToolError(
-          ErrorClass.VALIDATION,
-          'NOT_A_DIRECTORY',
-          `Path is not a directory: ${args.path}`,
+          ErrorClass.PERMANENT,
+          'ENOTDIR',
+          'Not a directory',
           { path: args.path, type: 'file' }
         );
       }

@@ -293,9 +293,9 @@ export class WriteTool extends EventEmitter implements NativeTool {
     // Check for path traversal
     if (!absolutePath.startsWith(this.workspaceRoot)) {
       throw new ToolError(
-        ErrorClass.PERMISSION,
+        ErrorClass.VALIDATION,  // Claude Code expects validation for path traversal
         'PATH_TRAVERSAL',
-        'Path traversal not allowed',
+        'Path traversal not permitted',  // Match Claude Code error message pattern
         { path: inputPath, resolved: absolutePath }
       );
     }
