@@ -499,7 +499,9 @@ export const orchestrator = {
     // Extract pending patch blocks if present
     pendingPatch = extractPatch(assistant) || null;
     await maybeAutoApply(pendingPatch, onEvent);
-    await maybeBridgeTool(assistant, onEvent);
+    // Import and use enhanced tool orchestration
+    const { executeToolCall } = await import('./tool-orchestration.js');
+    await executeToolCall(assistant, onEvent);
     await saveSessionDefault();
     return assistant;
   },
@@ -583,7 +585,9 @@ export const orchestrator = {
       emitPatchExtract(!!pendingPatch);
       
       await maybeAutoApply(pendingPatch, onEvent);
-      await maybeBridgeTool(assistant, onEvent);
+      // Import and use enhanced tool orchestration
+    const { executeToolCall } = await import('./tool-orchestration.js');
+    await executeToolCall(assistant, onEvent);
       await saveSessionDefault();
       
       // Add to transcript if enabled
@@ -2042,4 +2046,14 @@ function getToolCallOneLiner(modelId: string, cfg?: any): string {
     return 'Tool calls: use a fenced json block containing only {"tool_call":{"server":"<id>","name":"<tool>","input":{}}} — strictly valid JSON, no commentary.';
   }
   return 'For tool calls, output a fenced json block with only {"tool_call":{"server":"<id>","name":"<tool>","input":{}}} (no prose).';
+}
+
+// Export functions needed by tool-orchestration.ts
+export { ensurePermissionManager };
+
+/**
+ * Add message to conversation history
+ */
+export function addToHistory(message: Msg): void {
+  history.push(message);
 }

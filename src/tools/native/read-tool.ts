@@ -15,6 +15,7 @@ import {
   ErrorClass,
   ToolEvent 
 } from './types.js';
+import { ErrorClassifier } from './error-classifier.js';
 
 // Common binary file signatures
 const BINARY_SIGNATURES = [
@@ -98,13 +99,16 @@ export class ReadTool extends EventEmitter implements NativeTool {
       const encodingInfo = await this.detectEncoding(buffer, args.encoding, args.forceText);
       
       if (encodingInfo.isBinary && !args.forceText) {
-        return this.createResponse(true, {
-          content: buffer.toString('base64'),
-          encoding: 'binary',
+        // Claude Code rejects binary files by default
+        return this.createResponse(false, {
+          content: undefined,
+          encoding: undefined,
           isBinary: true,
-          size: stats.size,
-          resolvedPath: normalizedPath,
-          metrics: this.createMetrics(startTime, bytesRead, 'binary')
+          error: new ToolError(
+            ErrorClass.VALIDATION,
+            'BINARY_FILE',
+            'Cannot read binary file'
+          )
         });
       }
 
@@ -135,12 +139,17 @@ export class ReadTool extends EventEmitter implements NativeTool {
       }
 
       // Return full content
+      const totalLines = content.split('\n').length;
       return this.createResponse(true, {
         content,
         encoding: actualEncoding,
         detectedEncoding: encodingInfo.detectedEncoding,
         size: stats.size,
+        totalLines,
+        requestedRange: undefined,
         truncated: false,
+        isBinary: false,
+        outOfRange: false,
         encodingFallback,
         resolvedPath: normalizedPath,
         metrics: this.createMetrics(startTime, bytesRead, actualEncoding)
@@ -154,16 +163,11 @@ export class ReadTool extends EventEmitter implements NativeTool {
         throw error;
       }
 
-      // Convert system errors to tool errors
-      const systemError = error as NodeJS.ErrnoException;
-      const errorClass = this.classifyError(systemError.code);
-      
-      throw new ToolError(
-        errorClass,
-        systemError.code || 'UNKNOWN_ERROR',
-        systemError.message,
-        { path: args.path, originalError: systemError }
-      );
+      // Use ErrorClassifier to create standardized tool error
+      throw ErrorClassifier.createToolError(error as Error, { 
+        tool: 'read',
+        path: args.path 
+      });
     }
   }
 
@@ -193,7 +197,7 @@ export class ReadTool extends EventEmitter implements NativeTool {
       }
 
       // For large files, stream the reading process
-      const chunkSize = 64 * 1024; // 64KB chunks
+      const chunkSize = 4 * 1024; // 4KB chunks (Claude Code compatible)
       if (stats.size > chunkSize) {
         yield {
           type: 'progress',
@@ -325,26 +329,6 @@ export class ReadTool extends EventEmitter implements NativeTool {
     };
   }
 
-  private classifyError(errorCode?: string): ErrorClass {
-    switch (errorCode) {
-      case 'ENOENT':
-      case 'EISDIR':
-      case 'ENOTDIR':
-        return ErrorClass.PERMANENT;
-      
-      case 'EACCES':
-      case 'EPERM':
-        return ErrorClass.PERMISSION;
-      
-      case 'EAGAIN':
-      case 'EBUSY':
-      case 'ETIMEDOUT':
-        return ErrorClass.TRANSIENT;
-      
-      default:
-        return ErrorClass.PERMANENT;
-    }
-  }
 
   private async validatePath(inputPath: string): Promise<string> {
     // Resolve to absolute path
@@ -486,6 +470,8 @@ export class ReadTool extends EventEmitter implements NativeTool {
       content: selectedLines.join('\n'),
       totalLines,
       requestedRange: { start: startLine, end: endLine },
+      truncated: false,
+      isBinary: false,
       outOfRange: false
     });
   }

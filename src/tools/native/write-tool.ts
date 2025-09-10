@@ -16,6 +16,7 @@ import {
   ErrorClass,
   ToolEvent
 } from './types.js';
+import { ErrorClassifier } from './error-classifier.js';
 
 export class WriteTool extends EventEmitter implements NativeTool {
   private readonly maxFileSize: number = 50 * 1024 * 1024; // 50MB
@@ -72,15 +73,12 @@ export class WriteTool extends EventEmitter implements NativeTool {
         try {
           await fs.access(parentDir);
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-            throw new ToolError(
-              ErrorClass.PERMANENT,
-              'ENOENT',
-              `Parent directory does not exist: ${parentDir}`,
-              { path: args.path, parentDir }
-            );
-          }
-          throw error;
+          throw ErrorClassifier.createToolError(error as Error, { 
+            tool: 'write',
+            operation: 'createParentDirectories',
+            path: args.path, 
+            parentDir 
+          });
         }
       }
 
@@ -146,16 +144,11 @@ export class WriteTool extends EventEmitter implements NativeTool {
         throw error;
       }
 
-      // Convert system errors to tool errors
-      const systemError = error as NodeJS.ErrnoException;
-      const errorClass = this.classifyError(systemError.code);
-      
-      throw new ToolError(
-        errorClass,
-        systemError.code || 'UNKNOWN_ERROR',
-        systemError.message,
-        { path: args.path, originalError: systemError }
-      );
+      // Use ErrorClassifier to create standardized tool error
+      throw ErrorClassifier.createToolError(error as Error, { 
+        tool: 'write',
+        path: args.path 
+      });
     }
   }
 
@@ -401,28 +394,6 @@ export class WriteTool extends EventEmitter implements NativeTool {
     };
   }
 
-  private classifyError(errorCode?: string): ErrorClass {
-    switch (errorCode) {
-      case 'ENOENT':
-        return ErrorClass.PERMANENT;
-      
-      case 'EACCES':
-      case 'EPERM':
-        return ErrorClass.PERMISSION;
-      
-      case 'ENOSPC':
-      case 'EDQUOT':
-        return ErrorClass.TRANSIENT; // Disk full - might be temporary
-      
-      case 'EAGAIN':
-      case 'EBUSY':
-      case 'ETIMEDOUT':
-        return ErrorClass.TRANSIENT;
-      
-      default:
-        return ErrorClass.PERMANENT;
-    }
-  }
 
   private emitTelemetry(success: boolean, duration: number, bytesWritten: number = 0, error?: any): void {
     this.emit('telemetry', {

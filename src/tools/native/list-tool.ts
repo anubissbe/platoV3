@@ -18,6 +18,7 @@ import {
   ErrorClass,
   ToolEvent 
 } from './types.js';
+import { ErrorClassifier } from './error-classifier.js';
 import { minimatch } from 'minimatch';
 
 const lstat = promisify(fsSync.lstat);
@@ -45,13 +46,11 @@ export class ListTool extends EventEmitter implements NativeTool {
       try {
         stats = await fs.stat(normalizedPath);
       } catch (error) {
-        const systemError = error as NodeJS.ErrnoException;
-        throw new ToolError(
-          this.classifyError(systemError.code),
-          systemError.code || 'UNKNOWN_ERROR',
-          `Directory not found: ${args.path}`,
-          { path: args.path, originalError: systemError }
-        );
+        throw ErrorClassifier.createToolError(error as Error, {
+          tool: 'list',
+          operation: 'validateDirectory',
+          path: args.path
+        });
       }
 
       if (!stats.isDirectory()) {
@@ -139,16 +138,11 @@ export class ListTool extends EventEmitter implements NativeTool {
         throw error;
       }
 
-      // Convert system errors to tool errors
-      const systemError = error as NodeJS.ErrnoException;
-      const errorClass = this.classifyError(systemError.code);
-      
-      throw new ToolError(
-        errorClass,
-        systemError.code || 'UNKNOWN_ERROR',
-        systemError.message,
-        { path: args.path, originalError: systemError }
-      );
+      // Use ErrorClassifier to create standardized tool error
+      throw ErrorClassifier.createToolError(error as Error, { 
+        tool: 'list',
+        path: args.path 
+      });
     }
   }
 
@@ -271,7 +265,11 @@ export class ListTool extends EventEmitter implements NativeTool {
         const entry: FileInfo = {
           name: item,
           path: itemPath,
-          type: stats.isSymbolicLink() ? 'symlink' : (stats.isDirectory() ? 'directory' : 'file')
+          type: stats.isSymbolicLink() ? 'symlink' : (stats.isDirectory() ? 'directory' : 'file'),
+          size: stats.size,
+          modified: stats.mtime,
+          created: stats.birthtime,
+          permissions: this.formatPermissions(stats.mode, stats.isDirectory())
         };
 
         // Include stats if requested
@@ -327,7 +325,11 @@ export class ListTool extends EventEmitter implements NativeTool {
           name: item,
           path: itemPath,
           type: stats.isSymbolicLink() ? 'symlink' : (stats.isDirectory() ? 'directory' : 'file'),
-          depth: currentDepth
+          depth: currentDepth,
+          size: stats.size,
+          modified: stats.mtime,
+          created: stats.birthtime,
+          permissions: this.formatPermissions(stats.mode, stats.isDirectory())
         };
 
         // Include stats if requested
@@ -473,25 +475,6 @@ export class ListTool extends EventEmitter implements NativeTool {
     };
   }
 
-  private classifyError(errorCode?: string): ErrorClass {
-    switch (errorCode) {
-      case 'ENOENT':
-      case 'ENOTDIR':
-        return ErrorClass.PERMANENT;
-      
-      case 'EACCES':
-      case 'EPERM':
-        return ErrorClass.PERMISSION;
-      
-      case 'EAGAIN':
-      case 'EBUSY':
-      case 'ETIMEDOUT':
-        return ErrorClass.TRANSIENT;
-      
-      default:
-        return ErrorClass.PERMANENT;
-    }
-  }
 
   private isValidGlobPattern(pattern: string): boolean {
     // Check for unmatched square brackets

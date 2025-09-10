@@ -19,6 +19,7 @@ import {
   ErrorClass,
   ToolEvent
 } from './types.js';
+import { ErrorClassifier } from './error-classifier.js';
 
 export class EditTool extends EventEmitter implements NativeTool {
   private readonly maxFileSize: number = 100 * 1024 * 1024; // 100MB
@@ -189,16 +190,11 @@ export class EditTool extends EventEmitter implements NativeTool {
         throw error;
       }
 
-      // Convert system errors to tool errors
-      const systemError = error as NodeJS.ErrnoException;
-      const errorClass = this.classifyError(systemError.code);
-      
-      throw new ToolError(
-        errorClass,
-        systemError.code || 'UNKNOWN_ERROR',
-        systemError.message,
-        { path: args.path, originalError: systemError }
-      );
+      // Use ErrorClassifier to create standardized tool error
+      throw ErrorClassifier.createToolError(error as Error, { 
+        tool: 'edit',
+        path: args.path 
+      });
     }
   }
 
@@ -659,26 +655,6 @@ export class EditTool extends EventEmitter implements NativeTool {
     }
   }
 
-  private classifyError(code?: string): ErrorClass {
-    if (!code) return ErrorClass.PERMANENT;
-    
-    switch (code) {
-      case 'ENOENT':
-      case 'ENOTDIR':
-      case 'EISDIR':
-        return ErrorClass.PERMANENT;
-      case 'EACCES':
-      case 'EPERM':
-        return ErrorClass.PERMISSION;
-      case 'EMFILE':
-      case 'ENFILE':
-      case 'ENOSPC':
-      case 'EIO':
-        return ErrorClass.TRANSIENT;
-      default:
-        return ErrorClass.PERMANENT;
-    }
-  }
 
   private createMetrics(
     startTime: number,

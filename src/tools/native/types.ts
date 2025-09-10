@@ -332,6 +332,41 @@ export interface SearchToolMetrics extends ToolMetrics {
 }
 
 // ============================================================================
+// BASH TOOL INTERFACES
+// ============================================================================
+
+export interface BashToolArgs {
+  command: string;
+  cwd?: string;
+  env?: Record<string, string>;
+  timeout?: number;
+  shell?: string;
+  input?: string;
+  streaming?: boolean;
+  background?: boolean;
+}
+
+export interface BashToolResponse extends BaseToolResponse {
+  stdout?: string;
+  stderr?: string;
+  exitCode?: number;
+  signal?: string;
+  timedOut?: boolean;
+  cancelled?: boolean;
+  pid?: number;
+  metrics?: BashToolMetrics;
+}
+
+export interface BashToolMetrics extends ToolMetrics {
+  executionTime: number;
+  stdoutBytes: number;
+  stderrBytes: number;
+  peakMemoryUsage: number;
+  exitCode: number;
+  signalReceived?: string;
+}
+
+// ============================================================================
 // TOOL EXECUTOR INTERFACES
 // ============================================================================
 
@@ -347,6 +382,21 @@ export interface ToolExecutor {
   execute(tool: ToolCall): Promise<BaseToolResponse>;
   stream?(tool: ToolCall): AsyncGenerator<ToolEvent>;
   cancel(executionId: string): Promise<void>;
+  getCapabilities(): ToolCapability[];
+}
+
+export interface MCPBridge {
+  execute(tool: ToolCall): Promise<BaseToolResponse>;
+  stream?(tool: ToolCall): AsyncGenerator<ToolEvent>;
+  cancel?(executionId: string): Promise<void>;
+  getCapabilities(): ToolCapability[];
+}
+
+export interface ToolRegistry {
+  registerTool(name: string, tool: NativeTool): void;
+  unregisterTool(name: string): void;
+  getTool(name: string): NativeTool | undefined;
+  listTools(): string[];
   getCapabilities(): ToolCapability[];
 }
 
@@ -381,4 +431,124 @@ export interface ToolTelemetry {
   exitCode?: number;
   cancelled?: boolean;
   [key: string]: any;
+}
+
+// ============================================================================
+// SECURITY AND RESOURCE MANAGEMENT INTERFACES
+// ============================================================================
+
+export interface SecurityValidationResult {
+  allowed: boolean;
+  reason?: string;
+  severity?: 'low' | 'medium' | 'high' | 'critical';
+  actualSize?: number;
+  maxAllowedSize?: number;
+  fileExists?: boolean;
+  error?: PathValidationError;
+}
+
+export interface PathValidationError {
+  type: 'SYMLINK_TRAVERSAL' | 'CIRCULAR_SYMLINK' | 'PATH_TOO_LONG' | 'BROKEN_SYMLINK' | 'PERMISSION_DENIED';
+  message: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  path?: string;
+  target?: string;
+}
+
+export interface PathNormalizationResult {
+  success: boolean;
+  normalizedPath?: string;
+  isWithinWorkspace?: boolean;
+  isSymlink?: boolean;
+  symlinkTarget?: string;
+  error?: PathValidationError;
+}
+
+export interface PathSecurityResult {
+  safe: boolean;
+  threats: SecurityThreat[];
+  normalizedPath?: string;
+}
+
+export interface SecurityThreat {
+  type: 'DIRECTORY_TRAVERSAL' | 'NULL_BYTE' | 'CRLF_INJECTION' | 'XSS_ATTEMPT' | 'SUSPICIOUS_CHARS';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  message: string;
+  position?: number;
+}
+
+export interface FileTypeDetectionResult {
+  isBinary: boolean;
+  mimeType?: string;
+  encoding?: string;
+  error?: PathValidationError;
+}
+
+export interface ResourceLimits {
+  maxFileSize?: number;
+  maxMemoryUsage?: number;
+  maxCpuTime?: number;
+  maxOpenFiles?: number;
+  maxDirectoryDepth?: number;
+  maxGlobResults?: number;
+  maxConcurrentOperations?: number;
+  operationTimeout?: number;
+}
+
+export interface ResourceAcquisitionResult {
+  granted: boolean;
+  reason?: string;
+  queuePosition?: number;
+  estimatedWaitTime?: number;
+}
+
+export interface RateLimitResult {
+  allowed: boolean;
+  retryAfter?: number;
+  requestsRemaining?: number;
+  windowResetTime?: number;
+}
+
+export interface ResourceMonitoringData {
+  memoryUsage: {
+    heapUsed: number;
+    heapTotal: number;
+    rss: number;
+    external: number;
+  };
+  cpuUsage?: CPUUsageData;
+  openFileHandles?: FileHandleData;
+  timestamp: number;
+}
+
+export interface CPUUsageData {
+  userCPUTime: number;
+  systemCPUTime: number;
+  percentUsage: number;
+  elapsedTime: number;
+}
+
+export interface FileHandleData {
+  count: number;
+  types: Record<string, number>;
+  limit: number;
+}
+
+export interface OperationMetrics {
+  duration: number;
+  memoryDelta: number;
+  cpuUsage: CPUUsageData;
+  success: boolean;
+  error?: string;
+}
+
+export interface TelemetryEvent extends ToolTelemetry {
+  violationType?: string;
+  severity?: string;
+  path?: string;
+  timestamp?: number;
+  bytesProcessed?: number;
+  memoryUsage?: number;
+  cpuTime?: number;
+  resourcesUsed?: Record<string, number>;
 }
