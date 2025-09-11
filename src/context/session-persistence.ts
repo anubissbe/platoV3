@@ -155,32 +155,65 @@ export class ContextPersistenceManager {
   }
 
   /**
-   * Save context state to session.json
+   * Save context state to session.json with retry mechanism
    */
-  async saveToSession(state: ContextState): Promise<void> {
-    try {
-      const serialized = await this.serializeContextState(state);
-      
-      // Ensure directory exists
-      const sessionDir = path.dirname(this.sessionPath);
-      await fs.mkdir(sessionDir, { recursive: true });
-      
-      // Write to session.json
-      await fs.writeFile(this.sessionPath, JSON.stringify(serialized, null, 2), 'utf-8');
-      
-    } catch (error) {
-      console.error('Failed to save to session.json:', error);
-      
-      // Fallback: save to memory system
+  async saveToSession(state: ContextState, retryCount: number = 3): Promise<void> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= retryCount; attempt++) {
       try {
-        await this.saveToMemory(state, 'fallback-context-state');
-      } catch (memoryError) {
-        console.error('Fallback to memory also failed:', memoryError);
-        throw error;
+        const serialized = await this.serializeContextState(state);
+        
+        // Ensure directory exists
+        const sessionDir = path.dirname(this.sessionPath);
+        await fs.mkdir(sessionDir, { recursive: true });
+        
+        // Write to session.json
+        await fs.writeFile(this.sessionPath, JSON.stringify(serialized, null, 2), 'utf-8');
+        
+        // Success - exit retry loop
+        return;
+        
+      } catch (error: any) {
+        lastError = error;
+        
+        // Log error with context
+        const errorType = this.classifyError(error);
+        console.error(`Failed to save to session.json (attempt ${attempt}/${retryCount}):`, {
+          error: error.message,
+          type: errorType,
+          code: error.code,
+          path: this.sessionPath
+        });
+        
+        // Handle different error types
+        if (errorType === 'DISK_FULL' || errorType === 'PERMISSION_DENIED') {
+          // These errors are unlikely to resolve with retry, break early
+          console.warn(`Critical error detected (${errorType}), attempting fallback immediately`);
+          break;
+        }
+        
+        // Wait before retry for transient errors
+        if (attempt < retryCount && errorType === 'TRANSIENT') {
+          await this.delay(Math.pow(2, attempt - 1) * 100); // Exponential backoff
+        }
       }
+    }
+    
+    // All retries failed, attempt fallback
+    try {
+      console.warn('All session.json save attempts failed, using memory fallback');
+      await this.saveToMemory(state, 'fallback-context-state', true); // throwOnError=true for fallback
       
-      // Re-throw the original error if fallback succeeded but we still want to indicate failure
-      throw error;
+      // Don't throw original error if fallback succeeds - graceful degradation
+      console.info('Context state saved to memory system as fallback');
+      
+    } catch (memoryError) {
+      console.error('Both session.json and memory fallback failed:', {
+        originalError: lastError?.message,
+        memoryError: (memoryError as Error).message
+      });
+      throw lastError || memoryError;
     }
   }
 
@@ -202,6 +235,44 @@ export class ContextPersistenceManager {
   }
 
   /**
+   * Load context state from session.json with retry mechanism
+   */
+  async loadFromSessionWithRetry(retryCount: number = 2): Promise<ContextState | null> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= retryCount; attempt++) {
+      try {
+        const data = await fs.readFile(this.sessionPath, 'utf-8');
+        const parsed = JSON.parse(data);
+        return await this.deserializeContextState(parsed);
+      } catch (error: any) {
+        lastError = error;
+        
+        if (error.code === 'ENOENT') {
+          return null; // File doesn't exist - no point retrying
+        }
+
+        // For JSON parse errors, don't retry
+        if (error instanceof SyntaxError) {
+          console.warn('Session file contains invalid JSON, cannot recover:', error.message);
+          return null;
+        }
+
+        // Log retry attempt
+        console.warn(`Failed to load session.json (attempt ${attempt}/${retryCount}):`, error.message);
+        
+        // Wait before retry
+        if (attempt < retryCount) {
+          await this.delay(100 * attempt); // Linear backoff for read operations
+        }
+      }
+    }
+    
+    console.error('All attempts to load session.json failed:', lastError?.message);
+    return null;
+  }
+
+  /**
    * Update cost analytics data in session metadata
    */
   async updateSessionCostAnalytics(
@@ -214,16 +285,32 @@ export class ContextPersistenceManager {
     }
   ): Promise<void> {
     try {
-      // Load current session state
-      const currentState = await this.loadFromSession();
+      // Validate input data
+      if (!sessionId) {
+        console.warn('Cannot update cost analytics: sessionId is required');
+        return;
+      }
+
+      if (typeof costData !== 'object' || costData === null) {
+        console.warn('Cannot update cost analytics: invalid costData');
+        return;
+      }
+
+      // Load current session state with retry
+      const currentState = await this.loadFromSessionWithRetry();
       
       if (currentState) {
-        // Calculate average cost per query
-        const avgCostPerQuery = costData.interactionCount > 0 ? costData.totalCost / costData.interactionCount : 0;
+        // Calculate average cost per query with safety check
+        const avgCostPerQuery = costData.interactionCount > 0 
+          ? Math.round((costData.totalCost / costData.interactionCount) * 10000) / 10000 // Round to 4 decimal places
+          : 0;
         
         // Update cost analytics in session metadata
         currentState.sessionMetadata.costAnalytics = {
-          ...costData,
+          totalCost: Math.max(0, costData.totalCost || 0),
+          totalInputTokens: Math.max(0, costData.totalInputTokens || 0),
+          totalOutputTokens: Math.max(0, costData.totalOutputTokens || 0),
+          interactionCount: Math.max(0, costData.interactionCount || 0),
           sessionId,
           avgCostPerQuery,
           lastCostUpdate: new Date().toISOString()
@@ -232,16 +319,23 @@ export class ContextPersistenceManager {
         // Update last activity
         currentState.sessionMetadata.lastActivity = new Date().toISOString();
         
-        // Save updated state
+        // Save updated state (with retries built in)
         await this.saveToSession(currentState);
+        
+      } else {
+        console.warn('Cannot update cost analytics: no session state available');
       }
-    } catch (error) {
-      console.warn('Failed to update session cost analytics:', error);
+    } catch (error: any) {
+      console.error('Failed to update session cost analytics:', {
+        error: error.message,
+        sessionId,
+        costData
+      });
     }
   }
 
   /**
-   * Get cost analytics data from session
+   * Get cost analytics data from session with enhanced error handling
    */
   async getSessionCostAnalytics(): Promise<{
     totalCost: number;
@@ -253,39 +347,81 @@ export class ContextPersistenceManager {
     lastCostUpdate: string;
   } | null> {
     try {
-      const sessionState = await this.loadFromSession();
-      return sessionState?.sessionMetadata.costAnalytics || null;
-    } catch (error) {
-      console.warn('Failed to get session cost analytics:', error);
+      const sessionState = await this.loadFromSessionWithRetry();
+      
+      if (!sessionState) {
+        return null;
+      }
+      
+      const costAnalytics = sessionState.sessionMetadata?.costAnalytics;
+      
+      if (!costAnalytics) {
+        return null;
+      }
+      
+      // Validate and sanitize the cost analytics data
+      return {
+        totalCost: Math.max(0, costAnalytics.totalCost || 0),
+        totalInputTokens: Math.max(0, costAnalytics.totalInputTokens || 0),
+        totalOutputTokens: Math.max(0, costAnalytics.totalOutputTokens || 0),
+        interactionCount: Math.max(0, costAnalytics.interactionCount || 0),
+        sessionId: costAnalytics.sessionId || 'unknown',
+        avgCostPerQuery: Math.max(0, costAnalytics.avgCostPerQuery || 0),
+        lastCostUpdate: costAnalytics.lastCostUpdate || new Date().toISOString()
+      };
+    } catch (error: any) {
+      console.error('Failed to get session cost analytics:', error.message);
       return null;
     }
   }
 
   /**
-   * Initialize cost analytics for a new session
+   * Initialize cost analytics for a new session with enhanced error handling
    */
   async initializeSessionCostAnalytics(sessionId: string): Promise<void> {
-    const currentState = await this.loadFromSession();
-    
-    if (currentState && !currentState.sessionMetadata.costAnalytics) {
-      currentState.sessionMetadata.costAnalytics = {
-        totalCost: 0,
-        totalInputTokens: 0,
-        totalOutputTokens: 0,
-        interactionCount: 0,
-        sessionId,
-        avgCostPerQuery: 0,
-        lastCostUpdate: new Date().toISOString()
-      };
+    try {
+      // Validate session ID
+      if (!sessionId || typeof sessionId !== 'string') {
+        console.warn('Cannot initialize cost analytics: invalid sessionId');
+        return;
+      }
+
+      const currentState = await this.loadFromSessionWithRetry();
       
-      await this.saveToSession(currentState);
+      if (currentState) {
+        // Only initialize if not already present
+        if (!currentState.sessionMetadata.costAnalytics) {
+          currentState.sessionMetadata.costAnalytics = {
+            totalCost: 0,
+            totalInputTokens: 0,
+            totalOutputTokens: 0,
+            interactionCount: 0,
+            sessionId,
+            avgCostPerQuery: 0,
+            lastCostUpdate: new Date().toISOString()
+          };
+          
+          // Update session metadata
+          currentState.sessionMetadata.lastActivity = new Date().toISOString();
+          
+          // Save with built-in retry mechanism
+          await this.saveToSession(currentState);
+        }
+      } else {
+        console.warn('Cannot initialize cost analytics: no session state available');
+      }
+    } catch (error: any) {
+      console.error('Failed to initialize session cost analytics:', {
+        error: error.message,
+        sessionId
+      });
     }
   }
 
   /**
    * Save context state to memory system
    */
-  async saveToMemory(state: ContextState, memoryId: string): Promise<void> {
+  async saveToMemory(state: ContextState, memoryId: string, throwOnError: boolean = false): Promise<void> {
     try {
       const serialized = await this.serializeContextState(state);
       
@@ -301,7 +437,10 @@ export class ContextPersistenceManager {
       });
     } catch (error) {
       console.warn('Failed to save context to memory system:', error);
-      // Don't throw - this is often used as a fallback
+      if (throwOnError) {
+        throw error; // Re-throw when used as a fallback that needs to fail
+      }
+      // Otherwise, silently fail for "best effort" operations
     }
   }
 
@@ -627,6 +766,36 @@ export class ContextPersistenceManager {
     } catch (error) {
       console.warn('Failed to cleanup context history:', error);
     }
+  }
+
+  /**
+   * Classify error types for appropriate handling
+   */
+  private classifyError(error: any): 'DISK_FULL' | 'PERMISSION_DENIED' | 'TRANSIENT' | 'UNKNOWN' {
+    if (!error.code) return 'UNKNOWN';
+    
+    switch (error.code) {
+      case 'ENOSPC':
+        return 'DISK_FULL';
+      case 'EACCES':
+      case 'EPERM':
+        return 'PERMISSION_DENIED';
+      case 'EMFILE':
+      case 'ENFILE':
+      case 'EAGAIN':
+      case 'EBUSY':
+      case 'ETIMEDOUT':
+        return 'TRANSIENT';
+      default:
+        return 'UNKNOWN';
+    }
+  }
+
+  /**
+   * Delay helper for retry mechanism
+   */
+  private async delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**

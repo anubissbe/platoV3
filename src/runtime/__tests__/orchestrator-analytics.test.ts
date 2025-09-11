@@ -16,35 +16,39 @@ jest.mock('../../providers/chat_fallback.js');
 
 const mockFs = fs as jest.Mocked<typeof fs>;
 
+// Create analytics service mock instance
+const mockAnalyticsInstance = {
+  initialize: jest.fn().mockResolvedValue(undefined),
+  recordInteraction: jest.fn().mockResolvedValue({
+    timestamp: Date.now(),
+    sessionId: 'test-session',
+    model: 'gpt-3.5-turbo',
+    inputTokens: 10,
+    outputTokens: 20,
+    cost: 0.001,
+    provider: 'copilot',
+    duration: 1000
+  }),
+  getCurrentSessionCost: jest.fn().mockResolvedValue(0.05),
+  getTodayTotalCost: jest.fn().mockResolvedValue(0.15),
+  getSessionBreakdown: jest.fn().mockResolvedValue({
+    totalCost: 0.05,
+    totalTokens: 30,
+    interactions: 1,
+    avgCostPerInteraction: 0.05,
+    modelBreakdown: {
+      'gpt-3.5-turbo': { cost: 0.05, tokens: 30, interactions: 1 }
+    }
+  }),
+  calculateCost: jest.fn().mockReturnValue(0.001),
+  flush: jest.fn().mockResolvedValue(undefined),
+  shutdown: jest.fn().mockResolvedValue(undefined)
+};
+
 // Mock the analytics service  
 jest.mock('../../services/analytics.js', () => ({
-  createDefaultAnalyticsService: jest.fn(() => ({
-    initialize: jest.fn().mockResolvedValue(undefined),
-    recordInteraction: jest.fn().mockResolvedValue({
-      timestamp: Date.now(),
-      sessionId: 'test-session',
-      model: 'gpt-3.5-turbo',
-      inputTokens: 10,
-      outputTokens: 20,
-      cost: 0.001,
-      provider: 'copilot',
-      duration: 1000
-    }),
-    getCurrentSessionCost: jest.fn().mockResolvedValue(0.05),
-    getTodayTotalCost: jest.fn().mockResolvedValue(0.15),
-    getSessionBreakdown: jest.fn().mockResolvedValue({
-      totalCost: 0.05,
-      totalTokens: 30,
-      interactions: 1,
-      avgCostPerInteraction: 0.05,
-      modelBreakdown: {
-        'gpt-3.5-turbo': { cost: 0.05, tokens: 30, interactions: 1 }
-      }
-    }),
-    calculateCost: jest.fn().mockReturnValue(0.001),
-    flush: jest.fn().mockResolvedValue(undefined),
-    shutdown: jest.fn().mockResolvedValue(undefined)
-  }))
+  createDefaultAnalyticsService: jest.fn(() => mockAnalyticsInstance),
+  AnalyticsService: jest.fn().mockImplementation(() => mockAnalyticsInstance)
 }));
 
 // Import the orchestrator module

@@ -60,7 +60,9 @@ describe('Session Persistence Integration', () => {
     });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Clean up persistence manager to prevent timer leaks
+    await persistenceManager.shutdown();
     jest.clearAllMocks();
   });
 
@@ -583,8 +585,11 @@ describe('Session Persistence Integration', () => {
   });
 
   describe('Error Handling and Recovery', () => {
-    test('should handle disk I/O errors gracefully', async () => {
-      (fs.writeFile as jest.Mock).mockRejectedValue(new Error('ENOSPC: no space left on device'));
+    test('should handle disk I/O errors gracefully with fallback', async () => {
+      // Create a proper error object with code property
+      const diskFullError = new Error('ENOSPC: no space left on device');
+      (diskFullError as any).code = 'ENOSPC';
+      (fs.writeFile as jest.Mock).mockRejectedValue(diskFullError);
 
       const contextState = {
         index: new SemanticIndex(),
@@ -599,11 +604,13 @@ describe('Session Persistence Integration', () => {
         }
       };
 
+      // Should NOT throw - should gracefully degrade to memory fallback
       await expect(persistenceManager.saveToSession(contextState))
-        .rejects
-        .toThrow('ENOSPC: no space left on device');
+        .resolves
+        .not
+        .toThrow();
 
-      // Should still attempt fallback to memory
+      // Should attempt fallback to memory
       expect(mockMemoryManager.addMemory).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'fallback-context-state',
@@ -616,6 +623,44 @@ describe('Session Persistence Integration', () => {
           }
         })
       );
+    });
+
+    test('should throw error when both session and memory fallback fail', async () => {
+      // Create a fresh persistence manager that will fail the memory fallback
+      const testPersistenceManager = new ContextPersistenceManager({
+        sessionPath: path.join(testDir, '.plato', 'session.json'),
+        memoryPath: path.join(testDir, '.plato', 'memory'),
+        autoSave: false // Disable auto-save for test
+      });
+
+      // Create a proper error object with code property
+      const diskFullError = new Error('ENOSPC: no space left on device');
+      (diskFullError as any).code = 'ENOSPC';
+      (fs.writeFile as jest.Mock).mockRejectedValue(diskFullError);
+      
+      // Reset mock and make memory fallback fail
+      mockMemoryManager.addMemory.mockReset();
+      mockMemoryManager.addMemory.mockRejectedValue(new Error('Memory system unavailable'));
+
+      const contextState = {
+        index: new SemanticIndex(),
+        scorer: new FileRelevanceScorer(new SemanticIndex()),
+        sampler: new ContentSampler(new SemanticIndex()),
+        currentFiles: [],
+        userPreferences: {},
+        sessionMetadata: {
+          startTime: new Date().toISOString(),
+          lastActivity: new Date().toISOString(),
+          totalQueries: 0
+        }
+      };
+
+      await expect(testPersistenceManager.saveToSession(contextState))
+        .rejects
+        .toThrow('ENOSPC: no space left on device');
+      
+      // Clean up the test persistence manager
+      await testPersistenceManager.shutdown();
     });
 
     test('should recover from corrupted session data', async () => {

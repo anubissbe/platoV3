@@ -220,8 +220,32 @@ jest.mock('fs/promises', () => {
       throw error;
     }),
     
-    readdir: originalFs.readdir,
-    unlink: originalFs.unlink,
+    readdir: jest.fn().mockImplementation(async (dirPath: string) => {
+      const normalizedPath = path.resolve(dirPath);
+      
+      // For temp directories, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir)) {
+          return originalFs.readdir(dirPath);
+        }
+      }
+      
+      // Default: return empty array
+      return [];
+    }),
+    unlink: jest.fn().mockImplementation(async (filePath: string) => {
+      const normalizedPath = path.resolve(filePath);
+      
+      // For temp directories, use real fs
+      for (const tempDir of mockTempDirs) {
+        if (normalizedPath.startsWith(tempDir)) {
+          return originalFs.unlink(filePath);
+        }
+      }
+      
+      // Default: successful deletion
+      return;
+    }),
     rename: originalFs.rename,
     copyFile: originalFs.copyFile,
     appendFile: originalFs.appendFile,
