@@ -101,7 +101,7 @@ export const OptimizedConversationArea: React.FC<OptimizedConversationAreaProps>
   // Convert messages to virtual scroll items
   const scrollItems = useMemo((): ConversationScrollItem[] => {
     return messages.map((message, index) => ({
-      id: message.id || `msg-${index}`,
+      id: `msg-${index}-${message.timestamp}`,
       message,
       index,
       content: null, // Content rendered by renderItem
@@ -197,7 +197,7 @@ export const OptimizedConversationArea: React.FC<OptimizedConversationAreaProps>
         
         {/* Scroll indicator */}
         {scrollState.isScrolling && (
-          <Box position="absolute" right={0} top={0}>
+          <Box>
             <MemoizedScrollIndicator
               current={throttledScrollPosition}
               total={messages.length * 3}
@@ -224,7 +224,7 @@ export const OptimizedConversationArea: React.FC<OptimizedConversationAreaProps>
           <Box flexDirection="column" overflow="hidden">
             {messages.map((message, index) => (
               <MemoizedMessage
-                key={message.id || `msg-${index}`}
+                key={`msg-${index}-${message.timestamp}`}
                 message={message}
                 index={index}
                 showTimestamp={showTimestamps}
@@ -237,7 +237,7 @@ export const OptimizedConversationArea: React.FC<OptimizedConversationAreaProps>
         
         {/* Streaming message indicator */}
         {streamingMessage && (
-          <Box position="absolute" bottom={0} left={0}>
+          <Box>
             <StyledText type="info">Streaming...</StyledText>
           </Box>
         )}

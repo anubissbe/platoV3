@@ -14,7 +14,7 @@ export function useThrottledUpdate<T>(
 ): T {
   const [throttledValue, setThrottledValue] = useState(value);
   const lastUpdate = useRef(Date.now());
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const now = Date.now();
@@ -52,7 +52,7 @@ export function useDebouncedUpdate<T>(
   delay: number = 100
 ): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (timeoutRef.current) {
@@ -81,7 +81,7 @@ export function useBatchedUpdates<T extends Record<string, any>>(
 ): [T, (updates: Partial<T>) => void] {
   const [state, setState] = useState(initialState);
   const pendingUpdates = useRef<Partial<T>>({});
-  const updateTimer = useRef<NodeJS.Timeout>();
+  const updateTimer = useRef<NodeJS.Timeout | null>(null);
 
   const batchUpdate = useCallback((updates: Partial<T>) => {
     pendingUpdates.current = { ...pendingUpdates.current, ...updates };
@@ -138,7 +138,7 @@ export function useFrameUpdate(
   callback: (deltaTime: number) => void,
   deps: React.DependencyList = []
 ) {
-  const frameRef = useRef<number>();
+  const frameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
 
   useEffect(() => {
@@ -172,7 +172,7 @@ export function useLazyLoad(
 ): [boolean, (element: HTMLElement | null) => void] {
   const [isVisible, setIsVisible] = useState(false);
   const elementRef = useRef<HTMLElement | null>(null);
-  const observerRef = useRef<IntersectionObserver>();
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const setRef = useCallback((element: HTMLElement | null) => {
     if (observerRef.current) {
@@ -268,7 +268,7 @@ export function useOptimizedResize(
   onResize: (width: number, height: number) => void,
   debounceDelay: number = 100
 ) {
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSize = useRef({ width: 0, height: 0 });
 
   const handleResize = useCallback((width: number, height: number) => {
@@ -323,7 +323,7 @@ export const PerformanceUtils = {
   /**
    * Measure function execution time
    */
-  measurePerformance: <T>(fn: () => T, label?: string): T => {
+  measurePerformance: function<T>(fn: () => T, label?: string): T {
     const start = performance.now();
     const result = fn();
     const duration = performance.now() - start;

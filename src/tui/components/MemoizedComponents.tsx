@@ -111,7 +111,7 @@ export const MemoizedMessage = memo<MemoizedMessageProps>(({
 }, (prevProps, nextProps) => {
   // Custom comparison for deep equality check
   return (
-    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.timestamp === nextProps.message.timestamp &&
     prevProps.message.content === nextProps.message.content &&
     prevProps.index === nextProps.index &&
     prevProps.showTimestamp === nextProps.showTimestamp &&

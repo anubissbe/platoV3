@@ -45,7 +45,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
   const frameCount = useRef(0);
   const lastFrameTime = useRef(Date.now());
   const renderTimes = useRef<number[]>([]);
-  const animationFrameId = useRef<number>();
+  const animationFrameId = useRef<number | null>(null);
 
   // FPS calculation
   const calculateFPS = useCallback(() => {
@@ -161,7 +161,7 @@ export const PerformanceMonitor: React.FC<PerformanceMonitorProps> = ({
  * Hook to track component render performance
  */
 export const useRenderPerformance = (componentName: string) => {
-  const renderStart = useRef<number>();
+  const renderStart = useRef<number | null>(null);
   const renderCount = useRef(0);
 
   useEffect(() => {
