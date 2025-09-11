@@ -6,6 +6,7 @@ import { ConversationRenderer, ConversationMessage } from '../conversation-rende
 import { ScrollController } from '../scroll-controller.js';
 import { StreamingMessage, StreamingConversationMessage, StreamingMessageManager } from './StreamingMessage.js';
 import { MouseSupportLayer } from './MouseContextMenu.js';
+import { useResponsiveTerminalSize, useResponsiveStyles } from './ResponsiveContainer.js';
 
 export interface ConversationAreaProps {
   messages: ConversationMessage[];
@@ -46,6 +47,8 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
   const conversationRendererRef = useRef<ConversationRenderer | undefined>(undefined);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
+  const terminalSize = useResponsiveTerminalSize();
+  const responsiveStyles = useResponsiveStyles();
 
   // Initialize scroll controller and conversation renderer
   useEffect(() => {

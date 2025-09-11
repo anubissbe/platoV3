@@ -3,6 +3,7 @@ import { Box, Text } from 'ink';
 import { StyledBox, StyledText } from '../../styles/components.js';
 import { getStyleManager } from '../../styles/manager.js';
 import { SessionIndicator, SessionData } from './SessionIndicator.js';
+import { useResponsiveTerminalSize, useResponsiveStyles } from './ResponsiveContainer.js';
 
 export interface HeaderProps {
   // Model information
@@ -71,6 +72,8 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const manager = getStyleManager();
   const style = manager.getStyle();
+  const terminalSize = useResponsiveTerminalSize();
+  const responsiveStyles = useResponsiveStyles();
 
   // Format model and provider display
   const formatModelInfo = () => {
@@ -121,33 +124,64 @@ export const Header: React.FC<HeaderProps> = ({
     return `${remaining}/${rateLimit.maxRequests} requests`;
   };
 
+  // Compact mode for mobile terminals
+  if (terminalSize.mode === 'compact') {
+    return (
+      <StyledBox noBorder>
+        <Box flexDirection="column" width="100%">
+          {/* Single line header for compact mode */}
+          <Box flexDirection="row" justifyContent="space-between" paddingX={responsiveStyles.padding}>
+            <StyledText type="primary" bold>
+              plato
+            </StyledText>
+            <StyledText type={getConnectionStatusType(connectionStatus)}>
+              {getConnectionStatusIcon(connectionStatus)}
+            </StyledText>
+          </Box>
+          
+          {/* Bottom border */}
+          <Box width="100%">
+            <Text color="gray">
+              {'─'.repeat(terminalSize.columns)}
+            </Text>
+          </Box>
+        </Box>
+      </StyledBox>
+    );
+  }
+
+  // Normal and expanded modes
   return (
     <StyledBox noBorder>
       <Box flexDirection="column" width="100%">
         {/* Main header line */}
-        <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
+        <Box flexDirection="row" justifyContent="space-between" paddingX={responsiveStyles.padding}>
           {/* Left side: Brand and model info */}
           <Box flexDirection="row" alignItems="center">
             <StyledText type="primary" bold>
               plato
             </StyledText>
-            <StyledText type="secondary">
-              {' | '}
-            </StyledText>
-            <StyledText type="info">
-              {formatModelInfo()}
-            </StyledText>
+            {responsiveStyles.showDetails && (
+              <>
+                <StyledText type="secondary">
+                  {' | '}
+                </StyledText>
+                <StyledText type="info">
+                  {formatModelInfo()}
+                </StyledText>
+              </>
+            )}
           </Box>
 
           {/* Right side: Connection and session info */}
           <Box flexDirection="row" alignItems="center">
             {/* Enhanced session indicator */}
-            {showSessionIndicator && sessionData && (
+            {showSessionIndicator && sessionData && responsiveStyles.showTimestamps && (
               <>
                 <SessionIndicator
                   session={sessionData}
-                  showSaveStatus={true}
-                  showExportOption={Boolean(onSessionExport)}
+                  showSaveStatus={responsiveStyles.showMetadata}
+                  showExportOption={Boolean(onSessionExport) && responsiveStyles.showMetadata}
                   onSave={onSessionSave}
                   onExport={onSessionExport}
                   onImport={onSessionImport}
@@ -159,7 +193,7 @@ export const Header: React.FC<HeaderProps> = ({
             )}
             
             {/* Legacy session info (fallback) */}
-            {!sessionData && sessionInfo && (
+            {!sessionData && sessionInfo && responsiveStyles.showTimestamps && (
               <>
                 <StyledText type="secondary">
                   {formatSessionInfo()}
@@ -176,50 +210,52 @@ export const Header: React.FC<HeaderProps> = ({
           </Box>
         </Box>
 
-        {/* Second line: Token usage and rate limiting */}
-        <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
-          <Box flexDirection="row">
-            <StyledText type="secondary">
-              Tokens: 
-            </StyledText>
-            <StyledText type="info">
-              {formatTokenUsage()}
-            </StyledText>
-            {rateLimit && (
-              <>
-                <StyledText type="secondary">
-                  {' | Rate: '}
-                </StyledText>
-                <StyledText type="info">
-                  {formatRateLimit()}
-                </StyledText>
-              </>
-            )}
-          </Box>
-
-          {/* Status line integration */}
-          {statusLineConfig && (
+        {/* Second line: Token usage and rate limiting - only in normal/expanded mode */}
+        {responsiveStyles.showDetails && (
+          <Box flexDirection="row" justifyContent="space-between" paddingX={responsiveStyles.padding}>
             <Box flexDirection="row">
-              {statusLineConfig.mode && (
-                <StyledText type="warning">
-                  {statusLineConfig.mode}
-                </StyledText>
-              )}
-              {statusLineConfig.context && (
+              <StyledText type="secondary">
+                Tokens: 
+              </StyledText>
+              <StyledText type="info">
+                {formatTokenUsage()}
+              </StyledText>
+              {rateLimit && responsiveStyles.showMetadata && (
                 <>
-                  <StyledText type="secondary"> | </StyledText>
                   <StyledText type="secondary">
-                    {statusLineConfig.context}
+                    {' | Rate: '}
+                  </StyledText>
+                  <StyledText type="info">
+                    {formatRateLimit()}
                   </StyledText>
                 </>
               )}
             </Box>
-          )}
-        </Box>
 
-        {/* Keyboard shortcuts (optional) */}
-        {showKeyboardShortcuts && (
-          <Box paddingX={1}>
+            {/* Status line integration */}
+            {statusLineConfig && responsiveStyles.showMetadata && (
+              <Box flexDirection="row">
+                {statusLineConfig.mode && (
+                  <StyledText type="warning">
+                    {statusLineConfig.mode}
+                  </StyledText>
+                )}
+                {statusLineConfig.context && (
+                  <>
+                    <StyledText type="secondary"> | </StyledText>
+                    <StyledText type="secondary">
+                      {statusLineConfig.context}
+                    </StyledText>
+                  </>
+                )}
+              </Box>
+            )}
+          </Box>
+        )}
+
+        {/* Keyboard shortcuts (optional) - hide in compact mode */}
+        {showKeyboardShortcuts && responsiveStyles.showDetails && (
+          <Box paddingX={responsiveStyles.padding}>
             <StyledText type="secondary">
               Ctrl+C exit | Esc cancel | /help commands
             </StyledText>
@@ -229,7 +265,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Bottom border */}
         <Box width="100%">
           <Text color="gray">
-            {'─'.repeat(process.stdout.columns || 80)}
+            {'─'.repeat(terminalSize.columns)}
           </Text>
         </Box>
       </Box>

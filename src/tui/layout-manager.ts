@@ -42,11 +42,11 @@ export interface LayoutConfig {
 }
 
 export class LayoutManager {
-  private panels: Map<string, PanelInfo> = new Map();
-  private layoutMode: LayoutMode = 'multi';
+  protected panels: Map<string, PanelInfo> = new Map();
+  protected layoutMode: LayoutMode = 'multi';
   private focusedPanelId: string | null = null;
-  private eventEmitter: EventEmitter;
-  private terminalSize = { columns: 120, rows: 40 };
+  protected eventEmitter: EventEmitter;
+  protected terminalSize = { columns: 120, rows: 40 };
   private destroyed = false;
   private previousWidths: Map<string, number> = new Map();
   private savedLayoutWidths: Map<string, number> = new Map();
@@ -496,9 +496,9 @@ export class LayoutManager {
   }
   
   /**
-   * Private: Get visible panels
+   * Protected: Get visible panels (accessible to subclasses)
    */
-  private getVisiblePanels(): PanelInfo[] {
+  protected getVisiblePanels(): PanelInfo[] {
     return Array.from(this.panels.values()).filter(p => p.state.visible && !p.state.collapsed);
   }
   
