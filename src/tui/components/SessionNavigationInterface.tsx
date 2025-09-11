@@ -154,7 +154,7 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
   const renderSessionTab = () => {
     return (
       <Box flexDirection="column" flexGrow={1}>
-        <StyledText type="primary" bold marginBottom={1}>
+        <StyledText type="primary" bold>
           Current Session
         </StyledText>
         
@@ -173,7 +173,7 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
             />
             
             <Box marginTop={2} flexDirection="column">
-              <StyledText type="secondary" marginBottom={1}>
+              <StyledText type="secondary">
                 Session Details:
               </StyledText>
               
@@ -206,7 +206,7 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
             <StyledText type="secondary">
               No active session
             </StyledText>
-            <StyledText type="info" marginTop={1}>
+            <StyledText type="info">
               Press N to create a new session
             </StyledText>
           </Box>
@@ -239,12 +239,12 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
   const renderExportTab = () => {
     return (
       <Box flexDirection="column" flexGrow={1}>
-        <StyledText type="primary" bold marginBottom={1}>
+        <StyledText type="primary" bold>
           Export/Import Data
         </StyledText>
         
         <Box flexDirection="column" marginBottom={2}>
-          <StyledText type="secondary" marginBottom={1}>
+          <StyledText type="secondary">
             Export Format:
           </StyledText>
           
@@ -256,7 +256,7 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
         </Box>
         
         <Box flexDirection="column">
-          <StyledText type="secondary" marginBottom={1}>
+          <StyledText type="secondary">
             Available Actions:
           </StyledText>
           
