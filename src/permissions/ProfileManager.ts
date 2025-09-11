@@ -15,7 +15,7 @@ import {
   PermissionAction,
   ProfileError,
   ProfileManagerEvents
-} from './types';
+} from './types.js';
 
 export class ProfileManager extends EventEmitter implements IProfileManager {
   private profiles: Profile[] = [];

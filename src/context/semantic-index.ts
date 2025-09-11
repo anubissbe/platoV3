@@ -12,7 +12,7 @@ import {
   ImportGraph,
   SemanticIndexData,
   FileAnalyzerOptions
-} from './types';
+} from './types.js';
 
 /**
  * Symbol extraction from source code

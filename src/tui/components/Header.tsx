@@ -1,0 +1,251 @@
+import React from 'react';
+import { Box, Text } from 'ink';
+import { StyledBox, StyledText } from '../../styles/components.js';
+import { getStyleManager } from '../../styles/manager.js';
+
+export interface HeaderProps {
+  // Model information
+  model?: string;
+  provider?: string;
+  providerStatus?: 'connected' | 'connecting' | 'disconnected' | 'error';
+  
+  // Token usage and rate limiting
+  tokens?: number;
+  maxTokens?: number;
+  rateLimit?: {
+    requests: number;
+    maxRequests: number;
+    resetTime: Date;
+  };
+  
+  // Connection status
+  connectionStatus?: 'connected' | 'connecting' | 'disconnected' | 'error';
+  latency?: number;
+  error?: string;
+  
+  // Status line integration
+  statusLineConfig?: {
+    mode?: string;
+    context?: string;
+    session?: string;
+  };
+  showKeyboardShortcuts?: boolean;
+  
+  // Session information
+  sessionInfo?: {
+    startTime: Date;
+    messageCount: number;
+  };
+}
+
+/**
+ * Header component providing Claude Code visual parity
+ * Displays model info, token usage, connection status, and session details
+ */
+export const Header: React.FC<HeaderProps> = ({
+  model = 'unknown',
+  provider = 'copilot',
+  providerStatus = 'disconnected',
+  tokens,
+  maxTokens,
+  rateLimit,
+  connectionStatus = 'disconnected',
+  latency,
+  error,
+  statusLineConfig,
+  showKeyboardShortcuts = false,
+  sessionInfo
+}) => {
+  const manager = getStyleManager();
+  const style = manager.getStyle();
+
+  // Format model and provider display
+  const formatModelInfo = () => {
+    const statusIcon = getProviderStatusIcon(providerStatus);
+    return `${provider} ${statusIcon} ${model}`;
+  };
+
+  // Format token usage display
+  const formatTokenUsage = () => {
+    if (!tokens) return '--';
+    if (maxTokens) {
+      const percentage = Math.round((tokens / maxTokens) * 100);
+      return `${tokens}/${maxTokens} (${percentage}%)`;
+    }
+    return `${tokens} tokens`;
+  };
+
+  // Format connection status display
+  const formatConnectionStatus = () => {
+    const statusIcon = getConnectionStatusIcon(connectionStatus);
+    let display = `${statusIcon} ${connectionStatus}`;
+    
+    if (connectionStatus === 'connected' && latency) {
+      const latencyColor = latency > 1000 ? 'warning' : 'success';
+      display += ` ${latency}ms`;
+    }
+    
+    if (connectionStatus === 'error' && error) {
+      display += ` (${error})`;
+    }
+    
+    return display;
+  };
+
+  // Format session information
+  const formatSessionInfo = () => {
+    if (!sessionInfo) return '';
+    
+    const duration = getDurationString(sessionInfo.startTime);
+    return `${sessionInfo.messageCount} msgs | ${duration}`;
+  };
+
+  // Format rate limiting info
+  const formatRateLimit = () => {
+    if (!rateLimit) return '';
+    
+    const remaining = rateLimit.maxRequests - rateLimit.requests;
+    return `${remaining}/${rateLimit.maxRequests} requests`;
+  };
+
+  return (
+    <StyledBox noBorder>
+      <Box flexDirection="column" width="100%">
+        {/* Main header line */}
+        <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
+          {/* Left side: Brand and model info */}
+          <Box flexDirection="row" alignItems="center">
+            <StyledText type="primary" bold>
+              plato
+            </StyledText>
+            <StyledText type="secondary">
+              {' | '}
+            </StyledText>
+            <StyledText type="info">
+              {formatModelInfo()}
+            </StyledText>
+          </Box>
+
+          {/* Right side: Connection and session info */}
+          <Box flexDirection="row" alignItems="center">
+            {sessionInfo && (
+              <>
+                <StyledText type="secondary">
+                  {formatSessionInfo()}
+                </StyledText>
+                <StyledText type="secondary">
+                  {' | '}
+                </StyledText>
+              </>
+            )}
+            <StyledText type={getConnectionStatusType(connectionStatus)}>
+              {formatConnectionStatus()}
+            </StyledText>
+          </Box>
+        </Box>
+
+        {/* Second line: Token usage and rate limiting */}
+        <Box flexDirection="row" justifyContent="space-between" paddingX={1}>
+          <Box flexDirection="row">
+            <StyledText type="secondary">
+              Tokens: 
+            </StyledText>
+            <StyledText type="info">
+              {formatTokenUsage()}
+            </StyledText>
+            {rateLimit && (
+              <>
+                <StyledText type="secondary">
+                  {' | Rate: '}
+                </StyledText>
+                <StyledText type="info">
+                  {formatRateLimit()}
+                </StyledText>
+              </>
+            )}
+          </Box>
+
+          {/* Status line integration */}
+          {statusLineConfig && (
+            <Box flexDirection="row">
+              {statusLineConfig.mode && (
+                <StyledText type="warning">
+                  {statusLineConfig.mode}
+                </StyledText>
+              )}
+              {statusLineConfig.context && (
+                <>
+                  <StyledText type="secondary"> | </StyledText>
+                  <StyledText type="secondary">
+                    {statusLineConfig.context}
+                  </StyledText>
+                </>
+              )}
+            </Box>
+          )}
+        </Box>
+
+        {/* Keyboard shortcuts (optional) */}
+        {showKeyboardShortcuts && (
+          <Box paddingX={1}>
+            <StyledText type="secondary">
+              Ctrl+C exit | Esc cancel | /help commands
+            </StyledText>
+          </Box>
+        )}
+
+        {/* Bottom border */}
+        <Box width="100%">
+          <Text color="gray">
+            {'─'.repeat(process.stdout.columns || 80)}
+          </Text>
+        </Box>
+      </Box>
+    </StyledBox>
+  );
+};
+
+// Helper functions
+function getProviderStatusIcon(status: string): string {
+  switch (status) {
+    case 'connected': return '●';
+    case 'connecting': return '◐';
+    case 'disconnected': return '○';
+    case 'error': return '✗';
+    default: return '○';
+  }
+}
+
+function getConnectionStatusIcon(status: string): string {
+  switch (status) {
+    case 'connected': return '✓';
+    case 'connecting': return '…';
+    case 'disconnected': return '○';
+    case 'error': return '✗';
+    default: return '○';
+  }
+}
+
+function getConnectionStatusType(status: string): keyof import('../../styles/types.js').OutputStyleTheme {
+  switch (status) {
+    case 'connected': return 'success';
+    case 'connecting': return 'warning';
+    case 'disconnected': return 'secondary';
+    case 'error': return 'error';
+    default: return 'secondary';
+  }
+}
+
+function getDurationString(startTime: Date): string {
+  const now = new Date();
+  const diff = now.getTime() - startTime.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+  
+  if (minutes > 0) {
+    return `${minutes}m${seconds > 0 ? ` ${seconds}s` : ''}`;
+  }
+  return `${seconds}s`;
+}
+
+export default Header;

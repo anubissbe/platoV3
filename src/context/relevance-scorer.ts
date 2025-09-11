@@ -4,7 +4,7 @@
  */
 
 import { SemanticIndex } from './semantic-index';
-import { RelevanceScore, RelevanceReason, FileIndex } from './types';
+import { RelevanceScore, RelevanceReason, FileIndex } from './types.js';
 import * as path from 'path';
 
 export interface ScoringContext {

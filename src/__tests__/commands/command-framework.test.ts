@@ -75,7 +75,7 @@ describe('Command Test Framework', () => {
         '/compact', '/export', '/mcp', '/login', '/logout', '/hooks',
         '/security-review', '/todos', '/vim', '/proxy', '/upgrade', '/resume',
         '/privacy-settings', '/release-notes', '/keydebug', '/apply-mode',
-        '/ide', '/install-github-app', '/terminal-setup', '/bug'
+        '/ide', '/install-gitlab-app', '/terminal-setup', '/bug', '/analytics'
       ];
 
       // Verify count matches expected

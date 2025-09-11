@@ -145,7 +145,7 @@ export class AnalyticsExportService extends EventEmitter {
     let filteredMetrics = metrics;
     if (options.dateRange) {
       filteredMetrics = metrics.filter(m => {
-        const metricDate = m.timestamp instanceof Date ? m.timestamp : new Date(m.timestamp);
+        const metricDate = typeof m.timestamp === 'number' ? new Date(m.timestamp) : m.timestamp;
         return metricDate >= options.dateRange!.start && metricDate <= options.dateRange!.end;
       });
     }
@@ -222,7 +222,7 @@ export class AnalyticsExportService extends EventEmitter {
     
     for (const metric of metrics) {
       const row = [
-        metric.timestamp instanceof Date ? metric.timestamp.toISOString() : new Date(metric.timestamp).toISOString(),
+        typeof metric.timestamp === 'number' ? new Date(metric.timestamp).toISOString() : (metric.timestamp as Date).toISOString(),
         escapeCSV(metric.provider),
         escapeCSV(metric.model),
         metric.inputTokens.toString(),

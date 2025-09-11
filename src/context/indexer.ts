@@ -6,7 +6,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import ignore from 'ignore';
 import { FileAnalyzer, SemanticIndex } from './semantic-index';
-import { IndexingOptions, FileIndex } from './types';
+import { IndexingOptions, FileIndex } from './types.js';
 
 // Keep the original buildIndex function for compatibility
 export async function buildIndex(opts: { roots: string[] }) {

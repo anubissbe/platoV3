@@ -228,8 +228,14 @@ export class DeleteTool extends EventEmitter implements NativeTool {
             itemsAffected = await this.countItems(targetPath);
           }
           
-          // Use rmdir with recursive option for directories
-          await fs.rmdir(targetPath, { recursive: args.recursive || false });
+          // Use rm with recursive option for directories (with fallback for compatibility)
+          if (typeof (fs as any).rm === 'function') {
+            await (fs as any).rm(targetPath, { recursive: args.recursive || false });
+          } else {
+            // Fallback to rmdir for older Node.js versions or Jest compatibility
+            // @ts-ignore - rmdir may be deprecated but still available
+            await fs.rmdir(targetPath, { recursive: args.recursive || false });
+          }
           deleted = true;
         } else {
           itemsAffected = 1;
@@ -319,8 +325,8 @@ export class DeleteTool extends EventEmitter implements NativeTool {
       for (const entry of entries) {
         const entryPath = path.join(dirPath, entry);
         try {
-          const stat = await fs.stat(entryPath);
-          if (stat.isDirectory()) {
+          const statResult = await fs.stat(entryPath);
+          if (statResult.isDirectory()) {
             count += await this.countItems(entryPath);
           }
         } catch {

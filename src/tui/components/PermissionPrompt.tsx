@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { PermissionQuery, PermissionAction, Rule, Profile } from '../../permissions/types';
+import { PermissionQuery, PermissionAction, Rule, Profile } from '../../permissions/types.js';
 
 export interface PermissionPromptProps {
   query: PermissionQuery;

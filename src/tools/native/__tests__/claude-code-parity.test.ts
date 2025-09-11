@@ -235,7 +235,7 @@ describe('Claude Code Parity Tests', () => {
 
   afterEach(async () => {
     try {
-      await fs.rm(tempDir, { recursive: true, force: true });
+      await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true, force: true });
     } catch (error) {
       // Ignore cleanup errors
     }

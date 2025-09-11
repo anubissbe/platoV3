@@ -110,8 +110,8 @@ export class AnalyticsCommand {
           }
           break;
         case '--provider':
-          if (nextArg) {
-            options.provider = nextArg;
+          if (nextArg && ['copilot', 'openai', 'claude'].includes(nextArg)) {
+            options.provider = nextArg as 'copilot' | 'openai' | 'claude';
             i++;
           }
           break;
@@ -269,7 +269,7 @@ export class AnalyticsCommand {
       '💰 Cost Overview:',
       `  Total Cost: $${this.formatCostValue(summary.totalCost)}`,
       `  Sessions: ${summary.sessionCount}`,
-      `  Avg per Session: $${this.formatCostValue(summary.averageCostPerSession)}`,
+      `  Avg per Session: $${this.formatCostValue(summary.avgCostPerSession)}`,
       `  Daily Average: $${this.formatCostValue(this.calculateDailyAverage(summary))}`,
       '',
       '🪙 Token Usage:',
@@ -505,8 +505,9 @@ export class AnalyticsCommand {
 
     // Table rows
     for (const metric of displayMetrics) {
-      const time = metric.timestamp.toLocaleTimeString();
-      const date = metric.timestamp.toLocaleDateString();
+      const timestamp = new Date(metric.timestamp);
+      const time = timestamp.toLocaleTimeString();
+      const date = timestamp.toLocaleDateString();
       const model = `${metric.model}`.substring(0, 15);
       const tokens = metric.totalTokens.toString().padStart(8);
       const cost = `$${metric.cost.toFixed(4)}`.padStart(8);

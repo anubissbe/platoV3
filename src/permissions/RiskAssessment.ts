@@ -1,4 +1,4 @@
-import { PermissionQuery, RiskLevel } from './types';
+import { PermissionQuery, RiskLevel } from './types.js';
 import * as path from 'path';
 
 /**

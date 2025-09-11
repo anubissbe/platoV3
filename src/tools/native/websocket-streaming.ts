@@ -319,7 +319,7 @@ export interface WSProtocolMessage {
   data?: any;
   
   // Server to Client messages
-  event?: 'session-created' | 'stream-data' | 'execution-complete' | 'error' | 'pong';
+  event?: 'session-created' | 'stream-data' | 'execution-complete' | 'error' | 'pong' | 'session-closed';
   message?: WebSocketMessage;
 }
 
@@ -338,6 +338,7 @@ export class WebSocketServer {
     // Listen for messages to broadcast to WebSocket clients
     this.streaming.on('message', ({ sessionId, message }) => {
       this.broadcastToSession(sessionId, {
+        type: 'stream-command', // Using existing type from the protocol
         event: 'stream-data',
         message
       });
@@ -345,6 +346,7 @@ export class WebSocketServer {
     
     this.streaming.on('session-created', ({ sessionId }) => {
       this.broadcastToSession(sessionId, {
+        type: 'create-session', // Using existing type from the protocol
         event: 'session-created',
         data: { sessionId }
       });
@@ -352,6 +354,7 @@ export class WebSocketServer {
     
     this.streaming.on('session-closed', (data) => {
       this.broadcastToSession(data.sessionId, {
+        type: 'cancel-session', // Using existing type from the protocol
         event: 'session-closed',
         data
       });
@@ -367,6 +370,7 @@ export class WebSocketServer {
         case 'create-session':
           const sessionId = this.streaming.createSession(this.bashTool);
           this.sendToClient(clientId, {
+            type: 'create-session',
             event: 'session-created',
             data: { sessionId }
           });
@@ -387,7 +391,10 @@ export class WebSocketServer {
           break;
           
         case 'ping':
-          this.sendToClient(clientId, { event: 'pong' });
+          this.sendToClient(clientId, { 
+            type: 'ping',
+            event: 'pong' 
+          });
           break;
           
         default:
@@ -395,6 +402,7 @@ export class WebSocketServer {
       }
     } catch (error) {
       this.sendToClient(clientId, {
+        type: 'stream-command', // Using existing type from the protocol
         event: 'error',
         data: {
           error: (error as Error).message,

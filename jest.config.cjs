@@ -5,9 +5,12 @@ module.exports = {
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^ink$': '<rootDir>/src/__tests__/__mocks__/ink.ts',
+    '^react$': '<rootDir>/node_modules/react/index.js',
+    '^react-dom$': '<rootDir>/node_modules/react-dom/index.js',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(ink-testing-library)/)',
+    'node_modules/(?!(ink|ink-testing-library|@ink-ui|react|react-dom)/)',
   ],
   transform: {
     '^.+\\.tsx?$': [

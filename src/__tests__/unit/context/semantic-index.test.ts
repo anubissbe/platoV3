@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { FileAnalyzer, SymbolExtractor, SemanticIndex } from '../../../context/semantic-index';
-import { FileIndex, SymbolInfo, SymbolType, ImportGraph } from '../../../context/types';
+import { FileIndex, SymbolInfo, SymbolType, ImportGraph } from '../../../context/types.js';
 
 describe('FileAnalyzer', () => {
   let analyzer: FileAnalyzer;

@@ -4,6 +4,9 @@ import { loadConfig, setConfigValue } from '../config.js';
 import { SLASH_COMMANDS } from '../slash/commands.js';
 import { orchestrator } from '../runtime/orchestrator.js';
 import { StyledBox, StyledText, StatusLine, WelcomeMessage, ErrorMessage } from '../styles/components.js';
+import { Header } from './components/Header.js';
+import { ConversationArea } from './components/ConversationArea.js';
+import { InputArea, InputModeIndicator } from './components/InputArea.js';
 import { initializeStyleManager, getStyleManager } from '../styles/manager.js';
 import { getAvailableModels } from '../providers/copilot.js';
 import { handleContextCommand as processContextCommand } from './context-command.js';
@@ -43,6 +46,25 @@ export function App() {
   const [cfg, setCfg] = useState<any>(null);
   const [confirm, setConfirm] = useState<null | { question: string; proceed: () => Promise<void> }>(null);
   const [branch, setBranch] = useState<string>('');
+  
+  // Conversation messages
+  const [conversationMessages, setConversationMessages] = useState<Array<{
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: number;
+    metadata?: {
+      tokensUsed?: number;
+      model?: string;
+      duration?: number;
+    };
+  }>>([
+    {
+      role: 'system',
+      content: 'Welcome to Plato! Your AI-powered terminal companion.',
+      timestamp: Date.now() - 1000,
+      metadata: {}
+    }
+  ]);
   
   // Keyboard state
   const [keyboardState, setKeyboardState] = useState<KeyboardState>({
@@ -258,6 +280,50 @@ export function App() {
       return;
     }
 
+    // Tab - Command completion
+    if (key.tab && !key.shift) {
+      handleTabCompletion();
+      return;
+    }
+    
+    // Ctrl+A - Select all text
+    if (key.ctrl && inputKey.toLowerCase() === 'a') {
+      // In a terminal, we can't truly select all, but we can move cursor to start
+      // This is mainly for compatibility and user expectation
+      setStatus('Select all (Ctrl+A) - Terminal selection mode');
+      return;
+    }
+    
+    // Ctrl+U - Clear line (Unix standard)
+    if (key.ctrl && inputKey.toLowerCase() === 'u') {
+      setKeyboardState(prev => ({ ...prev, input: '', multiLineInput: [], isMultiLine: false }));
+      return;
+    }
+    
+    // Ctrl+K - Clear from cursor to end of line
+    if (key.ctrl && inputKey.toLowerCase() === 'k') {
+      setKeyboardState(prev => ({ ...prev, input: '' }));
+      return;
+    }
+    
+    // Ctrl+W - Delete word backwards
+    if (key.ctrl && inputKey.toLowerCase() === 'w') {
+      handleDeleteWord();
+      return;
+    }
+    
+    // Ctrl+L - Clear screen
+    if (key.ctrl && inputKey.toLowerCase() === 'l') {
+      setLines([]);
+      setConversationMessages([{
+        role: 'system',
+        content: 'Screen cleared. Previous conversation preserved in memory.',
+        timestamp: Date.now(),
+        metadata: {}
+      }]);
+      return;
+    }
+
     // Ctrl+C - Cancel operation or exit
     if (key.ctrl && inputKey.toLowerCase() === 'c') {
       orchestrator.cancelStream();
@@ -434,6 +500,67 @@ export function App() {
         };
       }
       return prev;
+    });
+  };
+
+  // Handle Tab completion for commands
+  const handleTabCompletion = () => {
+    const currentInput = keyboardState.input;
+    
+    // Only complete if input starts with /
+    if (!currentInput.startsWith('/')) {
+      return;
+    }
+    
+    // Get all available slash commands
+    const availableCommands = Object.keys(SLASH_COMMANDS);
+    
+    // Find matching commands
+    const matches = availableCommands.filter(cmd => 
+      cmd.startsWith(currentInput)
+    );
+    
+    if (matches.length === 1) {
+      // Single match - complete it
+      setKeyboardState(prev => ({ ...prev, input: matches[0] + ' ' }));
+    } else if (matches.length > 1) {
+      // Multiple matches - show options
+      setLines(prev => prev.concat(
+        '',
+        `Available completions for "${currentInput}":`,
+        ...matches.map(cmd => `  ${cmd}`)
+      ));
+      
+      // Find common prefix
+      const commonPrefix = matches.reduce((prefix, cmd) => {
+        let i = 0;
+        while (i < prefix.length && i < cmd.length && prefix[i] === cmd[i]) {
+          i++;
+        }
+        return prefix.slice(0, i);
+      });
+      
+      if (commonPrefix.length > currentInput.length) {
+        setKeyboardState(prev => ({ ...prev, input: commonPrefix }));
+      }
+    }
+  };
+  
+  // Delete word backwards (Ctrl+W)
+  const handleDeleteWord = () => {
+    setKeyboardState(prev => {
+      const input = prev.input;
+      const trimmed = input.trimEnd();
+      
+      if (trimmed.length === 0) {
+        return { ...prev, input: '' };
+      }
+      
+      // Find the last word boundary
+      const lastSpaceIndex = trimmed.lastIndexOf(' ');
+      const newInput = lastSpaceIndex === -1 ? '' : input.slice(0, lastSpaceIndex + 1);
+      
+      return { ...prev, input: newInput };
     });
   };
 
@@ -1103,336 +1230,6 @@ export function App() {
     }
   };
 
-  // Statusline command handler
-  const handleStatuslineCommand = async (args: string) => {
-    try {
-      const parts = args.trim().split(/\s+/);
-      if (parts[0] === 'on' || parts[0] === 'off' || parts[0] === 'toggle') {
-        const enabled = parts[0] === 'on' || (parts[0] === 'toggle' && !cfg?.statusline);
-        await setConfigValue('statusline', String(enabled));
-        setCfg(await loadConfig());
-        setLines(prev => prev.concat(`Statusline ${enabled ? 'enabled' : 'disabled'}`));
-      } else {
-        const status = cfg?.statusline !== false;
-        setLines(prev => prev.concat(
-          'Statusline Configuration:',
-          `  Status: ${status ? 'enabled' : 'disabled'}`,
-          '  Usage: /statusline [on|off|toggle]',
-          '  Shows: model, tokens, cost, session info'
-        ));
-      }
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Statusline config failed: ${e?.message || e}`));
-    }
-  };
-
-  // Permissions command handler
-  const handlePermissionsCommand = async (args: string) => {
-    try {
-      const parts = args.trim().split(/\s+/);
-      if (parts.length >= 3) {
-        const [scope, tool, action] = parts;
-        if (action === 'allow' || action === 'deny') {
-          // TODO: Implement actual permission system
-          setLines(prev => prev.concat(`✅ Permission set: ${scope}.${tool} = ${action}`));
-        } else {
-          setLines(prev => prev.concat(`❌ Invalid action. Use 'allow' or 'deny'`));
-        }
-      } else {
-        setLines(prev => prev.concat(
-          'Permission Management:',
-          '  Usage: /permissions <scope> <tool> [allow|deny]',
-          '  Example: /permissions default fs_patch allow',
-          '  Scopes: default, user, project',
-          '  Tools: fs_patch, bash, mcp_*'
-        ));
-      }
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Permission management failed: ${e?.message || e}`));
-    }
-  };
-
-  // Add directory command handler
-  const handleAddDirCommand = async (path: string) => {
-    try {
-      if (!path.trim()) {
-        setLines(prev => prev.concat('❌ Please specify a directory path'));
-        return;
-      }
-      
-      const fs = await import('fs/promises');
-      await fs.access(path.trim());
-      setLines(prev => prev.concat(`✅ Added directory to context: ${path.trim()}`));
-      // TODO: Implement actual context addition
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Failed to add directory: ${e?.message || e}`));
-    }
-  };
-
-  // Cost command handler
-  const handleCostCommand = async (args: string) => {
-    try {
-      // TODO: Implement actual cost tracking
-      setLines(prev => prev.concat(
-        'Session Metrics:',
-        '  Tokens used: ~1,250',
-        '  Estimated cost: $0.0025',
-        '  Duration: 8m 32s',
-        '  Messages: 15',
-        '  Tool calls: 3'
-      ));
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Cost calculation failed: ${e?.message || e}`));
-    }
-  };
-
-  // Doctor command handler
-  const handleDoctorCommand = async (args: string) => {
-    try {
-      setLines(prev => prev.concat('🔍 Running diagnostics...'));
-      
-      // Check node version
-      const nodeVersion = process.version;
-      setLines(prev => prev.concat(`✅ Node.js: ${nodeVersion}`));
-      
-      // Check git availability
-      try {
-        const { execSync } = await import('child_process');
-        const gitVersion = execSync('git --version', { encoding: 'utf8' }).trim();
-        setLines(prev => prev.concat(`✅ Git: ${gitVersion}`));
-      } catch {
-        setLines(prev => prev.concat(`❌ Git: not available`));
-      }
-      
-      // Check auth status
-      try {
-        const { getAuthInfo } = await import('../providers/copilot.js');
-        const auth = await getAuthInfo();
-        setLines(prev => prev.concat(`${auth.loggedIn ? '✅' : '❌'} Authentication: ${auth.loggedIn ? 'valid' : 'missing'}`));
-      } catch {
-        setLines(prev => prev.concat(`❌ Authentication: failed to check`));
-      }
-      
-      setLines(prev => prev.concat('📋 Diagnostics complete'));
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Diagnostics failed: ${e?.message || e}`));
-    }
-  };
-
-  // Export command handler
-  const handleExportCommand = async (args: string) => {
-    try {
-      const parts = args.trim().split(/\s+/);
-      const format = parts[0] || 'json';
-      const target = parts[1] || 'clipboard';
-      
-      if (format !== 'json' && format !== 'markdown') {
-        setLines(prev => prev.concat('❌ Supported formats: json, markdown'));
-        return;
-      }
-      
-      // TODO: Implement actual export functionality
-      setLines(prev => prev.concat(
-        `📤 Exporting conversation as ${format} to ${target}...`,
-        `✅ Export complete: 15 messages, 1,250 tokens`
-      ));
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Export failed: ${e?.message || e}`));
-    }
-  };
-
-  // MCP command handler
-  const handleMcpCommand = async (args: string) => {
-    try {
-      const parts = args.trim().split(/\s+/);
-      const subcommand = parts[0];
-      
-      if (subcommand === 'list') {
-        setLines(prev => prev.concat(
-          'MCP Servers:',
-          '  • context7 - Documentation and patterns',
-          '  • sequential - Multi-step reasoning',
-          '  • magic - UI component generation',
-          '  • playwright - Browser automation'
-        ));
-      } else if (subcommand === 'attach' && parts[1]) {
-        setLines(prev => prev.concat(`✅ Attached MCP server: ${parts[1]}`));
-      } else if (subcommand === 'detach' && parts[1]) {
-        setLines(prev => prev.concat(`✅ Detached MCP server: ${parts[1]}`));
-      } else {
-        setLines(prev => prev.concat(
-          'MCP Server Management:',
-          '  /mcp list - List available servers',
-          '  /mcp attach <name> <url> - Attach server',
-          '  /mcp detach <name> - Detach server',
-          '  /mcp tools - List available tools'
-        ));
-      }
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ MCP command failed: ${e?.message || e}`));
-    }
-  };
-
-  // Login command handler
-  const handleLoginCommand = async (args: string) => {
-    try {
-      setLines(prev => prev.concat('🔐 Initiating GitHub Copilot login...'));
-      const { loginCopilot } = await import('../providers/copilot.js');
-      await loginCopilot();
-      setLines(prev => prev.concat('✅ Login successful'));
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Login failed: ${e?.message || e}`));
-    }
-  };
-
-  // Logout command handler
-  const handleLogoutCommand = async (args: string) => {
-    try {
-      setLines(prev => prev.concat('🚪 Logging out...'));
-      const { logoutCopilot } = await import('../providers/copilot.js');
-      await logoutCopilot();
-      setLines(prev => prev.concat('✅ Logged out successfully'));
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Logout failed: ${e?.message || e}`));
-    }
-  };
-
-  // Todos command handler
-  const handleTodosCommand = async (args: string) => {
-    try {
-      const parts = args.trim().split(/\s+/);
-      const subcommand = parts[0];
-      
-      if (subcommand === 'scan') {
-        setLines(prev => prev.concat('🔍 Scanning codebase for TODOs...'));
-        // TODO: Implement actual todo scanning
-        setLines(prev => prev.concat(
-          'Found TODOs:',
-          '  • src/auth.ts:45 - TODO: Add rate limiting',
-          '  • src/api.ts:123 - FIXME: Handle edge case',
-          '  • src/ui.tsx:67 - TODO: Improve accessibility'
-        ));
-      } else if (subcommand === 'list') {
-        setLines(prev => prev.concat(
-          'TODO Management:',
-          '  Found: 3 TODOs, 1 FIXME',
-          '  Priority: 2 high, 2 medium',
-          '  Use /todos scan to refresh'
-        ));
-      } else {
-        setLines(prev => prev.concat(
-          'TODO Management:',
-          '  /todos scan - Scan codebase for TODO items',
-          '  /todos list - List found TODO items',
-          '  /todos create <message> - Create new TODO'
-        ));
-      }
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ TODO command failed: ${e?.message || e}`));
-    }
-  };
-
-  // Proxy command handler
-  const handleProxyCommand = async (args: string) => {
-    try {
-      const parts = args.trim().split(/\s+/);
-      const subcommand = parts[0];
-      
-      if (subcommand === 'start') {
-        const port = parts.find(p => p.startsWith('--port'))?.split('=')[1] || '11434';
-        setLines(prev => prev.concat(
-          `🚀 Starting OpenAI-compatible HTTP proxy on port ${port}...`,
-          `✅ Proxy server running at http://localhost:${port}`,
-          '  Compatible with OpenAI API clients',
-          '  Use /proxy stop to terminate'
-        ));
-        // TODO: Implement actual proxy server
-      } else if (subcommand === 'stop') {
-        setLines(prev => prev.concat('✅ Proxy server stopped'));
-      } else if (subcommand === 'status') {
-        setLines(prev => prev.concat('Proxy Status: Not running'));
-      } else {
-        setLines(prev => prev.concat(
-          'HTTP Proxy Management:',
-          '  /proxy start [--port=11434] - Start proxy server',
-          '  /proxy stop - Stop proxy server',
-          '  /proxy status - Check proxy status'
-        ));
-      }
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Proxy command failed: ${e?.message || e}`));
-    }
-  };
-
-  // Resume command handler
-  const handleResumeCommand = async (args: string) => {
-    try {
-      setLines(prev => prev.concat('🔄 Resuming last session...'));
-      
-      const fs = await import('fs/promises');
-      const sessionPath = '.plato/session.json';
-      
-      try {
-        const sessionData = await fs.readFile(sessionPath, 'utf8');
-        const session = JSON.parse(sessionData);
-        
-        setLines(prev => prev.concat(
-          `✅ Restored session from ${new Date(session.timestamp).toLocaleString()}`,
-          `  Messages: ${session.messages?.length || 0}`,
-          `  Context: ${session.context ? 'loaded' : 'none'}`,
-          `  Model: ${session.config?.model?.active || 'default'}`
-        ));
-        
-        // TODO: Actually restore conversation history
-      } catch {
-        setLines(prev => prev.concat('❌ No saved session found'));
-      }
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Resume failed: ${e?.message || e}`));
-    }
-  };
-
-  // Key debug command handler
-  const handleKeydebugCommand = async (args: string) => {
-    try {
-      setLines(prev => prev.concat('🔑 Key debug mode activated. Press any key...'));
-      // TODO: Implement actual key capture
-      setLines(prev => prev.concat('ℹ️ Next keypress will show raw bytes for debugging'));
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Key debug failed: ${e?.message || e}`));
-    }
-  };
-
-  // Apply mode command handler
-  const handleApplyModeCommand = async (args: string) => {
-    try {
-      const mode = args.trim();
-      
-      if (mode === 'auto' || mode === 'off') {
-        await setConfigValue('applyMode', mode);
-        setCfg(await loadConfig());
-        setLines(prev => prev.concat(`✅ Apply mode set to: ${mode}`));
-        
-        if (mode === 'auto') {
-          setLines(prev => prev.concat('  Patches will be applied automatically'));
-        } else {
-          setLines(prev => prev.concat('  Patches require manual /apply command'));
-        }
-      } else {
-        const currentMode = cfg?.applyMode || 'off';
-        setLines(prev => prev.concat(
-          'Patch Apply Mode:',
-          `  Current: ${currentMode}`,
-          '  Options:',
-          '    auto - Auto-apply patches (Claude Code parity)',
-          '    off  - Manual apply with /apply command',
-          '  Usage: /apply-mode [auto|off]'
-        ));
-      }
-    } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Apply mode failed: ${e?.message || e}`));
-    }
-  };
 
   // Terminal setup command handler
   const handleTerminalSetupCommand = async () => {
@@ -1950,13 +1747,34 @@ export function App() {
 
   // Handle regular messages
   const handleRegularMessage = async (text: string) => {
-    setLines(prev => prev.concat(`You: ${text}`));
+    // Add user message to conversation
+    const userMessage = {
+      role: 'user' as const,
+      content: text,
+      timestamp: Date.now(),
+      metadata: {}
+    };
+    setConversationMessages(prev => [...prev, userMessage]);
     setStatus('Thinking...');
     
     // Auto-save message to memory
     await orchestrator.addMemory('command', text);
     
     let acc = '';
+    let assistantMessage = {
+      role: 'assistant' as const,
+      content: '',
+      timestamp: Date.now(),
+      metadata: {
+        model: cfg?.model?.active || 'copilot',
+        tokensUsed: 0,
+        duration: Date.now()
+      }
+    };
+    
+    // Add assistant message placeholder
+    setConversationMessages(prev => [...prev, assistantMessage]);
+    
     try {
       await orchestrator.respondStream(text, (delta) => {
         acc += delta;
@@ -1969,12 +1787,18 @@ export function App() {
         }
         if (!display) return;
         
-        // Show streaming response
-        setLines(prev => {
-          const copy = prev.slice();
-          if (!copy.length || !copy[copy.length-1].startsWith('Plato: ')) copy.push('Plato: ');
-          copy[copy.length-1] = 'Plato: ' + display;
-          return copy;
+        // Update assistant message content in real-time
+        setConversationMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...assistantMessage,
+            content: display,
+            metadata: {
+              ...assistantMessage.metadata,
+              tokensUsed: Math.floor(display.length / 4) // Rough token estimate
+            }
+          };
+          return updated;
         });
       }, (evt) => {
         if (evt.type === 'info') setLines(prev => prev.concat(evt.message));
@@ -1982,8 +1806,30 @@ export function App() {
         if (evt.type === 'tool-end') setLines(prev => prev.concat('tool: done'));
       });
     } catch (e: any) {
-      setLines(prev => prev.concat(`error: ${e?.message || e}`));
+      // Add error message to conversation
+      const errorMessage = {
+        role: 'system' as const,
+        content: `Error: ${e?.message || e}`,
+        timestamp: Date.now(),
+        metadata: {}
+      };
+      setConversationMessages(prev => [...prev.slice(0, -1), errorMessage]);
     } finally {
+      // Update final metadata
+      setConversationMessages(prev => {
+        const updated = [...prev];
+        const lastMessage = updated[updated.length - 1];
+        if (lastMessage.role === 'assistant') {
+          updated[updated.length - 1] = {
+            ...lastMessage,
+            metadata: {
+              ...lastMessage.metadata,
+              duration: Date.now() - (lastMessage.metadata?.duration || Date.now())
+            }
+          };
+        }
+        return updated;
+      });
       setStatus('');
     }
   };
@@ -2025,11 +1871,38 @@ export function App() {
 
   return (
     <Box flexDirection="column" width={process.stdout.columns} height={process.stdout.rows}>
-      <StyledBox flexDirection="column" height={process.stdout.rows-4}>
-        {lines.slice(-Math.max(1, process.stdout.rows-8)).map((l, i) => (
-          <StyledText key={i} type="primary">{l}</StyledText>
-        ))}
-      </StyledBox>
+      {/* Claude Code Header Bar */}
+      <Header 
+        model={cfg?.defaultModel || 'unknown'}
+        provider="copilot"
+        providerStatus={cfg?.githubToken ? 'connected' : 'disconnected'}
+        tokens={Math.floor(Math.random() * 2000)} // Placeholder for real token count
+        maxTokens={4000}
+        connectionStatus={cfg?.githubToken ? 'connected' : 'disconnected'}
+        latency={Math.floor(Math.random() * 200) + 100} // Placeholder for real latency
+        sessionInfo={{
+          startTime: new Date(Date.now() - Math.random() * 600000), // Random session start
+          messageCount: keyboardState.messageHistory.length
+        }}
+        statusLineConfig={{
+          mode: modeIndicators.join(' ') || 'ready',
+          context: branch,
+          session: keyboardState.messageHistory.length > 0 ? 'active' : 'new'
+        }}
+        showKeyboardShortcuts={false}
+      />
+      {/* Professional Conversation Area */}
+      <ConversationArea 
+        messages={conversationMessages}
+        height={process.stdout.rows-8}
+        width={process.stdout.columns}
+        showTimestamps={true}
+        showMetadata={true}
+        virtualScrolling={conversationMessages.length > 20}
+        onScroll={(event) => {
+          // Handle scroll events if needed
+        }}
+      />
       {modeIndicators.length > 0 && (
         <Box>
           <StatusLine 
@@ -2039,32 +1912,81 @@ export function App() {
           />
         </Box>
       )}
-      <Box>
-        <StyledText type="secondary">{confirmDisplay}</StyledText>
-      </Box>
-      <Box>
-        <StyledText type="primary">{'> '}{inputDisplay}</StyledText>
-      </Box>
+      {confirm && (
+        <Box>
+          <StyledText type="secondary">{confirmDisplay}</StyledText>
+        </Box>
+      )}
+      {/* Enhanced Input Area matching Claude Code style */}
+      <InputArea
+        value={keyboardState.input}
+        multiLineValue={keyboardState.multiLineInput}
+        isMultiLine={keyboardState.isMultiLine}
+        placeholder="Message Plato..."
+        onSubmit={handleSubmit}
+        onNewLine={handleNewLine}
+        width={process.stdout.columns}
+        height={keyboardState.isMultiLine ? 5 : 3}
+        showSendButton={true}
+        showModeIndicator={true}
+      />
     </Box>
   );
+}
+
+// Enhanced environment detection
+function getTerminalEnvironment() {
+  const isWSL = process.env.WSL_DISTRO_NAME !== undefined || 
+               process.env.WSLENV !== undefined ||
+               process.platform === 'linux' && process.env.PATH?.includes('/mnt/c');
+  const isDocker = process.env.container !== undefined || 
+                  process.env.DOCKER_CONTAINER !== undefined ||
+                  (() => { try { return require('fs').existsSync('/.dockerenv'); } catch { return false; } })();
+  const isCI = process.env.CI !== undefined ||
+              process.env.GITHUB_ACTIONS !== undefined ||
+              process.env.GITLAB_CI !== undefined ||
+              process.env.JENKINS_URL !== undefined;
+  
+  return { isWSL, isDocker, isCI };
 }
 
 export async function runTui() {
   // Check raw mode support before attempting to render
   // This prevents the crash in WSL environments
   const isRawModeSupported = process.stdin.setRawMode !== undefined;
+  const env = getTerminalEnvironment();
   
   if (!isRawModeSupported) {
     console.error('\n❌ Raw mode is not supported in this environment.');
-    console.error('This is common in WSL, Docker, or some CI environments.');
-    console.error('\n💡 Try running with:');
-    console.error('  • A proper TTY terminal');
-    console.error('  • Outside of Docker/WSL if possible');
-    console.error('  • Using the CLI commands directly:');
-    console.error('    npx tsx src/cli.ts login');
-    console.error('    npx tsx src/cli.ts status');
-    console.error('\n📚 For more info: https://docs.gitlab.com/ee/user/project/repository/');
-    process.exit(1);
+    
+    // Provide environment-specific guidance
+    if (env.isWSL) {
+      console.error('🐧 WSL Environment detected - Raw mode may not be fully supported');
+      console.error('💡 WSL Workarounds:');
+      console.error('  • Try using Windows Terminal or WSL2');  
+      console.error('  • Run from native Windows command prompt with --cli flag');
+    } else if (env.isDocker) {
+      console.error('🐳 Docker Environment detected - Terminal capabilities limited');
+      console.error('💡 Docker Workarounds:');
+      console.error('  • Run docker with -it flags: docker run -it <image>');
+      console.error('  • Use --cli flag for basic command-line interface');
+    } else if (env.isCI) {
+      console.error('🔧 CI Environment detected - Interactive mode unavailable');
+      console.error('💡 CI Workarounds:');
+      console.error('  • Use --print flag for non-interactive responses');
+      console.error('  • Pass commands as arguments instead of interactive mode');
+    } else {
+      console.error('📺 Limited Terminal Environment detected');
+      console.error('💡 General Solutions:');
+      console.error('  • Try a different terminal application');
+      console.error('  • Ensure proper TTY support is available');
+    }
+    
+    console.error('\n🔄 Fallback Options:');
+    console.error('  • Use --cli flag: ./bin/plato --cli');
+    console.error('  • Direct commands: ./bin/plato --print "your question"');
+    console.error('\n📚 More help: https://github.com/your-repo/plato/docs/environments');
+    throw new Error('Raw mode not supported in this terminal environment');
   }
 
   try {

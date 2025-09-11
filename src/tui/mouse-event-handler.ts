@@ -4,8 +4,8 @@
  */
 
 import { EventEmitter } from 'events';
-import { MouseCapabilities } from './mouse-capabilities';
-import { MouseConfiguration, MouseConfig } from './mouse-configuration';
+import { MouseCapabilities } from './mouse-capabilities.js';
+import { MouseConfiguration, MouseConfig } from './mouse-configuration.js';
 
 // Mouse event types
 export enum MouseEventType {

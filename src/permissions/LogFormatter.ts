@@ -1,4 +1,4 @@
-import { AuditEntry, LogFormatter, LogFormatOptions } from './types';
+import { AuditEntry, LogFormatter, LogFormatOptions } from './types.js';
 
 /**
  * Comprehensive log formatting system for audit entries

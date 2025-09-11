@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import * as path from 'path';
-import { PermissionQuery, PermissionResult } from './types';
+import { PermissionQuery, PermissionResult } from './types.js';
 
 /**
  * Safety guard system to prevent dangerous operations

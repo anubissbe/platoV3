@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-import { Profile } from '../../permissions/types';
+import { Profile } from '../../permissions/types.js';
 
 export interface ProfileIndicatorProps {
   currentProfile: Profile | null;

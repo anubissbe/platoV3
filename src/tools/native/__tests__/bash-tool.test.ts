@@ -39,7 +39,7 @@ describe('BashTool', () => {
 
   afterEach(async () => {
     if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
+      await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true, force: true });
     }
   });
 

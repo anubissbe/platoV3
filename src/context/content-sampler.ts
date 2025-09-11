@@ -4,7 +4,7 @@
  */
 
 import { SemanticIndex } from './semantic-index';
-import { ContentSample, FileIndex, SymbolInfo, SymbolType } from './types';
+import { ContentSample, FileIndex, SymbolInfo, SymbolType } from './types.js';
 
 export type SamplingStrategy = 
   | 'function'

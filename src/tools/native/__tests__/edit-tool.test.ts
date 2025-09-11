@@ -32,7 +32,13 @@ describe('EditTool', () => {
 
   afterEach(async () => {
     if (tempDir) {
-      await fs.rmdir(tempDir, { recursive: true });
+      if (typeof (fs as any).rm === 'function') {
+        await (fs as any).rm(tempDir, { recursive: true });
+      } else {
+        // Fallback to rmdir for Jest compatibility
+        // @ts-ignore - rmdir may be deprecated but still available
+        await fs.rmdir(tempDir, { recursive: true });
+      }
     }
   });
 
@@ -174,8 +180,8 @@ describe('EditTool', () => {
       
       const result = await editTool.execute({
         path: filePath,
-        pattern: /console\.log\("([^"]+)"\)/,
-        replacement: 'console.warn("$1")',
+        pattern: /console\.log\(([^)]+)\)/,
+        replacement: 'console.warn($1)',
         regex: true
       });
 

@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import fs from 'fs/promises';
 import path from 'path';
-import { AuditEntry, AuditSearchCriteria } from './types';
+import { AuditEntry, AuditSearchCriteria } from './types.js';
 
 /**
  * Advanced indexing system for audit entries

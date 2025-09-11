@@ -12,10 +12,10 @@ import {
   AuditSearchCriteria,
   LogFormatOptions,
   LogFormatter
-} from './types';
-import { createLogFormatter, createAuditContext, createAuditMetadata } from './LogFormatter';
-import { AuditIndexer } from './AuditIndexer';
-import { RetentionPolicy } from './RetentionPolicy';
+} from './types.js';
+import { createLogFormatter, createAuditContext, createAuditMetadata } from './LogFormatter.js';
+import { AuditIndexer } from './AuditIndexer.js';
+import { RetentionPolicy } from './RetentionPolicy.js';
 
 export interface AuditLoggerOptions {
   logDirectory?: string;

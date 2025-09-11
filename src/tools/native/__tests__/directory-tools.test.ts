@@ -20,11 +20,11 @@ describe('Directory Tools', () => {
     if (tempDir) {
       try {
         // Try fs.rm (Node.js 14.14.0+)
-        await fs.rm(tempDir, { recursive: true, force: true });
+        await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true, force: true });
       } catch (error) {
-        // Fallback to fs.rmdir for older versions
+        // Fallback cleanup method
         try {
-          await fs.rmdir(tempDir, { recursive: true });
+          await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true });
         } catch (fallbackError) {
           // Last resort - try rimraf-like manual deletion
           console.warn('Failed to clean up temp directory:', tempDir);

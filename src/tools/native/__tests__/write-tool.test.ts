@@ -20,7 +20,7 @@ describe('WriteTool', () => {
 
   afterEach(async () => {
     if (tempDir) {
-      await fs.rmdir(tempDir, { recursive: true });
+      await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true });
     }
   });
 

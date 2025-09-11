@@ -977,12 +977,15 @@ export class AnalyticsManager {
           sessionId,
           cost,
           tokens,
-          timestamp: sessionMetrics[0].timestamp
+          timestamp: new Date(sessionMetrics[0].timestamp)
         };
       }
     }
 
     return {
+      period: 'week' as const, // Default period
+      startDate: typeof startDate === 'number' ? startDate : (startDate as Date).getTime(),
+      endDate: typeof endDate === 'number' ? endDate : (endDate as Date).getTime(),
       dateRange: {
         start: new Date(startDate),
         end: new Date(endDate)
@@ -990,10 +993,17 @@ export class AnalyticsManager {
       totalCost: Math.round(totalCost * 100) / 100, // Round to cents
       totalTokens,
       sessionCount: uniqueSessions,
-      averageCostPerSession: uniqueSessions > 0 ? Math.round((totalCost / uniqueSessions) * 100) / 100 : 0,
+      avgCostPerSession: uniqueSessions > 0 ? Math.round((totalCost / uniqueSessions) * 100) / 100 : 0,
       costByProvider,
       costByModel,
-      mostExpensiveSession
+      mostExpensiveSession,
+      modelBreakdown: Object.keys(costByModel).reduce((acc, model) => {
+        acc[model] = {
+          cost: costByModel[model],
+          tokens: 0 // TODO: Implement actual token count per model
+        };
+        return acc;
+      }, {} as Record<string, { cost: number; tokens: number }>)
     };
   }
 
@@ -1035,7 +1045,7 @@ export class AnalyticsManager {
     
     for (const metric of metrics) {
       const row = [
-        metric.timestamp instanceof Date ? metric.timestamp.toISOString() : new Date(metric.timestamp).toISOString(),
+        typeof metric.timestamp === 'number' ? new Date(metric.timestamp).toISOString() : (metric.timestamp as Date).toISOString(),
         escapeCSV(metric.provider),
         escapeCSV(metric.model),
         metric.inputTokens.toString(),
@@ -1110,7 +1120,7 @@ export class AnalyticsManager {
       },
       metrics: metrics.map(m => ({
         ...m,
-        timestamp: m.timestamp instanceof Date ? m.timestamp.toISOString() : new Date(m.timestamp).toISOString()
+        timestamp: typeof m.timestamp === 'number' ? new Date(m.timestamp).toISOString() : (m.timestamp as Date).toISOString()
       }))
     };
 

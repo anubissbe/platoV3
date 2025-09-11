@@ -33,7 +33,7 @@ describe('ToolExecutor Interface', () => {
 
   afterAll(async () => {
     try {
-      await fs.rmdir(tempDir, { recursive: true });
+      await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true });
     } catch (error) {
       // Ignore cleanup errors
     }

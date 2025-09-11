@@ -4,7 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { MouseEvent, MouseEventType, MouseButton } from './mouse-event-handler';
+import { MouseEvent, MouseEventType, MouseButton } from './mouse-event-handler.js';
 
 // Scroll configuration interface
 export interface ScrollConfig {

@@ -248,23 +248,36 @@ jest.mock('execa', () => ({
 // Mock terminal-specific functionality that doesn't work in tests
 // We check if the module exists before mocking
 try {
-  jest.mock('ink', () => ({
-    render: jest.fn(),
-    Box: jest.fn(),
-    Text: jest.fn(),
-    useApp: jest.fn(() => ({ exit: jest.fn() })),
-    useInput: jest.fn(),
-    useStdin: jest.fn(() => ({
-      stdin: {
-        ...process.stdin,
+  jest.mock('ink', () => {
+    const React = require('react');
+    return {
+      render: jest.fn().mockImplementation((element) => ({
+        lastFrame: () => 'mocked output',
+        rerender: jest.fn(),
+        waitUntilExit: jest.fn().mockResolvedValue(undefined),
+      })),
+      Box: jest.fn().mockImplementation((props) => React.createElement('div', props)),
+      Text: jest.fn().mockImplementation((props) => React.createElement('span', props)),
+      useApp: jest.fn(() => ({ exit: jest.fn() })),
+      useInput: jest.fn(),
+      useStdin: jest.fn(() => ({
+        stdin: {
+          ...process.stdin,
+          setRawMode: jest.fn(),
+          isRaw: false,
+          write: jest.fn(),
+          on: jest.fn(),
+          off: jest.fn(),
+        },
         setRawMode: jest.fn(),
-        isRaw: false,
-        write: jest.fn(),
-      },
-      setRawMode: jest.fn(),
-      isRawModeSupported: false,
-    })),
-  }));
+        isRawModeSupported: false,
+      })),
+      useEffect: React.useEffect,
+      useState: React.useState,
+      useRef: React.useRef,
+      useMemo: React.useMemo,
+    };
+  });
 } catch {
   // Ink module not used in this test
 }

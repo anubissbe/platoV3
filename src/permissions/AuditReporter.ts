@@ -8,7 +8,7 @@ import {
   AuditAnomaly,
   AuditSearchCriteria,
   PermissionAction 
-} from './types';
+} from './types.js';
 
 /**
  * Comprehensive audit report generation system

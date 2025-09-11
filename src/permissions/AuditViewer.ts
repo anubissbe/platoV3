@@ -1,6 +1,6 @@
 import { AuditLogger } from './AuditLogger';
-import { AuditEntry, AuditSearchCriteria, LogFormatOptions } from './types';
-import { createLogFormatter } from './LogFormatter';
+import { AuditEntry, AuditSearchCriteria, LogFormatOptions } from './types.js';
+import { createLogFormatter } from './LogFormatter.js';
 
 /**
  * Interactive audit log viewer for the `/permissions audit` command

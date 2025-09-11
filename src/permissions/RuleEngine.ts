@@ -6,7 +6,7 @@ import {
   PermissionAction,
   Profile,
   PermissionContext
-} from './types';
+} from './types.js';
 
 export interface RuleEngineOptions {
   enableCache: boolean;

@@ -6,6 +6,25 @@ import pc from "picocolors";
 import { loadConfig } from "./config/index.js";
 import { Session } from "./core/session.js";
 import { CopilotProvider } from "./core/provider/copilot.js";
+import { runTui } from "./tui/app.js";
+
+// Enhanced terminal capability detection
+function isTerminalCapable(): boolean {
+  return process.stdin.isTTY && 
+         process.stdout.isTTY &&
+         process.stdin.setRawMode !== undefined;
+}
+
+function getTerminalEnvironment() {
+  const isWSL = process.env.WSL_DISTRO_NAME !== undefined || 
+               process.env.WSLENV !== undefined ||
+               process.platform === 'linux' && process.env.PATH?.includes('/mnt/c');
+  const isDocker = process.env.container !== undefined || 
+                  process.env.DOCKER_CONTAINER !== undefined;
+  const isCI = process.env.CI !== undefined;
+  
+  return { isWSL, isDocker, isCI };
+}
 
 async function main() {
   const argv = await yargs(hideBin(process.argv))
@@ -15,6 +34,11 @@ async function main() {
       alias: "p",
       type: "boolean",
       describe: "Print response and exit",
+      default: false,
+    })
+    .option("cli", {
+      type: "boolean",
+      describe: "Use basic CLI prompts instead of rich TUI interface",
       default: false,
     })
     .option("model", {
@@ -46,6 +70,36 @@ async function main() {
   );
 
   const promptArg = (argv._[0] as string) || "";
+  
+  // Default to TUI unless --cli flag is used or terminal capabilities are limited
+  if (!argv.cli && !argv.print && !promptArg) {
+    const env = getTerminalEnvironment();
+    
+    if (isTerminalCapable()) {
+      try {
+        await runTui();
+        return;
+      } catch (error) {
+        console.error(pc.yellow("⚠️  TUI failed to launch, falling back to basic CLI"));
+        console.error(pc.dim(`Error: ${error instanceof Error ? error.message : String(error)}`));
+        console.error(pc.dim("Use --cli flag to skip TUI and go directly to basic CLI\n"));
+        // Fall through to basic CLI
+      }
+    } else {
+      // Provide environment-specific guidance when terminal capabilities are limited
+      console.error(pc.yellow("⚠️  TUI unavailable - terminal capabilities limited"));
+      if (env.isWSL) {
+        console.error(pc.dim("🐧 WSL detected: Try Windows Terminal or use --cli flag"));
+      } else if (env.isDocker) {
+        console.error(pc.dim("🐳 Docker detected: Ensure container runs with -it flags or use --cli"));
+      } else if (env.isCI) {
+        console.error(pc.dim("🔧 CI detected: Use --print flag for non-interactive usage"));
+      }
+      console.error(pc.dim("Using basic CLI interface...\n"));
+      // Fall through to basic CLI
+    }
+  }
+
   if (argv.print || promptArg) {
     const prompt = promptArg || (await askOnce());
     session.user(prompt);
