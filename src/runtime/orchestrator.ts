@@ -250,7 +250,6 @@ async function ensureAnalyticsService(): Promise<AnalyticsService> {
 function getAnalyticsServiceInstance(): AnalyticsService {
   if (!analyticsService) {
     // Create with default options synchronously (fallback)
-    const { AnalyticsService } = require('../services/analytics.js');
     analyticsService = new AnalyticsService(undefined, {
       dataDir: '.plato/analytics',
       autoSave: true,

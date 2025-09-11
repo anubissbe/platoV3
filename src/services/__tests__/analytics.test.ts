@@ -462,9 +462,17 @@ describe('AnalyticsManager', () => {
     });
 
     test('should handle file system errors gracefully', async () => {
+      // Create a manager with autoSave enabled and batchSize 1 to force immediate flush
+      const fileManager = new AnalyticsManager({ 
+        dataDir: testDataDir,
+        autoSave: true,
+        batchSize: 1
+      });
+      await fileManager.initialize();
+
       mockFs.writeFile.mockRejectedValueOnce(new Error('Disk full'));
       
-      await expect(manager.recordMetric(mockMetric)).rejects.toThrow('Disk full');
+      await expect(fileManager.recordMetric(mockMetric)).rejects.toThrow('Disk full');
     });
 
     test('should maintain data consistency during concurrent operations', async () => {

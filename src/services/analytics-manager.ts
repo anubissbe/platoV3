@@ -136,27 +136,34 @@ export class AnalyticsManager {
     const startTime = Date.now();
     
     try {
-      // Determine which files to load based on date range
-      const filesToLoad = this.getFilesForDateRange(startDate, endDate);
-      
       let allMetrics: CostMetric[] = [];
-      this.performanceStats.filesAccessed = filesToLoad.length;
 
-      // Load metrics from relevant files
-      for (const fileName of filesToLoad) {
-        const fileMetrics = await this.loadMetricsFromFile(fileName);
-        allMetrics = allMetrics.concat(fileMetrics);
+      if (this.options.autoSave) {
+        // File-based storage: determine which files to load based on date range
+        const filesToLoad = this.getFilesForDateRange(startDate, endDate);
+        this.performanceStats.filesAccessed = filesToLoad.length;
+
+        // Load metrics from relevant files
+        for (const fileName of filesToLoad) {
+          const fileMetrics = await this.loadMetricsFromFile(fileName);
+          allMetrics = allMetrics.concat(fileMetrics);
+        }
+      } else {
+        // In-memory storage: load from dataStore
+        for (const [month, metrics] of this.dataStore) {
+          allMetrics = allMetrics.concat(metrics);
+        }
       }
 
       // Add any pending metrics that fall within the range
       const pendingInRange = this.pendingMetrics.filter(
-        metric => new Date(metric.timestamp).getTime() >= startDate && new Date(metric.timestamp).getTime() <= endDate
+        metric => metric.timestamp >= startDate && metric.timestamp <= endDate
       );
       allMetrics = allMetrics.concat(pendingInRange);
 
       // Filter metrics by date range and apply additional filters
       let filteredMetrics = allMetrics.filter(
-        metric => new Date(metric.timestamp).getTime() >= startDate && new Date(metric.timestamp).getTime() <= endDate
+        metric => metric.timestamp >= startDate && metric.timestamp <= endDate
       );
 
       // Apply additional query options
@@ -466,26 +473,38 @@ export class AnalyticsManager {
   private async flushPendingMetrics(): Promise<void> {
     if (this.pendingMetrics.length === 0) return;
 
-    // Group metrics by month for efficient storage
-    const metricsByMonth = new Map<string, CostMetric[]>();
-    
-    for (const metric of this.pendingMetrics) {
-      const month = new Date(metric.timestamp).toISOString().substring(0, 7);
-      const monthMetrics = metricsByMonth.get(month) || [];
-      monthMetrics.push(metric);
-      metricsByMonth.set(month, monthMetrics);
-    }
+    if (this.options.autoSave) {
+      // File-based storage for persistent data
+      // Group metrics by month for efficient storage
+      const metricsByMonth = new Map<string, CostMetric[]>();
+      
+      for (const metric of this.pendingMetrics) {
+        const month = new Date(metric.timestamp).toISOString().substring(0, 7);
+        const monthMetrics = metricsByMonth.get(month) || [];
+        monthMetrics.push(metric);
+        metricsByMonth.set(month, monthMetrics);
+      }
 
-    // Save each month's metrics
-    for (const [month, metrics] of metricsByMonth) {
-      await this.appendMetricsToFile(month, metrics);
+      // Save each month's metrics
+      for (const [month, metrics] of metricsByMonth) {
+        await this.appendMetricsToFile(month, metrics);
+      }
+
+      // Update index
+      await this.updateIndex();
+    } else {
+      // In-memory storage for testing/non-persistent mode
+      // Group metrics by month for consistency
+      for (const metric of this.pendingMetrics) {
+        const month = new Date(metric.timestamp).toISOString().substring(0, 7);
+        const monthMetrics = this.dataStore.get(month) || [];
+        monthMetrics.push(metric);
+        this.dataStore.set(month, monthMetrics);
+      }
     }
 
     // Clear pending metrics
     this.pendingMetrics = [];
-
-    // Update index
-    await this.updateIndex();
   }
 
   /**
@@ -782,9 +801,16 @@ export class AnalyticsManager {
   }
 
   /**
-   * Load metrics from a specific file
+   * Load metrics from a specific file or memory
    */
   private async loadMetricsFromFile(fileName: string): Promise<CostMetric[]> {
+    // If autoSave is disabled, use in-memory dataStore
+    if (!this.options.autoSave) {
+      const month = fileName.replace('.json', '');
+      return this.dataStore.get(month) || [];
+    }
+
+    // Use file-based storage
     const filePath = path.join(this.options.dataDir, fileName);
     
     try {
@@ -983,7 +1009,7 @@ export class AnalyticsManager {
     }
 
     return {
-      period: 'week' as const, // Default period
+      period, // Use the actual period parameter
       startDate: typeof startDate === 'number' ? startDate : (startDate as Date).getTime(),
       endDate: typeof endDate === 'number' ? endDate : (endDate as Date).getTime(),
       dateRange: {
@@ -1074,57 +1100,13 @@ export class AnalyticsManager {
    * Generate JSON export
    */
   private generateJSONExport(metrics: CostMetric[], startDate: number | Date, endDate: number | Date): string {
-    const totalCost = metrics.reduce((sum, m) => sum + m.cost, 0);
-    const totalTokens = metrics.reduce((sum, m) => sum + (m.totalTokens || m.inputTokens + m.outputTokens), 0);
-    const totalInputTokens = metrics.reduce((sum, m) => sum + m.inputTokens, 0);
-    const totalOutputTokens = metrics.reduce((sum, m) => sum + m.outputTokens, 0);
-    
-    // Group by provider and model
-    const providerStats: Record<string, { cost: number; tokens: number; count: number }> = {};
-    const modelStats: Record<string, { cost: number; tokens: number; count: number }> = {};
-    
-    for (const metric of metrics) {
-      // Provider stats
-      if (!providerStats[metric.provider]) {
-        providerStats[metric.provider] = { cost: 0, tokens: 0, count: 0 };
-      }
-      providerStats[metric.provider].cost += metric.cost;
-      providerStats[metric.provider].tokens += metric.totalTokens || (metric.inputTokens + metric.outputTokens);
-      providerStats[metric.provider].count++;
-      
-      // Model stats
-      if (!modelStats[metric.model]) {
-        modelStats[metric.model] = { cost: 0, tokens: 0, count: 0 };
-      }
-      modelStats[metric.model].cost += metric.cost;
-      modelStats[metric.model].tokens += metric.totalTokens || (metric.inputTokens + metric.outputTokens);
-      modelStats[metric.model].count++;
-    }
-    
-    const exportData = {
-      exportDate: new Date().toISOString(),
-      dateRange: {
-        start: startDate instanceof Date ? startDate.toISOString() : new Date(startDate).toISOString(),
-        end: endDate instanceof Date ? endDate.toISOString() : new Date(endDate).toISOString()
-      },
-      summary: {
-        totalCost: Math.round(totalCost * 1000000) / 1000000, // Round to 6 decimal places
-        totalTokens,
-        totalInputTokens,
-        totalOutputTokens,
-        recordCount: metrics.length,
-        avgCostPerRecord: metrics.length > 0 ? Math.round((totalCost / metrics.length) * 1000000) / 1000000 : 0,
-        avgTokensPerRecord: metrics.length > 0 ? Math.round(totalTokens / metrics.length) : 0,
-        providerBreakdown: providerStats,
-        modelBreakdown: modelStats
-      },
-      metrics: metrics.map(m => ({
-        ...m,
-        timestamp: typeof m.timestamp === 'number' ? new Date(m.timestamp).toISOString() : (m.timestamp as Date).toISOString()
-      }))
-    };
+    // Format metrics with ISO timestamps for export
+    const formattedMetrics = metrics.map(m => ({
+      ...m,
+      timestamp: typeof m.timestamp === 'number' ? new Date(m.timestamp).toISOString() : (m.timestamp as Date).toISOString()
+    }));
 
-    return JSON.stringify(exportData, null, 2);
+    return JSON.stringify(formattedMetrics, null, 2);
   }
 
   /**
