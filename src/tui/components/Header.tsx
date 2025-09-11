@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { StyledBox, StyledText } from '../../styles/components.js';
 import { getStyleManager } from '../../styles/manager.js';
+import { SessionIndicator, SessionData } from './SessionIndicator.js';
 
 export interface HeaderProps {
   // Model information
@@ -31,11 +32,18 @@ export interface HeaderProps {
   };
   showKeyboardShortcuts?: boolean;
   
-  // Session information
+  // Session information (legacy - for compatibility)
   sessionInfo?: {
     startTime: Date;
     messageCount: number;
   };
+  
+  // Enhanced session management
+  sessionData?: SessionData;
+  showSessionIndicator?: boolean;
+  onSessionSave?: () => void;
+  onSessionExport?: () => void;
+  onSessionImport?: () => void;
 }
 
 /**
@@ -54,7 +62,12 @@ export const Header: React.FC<HeaderProps> = ({
   error,
   statusLineConfig,
   showKeyboardShortcuts = false,
-  sessionInfo
+  sessionInfo,
+  sessionData,
+  showSessionIndicator = true,
+  onSessionSave,
+  onSessionExport,
+  onSessionImport
 }) => {
   const manager = getStyleManager();
   const style = manager.getStyle();
@@ -128,7 +141,25 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right side: Connection and session info */}
           <Box flexDirection="row" alignItems="center">
-            {sessionInfo && (
+            {/* Enhanced session indicator */}
+            {showSessionIndicator && sessionData && (
+              <>
+                <SessionIndicator
+                  session={sessionData}
+                  showSaveStatus={true}
+                  showExportOption={Boolean(onSessionExport)}
+                  onSave={onSessionSave}
+                  onExport={onSessionExport}
+                  onImport={onSessionImport}
+                />
+                <StyledText type="secondary">
+                  {' | '}
+                </StyledText>
+              </>
+            )}
+            
+            {/* Legacy session info (fallback) */}
+            {!sessionData && sessionInfo && (
               <>
                 <StyledText type="secondary">
                   {formatSessionInfo()}
@@ -138,6 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </StyledText>
               </>
             )}
+            
             <StyledText type={getConnectionStatusType(connectionStatus)}>
               {formatConnectionStatus()}
             </StyledText>
