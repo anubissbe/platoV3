@@ -7,6 +7,7 @@ import { StyledBox, StyledText, StatusLine, WelcomeMessage, ErrorMessage } from 
 import { Header } from './components/Header.js';
 import { ConversationArea } from './components/ConversationArea.js';
 import { InputArea, InputModeIndicator } from './components/InputArea.js';
+import { CommandPalette, Command } from './CommandPalette.js';
 import { StreamingConversationMessage, StreamingMessageManager } from './components/StreamingMessage.js';
 import { initializeStyleManager, getStyleManager } from '../styles/manager.js';
 import { getAvailableModels } from '../providers/copilot.js';
@@ -24,6 +25,7 @@ interface KeyboardState {
   historyMode: boolean;
   selectedHistoryIndex: number;
   messageHistory: Array<{ role: string; content: string }>;
+  isCommandPaletteOpen: boolean;
   mouseMode: boolean; // When true, reduces input interference for better copy/paste
   pasteBuffer: string; // Buffer for detecting paste operations
   pasteTimeout: NodeJS.Timeout | null;
@@ -83,6 +85,7 @@ export function App() {
     historyMode: false,
     selectedHistoryIndex: -1,
     messageHistory: [],
+    isCommandPaletteOpen: false,
     mouseMode: true, // Default to mouse mode like Claude Code
     pasteBuffer: '',
     pasteTimeout: null,
@@ -333,6 +336,12 @@ export function App() {
       return;
     }
 
+    // Ctrl+P - Open command palette
+    if (key.ctrl && inputKey.toLowerCase() === 'p') {
+      setKeyboardState(prev => ({ ...prev, isCommandPaletteOpen: true }));
+      return;
+    }
+
     // Ctrl+C - Cancel operation or exit
     if (key.ctrl && inputKey.toLowerCase() === 'c') {
       orchestrator.cancelStream();
@@ -389,6 +398,12 @@ export function App() {
   // Handle escape key with double-tap detection
   const handleEscapeKey = () => {
     const currentState = keyboardStateRef.current;
+    
+    // First priority: close command palette if open
+    if (currentState.isCommandPaletteOpen) {
+      setKeyboardState(prev => ({ ...prev, isCommandPaletteOpen: false }));
+      return;
+    }
     
     // Cancel current streaming operation
     orchestrator.cancelStream();
@@ -1856,6 +1871,21 @@ export function App() {
     // The MouseContextMenu component handles the actual menu display
   };
 
+  const handleCommandExecution = async (command: Command, args?: string) => {
+    const commandText = args ? `${command.name} ${args}` : command.name;
+    
+    // Close the command palette
+    setKeyboardState(prev => ({ ...prev, isCommandPaletteOpen: false }));
+    
+    // Handle slash commands
+    if (command.name.startsWith('/')) {
+      await handleSlashCommand(commandText);
+    } else {
+      // Handle other command types if needed
+      setStatus(`Executed command: ${commandText}`);
+    }
+  };
+
   // Status line rendering
   const statusline = React.useMemo(() => {
     const fmt = cfg?.statusline?.format || 'plato | {provider} | {model} | {tokens} {branch}';
@@ -1957,6 +1987,15 @@ export function App() {
         showSendButton={true}
         showModeIndicator={true}
       />
+      
+      {/* Command Palette */}
+      {keyboardState.isCommandPaletteOpen && (
+        <CommandPalette
+          isOpen={keyboardState.isCommandPaletteOpen}
+          onClose={() => setKeyboardState(prev => ({ ...prev, isCommandPaletteOpen: false }))}
+          onExecute={handleCommandExecution}
+        />
+      )}
     </Box>
   );
 }

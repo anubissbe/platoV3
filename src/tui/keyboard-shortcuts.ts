@@ -88,7 +88,7 @@ export class KeyboardShortcutManager {
       description: 'Open command palette',
       binding: [
         { key: 'F2' },
-        { key: 'p', modifiers: { ctrl: true, shift: true } },
+        { key: 'p', modifiers: { ctrl: true } },
       ],
       handler: () => this.openCommandPalette(),
       category: 'General',
