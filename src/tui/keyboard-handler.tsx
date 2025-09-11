@@ -7,6 +7,7 @@ import { StyledBox, StyledText, StatusLine, WelcomeMessage, ErrorMessage } from 
 import { Header } from './components/Header.js';
 import { ConversationArea } from './components/ConversationArea.js';
 import { InputArea, InputModeIndicator } from './components/InputArea.js';
+import { StreamingConversationMessage, StreamingMessageManager } from './components/StreamingMessage.js';
 import { initializeStyleManager, getStyleManager } from '../styles/manager.js';
 import { getAvailableModels } from '../providers/copilot.js';
 import { handleContextCommand as processContextCommand } from './context-command.js';
@@ -66,6 +67,10 @@ export function App() {
     }
   ]);
   
+  // Streaming message state
+  const [streamingMessage, setStreamingMessage] = useState<StreamingConversationMessage | null>(null);
+  const streamingManagerRef = useRef<StreamingMessageManager | null>(null);
+  
   // Keyboard state
   const [keyboardState, setKeyboardState] = useState<KeyboardState>({
     input: '',
@@ -93,6 +98,10 @@ export function App() {
       setCfg(await loadConfig());
       // Initialize style manager
       await initializeStyleManager();
+      // Initialize streaming manager
+      const manager = new StreamingMessageManager();
+      manager.setUpdateCallback(setStreamingMessage);
+      streamingManagerRef.current = manager;
       // Auto-restore session on startup
       await orchestrator.restoreSession();
       // Load project context if available
@@ -1772,8 +1781,8 @@ export function App() {
       }
     };
     
-    // Add assistant message placeholder
-    setConversationMessages(prev => [...prev, assistantMessage]);
+    // Start streaming with new streaming manager
+    streamingManagerRef.current?.startStreaming('assistant', '');
     
     try {
       await orchestrator.respondStream(text, (delta) => {
@@ -1787,51 +1796,64 @@ export function App() {
         }
         if (!display) return;
         
-        // Update assistant message content in real-time
-        setConversationMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1] = {
-            ...assistantMessage,
-            content: display,
-            metadata: {
-              ...assistantMessage.metadata,
-              tokensUsed: Math.floor(display.length / 4) // Rough token estimate
-            }
-          };
-          return updated;
-        });
+        // Update streaming message content in real-time
+        streamingManagerRef.current?.updateStreamContent(display);
       }, (evt) => {
         if (evt.type === 'info') setLines(prev => prev.concat(evt.message));
         if (evt.type === 'tool-start') setLines(prev => prev.concat(`tool: ${evt.message}`));
         if (evt.type === 'tool-end') setLines(prev => prev.concat('tool: done'));
       });
     } catch (e: any) {
-      // Add error message to conversation
+      // Interrupt stream and add error message
+      streamingManagerRef.current?.interruptStream();
       const errorMessage = {
         role: 'system' as const,
         content: `Error: ${e?.message || e}`,
         timestamp: Date.now(),
         metadata: {}
       };
-      setConversationMessages(prev => [...prev.slice(0, -1), errorMessage]);
+      setConversationMessages(prev => [...prev, errorMessage]);
     } finally {
-      // Update final metadata
-      setConversationMessages(prev => {
-        const updated = [...prev];
-        const lastMessage = updated[updated.length - 1];
-        if (lastMessage.role === 'assistant') {
-          updated[updated.length - 1] = {
-            ...lastMessage,
-            metadata: {
-              ...lastMessage.metadata,
-              duration: Date.now() - (lastMessage.metadata?.duration || Date.now())
-            }
-          };
-        }
-        return updated;
-      });
+      // Complete the stream and add final message to conversation
+      const currentStreaming = streamingManagerRef.current?.getCurrentStreamingMessage();
+      if (currentStreaming && currentStreaming.content) {
+        streamingManagerRef.current?.completeStream();
+        const finalMessage = {
+          ...assistantMessage,
+          content: currentStreaming.content,
+          metadata: {
+            ...assistantMessage.metadata,
+            duration: Date.now() - assistantMessage.metadata.duration,
+            tokensUsed: Math.floor(currentStreaming.content.length / 4)
+          }
+        };
+        setConversationMessages(prev => [...prev, finalMessage]);
+      }
       setStatus('');
     }
+  };
+
+  // Handle stream completion
+  const handleStreamComplete = () => {
+    // Stream completed naturally - no additional action needed
+  };
+
+  // Handle stream interruption
+  const handleStreamInterrupt = () => {
+    streamingManagerRef.current?.interruptStream();
+    orchestrator.cancelStream();
+    setStatus('Stream interrupted by user');
+  };
+
+  // Mouse event handlers for enhanced interaction
+  const handleTextSelect = (text: string) => {
+    setStatus(`Selected: ${text.length} characters`);
+    // In a real implementation, you'd store this for copy operations
+  };
+
+  const handleRightClick = (x: number, y: number, selectedText?: string) => {
+    setStatus(`Right-click at (${x}, ${y})${selectedText ? ` with selection` : ''}`);
+    // The MouseContextMenu component handles the actual menu display
   };
 
   // Status line rendering
@@ -1899,9 +1921,14 @@ export function App() {
         showTimestamps={true}
         showMetadata={true}
         virtualScrolling={conversationMessages.length > 20}
+        streamingMessage={streamingMessage || undefined}
         onScroll={(event) => {
           // Handle scroll events if needed
         }}
+        onStreamComplete={handleStreamComplete}
+        onStreamInterrupt={handleStreamInterrupt}
+        onTextSelect={handleTextSelect}
+        onRightClick={handleRightClick}
       />
       {modeIndicators.length > 0 && (
         <Box>

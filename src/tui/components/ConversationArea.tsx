@@ -4,6 +4,8 @@ import { StyledBox, StyledText } from '../../styles/components.js';
 import { getStyleManager } from '../../styles/manager.js';
 import { ConversationRenderer, ConversationMessage } from '../conversation-renderer.js';
 import { ScrollController } from '../scroll-controller.js';
+import { StreamingMessage, StreamingConversationMessage, StreamingMessageManager } from './StreamingMessage.js';
+import { MouseSupportLayer } from './MouseContextMenu.js';
 
 export interface ConversationAreaProps {
   messages: ConversationMessage[];
@@ -13,7 +15,12 @@ export interface ConversationAreaProps {
   showMetadata?: boolean;
   virtualScrolling?: boolean;
   accessibilityMode?: boolean;
+  streamingMessage?: StreamingConversationMessage;
   onScroll?: (event: { position: number; direction: 'up' | 'down' }) => void;
+  onStreamComplete?: () => void;
+  onStreamInterrupt?: () => void;
+  onTextSelect?: (text: string) => void;
+  onRightClick?: (x: number, y: number, selectedText?: string) => void;
 }
 
 /**
@@ -28,7 +35,12 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
   showMetadata = false,
   virtualScrolling = true,
   accessibilityMode = false,
-  onScroll
+  streamingMessage,
+  onScroll,
+  onStreamComplete,
+  onStreamInterrupt,
+  onTextSelect,
+  onRightClick
 }) => {
   const scrollControllerRef = useRef<ScrollController | undefined>(undefined);
   const conversationRendererRef = useRef<ConversationRenderer | undefined>(undefined);
@@ -119,40 +131,62 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
   }
 
   return (
-    <StyledBox flexDirection="column" height={height} width={width}>
-      {/* Scroll indicator */}
-      {isScrolling && (
-        <Box position="absolute">
-          <Text color="gray">◐</Text>
-        </Box>
-      )}
+    <MouseSupportLayer
+      onTextSelect={onTextSelect}
+      onRightClick={onRightClick}
+      streamingMessage={streamingMessage}
+    >
+      <StyledBox flexDirection="column" height={height} width={width}>
+        {/* Scroll indicator */}
+        {isScrolling && (
+          <Box position="absolute">
+            <Text color="gray">◐</Text>
+          </Box>
+        )}
 
-      {/* Message display area */}
-      <Box flexDirection="column" flexGrow={1} overflow="hidden">
-        {visibleMessages.map((message, index) => (
-          <MessageComponent
-            key={`${message.timestamp}-${index}`}
-            message={message}
-            showTimestamp={showTimestamps}
-            showMetadata={showMetadata}
-            accessibilityMode={accessibilityMode}
-            width={width - 4} // Account for padding
-          />
-        ))}
-      </Box>
-
-      {/* Scroll position indicator */}
-      {messages.length > height && (
-        <Box justifyContent="space-between" paddingX={1}>
-          <StyledText type="secondary">
-            {Math.min(visibleMessages.length + Math.floor(scrollPosition / 3), messages.length)}/{messages.length}
-          </StyledText>
-          <StyledText type="secondary">
-            {scrollPosition > 0 && '↑'} {scrollPosition < messages.length * 3 - height && '↓'}
-          </StyledText>
+        {/* Message display area */}
+        <Box flexDirection="column" flexGrow={1} overflow="hidden">
+          {visibleMessages.map((message, index) => (
+            <MessageComponent
+              key={`${message.timestamp}-${index}`}
+              message={message}
+              showTimestamp={showTimestamps}
+              showMetadata={showMetadata}
+              accessibilityMode={accessibilityMode}
+              width={width - 4} // Account for padding
+            />
+          ))}
+          
+          {/* Streaming message display */}
+          {streamingMessage && (
+            <StreamingMessage
+              role={streamingMessage.role}
+              content={streamingMessage.content}
+              isStreaming={streamingMessage.isStreaming || false}
+              isComplete={streamingMessage.isComplete || false}
+              showTimestamp={showTimestamps}
+              timestamp={streamingMessage.timestamp}
+              onStreamComplete={onStreamComplete}
+              onStreamInterrupt={onStreamInterrupt}
+              width={width - 4}
+              speed={25} // 25ms per character as per tech spec
+            />
+          )}
         </Box>
-      )}
-    </StyledBox>
+
+        {/* Scroll position indicator */}
+        {messages.length > height && (
+          <Box justifyContent="space-between" paddingX={1}>
+            <StyledText type="secondary">
+              {Math.min(visibleMessages.length + Math.floor(scrollPosition / 3), messages.length)}/{messages.length}
+            </StyledText>
+            <StyledText type="secondary">
+              {scrollPosition > 0 && '↑'} {scrollPosition < messages.length * 3 - height && '↓'}
+            </StyledText>
+          </Box>
+        )}
+      </StyledBox>
+    </MouseSupportLayer>
   );
 };
 
