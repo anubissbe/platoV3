@@ -53,10 +53,10 @@ export class BashTool extends EventEmitter implements NativeTool {
       bash: 'bash.exe'
     },
     unix: {
-      bash: '/bin/bash',
-      sh: '/bin/sh',
-      zsh: '/bin/zsh',
-      fish: '/bin/fish'
+      bash: ['/bin/bash', '/usr/bin/bash'],
+      sh: ['/bin/sh', '/usr/bin/sh'],
+      zsh: ['/bin/zsh', '/usr/bin/zsh'],
+      fish: ['/bin/fish', '/usr/bin/fish']
     }
   };
 
@@ -758,7 +758,8 @@ export class BashTool extends EventEmitter implements NativeTool {
       env,
       detached: false,
       windowsHide: true,
-      timeout: args.timeout
+      timeout: args.timeout,
+      input: args.input
     };
 
     return { command, commandArgs, options };
@@ -777,13 +778,19 @@ export class BashTool extends EventEmitter implements NativeTool {
       } else {
         const unixShells = this.shellPaths.unix;
         if (requestedShell in unixShells) {
-          const shellPath = unixShells[requestedShell as keyof typeof unixShells];
-          try {
-            await fs.access(shellPath);
-            return shellPath;
-          } catch {
-            // Shell not available, continue to defaults
+          const shellPaths = unixShells[requestedShell as keyof typeof unixShells];
+          // Handle both string and array paths
+          const pathsToCheck = Array.isArray(shellPaths) ? shellPaths : [shellPaths];
+          
+          for (const shellPath of pathsToCheck) {
+            try {
+              await fs.access(shellPath);
+              return shellPath;
+            } catch {
+              // Continue to next path
+            }
           }
+          // No valid shell path found, continue to direct path check
         }
       }
       
@@ -806,12 +813,29 @@ export class BashTool extends EventEmitter implements NativeTool {
       return this.shellPaths.win32.cmd;
     } else {
       // Try bash first, fallback to sh
-      try {
-        await fs.access(this.shellPaths.unix.bash);
-        return this.shellPaths.unix.bash;
-      } catch {
-        return this.shellPaths.unix.sh;
+      const bashPaths = this.shellPaths.unix.bash;
+      for (const bashPath of bashPaths) {
+        try {
+          await fs.access(bashPath);
+          return bashPath;
+        } catch {
+          // Continue to next path
+        }
       }
+      
+      // Fallback to sh
+      const shPaths = this.shellPaths.unix.sh;
+      for (const shPath of shPaths) {
+        try {
+          await fs.access(shPath);
+          return shPath;
+        } catch {
+          // Continue to next path
+        }
+      }
+      
+      // Final fallback
+      return '/bin/sh';
     }
   }
 

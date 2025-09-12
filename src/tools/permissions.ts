@@ -15,17 +15,25 @@ export type Permissions = {
 export async function loadPermissions(): Promise<Permissions> {
   const proj = path.join(process.cwd(), '.plato', 'config.yaml');
   const glob = path.join(process.env.HOME || '', '.config', 'plato', 'config.yaml');
-  let merged: any = {};
+  let mergedPermissions: Permissions = {};
+  
   for (const f of [glob, proj]) {
     try {
       const txt = await fs.readFile(f, 'utf8');
       const y = YAML.parse(txt) || {};
-      merged = { ...merged, ...(y || {}) };
+      const permissions = (y.permissions || {}) as Permissions;
+      
+      // Deep merge permissions
+      mergedPermissions = {
+        defaults: { ...(mergedPermissions.defaults || {}), ...(permissions.defaults || {}) },
+        rules: [...(mergedPermissions.rules || []), ...(permissions.rules || [])]
+      };
     } catch {
       // Silent - config file optional
     }
   }
-  return (merged.permissions || {}) as Permissions;
+  
+  return mergedPermissions;
 }
 
 export type PermissionQuery = { tool: string; path?: string; command?: string };
@@ -47,8 +55,12 @@ export async function checkPermission(q: PermissionQuery): Promise<'allow'|'deny
   const rules = p.rules || [];
   for (const r of rules) {
     if (r.match.tool && r.match.tool !== q.tool) continue;
-    if (r.match.path && q.path && !matchGlob(q.path, r.match.path)) continue;
-    if (r.match.command && q.command && !new RegExp(r.match.command).test(q.command)) continue;
+    if (r.match.path) {
+      if (!q.path || !matchGlob(q.path, r.match.path)) continue;
+    }
+    if (r.match.command) {
+      if (!q.command || !new RegExp(r.match.command).test(q.command)) continue;
+    }
     return r.action;
   }
   const def = p.defaults?.[q.tool];
@@ -57,8 +69,26 @@ export async function checkPermission(q: PermissionQuery): Promise<'allow'|'deny
 
 function matchGlob(target: string, glob: string): boolean {
   // very naive glob: supports '**' anywhere and '*' wildcard
-  const esc = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*');
-  const re = new RegExp('^' + esc + '$');
+  let pattern = glob;
+  
+  // Use placeholders to avoid conflicts
+  const DOUBLE_STAR_PLACEHOLDER = '___DOUBLE_STAR___';
+  const SINGLE_STAR_PLACEHOLDER = '___SINGLE_STAR___';
+  
+  // Replace ** first (before escaping)
+  pattern = pattern.replace(/\*\*/g, DOUBLE_STAR_PLACEHOLDER);
+  
+  // Replace single * 
+  pattern = pattern.replace(/\*/g, SINGLE_STAR_PLACEHOLDER);
+  
+  // Escape regex special characters
+  pattern = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+  
+  // Restore patterns with proper regex
+  pattern = pattern.replace(new RegExp(DOUBLE_STAR_PLACEHOLDER, 'g'), '.*');
+  pattern = pattern.replace(new RegExp(SINGLE_STAR_PLACEHOLDER, 'g'), '[^/]*');
+  
+  const re = new RegExp('^' + pattern + '$');
   return re.test(target);
 }
 

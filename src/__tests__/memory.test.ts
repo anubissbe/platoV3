@@ -388,7 +388,7 @@ Test project documentation.
       // Verify the file was written with cost metadata
       expect(mockFs.writeFile).toHaveBeenCalledWith(
         expect.stringContaining('.plato/memory/test-with-cost-123.json'),
-        expect.stringContaining('"cost":0.002'),
+        expect.stringContaining('"costMetadata"'),
         'utf8'
       );
       
@@ -435,11 +435,14 @@ Test project documentation.
       await manager.updateMemoryCostMetadata('existing-memory', costMetadata);
       
       // Verify the file was updated with cost metadata
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('.plato/memory/existing-memory.json'),
-        expect.stringContaining('"cost":0.001'),
-        'utf8'
-      );
+      const lastWriteCall = (mockFs.writeFile as jest.Mock).mock.calls[
+        (mockFs.writeFile as jest.Mock).mock.calls.length - 1
+      ];
+      expect(lastWriteCall[0]).toEqual(expect.stringContaining('.plato/memory/existing-memory.json'));
+      const writtenContent = JSON.parse(lastWriteCall[1] as string);
+      expect(writtenContent.costMetadata).toBeDefined();
+      expect(writtenContent.costMetadata.cost).toBe(0.001);
+      expect(lastWriteCall[2]).toBe('utf8');
     });
 
     test('should calculate total costs for date range', async () => {

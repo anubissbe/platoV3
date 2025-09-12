@@ -28,6 +28,10 @@ describe('Permissions System Real Config Integration Tests', () => {
     await fs.mkdir(path.join(tempProjectDir, '.plato'), { recursive: true });
     await fs.mkdir(path.join(tempHomeDir, '.config', 'plato'), { recursive: true });
 
+    // Register temp directories with the mock system
+    ((global as any).mockTempDirs = (global as any).mockTempDirs || new Set()).add(tempProjectDir);
+    ((global as any).mockTempDirs = (global as any).mockTempDirs || new Set()).add(tempHomeDir);
+
     process.chdir(tempProjectDir);
     process.env.HOME = tempHomeDir;
     delete process.env.PLATO_SKIP_PERMISSIONS;
@@ -206,6 +210,10 @@ describe('Permissions System Real Config Integration Tests', () => {
 
   describe('Permission Checking with Real Configs', () => {
     beforeEach(async () => {
+      // Clear any cached config to ensure fresh load
+      const configModule = await import('../../config.js');
+      (configModule as any).cached = null;
+      
       // Set up realistic configuration
       const globalConfig = {
         permissions: {

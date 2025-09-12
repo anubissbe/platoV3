@@ -443,7 +443,7 @@ export class MemoryManager {
     }
 
     return {
-      totalCost: Math.round(totalCost * 100) / 100,
+      totalCost: Math.round((totalCost + Number.EPSILON) * 10000) / 10000,
       totalInputTokens,
       totalOutputTokens,
       interactionCount,
@@ -482,13 +482,13 @@ export class MemoryManager {
     }
 
     this.memoryStore.session.costAnalytics = {
-      totalCost: Math.round(costData.totalCost * 100) / 100,
+      totalCost: Math.round((costData.totalCost + Number.EPSILON) * 10000) / 10000,
       totalInputTokens: costData.totalInputTokens,
       totalOutputTokens: costData.totalOutputTokens,
       interactionCount: costData.interactionCount,
       sessionId,
       avgCostPerInteraction: costData.interactionCount > 0 
-        ? Math.round((costData.totalCost / costData.interactionCount) * 10000) / 10000 
+        ? Math.round(((costData.totalCost / costData.interactionCount) + Number.EPSILON) * 10000) / 10000 
         : 0,
       lastCostUpdate: new Date().toISOString(),
       modelBreakdown: costData.modelBreakdown
@@ -532,12 +532,12 @@ export class MemoryManager {
     }
 
     return {
-      totalCost: Math.round(totalCost * 100) / 100,
+      totalCost: Math.round((totalCost + Number.EPSILON) * 10000) / 10000,
       totalInputTokens,
       totalOutputTokens,
       interactionCount,
       sessionId,
-      avgCostPerInteraction: interactionCount > 0 ? Math.round((totalCost / interactionCount) * 10000) / 10000 : 0,
+      avgCostPerInteraction: interactionCount > 0 ? Math.round(((totalCost / interactionCount) + Number.EPSILON) * 10000) / 10000 : 0,
       lastCostUpdate: new Date().toISOString(),
       modelBreakdown
     };
