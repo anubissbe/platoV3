@@ -1,0 +1,51 @@
+{
+  "timestamp": "2025-09-11T16:40:44.059Z",
+  "config": {
+    "iterations": 5,
+    "warmupRuns": 10,
+    "targetFPS": 60,
+    "memoryThresholdMB": 100,
+    "responseTimeTargetMs": 50
+  },
+  "results": [
+    {
+      "name": "Header Component Render",
+      "operation": "rendering",
+      "averageTime": 0.0072560000000038375,
+      "minTime": 0.00396700000000294,
+      "maxTime": 0.018518000000000256,
+      "iterations": 5,
+      "memoryUsed": 0.083251953125,
+      "passedThreshold": true,
+      "timestamp": "2025-09-11T16:40:44.057Z"
+    },
+    {
+      "name": "ConversationArea Large Render",
+      "operation": "rendering",
+      "averageTime": 0.1017483999999996,
+      "minTime": 0.022351000000000454,
+      "maxTime": 0.3803359999999998,
+      "iterations": 5,
+      "memoryUsed": -0.9130096435546875,
+      "passedThreshold": true,
+      "timestamp": "2025-09-11T16:40:44.059Z"
+    },
+    {
+      "name": "StatusLine Update",
+      "operation": "rendering",
+      "averageTime": 0.005198800000002279,
+      "minTime": 0.004215000000002078,
+      "maxTime": 0.006493000000006077,
+      "iterations": 5,
+      "memoryUsed": -0.20000457763671875,
+      "passedThreshold": true,
+      "timestamp": "2025-09-11T16:40:44.059Z"
+    }
+  ],
+  "summary": {
+    "totalTests": 3,
+    "passed": 3,
+    "failed": 0,
+    "overallPerformance": "excellent"
+  }
+}
