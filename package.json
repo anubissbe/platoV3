@@ -58,7 +58,15 @@
     "test:coverage:full": "npm run test:coverage:comprehensive && npm run test:coverage:report && npm run test:coverage:badges && npm run test:coverage:enforce",
     "test:coverage:exclusions": "node scripts/manage-coverage-exclusions.cjs",
     "test:coverage:exclusions:update": "node scripts/manage-coverage-exclusions.cjs --update-config",
-    "test:coverage:exclusions:small": "node scripts/manage-coverage-exclusions.cjs --exclude-small-files --update-config"
+    "test:coverage:exclusions:small": "node scripts/manage-coverage-exclusions.cjs --exclude-small-files --update-config",
+    "perf:benchmark": "node scripts/performance-benchmarks.cjs",
+    "perf:benchmark:quick": "node scripts/performance-benchmarks.cjs --iterations 5 --warmup 2 --quiet",
+    "perf:benchmark:detailed": "node scripts/performance-benchmarks.cjs --iterations 20 --warmup 5",
+    "perf:regression:analyze": "node scripts/performance-regression-detector.cjs analyze",
+    "perf:regression:baseline": "node scripts/performance-regression-detector.cjs save-baseline",
+    "perf:regression:cleanup": "node scripts/performance-regression-detector.cjs cleanup",
+    "perf:monitor": "npm run perf:benchmark && npm run perf:regression:analyze",
+    "perf:ci": "npm run perf:benchmark:quick && npm run perf:regression:analyze"
   },
   "dependencies": {
     "@types/diff": "^7.0.2",

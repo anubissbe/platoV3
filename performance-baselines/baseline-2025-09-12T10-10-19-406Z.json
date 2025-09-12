@@ -1,0 +1,163 @@
+{
+  "timestamp": "2025-09-12T10:10:19.406Z",
+  "results": {
+    "cli_startup": {
+      "stats": {
+        "mean": 361.9702553999999,
+        "median": 391.25108299999965,
+        "p95": 420.51672700000006,
+        "p99": 420.51672700000006,
+        "stdDev": 70.03734706794494,
+        "count": 5
+      },
+      "metadata": {
+        "timestamp": "2025-09-12T10:09:41.195Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      }
+    },
+    "tui_initialization": {
+      "stats": {
+        "mean": 197.64529919999995,
+        "median": 195.22827899999993,
+        "p95": 292.33736499999986,
+        "p99": 292.33736499999986,
+        "stdDev": 60.910010332690746,
+        "count": 5
+      },
+      "metadata": {
+        "timestamp": "2025-09-12T10:09:42.672Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      }
+    },
+    "chat_completion": {
+      "stats": {
+        "mean": 106.79806079999999,
+        "median": 106.28148099999999,
+        "p95": 121.21110099999987,
+        "p99": 121.21110099999987,
+        "stdDev": 12.855212122578385,
+        "count": 5
+      },
+      "metadata": {
+        "timestamp": "2025-09-12T10:09:43.399Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      }
+    },
+    "mcp_tool_call": {
+      "stats": {
+        "mean": 1048.8247079999999,
+        "median": 1124.1496750000006,
+        "p95": 1423.3740530000005,
+        "p99": 1423.3740530000005,
+        "stdDev": 284.48502199063324,
+        "count": 5
+      },
+      "metadata": {
+        "timestamp": "2025-09-12T10:09:51.877Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      }
+    },
+    "file_operations": {
+      "stats": {
+        "mean": 50.52047199999979,
+        "median": 50.12765799999943,
+        "p95": 61.13602600000013,
+        "p99": 61.13602600000013,
+        "stdDev": 7.659555569122128,
+        "count": 5
+      },
+      "metadata": {
+        "timestamp": "2025-09-12T10:09:52.208Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      }
+    },
+    "session_persistence": {
+      "stats": {
+        "mean": 82.97355800000078,
+        "median": 63.129995000001145,
+        "p95": 132.26547800000117,
+        "p99": 132.26547800000117,
+        "stdDev": 31.38123083050266,
+        "count": 5
+      },
+      "metadata": {
+        "timestamp": "2025-09-12T10:09:52.883Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      }
+    },
+    "context_indexing": {
+      "stats": {
+        "mean": 1106.293883799999,
+        "median": 757.7443289999974,
+        "p95": 2338.3421789999993,
+        "p99": 2338.3421789999993,
+        "stdDev": 625.4877729240045,
+        "count": 5
+      },
+      "metadata": {
+        "timestamp": "2025-09-12T10:10:01.037Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      }
+    },
+    "memory_operations": {
+      "stats": {
+        "mean": 25.297209000000294,
+        "median": 26.121047000000544,
+        "p95": 36.08019199999762,
+        "p99": 36.08019199999762,
+        "stdDev": 9.022720180353662,
+        "count": 5
+      },
+      "metadata": {
+        "timestamp": "2025-09-12T10:10:01.232Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      }
+    }
+  },
+  "metadata": {
+    "nodeVersion": "v24.5.0",
+    "platform": "linux",
+    "arch": "x64",
+    "gitCommit": "2529baa84ab60788f6797a34a729e44f72fb436d"
+  }
+}

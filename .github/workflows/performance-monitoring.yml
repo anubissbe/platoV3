@@ -1,0 +1,337 @@
+name: Performance Monitoring
+
+on:
+  push:
+    branches: [ main, claude-code-ui-parity ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily performance monitoring at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      benchmark_iterations:
+        description: 'Number of benchmark iterations'
+        required: false
+        default: '10'
+        type: string
+      regression_analysis:
+        description: 'Run regression analysis'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  performance-benchmark:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18, 20, 22]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for trend analysis
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build project
+      run: npm run build
+      
+    - name: Create performance reports directory
+      run: mkdir -p performance-reports performance-baselines
+    
+    - name: Run performance benchmarks
+      run: |
+        ITERATIONS=${{ github.event.inputs.benchmark_iterations || '10' }}
+        node scripts/performance-benchmarks.cjs --iterations $ITERATIONS --output-dir performance-reports
+      env:
+        NODE_ENV: production
+        CI: true
+    
+    - name: Archive benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-results-node${{ matrix.node-version }}
+        path: performance-reports/
+        retention-days: 30
+    
+    - name: Download previous baselines
+      if: github.event_name != 'workflow_dispatch'
+      uses: actions/download-artifact@v4
+      with:
+        name: performance-baselines-node${{ matrix.node-version }}
+        path: performance-baselines/
+      continue-on-error: true
+    
+    - name: Run regression analysis
+      if: ${{ github.event.inputs.regression_analysis != 'false' }}
+      run: |
+        # Find the latest benchmark report
+        LATEST_REPORT=$(find performance-reports -name "benchmark-*.json" | sort | tail -1)
+        
+        if [ -n "$LATEST_REPORT" ]; then
+          echo "Running regression analysis on: $LATEST_REPORT"
+          node scripts/performance-regression-detector.cjs analyze "$LATEST_REPORT" || EXIT_CODE=$?
+          
+          # Save baseline if this is a scheduled run or main branch
+          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "Saving performance baseline"
+            node scripts/performance-regression-detector.cjs save-baseline "$LATEST_REPORT"
+          fi
+          
+          # Exit with regression analysis code
+          exit ${EXIT_CODE:-0}
+        else
+          echo "No benchmark report found"
+          exit 1
+        fi
+      env:
+        NODE_ENV: production
+    
+    - name: Upload baselines
+      if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-baselines-node${{ matrix.node-version }}
+        path: performance-baselines/
+        retention-days: 90
+    
+    - name: Comment performance results on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+          
+          // Find the latest benchmark report
+          const reportsDir = 'performance-reports';
+          const reportFiles = fs.readdirSync(reportsDir).filter(f => f.startsWith('benchmark-'));
+          
+          if (reportFiles.length === 0) {
+            console.log('No benchmark reports found');
+            return;
+          }
+          
+          const latestReport = reportFiles.sort().pop();
+          const reportPath = path.join(reportsDir, latestReport);
+          const reportData = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+          
+          // Find regression analysis if it exists
+          const analysisPath = reportPath.replace('.json', '-regression-analysis.json');
+          let analysisData = null;
+          if (fs.existsSync(analysisPath)) {
+            analysisData = JSON.parse(fs.readFileSync(analysisPath, 'utf8'));
+          }
+          
+          // Generate comment content
+          let comment = `## 🚀 Performance Report (Node.js ${{ matrix.node-version }})\n\n`;
+          
+          if (reportData.summary) {
+            const health = reportData.summary.overallHealth;
+            const healthIcon = health === 'excellent' ? '🟢' : 
+                              health === 'good' ? '✅' : 
+                              health === 'fair' ? '⚠️' : '❌';
+            
+            comment += `**Overall Health:** ${healthIcon} ${health.toUpperCase()}\n`;
+            comment += `**Status Breakdown:** ${reportData.summary.statusCounts.excellent}🟢 ${reportData.summary.statusCounts.good}✅ ${reportData.summary.statusCounts.warning}⚠️ ${reportData.summary.statusCounts.critical}❌\n\n`;
+          }
+          
+          if (analysisData) {
+            comment += `### Regression Analysis\n`;
+            comment += `- **Regressions:** ${analysisData.summary.regressions}\n`;
+            comment += `- **Improvements:** ${analysisData.summary.improvements}\n`;
+            comment += `- **Stable:** ${analysisData.summary.stable}\n`;
+            comment += `- **Assessment:** ${analysisData.assessment.message}\n\n`;
+            
+            if (analysisData.recommendations.length > 0) {
+              comment += `### 🚨 Recommendations\n`;
+              analysisData.recommendations.forEach(rec => {
+                const priorityIcon = rec.priority === 'high' ? '🔥' : '⚠️';
+                comment += `- ${priorityIcon} **${rec.path}:** ${rec.action}\n`;
+              });
+              comment += `\n`;
+            }
+          }
+          
+          comment += `### Key Metrics\n`;
+          Object.entries(reportData.results || {}).forEach(([pathId, result]) => {
+            if (result.stats) {
+              const status = result.performance?.status || 'unknown';
+              const statusIcon = status === 'excellent' ? '🟢' : 
+                                status === 'good' ? '✅' : 
+                                status === 'warning' ? '⚠️' : '❌';
+              comment += `- ${statusIcon} **${pathId}:** ${result.stats.p95.toFixed(1)}ms (P95)\n`;
+            }
+          });
+          
+          comment += `\n📊 [Full Report](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})`;
+          
+          // Post comment
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+  performance-comparison:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    needs: performance-benchmark
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+    
+    - name: Download benchmark results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: performance-results-*
+        path: ./artifacts/
+    
+    - name: Download baseline data
+      uses: actions/download-artifact@v4
+      with:
+        pattern: performance-baselines-*
+        path: ./baselines/
+      continue-on-error: true
+    
+    - name: Compare performance across Node versions
+      run: |
+        echo "## 📊 Cross-Node Performance Comparison" > comparison-report.md
+        echo "" >> comparison-report.md
+        
+        for artifact_dir in artifacts/performance-results-*; do
+          if [ -d "$artifact_dir" ]; then
+            node_version=$(basename "$artifact_dir" | sed 's/performance-results-node//')
+            echo "### Node.js $node_version" >> comparison-report.md
+            
+            # Find the latest report in this directory
+            latest_report=$(find "$artifact_dir" -name "benchmark-*.json" | sort | tail -1)
+            if [ -n "$latest_report" ]; then
+              node -e "
+                const report = require('./$latest_report');
+                if (report.summary) {
+                  console.log('- Health: ' + report.summary.overallHealth);
+                  console.log('- Status: ' + Object.entries(report.summary.statusCounts).map(([k,v]) => v + (k==='excellent'?'🟢':k==='good'?'✅':k==='warning'?'⚠️':'❌')).join(' '));
+                }
+              " >> comparison-report.md
+            fi
+            echo "" >> comparison-report.md
+          fi
+        done
+        
+        # Output the comparison
+        cat comparison-report.md
+    
+    - name: Upload comparison report
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-comparison
+        path: comparison-report.md
+
+  performance-alerting:
+    if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    needs: performance-benchmark
+    
+    steps:
+    - name: Download benchmark results
+      uses: actions/download-artifact@v4
+      with:
+        pattern: performance-results-*
+        path: ./artifacts/
+    
+    - name: Check for critical regressions
+      run: |
+        critical_found=false
+        
+        for artifact_dir in artifacts/performance-results-*; do
+          if [ -d "$artifact_dir" ]; then
+            node_version=$(basename "$artifact_dir" | sed 's/performance-results-node//')
+            
+            # Check for regression analysis files
+            analysis_file=$(find "$artifact_dir" -name "*regression-analysis.json" | head -1)
+            if [ -n "$analysis_file" ]; then
+              severity=$(node -e "console.log(require('./$analysis_file').severity)" 2>/dev/null || echo "none")
+              
+              if [ "$severity" = "critical" ] || [ "$severity" = "major" ]; then
+                echo "🚨 Critical regression detected in Node.js $node_version: $severity"
+                critical_found=true
+              fi
+            fi
+          fi
+        done
+        
+        if [ "$critical_found" = "true" ]; then
+          echo "CRITICAL_REGRESSION=true" >> $GITHUB_ENV
+          exit 1
+        fi
+    
+    - name: Send Slack notification for critical regressions
+      if: env.CRITICAL_REGRESSION == 'true' && github.event_name == 'push'
+      uses: rtCamp/action-slack-notify@v2
+      env:
+        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_COLOR: 'danger'
+        SLACK_MESSAGE: |
+          🚨 *Critical Performance Regression Detected*
+          
+          Repository: ${{ github.repository }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+          
+          Please investigate immediately!
+          
+          View Details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        SLACK_TITLE: 'Performance Alert'
+        SLACK_USERNAME: 'Performance Monitor'
+
+  cleanup-old-artifacts:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Cleanup old performance artifacts
+      uses: actions/github-script@v7
+      with:
+        script: |
+          // Cleanup artifacts older than 30 days
+          const cutoffDate = new Date();
+          cutoffDate.setDate(cutoffDate.getDate() - 30);
+          
+          const artifacts = await github.rest.actions.listArtifactsForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            per_page: 100
+          });
+          
+          for (const artifact of artifacts.data.artifacts) {
+            if (artifact.name.startsWith('performance-') && 
+                !artifact.name.includes('baselines') &&
+                new Date(artifact.created_at) < cutoffDate) {
+              
+              console.log(`Deleting old artifact: ${artifact.name}`);
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id
+              });
+            }
+          }
