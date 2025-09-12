@@ -141,10 +141,10 @@ This document outlines the tasks needed to fix test warnings and failures identi
 ## Task 5: Enhance Test Infrastructure and Performance
 
 ### 5.1 Optimize Test Execution Performance
-- [ ] Profile slow-running test suites
-- [ ] Implement better test isolation and cleanup
-- [ ] Add parallel test execution optimizations
-- [ ] Reduce test setup/teardown overhead
+- [x] Profile slow-running test suites
+- [x] Implement better test isolation and cleanup
+- [x] Add parallel test execution optimizations
+- [x] Reduce test setup/teardown overhead
 
 ### 5.2 Improve Test Reliability
 - [ ] Fix flaky tests with timing dependencies

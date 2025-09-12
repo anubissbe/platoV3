@@ -30,7 +30,13 @@
     "test:integration": "jest integration",
     "test:commands": "jest commands",
     "test:e2e": "jest e2e",
-    "test:ci": "jest --ci --coverage --maxWorkers=2"
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "test:fast": "jest --config=jest.config.fast.cjs",
+    "test:fast-watch": "jest --config=jest.config.fast.cjs --watch",
+    "test:integration-only": "jest --config=jest.config.integration.cjs",
+    "test:performance": "npm run test:fast && npm run test:integration-only",
+    "test:quick": "jest --config=jest.config.fast.cjs --passWithNoTests --silent",
+    "test:parallel": "jest --config=jest.config.fast.cjs --maxWorkers=75%"
   },
   "dependencies": {
     "@types/diff": "^7.0.2",
