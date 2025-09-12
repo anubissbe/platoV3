@@ -8,14 +8,22 @@ import path from 'path';
 import os from 'os';
 import { SearchTool } from '../search-tool.js';
 import { ToolError, ErrorClass } from '../types.js';
+import { withRetry, setupReliableTestEnvironment } from '../../__tests__/helpers/test-reliability';
 
 describe('SearchTool', () => {
   let searchTool: SearchTool;
   let tempDir: string;
+  let testEnv: ReturnType<typeof setupReliableTestEnvironment>;
 
   beforeEach(async () => {
+    testEnv = setupReliableTestEnvironment();
     searchTool = new SearchTool();
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'plato-search-test-'));
+    
+    // Create temp directory with retry logic
+    tempDir = await withRetry(
+      () => fs.mkdtemp(path.join(os.tmpdir(), 'plato-search-test-')),
+      { maxRetries: 3, delayMs: 100 }
+    );
 
     // Create test files with various content patterns
     const testFiles = {
@@ -32,34 +40,45 @@ describe('SearchTool', () => {
       'large.txt': Array.from({ length: 1000 }, (_, i) => `Line ${i + 1}: Pattern ${i % 10}`).join('\n')
     };
 
+    // Create files with retry logic and proper error handling
     for (const [filePath, content] of Object.entries(testFiles)) {
       const fullPath = path.join(tempDir, filePath);
-      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      const dirPath = path.dirname(fullPath);
       
-      if (filePath === 'binary.dat') {
-        await fs.writeFile(fullPath, Buffer.from(content, 'binary'));
-      } else {
-        await fs.writeFile(fullPath, content);
+      // Ensure directory exists with proper path handling
+      if (dirPath && dirPath !== tempDir) {
+        await withRetry(
+          () => fs.mkdir(dirPath, { recursive: true }),
+          { maxRetries: 3, delayMs: 50 }
+        );
       }
+      
+      // Write file with retry logic
+      await withRetry(async () => {
+        if (filePath === 'binary.dat') {
+          await fs.writeFile(fullPath, Buffer.from(content, 'binary'));
+        } else {
+          await fs.writeFile(fullPath, content);
+        }
+      }, { maxRetries: 3, delayMs: 50 });
     }
   });
 
   afterEach(async () => {
+    // Enhanced cleanup with reliability improvements
+    await testEnv.cleanup();
+    
     if (tempDir) {
-      // Use rmdir for Node.js compatibility, fallback to rm if available
-      try {
-        await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true, force: true });
-      } catch (error: any) {
-        if (error.code === 'ENOENT') return; // Already deleted
-        // Fallback to rmdir for older Node.js versions
+      await withRetry(async () => {
         try {
-          await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true });
-        } catch (rmError: any) {
-          if (rmError.code !== 'ENOENT') {
-            console.warn('Failed to cleanup temp directory:', rmError.message);
+          await fs.rm(tempDir, { recursive: true, force: true });
+        } catch (error: any) {
+          // Only throw if it's not a "file not found" error
+          if (error.code !== 'ENOENT') {
+            throw error;
           }
         }
-      }
+      }, { maxRetries: 3, delayMs: 100 });
     }
   });
 

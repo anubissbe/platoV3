@@ -36,7 +36,12 @@
     "test:integration-only": "jest --config=jest.config.integration.cjs",
     "test:performance": "npm run test:fast && npm run test:integration-only",
     "test:quick": "jest --config=jest.config.fast.cjs --passWithNoTests --silent",
-    "test:parallel": "jest --config=jest.config.fast.cjs --maxWorkers=75%"
+    "test:parallel": "jest --config=jest.config.fast.cjs --maxWorkers=75%",
+    "test:reliable": "jest --config=jest.config.reliable.cjs",
+    "test:reliable-watch": "jest --config=jest.config.reliable.cjs --watch",
+    "test:with-retry": "npx tsx scripts/test-with-retry.ts",
+    "test:retry-reliable": "npx tsx scripts/test-with-retry.ts npm run test:reliable",
+    "test:comprehensive": "npm run test:reliable && npm run test:integration-only"
   },
   "dependencies": {
     "@types/diff": "^7.0.2",

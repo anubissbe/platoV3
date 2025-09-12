@@ -147,10 +147,10 @@ This document outlines the tasks needed to fix test warnings and failures identi
 - [x] Reduce test setup/teardown overhead
 
 ### 5.2 Improve Test Reliability
-- [ ] Fix flaky tests with timing dependencies
-- [ ] Add proper async/await handling in tests
-- [ ] Implement better mock cleanup between tests
-- [ ] Add test retry mechanisms for intermittent failures
+- [x] Fix flaky tests with timing dependencies
+- [x] Add proper async/await handling in tests
+- [x] Implement better mock cleanup between tests
+- [x] Add test retry mechanisms for intermittent failures
 
 ### 5.3 Enhance Test Coverage Reporting
 - [ ] Configure comprehensive coverage collection
