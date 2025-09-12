@@ -542,4 +542,36 @@ export class MemoryManager {
       modelBreakdown
     };
   }
+
+  /**
+   * Save current memory state - for integration tests
+   */
+  async save(): Promise<void> {
+    await this.saveCurrentState();
+  }
+
+  /**
+   * Compact memories - remove duplicates and old entries
+   */
+  async compact(): Promise<void> {
+    // Remove duplicates based on content hash
+    const seen = new Set<string>();
+    const uniqueEntries: MemoryEntry[] = [];
+    
+    for (const entry of this.memoryStore.entries) {
+      const contentHash = entry.content + entry.type;
+      if (!seen.has(contentHash)) {
+        seen.add(contentHash);
+        uniqueEntries.push(entry);
+      }
+    }
+
+    // Keep only recent entries (last 500)
+    this.memoryStore.entries = uniqueEntries
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 500);
+
+    // Save compacted state
+    await this.saveCurrentState();
+  }
 }

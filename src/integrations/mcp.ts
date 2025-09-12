@@ -6,6 +6,7 @@ import { PermissionManager } from '../permissions/PermissionManager.js';
 import { ProfileManager } from '../permissions/ProfileManager.js';
 import { AuditLogger } from '../permissions/AuditLogger.js';
 import { PermissionQuery } from '../permissions/types.js';
+import yaml from 'yaml';
 
 export type Server = { id: string; url: string };
 export type MCPServer = Server;
@@ -18,7 +19,34 @@ let mcpPermissionManager: PermissionManager | null = null;
 async function ensureMCPPermissionSystem(): Promise<PermissionManager> {
   if (!mcpPermissionManager) {
     const profileManager = new ProfileManager();
-    // ProfileManager doesn't have initialize method
+    
+    // Ensure permission configuration exists
+    await ensurePermissionConfiguration();
+    
+    // Load profiles and set up default active profile
+    await profileManager.loadProfiles();
+    
+    // Ensure we have an active profile
+    let currentProfile = profileManager.getCurrentProfile();
+    if (!currentProfile) {
+      // Try to detect active profile
+      currentProfile = await profileManager.detectActiveProfile();
+      
+      if (!currentProfile) {
+        // Create and switch to a default profile if none exists
+        const profiles = profileManager.getAllProfiles();
+        if (profiles.length === 0) {
+          await createDefaultProfile();
+          await profileManager.loadProfiles(); // Reload after creating default
+        }
+        
+        // Switch to the first available profile or 'default' if it exists
+        const defaultProfile = profileManager.getAllProfiles().find(p => p.name === 'default') || profileManager.getAllProfiles()[0];
+        if (defaultProfile) {
+          await profileManager.switchProfile(defaultProfile.name);
+        }
+      }
+    }
     
     const auditLogger = new AuditLogger({
       logDirectory: '.plato/audit/mcp',
@@ -36,6 +64,49 @@ async function ensureMCPPermissionSystem(): Promise<PermissionManager> {
     await mcpPermissionManager.initialize();
   }
   return mcpPermissionManager;
+}
+
+// Ensure permission configuration exists
+async function ensurePermissionConfiguration(): Promise<void> {
+  const configPath = path.join(process.cwd(), '.plato', 'config.yaml');
+  
+  try {
+    await fs.access(configPath);
+  } catch {
+    // Configuration doesn't exist, create a default one
+    await createDefaultProfile();
+  }
+}
+
+// Create default permission profile
+async function createDefaultProfile(): Promise<void> {
+  const platoDir = path.join(process.cwd(), '.plato');
+  const configPath = path.join(platoDir, 'config.yaml');
+  
+  // Ensure .plato directory exists
+  await fs.mkdir(platoDir, { recursive: true });
+  
+  const defaultConfig = {
+    permissions: {
+      profiles: {
+        default: {
+          name: 'default',
+          description: 'Default profile for MCP operations',
+          defaults: {
+            mcp_operation: 'allow',
+            fs_patch: 'allow',
+            tool_execution: 'allow'
+          },
+          rules: [],
+          context: {
+            always: true
+          }
+        }
+      }
+    }
+  };
+  
+  await fs.writeFile(configPath, yaml.stringify(defaultConfig));
 }
 
 // Check MCP operation permissions
@@ -129,6 +200,10 @@ function head(u: URL): Promise<number> {
       res.resume();
     });
     req.on('error', reject);
+    req.setTimeout(5000, () => {
+      req.destroy();
+      reject(new Error('Request timeout'));
+    });
     req.end();
   });
 }
@@ -183,7 +258,9 @@ export async function callTool(serverId: string, toolName: string, input: any): 
         const r = await fetch(ep, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ input })
+          body: JSON.stringify({ input }),
+          // Add timeout
+          signal: AbortSignal.timeout?.(10000) // 10 second timeout if available
         });
         
         if (nonRetryableCodes.includes(r.status)) {
@@ -205,7 +282,7 @@ export async function callTool(serverId: string, toolName: string, input: any): 
         return data;
       } catch (e) {
         lastErr = e;
-        if (attempt < 3) {
+        if (attempt < 3 && !nonRetryableCodes.some(code => (e as any)?.message?.includes?.(String(code)))) {
           await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
         }
       }
@@ -219,7 +296,10 @@ async function fetchTools(s: Server): Promise<McpTool[]> {
   let lastErr: any;
   for (const ep of endpoints) {
     try {
-      const r = await fetch(ep, { method: 'GET' });
+      const r = await fetch(ep, { 
+        method: 'GET',
+        signal: AbortSignal.timeout?.(5000) // 5 second timeout if available
+      });
       if (!r.ok) { lastErr = new Error(`status ${r.status}`); continue; }
       const data = await r.json();
       if (Array.isArray(data)) return data as McpTool[];

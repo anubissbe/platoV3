@@ -15,7 +15,7 @@ export type Config = {
     }
   };
   model?: { active?: string };
-  statusline?: { format?: string };
+  statusline?: { format?: string; enabled?: boolean };
   editing?: { autoApply?: 'on'|'off' };
   privacy?: { 
     redact?: boolean; 

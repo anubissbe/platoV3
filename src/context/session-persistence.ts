@@ -106,7 +106,9 @@ export class ContextPersistenceManager {
       ...options
     };
 
-    this.sessionPath = this.options.sessionPath!;
+    // Use test directory if available
+    const testDir = process.env.PLATO_PROJECT_DIR || process.cwd();
+    this.sessionPath = path.join(testDir, this.options.sessionPath!);
     this.memoryManager = new MemoryManager({
       memoryDir: this.options.memoryPath!
     });
@@ -122,6 +124,13 @@ export class ContextPersistenceManager {
   destroy(): void {
     this.stopAutoSave();
     // Additional cleanup if needed - remove MemoryManager destroy call since it doesn't exist
+  }
+
+  /**
+   * Shutdown method for test compatibility (alias for destroy)
+   */
+  async shutdown(): Promise<void> {
+    this.destroy();
   }
 
   /**
@@ -517,6 +526,192 @@ export class ContextPersistenceManager {
       clearInterval(this.autoSaveTimer);
       this.autoSaveTimer = undefined;
     }
+  }
+
+  /**
+   * Save context state to memory system
+   */
+  async saveToMemory(state: ContextState, id: string): Promise<void> {
+    try {
+      const serialized = await this.serializeContextState(state);
+      
+      await this.memoryManager.addMemory({
+        id,
+        type: 'context',
+        content: JSON.stringify(serialized),
+        timestamp: new Date().toISOString(),
+        tags: ['context', 'session', 'persistent'],
+        metadata: {
+          priority: 'high'
+        }
+      });
+    } catch (error) {
+      console.error('Failed to save context state to memory:', error);
+    }
+  }
+
+  /**
+   * Load context state from memory system
+   */
+  async loadFromMemory(id: string): Promise<ContextState | null> {
+    try {
+      const memories = await this.memoryManager.getAllMemories();
+      const memory = memories.find(m => m.id === id);
+      
+      if (!memory) {
+        return null;
+      }
+      
+      const serialized = JSON.parse(memory.content);
+      return await this.deserializeContextState(serialized);
+    } catch (error) {
+      console.error('Failed to load context state from memory:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Create a history snapshot of current context state
+   */
+  async createHistorySnapshot(state: ContextState, reason: string, description?: string): Promise<void> {
+    try {
+      const snapshotId = `context-history-${Date.now()}`;
+      const serialized = await this.serializeContextState(state);
+      
+      await this.memoryManager.addMemory({
+        id: snapshotId,
+        type: 'session',
+        content: JSON.stringify({ 
+          snapshot: serialized,
+          reason,
+          description 
+        }),
+        timestamp: new Date().toISOString(),
+        tags: ['context', 'history', 'snapshot'],
+        metadata: {
+          priority: 'medium'
+        }
+      });
+    } catch (error) {
+      console.error('Failed to create context history snapshot:', error);
+    }
+  }
+
+  /**
+   * Merge with existing session data
+   */
+  async mergeWithExistingSession(contextState: ContextState, existingSessionData: any): Promise<any> {
+    const merged = {
+      ...existingSessionData,
+      contextManager: contextState
+    };
+    
+    return merged;
+  }
+
+  /**
+   * Smart resume that intelligently merges saved and current state
+   */
+  async smartResume(savedState: ContextState, currentState: ContextState): Promise<ContextState> {
+    // Merge files intelligently - avoid duplicates
+    const allFiles = [...savedState.currentFiles, ...currentState.currentFiles];
+    const uniqueFiles = [...new Set(allFiles)];
+    
+    // Merge preferences - prefer saved values for existing keys, keep new ones
+    const mergedPreferences = { ...currentState.userPreferences, ...savedState.userPreferences };
+    
+    // Sum session metrics where it makes sense
+    const totalQueries = (savedState.sessionMetadata.totalQueries || 0) + (currentState.sessionMetadata.totalQueries || 0);
+    
+    return {
+      index: savedState.index, // Use saved index
+      scorer: savedState.scorer, // Use saved scorer
+      sampler: savedState.sampler, // Use saved sampler
+      currentFiles: uniqueFiles,
+      userPreferences: mergedPreferences,
+      sessionMetadata: {
+        ...savedState.sessionMetadata,
+        totalQueries
+      }
+    };
+  }
+
+  /**
+   * Resolve file conflicts during resume
+   */
+  async resolveFileConflicts(savedFiles: string[], currentFiles: string[], options: { preferSaved?: boolean } = {}): Promise<string[]> {
+    const combined = [...currentFiles, ...savedFiles];
+    const unique = [...new Set(combined)];
+    return unique;
+  }
+
+  /**
+   * Validate context state integrity
+   */
+  async validateContextState(state: any): Promise<boolean> {
+    try {
+      // Check required properties
+      if (!state.index || !state.scorer || !state.sampler) {
+        return false;
+      }
+      
+      // Check that currentFiles is an array
+      if (!Array.isArray(state.currentFiles)) {
+        return false;
+      }
+      
+      // Check that userPreferences is an object
+      if (typeof state.userPreferences !== 'object' || state.userPreferences === null) {
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Export context configuration
+   */
+  async exportConfiguration(state: ContextState): Promise<{
+    version: string;
+    exportedAt: string;
+    configuration: ContextConfiguration;
+  }> {
+    return {
+      version: '1.0.0',
+      exportedAt: new Date().toISOString(),
+      configuration: {
+        userPreferences: state.userPreferences,
+        currentFiles: state.currentFiles,
+        sessionSettings: state.sessionMetadata
+      }
+    };
+  }
+
+  /**
+   * Import context configuration
+   */
+  async importConfiguration(importData: any): Promise<ContextState> {
+    if (!importData || !importData.configuration) {
+      throw new Error('Invalid import data format');
+    }
+    
+    const config = importData.configuration;
+    
+    return await this.deserializeContextState({
+      version: importData.version || '1.0.0',
+      timestamp: importData.exportedAt || new Date().toISOString(),
+      index: JSON.stringify({ files: new Map(), symbols: new Map(), imports: new Map() }),
+      currentFiles: config.currentFiles || [],
+      userPreferences: config.userPreferences || {},
+      sessionMetadata: config.sessionSettings || {
+        startTime: new Date().toISOString(),
+        lastActivity: new Date().toISOString(),
+        totalQueries: 0
+      }
+    });
   }
 
   /**

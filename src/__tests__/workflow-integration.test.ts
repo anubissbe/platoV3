@@ -21,8 +21,9 @@ const mockFs = {
 
 jest.mock('fs', () => mockFs);
 
+const mockExecuteMouseCommand = jest.fn();
 jest.mock('../commands/mouse-command.js', () => ({
-  executeMouseCommand: jest.fn(),
+  executeMouseCommand: mockExecuteMouseCommand,
 }));
 
 const mockDefaultSettings: MouseSettings = {
@@ -68,7 +69,7 @@ describe('Workflow Integration', () => {
     jest.clearAllMocks();
     mockFs.existsSync.mockReturnValue(false);
     mockFs.readFileSync.mockReturnValue(JSON.stringify(mockDefaultSettings));
-    (executeMouseCommand as jest.Mock).mockResolvedValue({ success: true, output: 'Command executed' });
+    mockExecuteMouseCommand.mockResolvedValue({ success: true, output: 'Command executed' });
     
     // Initialize components
     settingsManager = new MouseSettingsManager('/tmp/test-config');
@@ -134,7 +135,7 @@ describe('Workflow Integration', () => {
     it('should execute mouse commands via slash command interface', async () => {
       const result = await slashMouseIntegration.executeCommand('/mouse', ['on']);
       
-      expect(executeMouseCommand).toHaveBeenCalledWith(['on']);
+      expect(mockExecuteMouseCommand).toHaveBeenCalledWith(['on']);
       expect(result).toBe(true);
     });
 
