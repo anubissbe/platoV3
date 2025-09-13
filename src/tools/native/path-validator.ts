@@ -100,76 +100,58 @@ export class PathValidator {
     if (inputPath.includes('../') || inputPath.includes('..\\')) {
       threats.push({
         type: 'DIRECTORY_TRAVERSAL',
-        severity: 'high',
-        message: 'Path contains directory traversal sequences (../)',
-        position: inputPath.indexOf('../')
+        message: 'Directory traversal pattern detected',
+        severity: 'critical'
       });
     }
 
-    // Check for null byte injection
-    if (inputPath.includes('\0')) {
+    // Check for null bytes
+    if (inputPath.includes('\x00')) {
       threats.push({
         type: 'NULL_BYTE',
-        severity: 'high',
-        message: 'Path contains null byte characters',
-        position: inputPath.indexOf('\0')
+        message: 'Null byte detected in path',
+        severity: 'high'
       });
     }
 
-    // Check for CRLF injection
-    if (inputPath.includes('\r') || inputPath.includes('\n')) {
-      threats.push({
-        type: 'CRLF_INJECTION',
-        severity: 'medium',
-        message: 'Path contains CRLF characters',
-        position: Math.max(inputPath.indexOf('\r'), inputPath.indexOf('\n'))
-      });
-    }
-
-    // Check for XSS attempts in filenames
-    const xssPatterns = ['<script>', '</script>', 'javascript:', 'data:'];
-    for (const pattern of xssPatterns) {
-      if (inputPath.toLowerCase().includes(pattern)) {
-        threats.push({
-          type: 'XSS_ATTEMPT',
-          severity: 'medium',
-          message: `Path contains potentially malicious pattern: ${pattern}`,
-          position: inputPath.toLowerCase().indexOf(pattern)
-        });
-      }
-    }
-
-    // Check for suspicious control characters
-    const suspiciousChars = /[\x00-\x1f\x7f-\x9f]/;
-    if (suspiciousChars.test(inputPath)) {
+    // Check for control characters (use CRLF_INJECTION for control chars)
+    const controlCharPattern = /[\x00-\x1f\x7f]/;
+    if (controlCharPattern.test(inputPath)) {
       threats.push({
         type: 'SUSPICIOUS_CHARS',
-        severity: 'medium',
-        message: 'Path contains suspicious control characters',
-        position: inputPath.search(suspiciousChars)
+        message: 'Control characters detected in path',
+        severity: 'medium'
       });
     }
 
-    const safe = threats.length === 0;
-    let normalizedPath: string | undefined;
+    // Check for potential script injection (map to XSS_ATTEMPT)
+    const scriptPatterns = /<script|javascript:|vbscript:|data:/i;
+    if (scriptPatterns.test(inputPath)) {
+      threats.push({
+        type: 'XSS_ATTEMPT',
+        message: 'Potential script injection detected',
+        severity: 'high'
+      });
+    }
 
-    if (safe) {
-      try {
-        normalizedPath = path.normalize(inputPath);
-      } catch (error) {
-        // Normalization failed, but we can still report it as unsafe
-      }
+    // Check for CRLF injection patterns
+    if (inputPath.includes('\r\n') || inputPath.includes('\r') || inputPath.includes('\n')) {
+      threats.push({
+        type: 'CRLF_INJECTION',
+        message: 'CRLF sequence detected in path',
+        severity: 'medium'
+      });
     }
 
     return {
-      safe,
+      safe: threats.length === 0,
       threats,
-      normalizedPath
+      normalizedPath: path.normalize(inputPath)
     };
   }
 
   /**
-   * Resolve symlinks with cycle detection and workspace boundary enforcement
+   * Resolve symlinks with cycle detection and workspace boundary checking
    */
   private async resolveSymlinks(targetPath: string): Promise<{
     success: boolean;
@@ -238,16 +220,22 @@ export class PathValidator {
       } catch (error: any) {
         // Handle broken symlinks or permission errors
         if (error.code === 'ENOENT') {
-          return {
-            success: false,
-            error: {
-              type: 'BROKEN_SYMLINK',
-              message: `Broken symlink detected: ${currentPath}`,
-              severity: 'medium',
-              path: targetPath,
-              target: currentPath
-            }
-          };
+          // CRITICAL FIX: Only treat as broken symlink if we actually encountered a symlink
+          if (isSymlink) {
+            return {
+              success: false,
+              error: {
+                type: 'BROKEN_SYMLINK',
+                message: `Broken symlink detected: ${currentPath}`,
+                severity: 'medium',
+                path: targetPath,
+                target: currentPath
+              }
+            };
+          } else {
+            // File doesn't exist but that's not an error for path validation
+            break;
+          }
         }
         
         return {
@@ -303,31 +291,18 @@ export class PathValidator {
   }
 
   /**
-   * Get workspace root path
+   * Get validation statistics
    */
-  getWorkspaceRoot(): string {
-    return this.workspaceRoot;
-  }
-
-  /**
-   * Validate multiple paths efficiently
-   */
-  async validatePaths(paths: string[]): Promise<Map<string, PathNormalizationResult>> {
-    const results = new Map<string, PathNormalizationResult>();
-    
-    // Process paths in parallel for better performance
-    const validationPromises = paths.map(async (inputPath) => {
-      const result = await this.normalizePath(inputPath);
-      return { path: inputPath, result };
-    });
-
-    const validationResults = await Promise.all(validationPromises);
-    
-    for (const { path, result } of validationResults) {
-      results.set(path, result);
-    }
-
-    return results;
+  getValidationStats(): {
+    maxPathLength: number;
+    maxSymlinkDepth: number;
+    workspaceRoot: string;
+  } {
+    return {
+      maxPathLength: this.maxPathLength,
+      maxSymlinkDepth: this.maxSymlinkDepth,
+      workspaceRoot: this.workspaceRoot
+    };
   }
 
   /**

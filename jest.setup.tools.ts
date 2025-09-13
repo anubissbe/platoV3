@@ -39,11 +39,15 @@ const isRealPath = (filePath: string): boolean => {
   const normalized = path.resolve(filePath);
   const projectRoot = process.cwd();
   
-  // Use real fs for more paths in tool tests
+  // Use real fs for tool test temp directories
   return normalized.startsWith(tmpdir()) || 
          normalized.includes('node_modules') ||
          normalized.startsWith('/tmp/') ||
          normalized.startsWith('/var/tmp/') ||
+         normalized.includes('plato-tools-test-') ||  // Specific pattern from createTempDir
+         normalized.includes('test-temp-') ||  // Include test temp directories
+         normalized.includes('plato-dir-test-') ||  // Include other test temp patterns
+         normalized.includes('plato-edit-test-') ||
          normalized.startsWith(projectRoot) && (
            normalized.includes('/package.json') ||
            normalized.includes('/tsconfig') ||
@@ -116,6 +120,7 @@ jest.mock('fs/promises', () => {
         mtime: new Date(),
         mode: 0o644,
       });
+      return Promise.resolve();
     }),
     
     stat: jest.fn().mockImplementation(async (filePath: string) => {
@@ -194,12 +199,137 @@ jest.mock('fs/promises', () => {
       return files;
     }),
     
-    // Include additional fs methods that native tools might need
+    // Additional fs methods that native tools need
     realpath: jest.fn().mockImplementation(async (filePath: string) => {
       if (isRealPath(filePath)) {
         return originalFs.realpath(filePath);
       }
       return path.resolve(filePath);
+    }),
+
+    chmod: jest.fn().mockImplementation(async (filePath: string, mode: number) => {
+      if (isRealPath(filePath)) {
+        return originalFs.chmod(filePath, mode);
+      }
+      
+      const normalizedPath = path.resolve(filePath);
+      if (mockStats.has(normalizedPath)) {
+        const stats = mockStats.get(normalizedPath);
+        stats.mode = mode;
+        return;
+      }
+      
+      const error = new Error(`ENOENT: no such file or directory, chmod '${filePath}'`) as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      throw error;
+    }),
+
+    copyFile: jest.fn().mockImplementation(async (src: string, dest: string) => {
+      if (isRealPath(src) || isRealPath(dest)) {
+        return originalFs.copyFile(src, dest);
+      }
+      
+      const normalizedSrc = path.resolve(src);
+      const normalizedDest = path.resolve(dest);
+      
+      if (!mockFiles.has(normalizedSrc)) {
+        const error = new Error(`ENOENT: no such file or directory, copyfile '${src}'`) as NodeJS.ErrnoException;
+        error.code = 'ENOENT';
+        throw error;
+      }
+      
+      const buffer = mockFiles.get(normalizedSrc)!;
+      mockFiles.set(normalizedDest, Buffer.from(buffer));
+      mockStats.set(normalizedDest, {
+        isFile: () => true,
+        isDirectory: () => false,
+        size: buffer.length,
+        mtime: new Date(),
+        mode: 0o644,
+      });
+    }),
+
+    rename: jest.fn().mockImplementation(async (oldPath: string, newPath: string) => {
+      if (isRealPath(oldPath) || isRealPath(newPath)) {
+        return originalFs.rename(oldPath, newPath);
+      }
+      
+      const normalizedOld = path.resolve(oldPath);
+      const normalizedNew = path.resolve(newPath);
+      
+      if (!mockFiles.has(normalizedOld)) {
+        const error = new Error(`ENOENT: no such file or directory, rename '${oldPath}'`) as NodeJS.ErrnoException;
+        error.code = 'ENOENT';
+        throw error;
+      }
+      
+      const buffer = mockFiles.get(normalizedOld)!;
+      const stats = mockStats.get(normalizedOld)!;
+      
+      mockFiles.set(normalizedNew, buffer);
+      mockStats.set(normalizedNew, stats);
+      mockFiles.delete(normalizedOld);
+      mockStats.delete(normalizedOld);
+    }),
+
+    unlink: jest.fn().mockImplementation(async (filePath: string) => {
+      if (isRealPath(filePath)) {
+        return originalFs.unlink(filePath);
+      }
+      
+      const normalizedPath = path.resolve(filePath);
+      if (mockFiles.has(normalizedPath)) {
+        mockFiles.delete(normalizedPath);
+        mockStats.delete(normalizedPath);
+        return;
+      }
+      
+      const error = new Error(`ENOENT: no such file or directory, unlink '${filePath}'`) as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      throw error;
+    }),
+
+    open: jest.fn().mockImplementation(async (filePath: string, flags: string) => {
+      if (isRealPath(filePath)) {
+        return originalFs.open(filePath, flags);
+      }
+      
+      // Mock file handle for write operations
+      const normalizedPath = path.resolve(filePath);
+      let buffer = Buffer.alloc(0);
+      
+      return {
+        write: jest.fn().mockImplementation(async (data: Buffer) => {
+          buffer = Buffer.concat([buffer, data]);
+          mockFiles.set(normalizedPath, buffer);
+          mockStats.set(normalizedPath, {
+            isFile: () => true,
+            isDirectory: () => false,
+            size: buffer.length,
+            mtime: new Date(),
+            mode: 0o644,
+          });
+          return { bytesWritten: data.length };
+        }),
+        close: jest.fn().mockResolvedValue(undefined),
+      };
+    }),
+
+    utimes: jest.fn().mockImplementation(async (filePath: string, atime: Date, mtime: Date) => {
+      if (isRealPath(filePath)) {
+        return originalFs.utimes(filePath, atime, mtime);
+      }
+      
+      const normalizedPath = path.resolve(filePath);
+      if (mockStats.has(normalizedPath)) {
+        const stats = mockStats.get(normalizedPath);
+        stats.mtime = mtime;
+        return;
+      }
+      
+      const error = new Error(`ENOENT: no such file or directory, utimes '${filePath}'`) as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      throw error;
     }),
   };
 });

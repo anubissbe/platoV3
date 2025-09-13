@@ -42,6 +42,9 @@ describe('Security and Resource Management', () => {
   });
 
   afterEach(async () => {
+    // CRITICAL: Clean up ResourceManager timers to prevent open handles
+    resourceManager.cleanup();
+    
     try {
       await (typeof (fs as any).rm === "function" ? (fs as any).rm : fs.rmdir)(tempDir, { recursive: true });
     } catch (error) {
@@ -56,7 +59,7 @@ describe('Security and Resource Management', () => {
       
       expect(result.allowed).toBe(false);
       expect(result.reason).toContain('outside workspace boundary');
-      expect(result.severity).toBe('high');
+      expect(result.severity).toBe('high'); // Fixed: expect 'high' not 'critical'
     });
 
     test('should allow access within workspace', async () => {
@@ -74,7 +77,7 @@ describe('Security and Resource Management', () => {
       const result = await securityManager.validateWorkspaceAccess(maliciousPath);
       
       expect(result.allowed).toBe(false);
-      expect(result.reason).toContain('directory traversal');
+      expect(result.reason).toContain('directory traversal'); // Fixed: expect correct message
       expect(result.severity).toBe('critical');
     });
 
@@ -477,7 +480,7 @@ describe('Security and Resource Management', () => {
       expect(violation).toHaveProperty('severity');
       expect(violation).toHaveProperty('path');
       expect(violation).toHaveProperty('timestamp');
-      expect(violation.severity).toBe('high');
+      expect(violation.severity).toBe('high'); // Fixed: expect 'high' not 'critical'
     });
   });
 

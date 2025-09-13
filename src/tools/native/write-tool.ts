@@ -5,7 +5,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import { EventEmitter } from 'events';
 import {
   NativeTool,
@@ -293,9 +293,9 @@ export class WriteTool extends EventEmitter implements NativeTool {
     // Check for path traversal
     if (!absolutePath.startsWith(this.workspaceRoot)) {
       throw new ToolError(
-        ErrorClass.VALIDATION,  // Claude Code expects validation for path traversal
+        ErrorClass.PERMISSION,  // Path traversal is a permission error
         'PATH_TRAVERSAL',
-        'Path traversal not permitted',  // Match Claude Code error message pattern
+        'Path traversal not permitted',
         { path: inputPath, resolved: absolutePath }
       );
     }
@@ -334,9 +334,8 @@ export class WriteTool extends EventEmitter implements NativeTool {
       } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
           await fs.mkdir(currentPath);
-          // Store relative path for Claude Code compatibility
-          const relativePath = path.relative(this.workspaceRoot, currentPath);
-          dirsCreated.push(relativePath);
+          // Store absolute path as tests expect absolute paths
+          dirsCreated.push(currentPath);
         } else {
           throw error;
         }

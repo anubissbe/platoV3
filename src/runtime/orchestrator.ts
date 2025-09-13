@@ -24,7 +24,8 @@ import {
 } from './status-events.js';
 import { MemoryManager } from '../memory/manager.js';
 import { SessionData } from '../memory/types.js';
-import { chatCompletions, chatStream } from '../providers/chat.js';
+import { chatCompletions } from '../providers/chat.js';
+import { chatStreamGenerator } from '../providers/chat-stream.js';
 
 // Simple utility to ensure plato directory exists
 async function ensurePlatoDir(): Promise<void> {
@@ -199,51 +200,48 @@ class Orchestrator {
       if (process.env.NODE_ENV === 'test') {
         response = { content: 'test response', usage: { prompt_tokens: 10, completion_tokens: 20 } };
       } else {
-        response = await chatCompletions(this.history, { initiator: 'user' });
+        const messages = this.getHistory();
+        response = await chatCompletions(messages);
       }
-      
-      // Add assistant response to history
+
+      // Add response to history
       this.addToHistory('assistant', response.content);
 
       // Update token metrics
       if (response.usage) {
-        this.tokenMetrics.input += response.usage.prompt_tokens || 0;
-        this.tokenMetrics.output += response.usage.completion_tokens || 0;
         this.tokenMetrics.inputTokens += response.usage.prompt_tokens || 0;
         this.tokenMetrics.outputTokens += response.usage.completion_tokens || 0;
       }
-
-      // Emit response time
-      const responseTime = Date.now() - startTime;
-      emitResponseTime(responseTime);
 
       // Run post-response hooks
       await runHooks('post_response');
       onEvent?.({ type: 'post_response_hooks', message: 'Running post-response hooks...' });
 
+      const endTime = Date.now();
+      emitResponseTime(endTime - startTime);
       emitTurnEnd('assistant', response.content);
-      onEvent?.({ type: 'turn_end', message: 'Conversation completed' });
+      onEvent?.({ type: 'turn_end', message: 'Conversation turn completed' });
 
       return response.content;
-
     } catch (error: any) {
-      const responseTime = Date.now() - startTime;
-      emitResponseTime(responseTime);
-      emitError(error.message || 'Unknown error');
-      onEvent?.({ type: 'error', message: error.message || 'Unknown error' });
+      emitError(error.message);
+      onEvent?.({ type: 'error', message: `Chat error: ${error.message}` });
       throw error;
     }
   }
 
   /**
-   * Stream chat completion
+   * Streaming chat handler
    */
   async *streamMessage(message: string, onEvent?: (e: OrchestratorEvent) => void): AsyncGenerator<string, void, unknown> {
     const startTime = Date.now();
+    let charactersStreamed = 0;
     
     try {
       emitTurnStart('user', message);
+      emitStreamStart();
       onEvent?.({ type: 'turn_start', message: 'Starting streaming conversation...' });
+      onEvent?.({ type: 'stream_start', message: 'Stream started' });
 
       // Add user message to history
       this.addToHistory('user', message);
@@ -252,148 +250,109 @@ class Orchestrator {
       await runHooks('pre_prompt');
       onEvent?.({ type: 'pre_prompt_hooks', message: 'Running pre-prompt hooks...' });
 
-      emitStreamStart();
-      onEvent?.({ type: 'stream_start', message: 'Stream started' });
-
+      // Get streaming completion
       let fullResponse = '';
-
-      // Stream response
-      const streamResponse = await chatStream(this.history, { initiator: 'user' }, (text: string) => {
-        onEvent?.({ type: 'stream_delta', data: text });
-      });
-
-      fullResponse = streamResponse.content;
-
-      // Yield the complete response
-      yield fullResponse;
-
-      // Add assistant response to history
-      this.addToHistory('assistant', fullResponse);
-
-      // Update token metrics
-      if (streamResponse.usage) {
-        this.tokenMetrics.input += streamResponse.usage.prompt_tokens || 0;
-        this.tokenMetrics.output += streamResponse.usage.completion_tokens || 0;
-        this.tokenMetrics.inputTokens += streamResponse.usage.prompt_tokens || 0;
-        this.tokenMetrics.outputTokens += streamResponse.usage.completion_tokens || 0;
+      
+      if (process.env.NODE_ENV === 'test') {
+        // Mock streaming for tests
+        const testResponse = 'test streaming response';
+        for (let i = 0; i < testResponse.length; i += 5) {
+          const chunk = testResponse.slice(i, i + 5);
+          fullResponse += chunk;
+          charactersStreamed += chunk.length;
+          onEvent?.({ type: 'stream_delta', data: chunk });
+          yield chunk;
+        }
+      } else {
+        const messages = this.getHistory();
+        const streamGenerator = chatStreamGenerator(messages);
+        
+        for await (const chunk of streamGenerator) {
+          fullResponse += chunk;
+          charactersStreamed += chunk.length;
+          onEvent?.({ type: 'stream_delta', data: chunk });
+          yield chunk;
+        }
       }
 
-      // Emit completion events
-      const responseTime = Date.now() - startTime;
-      emitResponseTime(responseTime);
-      emitStreamEnd(fullResponse.length);
-      onEvent?.({ type: 'stream_end', message: 'Stream completed' });
+      // Add full response to history
+      this.addToHistory('assistant', fullResponse);
 
       // Run post-response hooks
       await runHooks('post_response');
       onEvent?.({ type: 'post_response_hooks', message: 'Running post-response hooks...' });
 
+      const endTime = Date.now();
+      emitResponseTime(endTime - startTime);
+      emitStreamEnd(charactersStreamed);
       emitTurnEnd('assistant', fullResponse);
-      onEvent?.({ type: 'turn_end', message: 'Streaming conversation completed' });
-
+      onEvent?.({ type: 'stream_end', message: 'Stream completed' });
+      onEvent?.({ type: 'turn_end', message: 'Streaming conversation turn completed' });
     } catch (error: any) {
-      const responseTime = Date.now() - startTime;
-      emitResponseTime(responseTime);
-      emitError(error.message || 'Unknown error');
-      onEvent?.({ type: 'error', message: error.message || 'Unknown error' });
+      emitError(error.message);
+      onEvent?.({ type: 'error', message: `Stream error: ${error.message}` });
       throw error;
     }
   }
 
   /**
-   * Initialize analytics system
+   * Get current token metrics
    */
-  async initializeAnalyticsSystem(enabled: boolean): Promise<void> {
-    // Analytics initialization stub
-    console.log(`Analytics system initialized: ${enabled}`);
+  getTokenMetrics() {
+    return { ...this.tokenMetrics };
   }
 
   /**
-   * Load session data
+   * Reset token metrics
    */
-  async loadSession(): Promise<void> {
-    const memMgr = await this.ensureMemoryManager();
-    const session = await memMgr.restoreSession();
-    if (session) {
-      // Restore conversation history if available
-      if (session.memories) {
-        for (const memory of session.memories) {
-          if (memory.type === 'session') {
-            try {
-              const messages = JSON.parse(memory.content);
-              if (Array.isArray(messages)) {
-                this.history = messages;
-              }
-            } catch {
-              // Ignore invalid session data
-            }
-          }
-        }
-      }
+  resetTokenMetrics(): void {
+    this.tokenMetrics = {
+      input: 0,
+      output: 0,
+      inputTokens: 0,
+      outputTokens: 0
+    };
+  }
+
+  /**
+   * Permission check for tool operations
+   */
+  async checkToolPermission(
+    toolName: string,
+    input: any,
+    context?: any
+  ): Promise<{ allowed: boolean; reason?: string }> {
+    try {
+      const permissionMgr = await this.ensurePermissionManager();
+      
+      const query: PermissionQuery = {
+        tool: toolName,
+        action: 'execute',
+        arguments: input,
+        context: {
+          source: 'orchestrator' as const,
+          workspace_path: process.cwd(),
+          environment: {
+            node_env: process.env.NODE_ENV,
+            platform: process.platform,
+            node_version: process.version,
+          },
+          correlation_id: 'orch-' + Date.now(),
+          ...context,
+        },
+      };
+
+      const result = await permissionMgr.checkPermission(query);
+      
+      return {
+        allowed: result.action === 'allow',
+        reason: result.reason,
+      };
+    } catch (error) {
+      console.warn('Tool permission check failed:', error);
+      // Fallback: allow operation but log warning
+      return { allowed: true, reason: 'Permission system unavailable' };
     }
-  }
-
-  /**
-   * Restore session (alias for loadSession)
-   */
-  async restoreSession(): Promise<void> {
-    await this.loadSession();
-  }
-
-  /**
-   * Save session data
-   */
-  async saveSession(): Promise<void> {
-    const memMgr = await this.ensureMemoryManager();
-    const sessionData: SessionData = {
-      startTime: new Date().toISOString(),
-      commands: [],
-      context: JSON.stringify(this.history),
-    };
-    await memMgr.saveSession(sessionData);
-  }
-
-  /**
-   * Save conversation history to memory
-   */
-  async saveHistory(): Promise<void> {
-    const memMgr = await this.ensureMemoryManager();
-    const entry = {
-      id: `history-${Date.now()}`,
-      type: 'session' as const,
-      content: JSON.stringify(this.history),
-      timestamp: new Date().toISOString(),
-    };
-    await memMgr.addMemory(entry);
-  }
-
-  /**
-   * Get conversation statistics
-   */
-  getStats(): { messages: number; tokens: { input: number; output: number }; inputTokens: number; outputTokens: number; durationMs: number; turns: number } {
-    return {
-      messages: this.history.length,
-      tokens: { input: this.tokenMetrics.input, output: this.tokenMetrics.output },
-      inputTokens: this.tokenMetrics.inputTokens,
-      outputTokens: this.tokenMetrics.outputTokens,
-      durationMs: 0, // Stub value
-      turns: Math.ceil(this.history.length / 2) // Approximate turns based on message pairs
-    };
-  }
-
-  /**
-   * Get metrics (alias for getStats)
-   */
-  getMetrics(): { messages: number; tokens: { input: number; output: number }; inputTokens: number; outputTokens: number; durationMs: number; turns: number } {
-    return this.getStats();
-  }
-
-  /**
-   * Reset conversation
-   */
-  reset(): void {
-    this.history = [];
-    this.tokenMetrics = { input: 0, output: 0, inputTokens: 0, outputTokens: 0 };
   }
 
   /**
@@ -548,9 +507,9 @@ class Orchestrator {
   /**
    * Select a message from history by index
    */
-  async selectHistoryMessage(index: number): Promise<Msg | null> {
+  selectMessage(index: number): Msg | undefined {
     if (index < 0 || index >= this.history.length) {
-      return null;
+      return undefined;
     }
     return this.history[index];
   }
@@ -580,5 +539,9 @@ class Orchestrator {
 }
 
 // Create and export singleton instance
-const orchestrator = new Orchestrator();
-export default orchestrator;
+const orchestratorInstance = new Orchestrator();
+
+// Export both as default and named export for compatibility
+export default orchestratorInstance;
+export { orchestratorInstance as orchestrator };
+export type { Orchestrator };

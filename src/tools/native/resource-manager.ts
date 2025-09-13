@@ -51,6 +51,7 @@ export class ResourceManager extends EventEmitter {
   private readonly requestQueue: QueuedRequest[] = [];
   private readonly rateLimitStates = new Map<string, RateLimitState>();
   private readonly operationMonitoring = new Map<string, OperationMonitoring>();
+  private monitoringInterval?: NodeJS.Timeout; // Track the interval for cleanup
 
   // Rate limiting configuration
   private readonly rateLimits = {
@@ -70,6 +71,42 @@ export class ResourceManager extends EventEmitter {
     this.limits = this.validateAndNormalizeLimits(limits);
     this.initializeCPUBaseline();
     this.startResourceMonitoring();
+  }
+
+  /**
+   * Cleanup method to clear timers and resources - CRITICAL for test cleanup
+   */
+  cleanup(): void {
+    // Clear the monitoring interval
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
+      this.monitoringInterval = undefined;
+    }
+
+    // Clear all active slot timeouts
+    for (const slot of this.activeSlots.values()) {
+      if (slot.timeoutHandle) {
+        clearTimeout(slot.timeoutHandle);
+      }
+    }
+    this.activeSlots.clear();
+
+    // Clear all queued request timeouts
+    for (const request of this.requestQueue) {
+      if (request.timeoutHandle) {
+        clearTimeout(request.timeoutHandle);
+      }
+    }
+    this.requestQueue.length = 0;
+
+    // Clear operation monitoring
+    this.operationMonitoring.clear();
+
+    // Clear rate limit states
+    this.rateLimitStates.clear();
+
+    // Remove all listeners
+    this.removeAllListeners();
   }
 
   /**
@@ -516,7 +553,7 @@ export class ResourceManager extends EventEmitter {
    */
   private startResourceMonitoring(): void {
     // Check resource usage every 30 seconds
-    const monitoringInterval = setInterval(async () => {
+    this.monitoringInterval = setInterval(async () => {
       try {
         await this.checkResourceLimits();
       } catch (error) {
@@ -527,7 +564,9 @@ export class ResourceManager extends EventEmitter {
 
     // Clean up on process exit
     process.once('exit', () => {
-      clearInterval(monitoringInterval);
+      if (this.monitoringInterval) {
+        clearInterval(this.monitoringInterval);
+      }
     });
   }
 

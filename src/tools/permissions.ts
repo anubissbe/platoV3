@@ -15,7 +15,10 @@ export type Permissions = {
 export async function loadPermissions(): Promise<Permissions> {
   const proj = path.join(process.cwd(), '.plato', 'config.yaml');
   const glob = path.join(process.env.HOME || '', '.config', 'plato', 'config.yaml');
-  let mergedPermissions: Permissions = {};
+  let mergedPermissions: Permissions = {
+    defaults: {},
+    rules: []
+  };
   
   for (const f of [glob, proj]) {
     try {
@@ -105,7 +108,11 @@ export async function savePermissions(next: Permissions): Promise<void> {
 export async function getProjectPermissions(): Promise<Permissions> {
   let current: any = {};
   try { current = YAML.parse(await fs.readFile(path.join(process.cwd(), '.plato', 'config.yaml'), 'utf8')) || {}; } catch {}
-  return (current.permissions || {}) as Permissions;
+  const permissions = (current.permissions || {}) as Permissions;
+  return {
+    defaults: permissions.defaults || {},
+    rules: permissions.rules || []
+  };
 }
 
 export async function setDefault(tool: string, action: 'allow'|'deny'|'confirm') {
@@ -123,7 +130,11 @@ export async function addPermissionRule(rule: Rule) {
 export async function removePermissionRule(index: number) {
   const p = await getProjectPermissions();
   const rules = (p.rules||[]).slice();
-  if (index < 0 || index >= rules.length) return;
+  if (index < 0 || index >= rules.length) {
+    // Save the current permissions even if index is invalid
+    await savePermissions(p);
+    return;
+  }
   rules.splice(index, 1);
   await savePermissions({ ...p, rules });
 }
