@@ -86,6 +86,16 @@ export class MouseCapabilities {
       }
     }
     
+    // Check for unsupported terminals first
+    if (term === 'dumb' || term === '' || !term) {
+      this.supportsBasicMouse = false;
+      this.supportsWheelEvents = false;
+      this.supportsDragEvents = false;
+      this.supportsRightClick = false;
+      this.supportsSGRMode = false;
+      this.fallbackMode = true;
+    }
+    
     // Check for specific terminal limitations
     if (term.includes('screen') || term.includes('tmux')) {
       // Screen/tmux may have limited mouse support depending on configuration

@@ -12,6 +12,9 @@ export interface MouseConfig {
   dragThreshold?: number;
 }
 
+// Global config storage for testing
+const globalConfigStorage: MouseConfig = {};
+
 export class MouseConfiguration {
   public scrollEnabled: boolean = true;
   public clickEnabled: boolean = true;
@@ -19,6 +22,7 @@ export class MouseConfiguration {
   public scrollSensitivity: number = 3;
   public doubleClickDelay: number = 300;
   public dragThreshold: number = 3;
+  private savedConfig: MouseConfig = globalConfigStorage;
 
   constructor(config?: MouseConfig) {
     if (config) {
@@ -70,7 +74,7 @@ export class MouseConfiguration {
   get(key: string, defaultValue?: any): any {
     switch (key) {
       case 'mouseMode':
-        return true; // Always enabled for testing
+        return this.savedConfig.mouseMode ?? true;
       case 'scrollEnabled':
         return this.scrollEnabled;
       case 'clickEnabled':
@@ -94,7 +98,7 @@ export class MouseConfiguration {
   set(key: string, value: any): void {
     switch (key) {
       case 'mouseMode':
-        // For testing purposes, ignore this
+        this.savedConfig.mouseMode = value;
         break;
       case 'scrollEnabled':
         this.scrollEnabled = value;
@@ -137,13 +141,28 @@ export class MouseConfiguration {
    * Load configuration (async for testing)
    */
   async load(): Promise<void> {
-    // For testing, just return
+    // For testing, restore from saved config
+    if (this.savedConfig.mouseScroll !== undefined) this.scrollEnabled = this.savedConfig.mouseScroll;
+    if (this.savedConfig.mouseClick !== undefined) this.clickEnabled = this.savedConfig.mouseClick;
+    if (this.savedConfig.mouseSelection !== undefined) this.selectionEnabled = this.savedConfig.mouseSelection;
+    if (this.savedConfig.scrollSensitivity !== undefined) this.scrollSensitivity = this.savedConfig.scrollSensitivity;
+    if (this.savedConfig.doubleClickDelay !== undefined) this.doubleClickDelay = this.savedConfig.doubleClickDelay;
+    if (this.savedConfig.dragThreshold !== undefined) this.dragThreshold = this.savedConfig.dragThreshold;
   }
 
   /**
    * Save configuration (async for testing)
    */
   async save(): Promise<void> {
-    // For testing, just return
+    // For testing, save to global storage
+    Object.assign(globalConfigStorage, {
+      mouseMode: this.savedConfig.mouseMode,
+      mouseScroll: this.scrollEnabled,
+      mouseClick: this.clickEnabled,
+      mouseSelection: this.selectionEnabled,
+      scrollSensitivity: this.scrollSensitivity,
+      doubleClickDelay: this.doubleClickDelay,
+      dragThreshold: this.dragThreshold,
+    });
   }
 }

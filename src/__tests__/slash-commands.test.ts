@@ -64,7 +64,7 @@ const mockOpen = jest.fn().mockResolvedValue(undefined);
 jest.mock('open', () => mockOpen, { virtual: true });
 
 import { SLASH_COMMANDS, SLASH_MAP } from '../slash/commands';
-import { orchestrator } from '../runtime/orchestrator';
+import orchestrator from '../runtime/orchestrator';
 
 describe('Slash Commands - New Commands Tests', () => {
   beforeEach(() => {
@@ -75,7 +75,7 @@ describe('Slash Commands - New Commands Tests', () => {
     test('should include all new slash commands in registry', () => {
       const expectedCommands = [
         '/ide',
-        '/install-github-app', 
+        '/install-gitlab-app', 
         '/terminal-setup',
         '/compact',
         '/bug'
@@ -88,7 +88,7 @@ describe('Slash Commands - New Commands Tests', () => {
 
     test('should have proper summaries for new commands', () => {
       expect(SLASH_MAP.get('/ide')?.summary).toContain('IDE');
-      expect(SLASH_MAP.get('/install-github-app')?.summary).toContain('GitHub');
+      expect(SLASH_MAP.get('/install-gitlab-app')?.summary).toContain('GitLab');
       expect(SLASH_MAP.get('/terminal-setup')?.summary).toContain('terminal');
       expect(SLASH_MAP.get('/compact')?.summary).toContain('Compact');
       expect(SLASH_MAP.get('/bug')?.summary).toContain('bug');
@@ -118,17 +118,17 @@ describe('Slash Commands - New Commands Tests', () => {
     });
   });
 
-  describe('/install-github-app command', () => {
-    test('should handle GitHub app installation', async () => {
-      const result = await simulateSlashCommand('/install-github-app');
+  describe('/install-gitlab-app command', () => {
+    test('should handle GitLab app installation', async () => {
+      const result = await simulateSlashCommand('/install-gitlab-app');
       expect(result.success).toBe(true);
-      expect(mockOpen).toHaveBeenCalledWith(expect.stringContaining('github'));
+      expect(mockOpen).toHaveBeenCalledWith(expect.stringContaining('gitlab'));
     });
 
     test('should provide installation instructions', async () => {
-      const result = await simulateSlashCommand('/install-github-app');
+      const result = await simulateSlashCommand('/install-gitlab-app');
       expect(result.message).toContain('install');
-      expect(result.message).toContain('GitHub');
+      expect(result.message).toContain('GitLab');
     });
   });
 
@@ -182,10 +182,10 @@ describe('Slash Commands - New Commands Tests', () => {
   });
 
   describe('/bug command', () => {
-    test('should redirect to Plato GitHub issues', async () => {
+    test('should redirect to Plato GitLab issues', async () => {
       const result = await simulateSlashCommand('/bug');
       expect(result.success).toBe(true);
-      expect(mockOpen).toHaveBeenCalledWith(expect.stringContaining('github.com'));
+      expect(mockOpen).toHaveBeenCalledWith(expect.stringContaining('gitlab.com'));
       expect(mockOpen).toHaveBeenCalledWith(expect.stringContaining('issues'));
     });
 
@@ -206,7 +206,7 @@ describe('Slash Commands - New Commands Tests', () => {
       const result = await simulateSlashCommand('/help');
       expect(result.success).toBe(true);
       
-      const newCommands = ['/ide', '/install-github-app', '/terminal-setup', '/compact', '/bug'];
+      const newCommands = ['/ide', '/install-gitlab-app', '/terminal-setup', '/compact', '/bug'];
       newCommands.forEach(cmd => {
         expect(result.commandList).toContain(cmd);
       });
@@ -265,8 +265,8 @@ async function simulateSlashCommand(command: string): Promise<any> {
   switch (cmd) {
     case '/ide':
       return handleIdeCommand(args);
-    case '/install-github-app':
-      return handleInstallGithubAppCommand();
+    case '/install-gitlab-app':
+      return handleInstallGitlabAppCommand();
     case '/terminal-setup':
       return handleTerminalSetupCommand();
     case '/compact':
@@ -293,10 +293,10 @@ async function handleIdeCommand(editor?: string): Promise<any> {
   return { success: true, message: `IDE connection ${editor ? `for ${editor}` : 'established'}` };
 }
 
-async function handleInstallGithubAppCommand(): Promise<any> {
-  const url = 'https://github.com/apps/plato-ai/installations/new';
+async function handleInstallGitlabAppCommand(): Promise<any> {
+  const url = 'https://gitlab.com/plato-ai/plato/-/issues';
   await mockOpen(url);
-  return { success: true, message: 'Opening GitHub app installation page...' };
+  return { success: true, message: 'Opening GitLab app installation page...' };
 }
 
 async function handleTerminalSetupCommand(): Promise<any> {
@@ -329,11 +329,11 @@ async function handleCompactCommand(instructions?: string): Promise<any> {
 }
 
 async function handleBugCommand(description?: string): Promise<any> {
-  const url = 'https://github.com/plato-ai/plato/issues/new';
+  const url = 'https://gitlab.com/plato-ai/plato/-/issues/new';
   await mockOpen(url);
   return { 
     success: true, 
-    message: 'Opening Plato GitHub issues page...',
+    message: 'Opening Plato GitLab issues page...',
     description: description || undefined
   };
 }

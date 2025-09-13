@@ -125,11 +125,60 @@ jest.mock('fs/promises', () => {
       throw error;
     }),
     
+    mkdir: jest.fn().mockImplementation(async (dirPath: string, options?: any) => {
+      if (isRealPath(dirPath)) {
+        return originalFs.mkdir(dirPath, options);
+      }
+      
+      const normalizedPath = path.resolve(dirPath);
+      mockStats.set(normalizedPath, {
+        isFile: () => false,
+        isDirectory: () => true,
+        size: 0,
+        mtime: new Date(),
+      });
+    }),
+    
+    readdir: jest.fn().mockImplementation(async (dirPath: string) => {
+      if (isRealPath(dirPath)) {
+        return originalFs.readdir(dirPath);
+      }
+      
+      const normalizedPath = path.resolve(dirPath);
+      const files: string[] = [];
+      
+      // Find all files that start with this directory path
+      for (const filePath of mockFiles.keys()) {
+        if (filePath.startsWith(normalizedPath + path.sep)) {
+          const relativePath = path.relative(normalizedPath, filePath);
+          const firstSegment = relativePath.split(path.sep)[0];
+          if (!files.includes(firstSegment)) {
+            files.push(firstSegment);
+          }
+        }
+      }
+      
+      return files;
+    }),
+    
+    unlink: jest.fn().mockImplementation(async (filePath: string) => {
+      if (isRealPath(filePath)) {
+        return originalFs.unlink(filePath);
+      }
+      
+      const normalizedPath = path.resolve(filePath);
+      if (mockFiles.has(normalizedPath)) {
+        mockFiles.delete(normalizedPath);
+        mockStats.delete(normalizedPath);
+      } else {
+        const error = new Error(`ENOENT: no such file or directory, unlink '${filePath}'`) as NodeJS.ErrnoException;
+        error.code = 'ENOENT';
+        throw error;
+      }
+    }),
+    
     mkdtemp: originalFs.mkdtemp,
-    mkdir: originalFs.mkdir,
     rmdir: originalFs.rm || originalFs.rmdir,
-    readdir: originalFs.readdir,
-    unlink: originalFs.unlink,
     rename: originalFs.rename,
     copyFile: originalFs.copyFile,
     appendFile: originalFs.appendFile,

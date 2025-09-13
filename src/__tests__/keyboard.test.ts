@@ -12,6 +12,20 @@ jest.mock('../providers/chat_fallback', () => ({
   chatStream: jest.fn().mockResolvedValue({ content: 'mock response', usage: null }),
 }));
 
+// Mock the specific module path used by orchestrator
+const mockChatCompletions = jest.fn().mockResolvedValue({ content: 'mock response', usage: { prompt_tokens: 10, completion_tokens: 20 } });
+const mockChatStream = jest.fn().mockResolvedValue({ content: 'mock response', usage: { prompt_tokens: 10, completion_tokens: 20 } });
+
+jest.mock('../providers/chat.js', () => ({
+  chatCompletions: mockChatCompletions,
+  chatStream: mockChatStream,
+}));
+
+jest.mock('../providers/chat', () => ({
+  chatCompletions: mockChatCompletions,
+  chatStream: mockChatStream,
+}));
+
 jest.mock('../tools/patch', () => ({
   dryRunApply: jest.fn().mockResolvedValue({ ok: true, conflicts: [] }),
   apply: jest.fn().mockResolvedValue(undefined),
@@ -34,12 +48,29 @@ jest.mock('../integrations/mcp', () => ({
 }));
 
 jest.mock('../config', () => ({
-  loadConfig: () => Promise.resolve({}),
+  loadConfig: () => Promise.resolve({
+    provider: {
+      active: 'copilot',
+      copilot: {
+        base_url: 'http://localhost:8080',
+        chat_path: '/chat/completions'
+      }
+    },
+    model: { active: 'gpt-4' }
+  }),
   setConfigValue: jest.fn(),
 }));
 
 jest.mock('../providers/copilot', () => ({
   getAuthInfo: () => Promise.resolve({ loggedIn: false }),
+  providerFetch: jest.fn().mockResolvedValue({
+    ok: true,
+    json: () => Promise.resolve({
+      choices: [{ message: { content: 'mock response' } }],
+      usage: { prompt_tokens: 10, completion_tokens: 20 }
+    }),
+    text: () => Promise.resolve('mock response')
+  }),
 }));
 
 jest.mock('simple-git', () => ({
@@ -63,11 +94,16 @@ jest.mock('child_process', () => ({
   execSync: jest.fn().mockReturnValue(''),
 }));
 
-import { orchestrator } from '../runtime/orchestrator';
+import orchestrator from '../runtime/orchestrator';
 
 describe('Keyboard Shortcuts - Core Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    process.env.NODE_ENV = 'test';
+  });
+  
+  afterEach(() => {
+    delete process.env.NODE_ENV;
   });
 
   describe('Orchestrator Core Methods', () => {

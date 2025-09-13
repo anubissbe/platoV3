@@ -25,6 +25,9 @@ describe('Session Persistence Integration', () => {
   beforeEach(async () => {
     testDir = path.join(tmpdir(), `plato-test-${Date.now()}`);
     
+    // Set up test environment
+    process.env.PLATO_PROJECT_DIR = testDir;
+    
     // Create mock MemoryManager
     mockMemoryManager = {
       addMemory: jest.fn().mockResolvedValue(undefined),
@@ -63,6 +66,10 @@ describe('Session Persistence Integration', () => {
   afterEach(async () => {
     // Clean up persistence manager to prevent timer leaks
     await persistenceManager.shutdown();
+    
+    // Clean up test environment
+    delete process.env.PLATO_PROJECT_DIR;
+    
     jest.clearAllMocks();
   });
 

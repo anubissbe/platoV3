@@ -29,7 +29,9 @@ describe('MouseEventHandler', () => {
   });
 
   afterEach(() => {
+    mouseHandler.dispose();
     jest.clearAllMocks();
+    jest.clearAllTimers();
   });
 
   describe('Initialization', () => {
@@ -245,7 +247,7 @@ describe('MouseEventHandler', () => {
       expect(clickHandler).toHaveBeenCalledWith(clickEvent);
     });
 
-    test('should emit scroll events with aggregated data', () => {
+    test('should emit scroll events with correct event data', () => {
       const scrollHandler = jest.fn();
       mouseHandler.on('scroll', scrollHandler);
       
@@ -262,8 +264,8 @@ describe('MouseEventHandler', () => {
       
       expect(scrollHandler).toHaveBeenCalledWith(
         expect.objectContaining({
-          direction: 'up',
-          delta: 1,
+          type: MouseEventType.SCROLL,
+          button: MouseButton.WHEEL_UP,
           x: 10,
           y: 10,
         })

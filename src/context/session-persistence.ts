@@ -106,9 +106,16 @@ export class ContextPersistenceManager {
       ...options
     };
 
-    // Use test directory if available
-    const testDir = process.env.PLATO_PROJECT_DIR || process.cwd();
-    this.sessionPath = path.join(testDir, this.options.sessionPath!);
+    // Handle test directory path resolution
+    if (this.options.sessionPath!.startsWith('/')) {
+      // Absolute path provided
+      this.sessionPath = this.options.sessionPath!;
+    } else {
+      // Relative path - resolve against project directory
+      const testDir = process.env.PLATO_PROJECT_DIR || process.cwd();
+      this.sessionPath = path.join(testDir, this.options.sessionPath!);
+    }
+    
     this.memoryManager = new MemoryManager({
       memoryDir: this.options.memoryPath!
     });
@@ -197,7 +204,7 @@ export class ContextPersistenceManager {
         await fs.mkdir(sessionDir, { recursive: true });
         
         // Write to file
-        await fs.writeFile(this.sessionPath, JSON.stringify(serialized, null, 2));
+        await fs.writeFile(this.sessionPath, JSON.stringify(serialized, null, 2), 'utf-8');
         return true;
         
       } catch (error: any) {
@@ -219,24 +226,29 @@ export class ContextPersistenceManager {
       }
     }
     
-    // Memory fallback attempt - skip if MemoryManager doesn't have the method
+    // Memory fallback attempt using proper MemoryManager API
     try {
-      if (this.memoryManager && typeof (this.memoryManager as any).remember === 'function') {
-        const memoryKey = `session_backup_${Date.now()}`;
-        await (this.memoryManager as any).remember(memoryKey, {
-          content: 'Session backup due to file write failure',
-          metadata: { contextState: await this.serializeContextState(state) }
-        });
-        
-        console.warn('Session saved to memory fallback due to file write failure');
-        return true;
-      }
+      await this.memoryManager.addMemory({
+        id: 'fallback-context-state',
+        type: 'context',
+        content: JSON.stringify(await this.serializeContextState(state)),
+        timestamp: new Date().toISOString(),
+        tags: ['context', 'session', 'persistent'],
+        metadata: {
+          priority: 'high'
+        }
+      });
+      
+      console.warn('Session saved to memory fallback due to file write failure');
+      return true;
       
     } catch (memoryError) {
       console.error('Both session.json and memory fallback failed:', {
         originalError: lastError?.message,
         memoryError: (memoryError as Error).message
       });
+      // Re-throw the original error since fallback also failed
+      throw lastError;
     }
     
     return false;
@@ -270,17 +282,15 @@ export class ContextPersistenceManager {
         path: this.sessionPath
       });
       
-      // Try memory fallback - skip if MemoryManager doesn't have the method
+      // Try memory fallback using proper MemoryManager API
       try {
-        if (this.memoryManager && typeof (this.memoryManager as any).recall === 'function') {
-          const memories = await (this.memoryManager as any).recall('session_backup');
-          if (memories.length > 0) {
-            const latestBackup = memories[0];
-            if (latestBackup.metadata?.contextState) {
-              console.info('Restored session from memory fallback');
-              return await this.deserializeContextState(latestBackup.metadata.contextState);
-            }
-          }
+        const memories = await this.memoryManager.getAllMemories();
+        const fallbackMemory = memories.find(m => m.id === 'fallback-context-state');
+        
+        if (fallbackMemory) {
+          console.info('Restored session from memory fallback');
+          const serialized = JSON.parse(fallbackMemory.content);
+          return await this.deserializeContextState(serialized);
         }
       } catch (memoryError) {
         console.warn('Memory fallback also failed:', (memoryError as Error).message);
@@ -295,9 +305,10 @@ export class ContextPersistenceManager {
    */
   async storeContextEntry(key: string, entry: MemoryEntry): Promise<void> {
     try {
-      if (this.memoryManager && typeof (this.memoryManager as any).remember === 'function') {
-        await (this.memoryManager as any).remember(key, entry);
-      }
+      await this.memoryManager.addMemory({
+        ...entry,
+        id: key
+      });
     } catch (error) {
       console.error(`Failed to store context entry '${key}':`, error);
       throw error;
@@ -309,10 +320,16 @@ export class ContextPersistenceManager {
    */
   async getContextHistory(query?: string): Promise<MemoryEntry[]> {
     try {
-      if (this.memoryManager && typeof (this.memoryManager as any).recall === 'function') {
-        return await (this.memoryManager as any).recall(query || '');
-      }
-      return [];
+      // Get all memories and filter for context history entries
+      const memories = await this.memoryManager.getAllMemories();
+      const historyEntries = memories.filter(m => 
+        m.tags?.includes('context') && m.tags?.includes('history')
+      );
+      
+      // Sort by timestamp (newest first)
+      return historyEntries.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
     } catch (error) {
       console.error('Failed to retrieve context history:', error);
       return [];

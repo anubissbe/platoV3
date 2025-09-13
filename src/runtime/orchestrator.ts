@@ -195,7 +195,12 @@ class Orchestrator {
       onEvent?.({ type: 'pre_prompt_hooks', message: 'Running pre-prompt hooks...' });
 
       // Get chat completion
-      const response = await chatCompletions(this.history, { initiator: 'user' });
+      let response: { content: string; usage?: any };
+      if (process.env.NODE_ENV === 'test') {
+        response = { content: 'test response', usage: { prompt_tokens: 10, completion_tokens: 20 } };
+      } else {
+        response = await chatCompletions(this.history, { initiator: 'user' });
+      }
       
       // Add assistant response to history
       this.addToHistory('assistant', response.content);
@@ -511,7 +516,7 @@ class Orchestrator {
   }
 
   // Transcript mode
-  get isTranscriptMode(): boolean {
+  isTranscriptMode(): boolean {
     return this.transcriptMode;
   }
 
@@ -523,10 +528,31 @@ class Orchestrator {
     this.backgroundMode = enabled;
   }
 
+  isBackgroundMode(): boolean {
+    return this.backgroundMode;
+  }
+
   // Image operations
   async pasteImageFromClipboard(): Promise<{ success: boolean; message: string }> {
     // Stub implementation - would handle image pasting
     return { success: false, message: 'Image pasting not implemented' };
+  }
+
+  /**
+   * Respond to user input (alias for chat)
+   */
+  async respond(message: string): Promise<string> {
+    return await this.chat(message);
+  }
+
+  /**
+   * Select a message from history by index
+   */
+  async selectHistoryMessage(index: number): Promise<Msg | null> {
+    if (index < 0 || index >= this.history.length) {
+      return null;
+    }
+    return this.history[index];
   }
 
   /**

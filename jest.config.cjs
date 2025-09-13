@@ -61,6 +61,12 @@ module.exports = {
     '<rootDir>/src/__tests__/output-styles.test.ts',
     '<rootDir>/src/__tests__/configuration-management.test.ts',
     '<rootDir>/src/__tests__/custom-commands.test.ts',
+    
+    // Fixed mouse event tests
+    '<rootDir>/src/__tests__/mouse-event-handler.test.ts',
+    '<rootDir>/src/__tests__/mouse-event-capture.test.ts',
+    '<rootDir>/src/__tests__/mouse-mode.test.ts',
+    '<rootDir>/src/__tests__/mouse-wheel-scrolling.test.ts',
   ],
   
   // EXCLUDE PROBLEMATIC TESTS - Run these separately
@@ -88,10 +94,6 @@ module.exports = {
     
     // Known problematic tests that need fixes
     '<rootDir>/src/__tests__/cli.test.ts',
-    '<rootDir>/src/__tests__/mouse-event-handler.test.ts',
-    '<rootDir>/src/__tests__/mouse-event-capture.test.ts',
-    '<rootDir>/src/__tests__/mouse-mode.test.ts',
-    '<rootDir>/src/__tests__/mouse-wheel-scrolling.test.ts',
     '<rootDir>/src/__tests__/platform-mouse-compatibility.test.ts',
     '<rootDir>/src/__tests__/horizontal-scrolling.test.ts',
     '<rootDir>/src/__tests__/long-response-scrolling.test.ts',

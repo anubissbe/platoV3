@@ -325,8 +325,8 @@ export class MousePreferencesManager {
     // Save final state
     this.saveStorage();
     
-    // Stop auto-save
-    this.stopAutoSave();
+    // Stop auto-save and cleanup resources
+    this.cleanup();
   }
 
   /**
@@ -615,6 +615,14 @@ export class MousePreferencesManager {
       clearInterval(this.autoSaveInterval);
       this.autoSaveInterval = null;
     }
+  }
+  
+  /**
+   * Cleanup method to ensure proper resource disposal
+   */
+  cleanup(): void {
+    this.stopAutoSave();
+    this.eventBuffer = [];
   }
 }
 
