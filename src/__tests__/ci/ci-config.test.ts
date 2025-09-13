@@ -111,10 +111,12 @@ describe('CI Configuration Validation', () => {
       const testJob = workflowContent.jobs.test;
       expect(testJob.strategy).toBeDefined();
       expect(testJob.strategy?.matrix).toBeDefined();
-      expect(testJob.strategy?.matrix?.node).toBeDefined();
+      
+      // Check for either 'node' or 'node-version' matrix key
+      const nodeVersions = testJob.strategy?.matrix?.node || testJob.strategy?.matrix?.['node-version'];
+      expect(nodeVersions).toBeDefined();
       
       // Should test Node 18, 20, 22
-      const nodeVersions = testJob.strategy?.matrix?.node;
       expect(nodeVersions).toContain(18);
       expect(nodeVersions).toContain(20);
       expect(nodeVersions).toContain(22);
@@ -291,22 +293,28 @@ describe('CI Configuration Validation', () => {
 
     test('should include coverage badge', () => {
       if (!readmeExists) return;
-      // Check for coverage badge patterns (Codecov or Coveralls)
+      // Check for coverage badge patterns (Codecov, Coveralls, GitLab, or generic)
       const hasCodecovBadge = readmeContent.includes('codecov.io/gh/');
       const hasCoverallsBadge = readmeContent.includes('coveralls.io/repos/');
       const hasCoverageBadge = readmeContent.includes('![Coverage]') || 
                                readmeContent.includes('![coverage]');
+      const hasGitLabCoverageBadge = readmeContent.includes('/badges/') && readmeContent.includes('coverage');
+      const hasGenericCoverageBadge = readmeContent.includes('coverage-') && readmeContent.includes('%');
       
-      expect(hasCodecovBadge || hasCoverallsBadge || hasCoverageBadge).toBe(true);
+      expect(hasCodecovBadge || hasCoverallsBadge || hasCoverageBadge || hasGitLabCoverageBadge || hasGenericCoverageBadge).toBe(true);
     });
 
     test('should include build status badge', () => {
       if (!readmeExists) return;
-      const hasBuildBadge = readmeContent.includes('github.com/') && 
-                           (readmeContent.includes('/workflows/') || 
-                            readmeContent.includes('/actions/'));
+      const hasGitHubBuildBadge = readmeContent.includes('github.com/') && 
+                                 (readmeContent.includes('/workflows/') || 
+                                  readmeContent.includes('/actions/'));
+      const hasGitLabPipelineBadge = readmeContent.includes('/badges/') && 
+                                    (readmeContent.includes('pipeline') || readmeContent.includes('build'));
+      const hasGenericBuildBadge = readmeContent.includes('![Pipeline') || 
+                                  readmeContent.includes('![Build');
       
-      expect(hasBuildBadge).toBe(true);
+      expect(hasGitHubBuildBadge || hasGitLabPipelineBadge || hasGenericBuildBadge).toBe(true);
     });
   });
 

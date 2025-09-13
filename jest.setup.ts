@@ -36,10 +36,23 @@ const mockStats = new Map<string, any>();
 // Helper to determine if path should use real fs
 const isRealPath = (filePath: string): boolean => {
   const normalized = path.resolve(filePath);
-  // Use real fs for temp directories and node_modules
+  const projectRoot = process.cwd();
+  
+  // Use real fs for:
+  // - temp directories and node_modules
+  // - project root files (package.json, README.md, .gitignore, etc.)
+  // - .github directory and subdirectories
+  // - jest config files
   return normalized.startsWith(tmpdir()) || 
          normalized.includes('node_modules') ||
-         normalized.startsWith('/tmp/');
+         normalized.startsWith('/tmp/') ||
+         normalized === path.join(projectRoot, 'package.json') ||
+         normalized === path.join(projectRoot, 'README.md') ||
+         normalized === path.join(projectRoot, '.gitignore') ||
+         normalized.startsWith(path.join(projectRoot, '.github')) ||
+         normalized.includes('jest.config') ||
+         normalized === path.join(projectRoot, 'tsconfig.json') ||
+         normalized === path.join(projectRoot, 'tsconfig.test.json');
 };
 
 // Simplified fs mock
@@ -97,10 +110,24 @@ jest.mock('fs/promises', () => {
       throw error;
     }),
     
+    access: jest.fn().mockImplementation(async (filePath: string, mode?: number) => {
+      if (isRealPath(filePath)) {
+        return originalFs.access(filePath, mode);
+      }
+      
+      const normalizedPath = path.resolve(filePath);
+      if (mockFiles.has(normalizedPath) || mockStats.has(normalizedPath)) {
+        return; // File exists in mock
+      }
+      
+      const error = new Error(`ENOENT: no such file or directory, access '${filePath}'`) as NodeJS.ErrnoException;
+      error.code = 'ENOENT';
+      throw error;
+    }),
+    
     mkdtemp: originalFs.mkdtemp,
     mkdir: originalFs.mkdir,
     rmdir: originalFs.rm || originalFs.rmdir,
-    access: originalFs.access,
     readdir: originalFs.readdir,
     unlink: originalFs.unlink,
     rename: originalFs.rename,

@@ -1,0 +1,458 @@
+{
+  "timestamp": "2025-09-12T21:31:53.118Z",
+  "environment": {
+    "nodeVersion": "v24.5.0",
+    "platform": "linux",
+    "arch": "x64",
+    "cpuCount": 24,
+    "totalMemory": 50126262272,
+    "freeMemory": 24156622848
+  },
+  "testResults": [
+    {
+      "testFilePath": "src/__tests__/performance.test.ts",
+      "duration": 35665,
+      "numPassingTests": 22,
+      "numFailingTests": 14,
+      "numPendingTests": 0,
+      "tests": [
+        {
+          "title": "PerformanceMonitor Metrics Collection should track render times",
+          "status": "failed",
+          "duration": 2,
+          "failureMessages": [
+            "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:62:32)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "Metrics Collection"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor Metrics Collection should calculate average performance",
+          "status": "failed",
+          "duration": 1,
+          "failureMessages": [
+            "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 10\nReceived: 0\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:76:29)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "Metrics Collection"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor Metrics Collection should track memory usage",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "Metrics Collection"
+          ],
+          "performanceMetrics": {
+            "type": "memory_test"
+          }
+        },
+        {
+          "title": "PerformanceMonitor Metrics Collection should detect performance bottlenecks",
+          "status": "failed",
+          "duration": 1,
+          "failureMessages": [
+            "Error: expect(received).toContain(expected) // indexOf\n\nExpected value: \"slow-op\"\nReceived array: []\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:99:27)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "Metrics Collection"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor Metrics Collection should return empty metrics for unknown operations",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "Metrics Collection"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor FPS Monitoring should track frame rate",
+          "status": "failed",
+          "duration": 31809,
+          "failureMessages": [
+            "Error: expect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 0\nReceived:    NaN\n    at Timeout.renderFrame [as _onTimeout] (/opt/projects/platoV3/src/__tests__/performance.test.ts:125:23)\n    at listOnTimeout (node:internal/timers:608:17)\n    at processTimers (node:internal/timers:543:7)",
+            "Error: thrown: \"Exceeded timeout of 30000 ms for a test while waiting for `done()` to be called.\nAdd a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout.\"\n    at /opt/projects/platoV3/src/__tests__/performance.test.ts:113:5\n    at _dispatchDescribe (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:604:26)\n    at describe (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:572:44)\n    at /opt/projects/platoV3/src/__tests__/performance.test.ts:112:3\n    at _dispatchDescribe (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:604:26)\n    at describe (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:572:44)\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:41:1)\n    at Runtime._execModule (/opt/projects/platoV3/node_modules/jest-runtime/build/index.js:1268:24)\n    at Runtime._loadModule (/opt/projects/platoV3/node_modules/jest-runtime/build/index.js:944:12)\n    at Runtime.requireModule (/opt/projects/platoV3/node_modules/jest-runtime/build/index.js:832:12)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:95:13)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "FPS Monitoring"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor FPS Monitoring should detect frame drops",
+          "status": "passed",
+          "duration": 888,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "FPS Monitoring"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor FPS Monitoring should not record frames when monitoring is stopped",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "FPS Monitoring"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor Thresholds and Alerts should trigger alerts for slow operations",
+          "status": "failed",
+          "duration": 1,
+          "failureMessages": [
+            "Error: expect(jest.fn()).toHaveBeenCalledWith(...expected)\n\nExpected: ObjectContaining {\"duration\": Any<Number>, \"metric\": \"render\", \"threshold\": 50, \"timestamp\": Any<Number>}\n\nNumber of calls: 0\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:176:29)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "Thresholds and Alerts"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor Thresholds and Alerts should track performance budget violations",
+          "status": "failed",
+          "duration": 1,
+          "failureMessages": [
+            "Error: expect(received).toHaveLength(expected)\n\nExpected length: 1\nReceived length: 0\nReceived array:  []\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:196:26)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "Thresholds and Alerts"
+          ]
+        },
+        {
+          "title": "PerformanceMonitor Thresholds and Alerts should not trigger alerts for operations within threshold",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "PerformanceMonitor",
+            "Thresholds and Alerts"
+          ]
+        },
+        {
+          "title": "RenderOptimizer Render Batching should batch multiple updates",
+          "status": "failed",
+          "duration": 3,
+          "failureMessages": [
+            "Error: expect(jest.fn()).toHaveBeenCalledTimes(expected)\n\nExpected number of calls: 1\nReceived number of calls: 0\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:246:22)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "RenderOptimizer",
+            "Render Batching"
+          ]
+        },
+        {
+          "title": "RenderOptimizer Render Batching should debounce rapid updates",
+          "status": "passed",
+          "duration": 1,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "RenderOptimizer",
+            "Render Batching"
+          ]
+        },
+        {
+          "title": "RenderOptimizer Render Batching should throttle continuous updates",
+          "status": "failed",
+          "duration": 1,
+          "failureMessages": [
+            "Error: expect(jest.fn()).toHaveBeenCalledTimes(expected)\n\nExpected number of calls: 2\nReceived number of calls: 3\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:286:22)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "RenderOptimizer",
+            "Render Batching"
+          ]
+        },
+        {
+          "title": "RenderOptimizer Render Prioritization should prioritize high priority updates",
+          "status": "passed",
+          "duration": 63,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "RenderOptimizer",
+            "Render Prioritization"
+          ]
+        },
+        {
+          "title": "RenderOptimizer Render Prioritization should use requestIdleCallback for low priority when available",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "RenderOptimizer",
+            "Render Prioritization"
+          ]
+        },
+        {
+          "title": "RenderOptimizer Render Caching should cache expensive computations",
+          "status": "passed",
+          "duration": 1,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "RenderOptimizer",
+            "Render Caching"
+          ]
+        },
+        {
+          "title": "RenderOptimizer Render Caching should invalidate cache when needed",
+          "status": "failed",
+          "duration": 1,
+          "failureMessages": [
+            "Error: expect(jest.fn()).toHaveBeenCalledTimes(expected)\n\nExpected number of calls: 2\nReceived number of calls: 1\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:343:23)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "RenderOptimizer",
+            "Render Caching"
+          ]
+        },
+        {
+          "title": "MemoryManager Memory Tracking should track object allocations",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "MemoryManager",
+            "Memory Tracking"
+          ]
+        },
+        {
+          "title": "MemoryManager Memory Tracking should detect memory leaks",
+          "status": "passed",
+          "duration": 2,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "MemoryManager",
+            "Memory Tracking"
+          ],
+          "performanceMetrics": {
+            "type": "memory_test"
+          }
+        },
+        {
+          "title": "MemoryManager Memory Tracking should cleanup released objects",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "MemoryManager",
+            "Memory Tracking"
+          ]
+        },
+        {
+          "title": "MemoryManager Memory Optimization should implement object pooling",
+          "status": "passed",
+          "duration": 1,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "MemoryManager",
+            "Memory Optimization"
+          ]
+        },
+        {
+          "title": "MemoryManager Memory Optimization should limit pool size",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "MemoryManager",
+            "Memory Optimization"
+          ]
+        },
+        {
+          "title": "MemoryManager Memory Optimization should garbage collect unused objects",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "MemoryManager",
+            "Memory Optimization"
+          ]
+        },
+        {
+          "title": "MemoryManager Memory Limits should enforce memory limits",
+          "status": "passed",
+          "duration": 4,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "MemoryManager",
+            "Memory Limits"
+          ],
+          "performanceMetrics": {
+            "type": "memory_test"
+          }
+        },
+        {
+          "title": "MemoryManager Memory Limits should provide memory pressure warnings",
+          "status": "failed",
+          "duration": 0,
+          "failureMessages": [
+            "Error: Memory limit exceeded\n    at MemoryManager.checkMemoryPressure (/opt/projects/platoV3/src/tui/PerformanceMonitor.ts:404:13)\n    at MemoryManager.track (/opt/projects/platoV3/src/tui/PerformanceMonitor.ts:325:10)\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:460:21)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "MemoryManager",
+            "Memory Limits"
+          ],
+          "performanceMetrics": {
+            "type": "memory_test"
+          }
+        },
+        {
+          "title": "VirtualScroller Virtualization should calculate visible items",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Virtualization"
+          ]
+        },
+        {
+          "title": "VirtualScroller Virtualization should update visible range on scroll",
+          "status": "passed",
+          "duration": 1,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Virtualization"
+          ]
+        },
+        {
+          "title": "VirtualScroller Virtualization should include buffer for smooth scrolling",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Virtualization"
+          ]
+        },
+        {
+          "title": "VirtualScroller Virtualization should handle variable item heights",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Virtualization"
+          ]
+        },
+        {
+          "title": "VirtualScroller Performance should handle large datasets efficiently",
+          "status": "failed",
+          "duration": 0,
+          "failureMessages": [
+            "Error: expect(received).toBeLessThan(expected)\n\nExpected: < 100\nReceived:   NaN\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:532:24)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Performance"
+          ]
+        },
+        {
+          "title": "VirtualScroller Performance should cache position calculations",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Performance"
+          ]
+        },
+        {
+          "title": "VirtualScroller Performance should recycle DOM elements",
+          "status": "passed",
+          "duration": 0,
+          "failureMessages": [],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Performance"
+          ]
+        },
+        {
+          "title": "VirtualScroller Smooth Scrolling should support smooth scroll animations",
+          "status": "failed",
+          "duration": 0,
+          "failureMessages": [
+            "Error: expect(received).toBeCloseTo(expected, precision)\n\nExpected: 500\nReceived: 0\n\nExpected precision:    0\nExpected difference: < 0.5\nReceived difference:   500\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:582:24)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Smooth Scrolling"
+          ]
+        },
+        {
+          "title": "VirtualScroller Smooth Scrolling should handle scroll momentum",
+          "status": "failed",
+          "duration": 1,
+          "failureMessages": [
+            "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:595:47)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Smooth Scrolling"
+          ]
+        },
+        {
+          "title": "VirtualScroller Smooth Scrolling should apply friction to momentum",
+          "status": "failed",
+          "duration": 0,
+          "failureMessages": [
+            "Error: expect(received).toBeGreaterThan(expected)\n\nExpected: > 0\nReceived:   0\n    at Object.<anonymous> (/opt/projects/platoV3/src/__tests__/performance.test.ts:608:25)\n    at Promise.finally.completed (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1556:28)\n    at new Promise (<anonymous>)\n    at callAsyncCircusFn (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1496:10)\n    at _callCircusTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1006:40)\n    at _runTest (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:946:3)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:839:13)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at _runTestsForDescribeBlock (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:829:11)\n    at run (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:757:3)\n    at runAndTransformResultsToJestFormat (/opt/projects/platoV3/node_modules/jest-circus/build/jestAdapterInit.js:1917:21)\n    at jestAdapter (/opt/projects/platoV3/node_modules/jest-circus/build/runner.js:101:19)\n    at runTestInternal (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:275:16)\n    at runTest (/opt/projects/platoV3/node_modules/jest-runner/build/index.js:343:7)"
+          ],
+          "ancestorTitles": [
+            "VirtualScroller",
+            "Smooth Scrolling"
+          ]
+        }
+      ],
+      "memoryUsage": {
+        "rss": 407109632,
+        "heapTotal": 292384768,
+        "heapUsed": 283917368,
+        "external": 4682953,
+        "arrayBuffers": 1133938
+      },
+      "timestamp": "2025-09-12T21:32:28.805Z"
+    }
+  ],
+  "summary": {
+    "totalTests": 36,
+    "passedTests": 22,
+    "failedTests": 14,
+    "skippedTests": 0,
+    "totalDuration": 35665,
+    "averageTestDuration": 990.6944444444445,
+    "slowTests": [
+      {
+        "testFile": "src/__tests__/performance.test.ts",
+        "duration": 35665,
+        "slowTestsCount": 1
+      }
+    ],
+    "performanceMetrics": {
+      "benchmarkTests": 0,
+      "loadTests": 0,
+      "memoryTests": 4,
+      "stabilityTests": 0,
+      "memoryStats": {
+        "min": 283917368,
+        "max": 283917368,
+        "average": 283917368,
+        "growth": 0
+      }
+    }
+  }
+}

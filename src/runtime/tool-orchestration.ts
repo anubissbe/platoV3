@@ -145,8 +145,8 @@ export async function executeToolCall(
     const result = await toolExecutor.execute(toolCall);
     
     // Add result to conversation history (maintain compatibility)
-    const { addToHistory } = await import('./orchestrator.js');
-    addToHistory({ role: 'tool', content: JSON.stringify(result) });
+    const orchestrator = await import("./orchestrator.js"); const addToHistory = orchestrator.default.addToHistory.bind(orchestrator.default);
+    addToHistory("tool", JSON.stringify(result));
     
     onEvent?.({ type: 'tool-end', message: 'Tool completed successfully' });
     
@@ -154,8 +154,8 @@ export async function executeToolCall(
     const errorMessage = `Tool failed: ${error?.message || error}`;
     
     // Add error to conversation history
-    const { addToHistory } = await import('./orchestrator.js');
-    addToHistory({ role: 'tool', content: errorMessage });
+    const orchestrator = await import("./orchestrator.js"); const addToHistory = orchestrator.default.addToHistory.bind(orchestrator.default);
+    addToHistory("tool", errorMessage);
     
     onEvent?.({ type: 'tool-end', message: errorMessage });
   }
@@ -209,8 +209,8 @@ export async function* streamToolCall(
       // Handle completion
       if (event.type === 'complete') {
         // Add to history
-        const { addToHistory } = await import('./orchestrator.js');
-        addToHistory({ role: 'tool', content: JSON.stringify(event.data) });
+        const orchestrator = await import("./orchestrator.js"); const addToHistory = orchestrator.default.addToHistory.bind(orchestrator.default);
+        addToHistory("tool", JSON.stringify(event.data));
         
         onEvent?.({ type: 'tool-end', message: 'Streaming completed' });
       }
@@ -337,8 +337,7 @@ function extractServerFromToolName(toolName: string): string | null {
  */
 async function getPermissionManager(): Promise<PermissionManager> {
   // Import the permission manager initialization from orchestrator
-  const { ensurePermissionManager } = await import('./orchestrator.js');
-  return ensurePermissionManager();
+  const orchestrator = await import("./orchestrator.js"); return orchestrator.default.ensurePermissionManagerPublic();
 }
 
 /**

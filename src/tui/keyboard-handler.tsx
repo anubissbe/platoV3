@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Box, Text, render, useApp, useInput, useStdin } from 'ink';
 import { loadConfig, setConfigValue } from '../config.js';
 import { SLASH_COMMANDS } from '../slash/commands.js';
-import { orchestrator } from '../runtime/orchestrator.js';
+import orchestrator from '../runtime/orchestrator.js';
 import { StyledBox, StyledText, StatusLine, WelcomeMessage, ErrorMessage } from '../styles/components.js';
 import { Header } from './components/Header.js';
 import { ConversationArea } from './components/ConversationArea.js';
@@ -1814,7 +1814,7 @@ export function App() {
         // Update streaming message content in real-time
         streamingManagerRef.current?.updateStreamContent(display);
       }, (evt) => {
-        if (evt.type === 'info') setLines(prev => prev.concat(evt.message));
+        if (evt.type === 'info') setLines(prev => prev.concat(evt.message || "info"));
         if (evt.type === 'tool-start') setLines(prev => prev.concat(`tool: ${evt.message}`));
         if (evt.type === 'tool-end') setLines(prev => prev.concat('tool: done'));
       });
