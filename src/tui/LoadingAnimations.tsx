@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text } from 'ink';
-import { LoadingAnimations as LoadingAnimationManager, Animation } from './VisualIndicators';
+import { LoadingAnimations as LoadingAnimationManager, Animation } from './VisualIndicators.js';
 
 export interface LoadingSpinnerProps {
   text?: string;
