@@ -1887,9 +1887,13 @@ export function App() {
   };
 
   // Status line rendering
+  // Get metrics outside of useMemo to avoid re-render loop
+  const metrics = orchestrator.getMetrics();
+  const turnCount = metrics.turns;
+  
   const statusline = React.useMemo(() => {
     const fmt = cfg?.statusline?.format || 'plato | {provider} | {model} | {tokens} {branch}';
-    const m = orchestrator.getMetrics();
+    const m = metrics;
     const tokens = `tok ${m.inputTokens}/${m.outputTokens}`;
     const map: Record<string, string> = {
       provider: cfg?.provider?.active || 'copilot',
@@ -1902,7 +1906,7 @@ export function App() {
       turns: String(m.turns),
     };
     return fmt.replace(/\{(\w+)\}/g, (_: string, k: string) => map[k] ?? '');
-  }, [cfg, branch, keyboardState.transcriptMode, keyboardState.backgroundMode, orchestrator.getMetrics().turns]);
+  }, [cfg, branch, keyboardState.transcriptMode, keyboardState.backgroundMode, turnCount]);
 
   // Current input display
   const inputDisplay = keyboardState.isMultiLine
