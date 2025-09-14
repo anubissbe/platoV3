@@ -1306,7 +1306,7 @@ export function App() {
       setLines(prev => prev.concat(`🗜️ Compacting conversation history...`));
       
       // Use smart compaction with focus instructions
-      const result = orchestrator.compactHistoryWithFocus(instructions);
+      const result = await orchestrator.compactHistoryWithFocus(instructions);
       
       if (instructions) {
         setLines(prev => prev.concat(`📋 Focus instructions: "${instructions}"`));

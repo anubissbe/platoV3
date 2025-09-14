@@ -179,6 +179,79 @@ class Orchestrator {
   }
 
   /**
+   * Get current metrics
+   */
+  getMetrics() {
+    return {
+      inputTokens: this.tokenMetrics.inputTokens || 0,
+      outputTokens: this.tokenMetrics.outputTokens || 0,
+      input: this.tokenMetrics.input || 0,
+      output: this.tokenMetrics.output || 0,
+      turns: Math.floor(this.history.length / 2) || 0,
+      durationMs: 0 // Add duration tracking if needed
+    };
+  }
+
+  /**
+   * Save current session
+   */
+  async saveSession(): Promise<void> {
+    // Session saving logic - implement if needed
+    // For now, just return to prevent runtime errors
+    return Promise.resolve();
+  }
+
+  /**
+   * Restore previous session
+   */
+  async restoreSession(): Promise<void> {
+    // Session restoration logic - implement if needed
+    // For now, just return to prevent runtime errors
+    return Promise.resolve();
+  }
+
+  /**
+   * Reset the orchestrator state
+   */
+  reset(): void {
+    this.history = [];
+    this.tokenMetrics = {
+      input: 0,
+      output: 0,
+      inputTokens: 0,
+      outputTokens: 0
+    };
+    this.transcriptMode = false;
+    this.backgroundMode = false;
+  }
+
+  /**
+   * Initialize analytics system
+   */
+  async initializeAnalyticsSystem(options?: any): Promise<void> {
+    // Analytics initialization - implement if needed
+    return Promise.resolve();
+  }
+
+  /**
+   * Get orchestrator statistics
+   */
+  getStats() {
+    return {
+      messageCount: this.history.length,
+      messages: this.history.length, // Alias for compatibility
+      inputTokens: this.tokenMetrics.inputTokens,
+      outputTokens: this.tokenMetrics.outputTokens,
+      tokens: {
+        input: this.tokenMetrics.inputTokens,
+        output: this.tokenMetrics.outputTokens,
+        total: this.tokenMetrics.inputTokens + this.tokenMetrics.outputTokens
+      },
+      turns: Math.floor(this.history.length / 2)
+    };
+  }
+
+  /**
    * Basic chat completion handler
    */
   async chat(message: string, onEvent?: (e: OrchestratorEvent) => void): Promise<string> {
@@ -463,7 +536,7 @@ class Orchestrator {
   }
 
   // Streaming with callback
-  async respondStream(message: string, onDelta: (delta: any) => void): Promise<void> {
+  async respondStream(message: string, onDelta: (delta: any) => void, onEvent?: (evt: any) => void): Promise<void> {
     try {
       const stream = this.processMessageStream(message);
       for await (const chunk of stream) {
