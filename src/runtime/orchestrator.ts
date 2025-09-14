@@ -158,6 +158,13 @@ class Orchestrator {
   }
 
   /**
+   * Add a message object to history (compatibility method)
+   */
+  addMessage(message: { role: string; content: string }): void {
+    this.addToHistory(message.role, message.content);
+  }
+
+  /**
    * Get conversation history
    */
   getHistory(): Msg[] {
@@ -585,6 +592,57 @@ class Orchestrator {
       return undefined;
     }
     return this.history[index];
+  }
+
+  /**
+   * Select a history message asynchronously (compatibility method)
+   */
+  async selectHistoryMessage(index: number): Promise<string | null> {
+    if (index < 0 || index >= this.history.length) {
+      return null;
+    }
+    const msg = this.history[index];
+    return msg ? msg.content : null;
+  }
+
+  /**
+   * Update token metrics with new token counts (overloaded method)
+   */
+  updateTokenMetrics(inputTokens: number, outputTokens: number): void;
+  updateTokenMetrics(metrics: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+    cost?: number;
+  }): void;
+  updateTokenMetrics(
+    inputOrMetrics: number | {
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      cost?: number;
+    },
+    outputTokens?: number
+  ): void {
+    if (typeof inputOrMetrics === 'number' && typeof outputTokens === 'number') {
+      // Handle (inputTokens, outputTokens) signature
+      this.tokenMetrics.inputTokens += inputOrMetrics;
+      this.tokenMetrics.input += inputOrMetrics;
+      this.tokenMetrics.outputTokens += outputTokens;
+      this.tokenMetrics.output += outputTokens;
+    } else if (typeof inputOrMetrics === 'object') {
+      // Handle metrics object signature
+      const metrics = inputOrMetrics;
+      if (metrics.inputTokens !== undefined) {
+        this.tokenMetrics.inputTokens += metrics.inputTokens;
+        this.tokenMetrics.input += metrics.inputTokens;
+      }
+      if (metrics.outputTokens !== undefined) {
+        this.tokenMetrics.outputTokens += metrics.outputTokens;
+        this.tokenMetrics.output += metrics.outputTokens;
+      }
+      // Note: cost tracking could be added to tokenMetrics if needed
+    }
   }
 
   /**

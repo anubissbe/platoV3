@@ -1,4 +1,5 @@
 import React from 'react';
+// @ts-ignore - ink-testing-library doesn't have types
 import { render } from 'ink-testing-library';
 import { 
   LoadingSpinner, 

@@ -50,6 +50,9 @@ export function App() {
   const [confirm, setConfirm] = useState<null | { question: string; proceed: () => Promise<void> }>(null);
   const [branch, setBranch] = useState<string>('');
   
+  // Stable session start time to prevent re-renders
+  const sessionStartTime = React.useRef(new Date()).current;
+  
   // Conversation messages
   const [conversationMessages, setConversationMessages] = useState<Array<{
     role: 'user' | 'assistant' | 'system';
@@ -621,7 +624,12 @@ export function App() {
     const args = parts.slice(1).join(' ');
 
     if (command === '/help') {
-      setLines(prev => prev.concat('Commands:', ...SLASH_COMMANDS.map(c => ` ${c.name} — ${c.summary}`)));
+      const helpText = ['Commands:', ...SLASH_COMMANDS.map(c => ` ${c.name} — ${c.summary}`)].join('\n');
+      setConversationMessages(prev => [...prev, {
+        role: 'system' as const,
+        content: helpText,
+        timestamp: Date.now()
+      }]);
       return;
     }
 
@@ -1096,24 +1104,55 @@ export function App() {
   // Login command handler
   const handleLoginCommand = async (args: string) => {
     try {
-      setLines(prev => prev.concat('🔐 Initiating Copilot login...'));
+      // Add system message to conversation
+      setConversationMessages(prev => [...prev, {
+        role: 'system' as const,
+        content: '🔐 Initiating Copilot login...',
+        timestamp: Date.now()
+      }]);
+      
       const { loginCopilot } = await import('../providers/copilot.js');
       await loginCopilot();
-      setLines(prev => prev.concat('✅ Login successful'));
+      
+      // Add success message to conversation
+      setConversationMessages(prev => [...prev, {
+        role: 'system' as const,
+        content: '✅ Login successful',
+        timestamp: Date.now()
+      }]);
     } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Login failed: ${e?.message || e}`));
+      // Add error message to conversation
+      setConversationMessages(prev => [...prev, {
+        role: 'system' as const,
+        content: `❌ Login failed: ${e?.message || e}`,
+        timestamp: Date.now()
+      }]);
     }
   };
 
   // Logout command handler
   const handleLogoutCommand = async (args: string) => {
     try {
-      setLines(prev => prev.concat('🚪 Logging out...'));
+      setConversationMessages(prev => [...prev, {
+        role: 'system' as const,
+        content: '🚪 Logging out...',
+        timestamp: Date.now()
+      }]);
+      
       const { logoutCopilot } = await import('../providers/copilot.js');
       await logoutCopilot();
-      setLines(prev => prev.concat('✅ Logged out successfully'));
+      
+      setConversationMessages(prev => [...prev, {
+        role: 'system' as const,
+        content: '✅ Logged out successfully',
+        timestamp: Date.now()
+      }]);
     } catch (e: any) {
-      setLines(prev => prev.concat(`❌ Logout failed: ${e?.message || e}`));
+      setConversationMessages(prev => [...prev, {
+        role: 'system' as const,
+        content: `❌ Logout failed: ${e?.message || e}`,
+        timestamp: Date.now()
+      }]);
     }
   };
 
@@ -1932,12 +1971,12 @@ export function App() {
         model={cfg?.defaultModel || 'unknown'}
         provider="copilot"
         providerStatus={cfg?.githubToken ? 'connected' : 'disconnected'}
-        tokens={Math.floor(Math.random() * 2000)} // Placeholder for real token count
+        tokens={orchestrator.getMetrics().outputTokens || 0} // Use real token count
         maxTokens={4000}
         connectionStatus={cfg?.githubToken ? 'connected' : 'disconnected'}
-        latency={Math.floor(Math.random() * 200) + 100} // Placeholder for real latency
+        latency={150} // Use stable value
         sessionInfo={{
-          startTime: new Date(Date.now() - Math.random() * 600000), // Random session start
+          startTime: sessionStartTime, // Use stable session start time
           messageCount: keyboardState.messageHistory.length
         }}
         statusLineConfig={{
