@@ -1,0 +1,172 @@
+# MCP Testing Environment for Plato TUI
+FROM node:20-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    python3 \
+    python3-pip \
+    expect \
+    tmux \
+    curl \
+    jq \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pexpect for Python-based PTY testing
+RUN pip3 install pexpect --break-system-packages
+
+# Create workspace
+WORKDIR /workspace
+
+# Install global npm packages
+RUN npm install -g \
+    typescript \
+    tsx \
+    @modelcontextprotocol/server-nodejs \
+    ink-testing-library
+
+# Copy package files first for better caching
+COPY package*.json ./
+COPY pnpm-lock.yaml* ./
+
+# Install pnpm and dependencies
+RUN npm install -g pnpm && pnpm install
+
+# Copy the rest of the application
+COPY . .
+
+# Build the application
+RUN pnpm build
+
+# Create MCP server wrapper script
+RUN cat > /usr/local/bin/mcp-plato-server.js << 'EOF'
+#!/usr/bin/env node
+import { Server } from '@modelcontextprotocol/server-nodejs';
+import { spawn } from 'child_process';
+import { promisify } from 'util';
+import { exec as execCallback } from 'child_process';
+const exec = promisify(execCallback);
+
+const server = new Server({
+  name: 'plato-testing-server',
+  version: '1.0.0',
+  description: 'MCP server for testing Plato TUI'
+});
+
+// Whitelist of allowed commands
+const ALLOWED_COMMANDS = [
+  'git', 'node', 'npm', 'pnpm', 'tsx', 
+  'jest', 'cat', 'ls', 'pwd', 'echo',
+  './bin/plato', 'pnpm test', 'pnpm build'
+];
+
+// Tool: Execute shell command
+server.addTool({
+  name: 'shell_exec',
+  description: 'Execute a whitelisted shell command',
+  parameters: {
+    type: 'object',
+    properties: {
+      command: { type: 'string', description: 'Command to execute' },
+      cwd: { type: 'string', description: 'Working directory' }
+    },
+    required: ['command']
+  },
+  handler: async ({ command, cwd = '/workspace' }) => {
+    // Check if command is whitelisted
+    const isAllowed = ALLOWED_COMMANDS.some(allowed => 
+      command.startsWith(allowed + ' ') || command === allowed
+    );
+    
+    if (!isAllowed) {
+      throw new Error(`Command not allowed: ${command}`);
+    }
+    
+    try {
+      const { stdout, stderr } = await exec(command, { cwd });
+      return { success: true, stdout, stderr };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+});
+
+// Tool: Run Plato TUI in PTY
+server.addTool({
+  name: 'run_plato_pty',
+  description: 'Run Plato in a PTY and interact with it',
+  parameters: {
+    type: 'object',
+    properties: {
+      input: { type: 'string', description: 'Input to send to Plato' },
+      timeout: { type: 'number', description: 'Timeout in seconds' }
+    }
+  },
+  handler: async ({ input = '', timeout = 10 }) => {
+    return new Promise((resolve) => {
+      const plato = spawn('./bin/plato', [], {
+        cwd: '/workspace',
+        env: { ...process.env, TERM: 'xterm-256color' },
+        shell: true
+      });
+      
+      let output = '';
+      const timer = setTimeout(() => {
+        plato.kill();
+        resolve({ output, timedOut: true });
+      }, timeout * 1000);
+      
+      plato.stdout.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      plato.stderr.on('data', (data) => {
+        output += data.toString();
+      });
+      
+      plato.on('close', () => {
+        clearTimeout(timer);
+        resolve({ output, timedOut: false });
+      });
+      
+      // Send input after a short delay
+      if (input) {
+        setTimeout(() => {
+          plato.stdin.write(input);
+        }, 1000);
+      }
+    });
+  }
+});
+
+// Tool: Run component tests
+server.addTool({
+  name: 'test_components',
+  description: 'Run Ink component tests with ink-testing-library',
+  parameters: {
+    type: 'object',
+    properties: {
+      component: { type: 'string', description: 'Component to test' }
+    }
+  },
+  handler: async ({ component }) => {
+    const testFile = component ? `--testNamePattern="${component}"` : '';
+    const { stdout, stderr } = await exec(
+      `pnpm test:components ${testFile}`,
+      { cwd: '/workspace' }
+    );
+    return { stdout, stderr };
+  }
+});
+
+server.start();
+EOF
+
+RUN chmod +x /usr/local/bin/mcp-plato-server.js
+
+# Expose port for MCP server
+EXPOSE 3000
+
+# Set entrypoint
+ENTRYPOINT ["node", "/usr/local/bin/mcp-plato-server.js"]
