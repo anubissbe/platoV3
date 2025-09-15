@@ -1,9 +1,13 @@
-import React from 'react';
+import React from "react";
 
-export const Box = jest.fn().mockImplementation((props: any) => React.createElement('div', props));
-export const Text = jest.fn().mockImplementation((props: any) => React.createElement('span', props));
+export const Box = jest
+  .fn()
+  .mockImplementation((props: any) => React.createElement("div", props));
+export const Text = jest
+  .fn()
+  .mockImplementation((props: any) => React.createElement("span", props));
 export const render = jest.fn().mockImplementation(() => ({
-  lastFrame: () => 'mocked output',
+  lastFrame: () => "mocked output",
   rerender: jest.fn(),
   waitUntilExit: jest.fn().mockResolvedValue(undefined),
 }));

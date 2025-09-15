@@ -3,8 +3,8 @@
  * Enhanced coverage threshold enforcement with detailed reporting
  */
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 /**
  * Coverage thresholds configuration
@@ -18,37 +18,37 @@ const DEFAULT_THRESHOLDS = {
     statements: 80,
   },
   // Directory-specific thresholds
-  'src/providers/': {
+  "src/providers/": {
     branches: 85,
     functions: 85,
     lines: 85,
     statements: 85,
   },
-  'src/tools/': {
+  "src/tools/": {
     branches: 85,
     functions: 85,
     lines: 85,
     statements: 85,
   },
-  'src/runtime/': {
+  "src/runtime/": {
     branches: 90,
     functions: 90,
     lines: 90,
     statements: 90,
   },
-  'src/tui/': {
+  "src/tui/": {
     branches: 70,
     functions: 70,
     lines: 70,
     statements: 70,
   },
-  'src/config/': {
+  "src/config/": {
     branches: 75,
     functions: 75,
     lines: 75,
     statements: 75,
   },
-  'src/services/': {
+  "src/services/": {
     branches: 80,
     functions: 80,
     lines: 80,
@@ -61,7 +61,7 @@ const DEFAULT_THRESHOLDS = {
  */
 function getThresholds() {
   const thresholds = JSON.parse(JSON.stringify(DEFAULT_THRESHOLDS));
-  
+
   // Allow environment variable overrides
   if (process.env.COVERAGE_THRESHOLD_GLOBAL) {
     const globalThreshold = parseInt(process.env.COVERAGE_THRESHOLD_GLOBAL);
@@ -72,7 +72,7 @@ function getThresholds() {
       statements: globalThreshold,
     };
   }
-  
+
   return thresholds;
 }
 
@@ -80,13 +80,19 @@ function getThresholds() {
  * Load coverage data from Jest output
  */
 function loadCoverageData() {
-  const coveragePath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
-  
+  const coveragePath = path.join(
+    process.cwd(),
+    "coverage",
+    "coverage-summary.json",
+  );
+
   if (!fs.existsSync(coveragePath)) {
-    throw new Error('Coverage summary not found. Run tests with coverage first.');
+    throw new Error(
+      "Coverage summary not found. Run tests with coverage first.",
+    );
   }
-  
-  return JSON.parse(fs.readFileSync(coveragePath, 'utf8'));
+
+  return JSON.parse(fs.readFileSync(coveragePath, "utf8"));
 }
 
 /**
@@ -103,10 +109,10 @@ function meetsThreshold(actual, threshold) {
  * Get status emoji based on coverage vs threshold
  */
 function getStatusEmoji(actual, threshold) {
-  if (actual >= threshold + 10) return '🟢';  // Well above threshold
-  if (actual >= threshold) return '✅';       // Meets threshold
-  if (actual >= threshold - 5) return '⚠️';   // Close to threshold
-  return '❌';                               // Below threshold
+  if (actual >= threshold + 10) return "🟢"; // Well above threshold
+  if (actual >= threshold) return "✅"; // Meets threshold
+  if (actual >= threshold - 5) return "⚠️"; // Close to threshold
+  return "❌"; // Below threshold
 }
 
 /**
@@ -131,74 +137,93 @@ function checkCoverage(coverageData, thresholds) {
   // Check global thresholds
   const total = coverageData.total;
   const globalThresholds = thresholds.global;
-  
-  console.log('\n📊 Global Coverage Analysis:');
-  console.log('============================');
-  
-  ['lines', 'statements', 'functions', 'branches'].forEach(metric => {
+
+  console.log("\n📊 Global Coverage Analysis:");
+  console.log("============================");
+
+  ["lines", "statements", "functions", "branches"].forEach((metric) => {
     const actual = total[metric].pct;
     const threshold = globalThresholds[metric];
     const passed = meetsThreshold(actual, threshold);
-    
+
     console.log(`${metric.padEnd(12)}: ${formatCoverage(actual, threshold)}`);
-    
+
     if (passed) {
-      results.passed.push({ scope: 'global', metric, actual, threshold });
+      results.passed.push({ scope: "global", metric, actual, threshold });
     } else {
-      results.failed.push({ scope: 'global', metric, actual, threshold });
+      results.failed.push({ scope: "global", metric, actual, threshold });
       results.overall = false;
     }
-    
+
     // Add warnings for close calls
     if (passed && actual < threshold + 5) {
-      results.warnings.push({ scope: 'global', metric, actual, threshold, message: 'Close to threshold' });
+      results.warnings.push({
+        scope: "global",
+        metric,
+        actual,
+        threshold,
+        message: "Close to threshold",
+      });
     }
   });
 
   // Check directory-specific thresholds (if available in coverage data)
-  console.log('\n📁 Directory Coverage Analysis:');
-  console.log('==============================');
-  
+  console.log("\n📁 Directory Coverage Analysis:");
+  console.log("==============================");
+
   Object.entries(thresholds).forEach(([dirPattern, dirThresholds]) => {
-    if (dirPattern === 'global') return;
-    
+    if (dirPattern === "global") return;
+
     // Find matching files in coverage data
-    const matchingFiles = Object.keys(coverageData).filter(filePath => {
-      return filePath.includes(dirPattern.replace('/', ''));
+    const matchingFiles = Object.keys(coverageData).filter((filePath) => {
+      return filePath.includes(dirPattern.replace("/", ""));
     });
-    
+
     if (matchingFiles.length === 0) {
       console.log(`${dirPattern.padEnd(20)}: No files found`);
       return;
     }
-    
+
     // Calculate directory coverage
-    const dirStats = { lines: 0, statements: 0, functions: 0, branches: 0, total: 0 };
+    const dirStats = {
+      lines: 0,
+      statements: 0,
+      functions: 0,
+      branches: 0,
+      total: 0,
+    };
     let fileCount = 0;
-    
-    matchingFiles.forEach(filePath => {
-      if (filePath === 'total') return;
+
+    matchingFiles.forEach((filePath) => {
+      if (filePath === "total") return;
       const fileData = coverageData[filePath];
       if (!fileData) return;
-      
-      ['lines', 'statements', 'functions', 'branches'].forEach(metric => {
+
+      ["lines", "statements", "functions", "branches"].forEach((metric) => {
         if (fileData[metric]) {
           dirStats[metric] += fileData[metric].pct || 0;
         }
       });
       fileCount++;
     });
-    
+
     if (fileCount > 0) {
-      ['lines', 'statements', 'functions', 'branches'].forEach(metric => {
+      ["lines", "statements", "functions", "branches"].forEach((metric) => {
         const avgCoverage = dirStats[metric] / fileCount;
         const threshold = dirThresholds[metric];
         const passed = meetsThreshold(avgCoverage, threshold);
-        
-        console.log(`${dirPattern.padEnd(20)} ${metric.padEnd(10)}: ${formatCoverage(avgCoverage, threshold)}`);
-        
+
+        console.log(
+          `${dirPattern.padEnd(20)} ${metric.padEnd(10)}: ${formatCoverage(avgCoverage, threshold)}`,
+        );
+
         if (!passed) {
-          results.failed.push({ scope: dirPattern, metric, actual: avgCoverage, threshold });
+          results.failed.push({
+            scope: dirPattern,
+            metric,
+            actual: avgCoverage,
+            threshold,
+          });
           results.overall = false;
         }
       });
@@ -213,22 +238,24 @@ function checkCoverage(coverageData, thresholds) {
  */
 function generateFailureReport(results) {
   if (results.failed.length === 0) return;
-  
-  console.log('\n❌ Coverage Threshold Failures:');
-  console.log('===============================');
-  
-  results.failed.forEach(failure => {
+
+  console.log("\n❌ Coverage Threshold Failures:");
+  console.log("===============================");
+
+  results.failed.forEach((failure) => {
     const deficit = failure.threshold - failure.actual;
-    console.log(`${failure.scope}/${failure.metric}: ${failure.actual.toFixed(1)}% (need ${deficit.toFixed(1)}% more)`);
+    console.log(
+      `${failure.scope}/${failure.metric}: ${failure.actual.toFixed(1)}% (need ${deficit.toFixed(1)}% more)`,
+    );
   });
-  
-  console.log('\n💡 Suggestions to improve coverage:');
-  console.log('===================================');
-  console.log('1. Add unit tests for uncovered functions');
-  console.log('2. Test error handling and edge cases');
-  console.log('3. Add integration tests for component interactions');
-  console.log('4. Review and test conditional branches');
-  console.log('5. Run: npm run test:coverage:detailed -- --verbose');
+
+  console.log("\n💡 Suggestions to improve coverage:");
+  console.log("===================================");
+  console.log("1. Add unit tests for uncovered functions");
+  console.log("2. Test error handling and edge cases");
+  console.log("3. Add integration tests for component interactions");
+  console.log("4. Review and test conditional branches");
+  console.log("5. Run: npm run test:coverage:detailed -- --verbose");
 }
 
 /**
@@ -236,12 +263,14 @@ function generateFailureReport(results) {
  */
 function generateWarningsReport(results) {
   if (results.warnings.length === 0) return;
-  
-  console.log('\n⚠️  Coverage Warnings:');
-  console.log('=====================');
-  
-  results.warnings.forEach(warning => {
-    console.log(`${warning.scope}/${warning.metric}: ${warning.actual.toFixed(1)}% (${warning.message})`);
+
+  console.log("\n⚠️  Coverage Warnings:");
+  console.log("=====================");
+
+  results.warnings.forEach((warning) => {
+    console.log(
+      `${warning.scope}/${warning.metric}: ${warning.actual.toFixed(1)}% (${warning.message})`,
+    );
   });
 }
 
@@ -249,15 +278,19 @@ function generateWarningsReport(results) {
  * Generate success report
  */
 function generateSuccessReport(results) {
-  console.log(`\n✅ Coverage Summary: ${results.passed.length} passed, ${results.failed.length} failed`);
-  
+  console.log(
+    `\n✅ Coverage Summary: ${results.passed.length} passed, ${results.failed.length} failed`,
+  );
+
   if (results.overall) {
-    console.log('🎉 All coverage thresholds met!');
-    
+    console.log("🎉 All coverage thresholds met!");
+
     // Show some stats
     const total = results.passed.length + results.failed.length;
     const passRate = ((results.passed.length / total) * 100).toFixed(1);
-    console.log(`📈 Pass rate: ${passRate}% (${results.passed.length}/${total})`);
+    console.log(
+      `📈 Pass rate: ${passRate}% (${results.passed.length}/${total})`,
+    );
   }
 }
 
@@ -266,30 +299,31 @@ function generateSuccessReport(results) {
  */
 function main() {
   try {
-    console.log('🔍 Coverage Threshold Enforcement');
-    console.log('=================================');
-    
+    console.log("🔍 Coverage Threshold Enforcement");
+    console.log("=================================");
+
     const thresholds = getThresholds();
     const coverageData = loadCoverageData();
     const results = checkCoverage(coverageData, thresholds);
-    
+
     generateWarningsReport(results);
     generateFailureReport(results);
     generateSuccessReport(results);
-    
+
     // Exit with appropriate code
     if (!results.overall) {
-      console.log('\n💡 Run `npm run test:coverage:detailed` for detailed coverage report');
+      console.log(
+        "\n💡 Run `npm run test:coverage:detailed` for detailed coverage report",
+      );
       process.exit(1);
     }
-    
-    console.log('\n✨ Coverage enforcement passed!');
+
+    console.log("\n✨ Coverage enforcement passed!");
     process.exit(0);
-    
   } catch (error) {
-    console.error('\n❌ Coverage enforcement error:', error.message);
-    console.error('\n💡 Make sure to run tests with coverage first:');
-    console.error('   npm run test:coverage:comprehensive');
+    console.error("\n❌ Coverage enforcement error:", error.message);
+    console.error("\n💡 Make sure to run tests with coverage first:");
+    console.error("   npm run test:coverage:comprehensive");
     process.exit(1);
   }
 }
@@ -298,7 +332,7 @@ function main() {
 if (require.main === module) {
   // Handle command line arguments
   const args = process.argv.slice(2);
-  if (args.includes('--help') || args.includes('-h')) {
+  if (args.includes("--help") || args.includes("-h")) {
     console.log(`
 Coverage Threshold Enforcement Tool
 
@@ -319,28 +353,34 @@ Examples:
     `);
     process.exit(0);
   }
-  
+
   // Apply strict/relaxed modifiers
-  if (args.includes('--strict')) {
-    Object.keys(DEFAULT_THRESHOLDS).forEach(key => {
-      if (typeof DEFAULT_THRESHOLDS[key] === 'object') {
-        Object.keys(DEFAULT_THRESHOLDS[key]).forEach(metric => {
-          DEFAULT_THRESHOLDS[key][metric] = Math.min(95, DEFAULT_THRESHOLDS[key][metric] + 10);
+  if (args.includes("--strict")) {
+    Object.keys(DEFAULT_THRESHOLDS).forEach((key) => {
+      if (typeof DEFAULT_THRESHOLDS[key] === "object") {
+        Object.keys(DEFAULT_THRESHOLDS[key]).forEach((metric) => {
+          DEFAULT_THRESHOLDS[key][metric] = Math.min(
+            95,
+            DEFAULT_THRESHOLDS[key][metric] + 10,
+          );
         });
       }
     });
   }
-  
-  if (args.includes('--relaxed')) {
-    Object.keys(DEFAULT_THRESHOLDS).forEach(key => {
-      if (typeof DEFAULT_THRESHOLDS[key] === 'object') {
-        Object.keys(DEFAULT_THRESHOLDS[key]).forEach(metric => {
-          DEFAULT_THRESHOLDS[key][metric] = Math.max(50, DEFAULT_THRESHOLDS[key][metric] - 10);
+
+  if (args.includes("--relaxed")) {
+    Object.keys(DEFAULT_THRESHOLDS).forEach((key) => {
+      if (typeof DEFAULT_THRESHOLDS[key] === "object") {
+        Object.keys(DEFAULT_THRESHOLDS[key]).forEach((metric) => {
+          DEFAULT_THRESHOLDS[key][metric] = Math.max(
+            50,
+            DEFAULT_THRESHOLDS[key][metric] - 10,
+          );
         });
       }
     });
   }
-  
+
   main();
 }
 

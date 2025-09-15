@@ -3,6 +3,7 @@
 ## Issues Fixed
 
 ### 1. Orchestrator Export Issues ✅
+
 - **Problem**: Integration tests were importing `orchestrator` as named export but it was only exported as default
 - **Solution**: Updated `/src/runtime/orchestrator.ts` to export both as default and named export:
   ```typescript
@@ -10,7 +11,8 @@
   export { orchestratorInstance as orchestrator };
   ```
 
-### 2. TypeScript Streaming Implementation ✅  
+### 2. TypeScript Streaming Implementation ✅
+
 - **Problem**: `chatStream` was not returning an async generator, causing TypeScript errors
 - **Solution**: Created `/src/providers/chat-stream.ts` with proper async generator implementation:
   ```typescript
@@ -18,10 +20,12 @@
   ```
 
 ### 3. Status Events API ✅
+
 - **Problem**: `emitStreamEnd()` was called without required `totalCharacters` parameter
 - **Solution**: Updated orchestrator streaming to track and pass character count
 
 ### 4. Permission System Integration Issues ⚠️
+
 - **Problem**: ProfileManager loads profiles but doesn't automatically activate the 'default' profile
 - **Current State**: Permission system initializes but no active profile is set
 - **Impact**: MCP server attachment fails with "No active profile" error
@@ -29,23 +33,27 @@
 ## Files Modified
 
 ### Core Fixes ✅
+
 - `/src/runtime/orchestrator.ts` - Fixed exports, streaming, and TypeScript issues
 - `/src/providers/chat-stream.ts` - New proper streaming implementation
 
-### Test Infrastructure ✅  
+### Test Infrastructure ✅
+
 - `/jest.config.integration.cjs` - New dedicated integration test config
 - `/src/__tests__/integration/tool-chain-execution.test.ts` - Comprehensive tool chain test
 
 ## Current Status
 
 ### Working ✅
+
 - Orchestrator properly exported and importable
-- Streaming implementation works without TypeScript errors  
+- Streaming implementation works without TypeScript errors
 - Tool execution pipeline architecture is sound
 - Permission system initializes correctly
 - Mock MCP server setup works
 
 ### Remaining Issue ⚠️
+
 - **ProfileManager Activation**: Profiles load but default profile is not automatically activated
 - **Test Impact**: All tool integration tests fail with "No active profile" permission error
 

@@ -1,16 +1,19 @@
 # Plato CLI/TUI – Design
 
 ## Product Goals
+
 - Exact behavioral parity with Claude Code’s CLI/TUI, under the `plato` name.
 - Sign-in with GitHub Copilot; use Copilot subscription models.
 - Immediate write semantics: assistant performs file writes directly ("Write(filename)") subject to permissions and safety checks, without requiring a separate `/apply` step.
 
 ## UX Overview
+
 - Single-command entry: `plato` opens a full-screen TUI with chat + context.
 - Interaction mirrors Claude Code: assistant announces actions (e.g., "Write(hello.py)") and performs them immediately; outputs concise confirmations (e.g., "Wrote 1 lines to hello.py").
 - Diff previews and patch engine remain available under the hood for auditing and `/revert`, but are not required in the normal flow.
 
 ## Core Features
+
 - Chat-driven coding: immediate writes (with safety + permissions), diffs, refactors, explanations.
 - Repo awareness: index files, respect `.gitignore` + `.platoignore`.
 - Tooling: run shell, tests, and git operations with confirmation gates.
@@ -19,6 +22,7 @@
 - Auth + Models: GitHub Copilot device login; select Copilot models; stream.
 
 ## Slash Commands (TUI)
+
 - /help — Show help and list all commands
 - /status — Show Plato status: version, provider, model, account, API connectivity, tool statuses
 - /statusline — Configure the statusline display
@@ -50,25 +54,31 @@
 - /release-notes — Show Plato release notes
 
 ## Additional UX Details
+
 - Agents & memory: switch personas, maintain project/global memory influencing system prompts.
 - Output styles: control response tone/format; custom styles saved to config.
 - Bashes: persistent shell sessions for long-running tasks; attach/detach.
 
 ## Keybinds
+
 - Enter: send. Ctrl-L: clear. Tab: autocomplete `/<cmd>` and file paths.
 - Ctrl-D: diff panel toggle. Ctrl-A: apply. Ctrl-R: retry. Ctrl-C: cancel task.
 
 ## Safety & Privacy
+
 - Never uploads files unless included in context; shows token usage.
 - Redacts secrets; honors `.platoignore`. Confirmation before writes/network.
 
 ## Performance
+
 - Ripgrep for search; chunked file loading; streaming UI; incremental index cache.
 
 ## Non-Goals (v1)
+
 - No remote execution or container orchestration; local-only runtime.
 
 ## Further Reading
+
 - Providers: `docs/providers/copilot-auth.md`, `docs/providers/models.md`
 - Orchestrator/Streaming: `docs/runtime/orchestrator.md`, `docs/runtime/streaming.md`
 - Patch/Permissions/Hooks: `docs/tools/patch-engine.md`, `docs/tools/permissions.md`, `docs/tools/hooks.md`

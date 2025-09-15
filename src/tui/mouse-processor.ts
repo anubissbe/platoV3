@@ -10,8 +10,8 @@ import {
   MouseEventProcessingOptions,
   MouseState,
   MouseBoundsError,
-  DEFAULT_PROCESSING_OPTIONS
-} from './mouse-types.js';
+  DEFAULT_PROCESSING_OPTIONS,
+} from "./mouse-types.js";
 
 /**
  * Mouse event processor with throttling and validation
@@ -38,9 +38,14 @@ export class MouseEventProcessor {
 
     try {
       // Validate coordinates
-      if (this.options.validateBounds && !this.validateCoordinates(event.coordinates, this.bounds)) {
+      if (
+        this.options.validateBounds &&
+        !this.validateCoordinates(event.coordinates, this.bounds)
+      ) {
         if (this.options.debug) {
-          console.debug(`[MouseProcessor] Event outside bounds: ${event.coordinates.x}, ${event.coordinates.y}`);
+          console.debug(
+            `[MouseProcessor] Event outside bounds: ${event.coordinates.x}, ${event.coordinates.y}`,
+          );
         }
         return null;
       }
@@ -57,7 +62,7 @@ export class MouseEventProcessor {
       return processedEvent;
     } catch (error) {
       if (this.options.debug) {
-        console.error('[MouseProcessor] Error processing event:', error);
+        console.error("[MouseProcessor] Error processing event:", error);
       }
       return null;
     }
@@ -68,7 +73,7 @@ export class MouseEventProcessor {
    */
   processEventQueue(): MouseEvent[] {
     const now = Date.now();
-    
+
     if (now - this.lastProcessedTime < this.options.throttleMs) {
       return []; // Too soon, return empty array
     }
@@ -78,7 +83,9 @@ export class MouseEventProcessor {
     this.lastProcessedTime = now;
 
     if (this.options.debug && events.length > 0) {
-      console.debug(`[MouseProcessor] Processed ${events.length} events from queue`);
+      console.debug(
+        `[MouseProcessor] Processed ${events.length} events from queue`,
+      );
     }
 
     return events;
@@ -100,28 +107,32 @@ export class MouseEventProcessor {
     // Apply type-specific throttling
     for (const [eventType, typeEvents] of eventGroups) {
       switch (eventType) {
-        case 'move':
+        case "move":
           // Aggressively throttle move events
-          throttledEvents.push(...this.throttleByTime(typeEvents, throttleMs * 2));
+          throttledEvents.push(
+            ...this.throttleByTime(typeEvents, throttleMs * 2),
+          );
           break;
-        
-        case 'scroll':
+
+        case "scroll":
           // Moderate throttling for scroll events
           throttledEvents.push(...this.throttleByTime(typeEvents, throttleMs));
           break;
-        
-        case 'drag':
+
+        case "drag":
           // Light throttling for drag events to maintain smoothness
-          throttledEvents.push(...this.throttleByTime(typeEvents, throttleMs / 2));
+          throttledEvents.push(
+            ...this.throttleByTime(typeEvents, throttleMs / 2),
+          );
           break;
-        
-        case 'click':
-        case 'drag_start':
-        case 'drag_end':
+
+        case "click":
+        case "drag_start":
+        case "drag_end":
           // No throttling for discrete events
           throttledEvents.push(...typeEvents);
           break;
-        
+
         default:
           throttledEvents.push(...this.throttleByTime(typeEvents, throttleMs));
       }
@@ -135,10 +146,12 @@ export class MouseEventProcessor {
    * Validate coordinates against terminal bounds
    */
   validateCoordinates(coords: MouseCoordinates, bounds: MouseBounds): boolean {
-    return coords.x >= 0 && 
-           coords.x < bounds.width && 
-           coords.y >= 0 && 
-           coords.y < bounds.height;
+    return (
+      coords.x >= 0 &&
+      coords.x < bounds.width &&
+      coords.y >= 0 &&
+      coords.y < bounds.height
+    );
   }
 
   /**
@@ -149,23 +162,26 @@ export class MouseEventProcessor {
     this.mouseState.modifiers = event.modifiers;
 
     // Update button press state
-    if (event.type === 'click') {
+    if (event.type === "click") {
       this.mouseState.pressedButtons.add(event.button);
       this.mouseState.isPressed = true;
-    } else if (event.type === 'drag_end') {
+    } else if (event.type === "drag_end") {
       this.mouseState.pressedButtons.delete(event.button);
       this.mouseState.isPressed = this.mouseState.pressedButtons.size > 0;
     }
 
     // Update drag state
-    if (event.type === 'drag_start' || (event.type === 'click' && !this.mouseState.dragState.isDragging)) {
+    if (
+      event.type === "drag_start" ||
+      (event.type === "click" && !this.mouseState.dragState.isDragging)
+    ) {
       this.mouseState.dragState.isDragging = true;
       this.mouseState.dragState.startPosition = event.coordinates;
       this.mouseState.dragState.currentPosition = event.coordinates;
       this.mouseState.dragState.button = event.button;
-    } else if (event.type === 'drag') {
+    } else if (event.type === "drag") {
       this.mouseState.dragState.currentPosition = event.coordinates;
-    } else if (event.type === 'drag_end') {
+    } else if (event.type === "drag_end") {
       this.mouseState.dragState.isDragging = false;
       this.mouseState.dragState.startPosition = null;
       this.mouseState.dragState.currentPosition = null;
@@ -173,7 +189,7 @@ export class MouseEventProcessor {
     }
 
     // Update hover state (simplified - would be enhanced by component system)
-    if (event.type === 'move') {
+    if (event.type === "move") {
       if (!this.mouseState.hoverState.currentTarget) {
         this.mouseState.hoverState.hoverStartTime = Date.now();
       }
@@ -203,9 +219,11 @@ export class MouseEventProcessor {
       // Remove oldest events
       const overflow = this.eventQueue.length - this.options.maxQueueSize;
       this.eventQueue.splice(0, overflow);
-      
+
       if (this.options.debug) {
-        console.warn(`[MouseProcessor] Event queue overflow, removed ${overflow} events`);
+        console.warn(
+          `[MouseProcessor] Event queue overflow, removed ${overflow} events`,
+        );
       }
     }
   }
@@ -215,7 +233,7 @@ export class MouseEventProcessor {
    */
   private groupEventsByType(events: MouseEvent[]): Map<string, MouseEvent[]> {
     const groups = new Map<string, MouseEvent[]>();
-    
+
     for (const event of events) {
       const key = event.type;
       if (!groups.has(key)) {
@@ -223,14 +241,17 @@ export class MouseEventProcessor {
       }
       groups.get(key)!.push(event);
     }
-    
+
     return groups;
   }
 
   /**
    * Apply time-based throttling to events
    */
-  private throttleByTime(events: MouseEvent[], minInterval: number): MouseEvent[] {
+  private throttleByTime(
+    events: MouseEvent[],
+    minInterval: number,
+  ): MouseEvent[] {
     if (events.length === 0) return events;
 
     const throttled: MouseEvent[] = [events[0]]; // Always include first event
@@ -260,12 +281,12 @@ export class MouseEventProcessor {
         isDragging: false,
         startPosition: null,
         currentPosition: null,
-        button: null
+        button: null,
       },
       hoverState: {
         currentTarget: null,
-        hoverStartTime: null
-      }
+        hoverStartTime: null,
+      },
     };
   }
 
@@ -304,7 +325,7 @@ export class MouseEventProcessor {
     return {
       size: this.eventQueue.length,
       maxSize: this.options.maxQueueSize,
-      lastProcessed: this.lastProcessedTime
+      lastProcessed: this.lastProcessedTime,
     };
   }
 
@@ -346,7 +367,7 @@ export class MouseEventProcessor {
   /**
    * Get events in queue by type
    */
-  getQueuedEventsByType(eventType: MouseEvent['type']): MouseEvent[] {
-    return this.eventQueue.filter(event => event.type === eventType);
+  getQueuedEventsByType(eventType: MouseEvent["type"]): MouseEvent[] {
+    return this.eventQueue.filter((event) => event.type === eventType);
   }
 }

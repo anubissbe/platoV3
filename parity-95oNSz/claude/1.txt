@@ -1,0 +1,25 @@
+/help
+╭───────────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code!                         │
+│                                                   │
+│   /help for help, /status for your current setup  │
+│                                                   │
+│   cwd: /opt/projects/platoV3/parity-95oNSz/work   │
+╰───────────────────────────────────────────────────╯
+
+ Tips for getting started:
+
+  Run /init to create a CLAUDE.md file with instructions for Claude
+  Use Claude to help with file analysis, editing, bash commands and git
+  Be as specific as you would with another engineer for the best results
+
+────────────────────────────────────────────────────────────────────────────────
+ > 
+────────────────────────────────────────────────────────────────────────────────
+  ? for shortcuts
+
+
+
+
+
+

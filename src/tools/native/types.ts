@@ -3,17 +3,17 @@
  * Defines interfaces and types for Claude Code-compatible tool implementations
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 
 /**
  * Error classification for proper retry logic
  */
 export enum ErrorClass {
-  TRANSIENT = 'transient',    // Retryable errors
-  PERMANENT = 'permanent',    // Non-retryable errors
-  VALIDATION = 'validation',  // Input validation errors
-  PERMISSION = 'permission',  // Access denied errors
-  TIMEOUT = 'timeout',        // Execution timeout errors
+  TRANSIENT = "transient", // Retryable errors
+  PERMANENT = "permanent", // Non-retryable errors
+  VALIDATION = "validation", // Input validation errors
+  PERMISSION = "permission", // Access denied errors
+  TIMEOUT = "timeout", // Execution timeout errors
 }
 
 /**
@@ -25,10 +25,10 @@ export class ToolError extends Error {
     public readonly code: string,
     message: string,
     public readonly details?: any,
-    public readonly retryAfter?: number
+    public readonly retryAfter?: number,
   ) {
     super(message);
-    this.name = 'ToolError';
+    this.name = "ToolError";
   }
 
   get retryable(): boolean {
@@ -63,7 +63,7 @@ export interface ToolMetrics {
  * Streaming event types
  */
 export interface ToolEvent {
-  type: 'stdout' | 'stderr' | 'progress' | 'metadata' | 'error' | 'complete';
+  type: "stdout" | "stderr" | "progress" | "metadata" | "error" | "complete";
   data?: any;
   timestamp: number;
   sequence: number;
@@ -164,14 +164,14 @@ export interface WriteToolMetrics extends ToolMetrics {
 
 export interface EditToolArgs {
   path: string;
-  
+
   // Line-based editing
   lineNumber?: number;
   startLine?: number;
   endLine?: number;
   insertAfterLine?: number;
   delete?: boolean;
-  
+
   // Pattern-based editing
   pattern?: string | RegExp | Buffer;
   replacement?: string | Buffer;
@@ -180,7 +180,7 @@ export interface EditToolArgs {
   replaceAll?: boolean;
   caseInsensitive?: boolean;
   multiline?: boolean;
-  
+
   // Options
   atomic?: boolean;
   backup?: boolean;
@@ -218,8 +218,8 @@ export interface ListToolArgs {
   pattern?: string;
   glob?: string;
   includeHidden?: boolean;
-  sortBy?: 'name' | 'size' | 'modified' | 'type';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?: "name" | "size" | "modified" | "type";
+  sortOrder?: "asc" | "desc";
   stats?: boolean;
   maxDepth?: number;
 }
@@ -227,7 +227,7 @@ export interface ListToolArgs {
 export interface FileInfo {
   name: string;
   path: string;
-  type: 'file' | 'directory' | 'symlink' | 'other';
+  type: "file" | "directory" | "symlink" | "other";
   size?: number;
   modified?: Date;
   created?: Date;
@@ -444,7 +444,7 @@ export interface ToolTelemetry {
 export interface SecurityValidationResult {
   allowed: boolean;
   reason?: string;
-  severity?: 'low' | 'medium' | 'high' | 'critical';
+  severity?: "low" | "medium" | "high" | "critical";
   actualSize?: number;
   maxAllowedSize?: number;
   fileExists?: boolean;
@@ -452,9 +452,14 @@ export interface SecurityValidationResult {
 }
 
 export interface PathValidationError {
-  type: 'SYMLINK_TRAVERSAL' | 'CIRCULAR_SYMLINK' | 'PATH_TOO_LONG' | 'BROKEN_SYMLINK' | 'PERMISSION_DENIED';
+  type:
+    | "SYMLINK_TRAVERSAL"
+    | "CIRCULAR_SYMLINK"
+    | "PATH_TOO_LONG"
+    | "BROKEN_SYMLINK"
+    | "PERMISSION_DENIED";
   message: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  severity: "low" | "medium" | "high" | "critical";
   path?: string;
   target?: string;
 }
@@ -475,8 +480,13 @@ export interface PathSecurityResult {
 }
 
 export interface SecurityThreat {
-  type: 'DIRECTORY_TRAVERSAL' | 'NULL_BYTE' | 'CRLF_INJECTION' | 'XSS_ATTEMPT' | 'SUSPICIOUS_CHARS';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type:
+    | "DIRECTORY_TRAVERSAL"
+    | "NULL_BYTE"
+    | "CRLF_INJECTION"
+    | "XSS_ATTEMPT"
+    | "SUSPICIOUS_CHARS";
+  severity: "low" | "medium" | "high" | "critical";
   message: string;
   position?: number;
 }

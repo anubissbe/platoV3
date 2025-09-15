@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
 
 // Define interfaces locally to avoid importing from the actual component
 interface SessionData {
@@ -6,59 +6,66 @@ interface SessionData {
   timestamp: number;
   messageCount: number;
   lastSaved?: number;
-  status: 'active' | 'saving' | 'saved' | 'error';
+  status: "active" | "saving" | "saved" | "error";
   exportable?: boolean;
 }
 
-describe('SessionIndicator Component Logic', () => {
+describe("SessionIndicator Component Logic", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('SessionData Interface', () => {
-    it('should have correct structure for SessionData', () => {
+  describe("SessionData Interface", () => {
+    it("should have correct structure for SessionData", () => {
       const mockSession: SessionData = {
-        id: 'test-session-123',
+        id: "test-session-123",
         timestamp: Date.now(),
         messageCount: 5,
-        status: 'active',
-        exportable: true
+        status: "active",
+        exportable: true,
       };
 
-      expect(mockSession).toHaveProperty('id');
-      expect(mockSession).toHaveProperty('timestamp');
-      expect(mockSession).toHaveProperty('messageCount');
-      expect(mockSession).toHaveProperty('status');
-      expect(mockSession).toHaveProperty('exportable');
-      expect(mockSession.status).toBe('active');
-      expect(typeof mockSession.id).toBe('string');
-      expect(typeof mockSession.timestamp).toBe('number');
-      expect(typeof mockSession.messageCount).toBe('number');
+      expect(mockSession).toHaveProperty("id");
+      expect(mockSession).toHaveProperty("timestamp");
+      expect(mockSession).toHaveProperty("messageCount");
+      expect(mockSession).toHaveProperty("status");
+      expect(mockSession).toHaveProperty("exportable");
+      expect(mockSession.status).toBe("active");
+      expect(typeof mockSession.id).toBe("string");
+      expect(typeof mockSession.timestamp).toBe("number");
+      expect(typeof mockSession.messageCount).toBe("number");
     });
 
-    it('should validate session status types', () => {
-      const validStatuses: Array<SessionData['status']> = ['active', 'saving', 'saved', 'error'];
-      
-      validStatuses.forEach(status => {
+    it("should validate session status types", () => {
+      const validStatuses: Array<SessionData["status"]> = [
+        "active",
+        "saving",
+        "saved",
+        "error",
+      ];
+
+      validStatuses.forEach((status) => {
         const session: SessionData = {
-          id: 'test',
+          id: "test",
           timestamp: Date.now(),
           messageCount: 0,
           status,
-          exportable: true
+          exportable: true,
         };
-        expect(['active', 'saving', 'saved', 'error']).toContain(session.status);
+        expect(["active", "saving", "saved", "error"]).toContain(
+          session.status,
+        );
       });
     });
 
-    it('should support optional properties', () => {
+    it("should support optional properties", () => {
       const sessionWithOptionals: SessionData = {
-        id: 'test-session-456',
+        id: "test-session-456",
         timestamp: Date.now(),
         messageCount: 3,
-        status: 'saved',
+        status: "saved",
         lastSaved: Date.now() - 30000,
-        exportable: false
+        exportable: false,
       };
 
       expect(sessionWithOptionals.lastSaved).toBeDefined();
@@ -66,8 +73,8 @@ describe('SessionIndicator Component Logic', () => {
     });
   });
 
-  describe('Session Management Logic', () => {
-    it('should create session with correct structure', () => {
+  describe("Session Management Logic", () => {
+    it("should create session with correct structure", () => {
       const createSession = (): SessionData => {
         const timestamp = Date.now();
         const randomPart = Math.random().toString(36).substring(2, 8);
@@ -75,44 +82,47 @@ describe('SessionIndicator Component Logic', () => {
           id: `session-${timestamp}-${randomPart}`,
           timestamp,
           messageCount: 0,
-          status: 'active',
-          exportable: true
+          status: "active",
+          exportable: true,
         };
       };
 
       const session = createSession();
       expect(session.id).toMatch(/^session-\d+-[a-z0-9]{6}$/);
-      expect(session.status).toBe('active');
+      expect(session.status).toBe("active");
       expect(session.messageCount).toBe(0);
       expect(session.exportable).toBe(true);
     });
 
-    it('should update session correctly', () => {
-      const updateSession = (session: SessionData, updates: Partial<SessionData>): SessionData => {
+    it("should update session correctly", () => {
+      const updateSession = (
+        session: SessionData,
+        updates: Partial<SessionData>,
+      ): SessionData => {
         return { ...session, ...updates };
       };
 
       const original: SessionData = {
-        id: 'test-session',
+        id: "test-session",
         timestamp: Date.now(),
         messageCount: 5,
-        status: 'active',
-        exportable: true
+        status: "active",
+        exportable: true,
       };
 
       const updated = updateSession(original, {
         messageCount: 10,
-        status: 'saved',
-        lastSaved: Date.now()
+        status: "saved",
+        lastSaved: Date.now(),
       });
 
       expect(updated.messageCount).toBe(10);
-      expect(updated.status).toBe('saved');
+      expect(updated.status).toBe("saved");
       expect(updated.lastSaved).toBeDefined();
-      expect(updated.id).toBe('test-session'); // Should preserve original id
+      expect(updated.id).toBe("test-session"); // Should preserve original id
     });
 
-    it('should calculate duration correctly', () => {
+    it("should calculate duration correctly", () => {
       const calculateDuration = (timestamp: number): string => {
         const elapsed = Date.now() - timestamp;
         const seconds = Math.floor(elapsed / 1000);
@@ -128,74 +138,76 @@ describe('SessionIndicator Component Logic', () => {
       const oneMinuteAgo = now - 60000;
       const twoHoursAgo = now - 7200000;
 
-      expect(calculateDuration(oneMinuteAgo)).toBe('1m');
-      expect(calculateDuration(twoHoursAgo)).toBe('2h');
+      expect(calculateDuration(oneMinuteAgo)).toBe("1m");
+      expect(calculateDuration(twoHoursAgo)).toBe("2h");
     });
 
-    it('should format short session IDs', () => {
+    it("should format short session IDs", () => {
       const formatShortId = (id: string): string => {
         return id.length > 12 ? `${id.substring(0, 8)}...` : id;
       };
 
-      expect(formatShortId('session-1234567890123')).toBe('session-...');
-      expect(formatShortId('short-id')).toBe('short-id');
+      expect(formatShortId("session-1234567890123")).toBe("session-...");
+      expect(formatShortId("short-id")).toBe("short-id");
     });
   });
 
-  describe('Status Handling', () => {
-    it('should determine status display correctly', () => {
-      const getStatusDisplay = (session: SessionData): { icon: string; color: string } => {
+  describe("Status Handling", () => {
+    it("should determine status display correctly", () => {
+      const getStatusDisplay = (
+        session: SessionData,
+      ): { icon: string; color: string } => {
         switch (session.status) {
-          case 'active':
-            return { icon: '🟢', color: 'green' };
-          case 'saving':
-            return { icon: '💾', color: 'yellow' };
-          case 'saved':
-            return { icon: '💾 ✓', color: 'green' };
-          case 'error':
-            return { icon: '⚠️ Error', color: 'red' };
+          case "active":
+            return { icon: "🟢", color: "green" };
+          case "saving":
+            return { icon: "💾", color: "yellow" };
+          case "saved":
+            return { icon: "💾 ✓", color: "green" };
+          case "error":
+            return { icon: "⚠️ Error", color: "red" };
           default:
-            return { icon: '⚪', color: 'gray' };
+            return { icon: "⚪", color: "gray" };
         }
       };
 
       const activeSession: SessionData = {
-        id: 'test',
+        id: "test",
         timestamp: Date.now(),
         messageCount: 5,
-        status: 'active',
-        exportable: true
+        status: "active",
+        exportable: true,
       };
 
-      const savingSession = { ...activeSession, status: 'saving' as const };
-      const savedSession = { ...activeSession, status: 'saved' as const };
-      const errorSession = { ...activeSession, status: 'error' as const };
+      const savingSession = { ...activeSession, status: "saving" as const };
+      const savedSession = { ...activeSession, status: "saved" as const };
+      const errorSession = { ...activeSession, status: "error" as const };
 
-      expect(getStatusDisplay(activeSession).icon).toBe('🟢');
-      expect(getStatusDisplay(savingSession).icon).toBe('💾');
-      expect(getStatusDisplay(savedSession).icon).toBe('💾 ✓');
-      expect(getStatusDisplay(errorSession).icon).toBe('⚠️ Error');
+      expect(getStatusDisplay(activeSession).icon).toBe("🟢");
+      expect(getStatusDisplay(savingSession).icon).toBe("💾");
+      expect(getStatusDisplay(savedSession).icon).toBe("💾 ✓");
+      expect(getStatusDisplay(errorSession).icon).toBe("⚠️ Error");
     });
 
-    it('should determine exportability', () => {
+    it("should determine exportability", () => {
       const isExportable = (session: SessionData): boolean => {
         return Boolean(session.exportable && session.messageCount > 0);
       };
 
       const exportableSession: SessionData = {
-        id: 'test',
+        id: "test",
         timestamp: Date.now(),
         messageCount: 5,
-        status: 'active',
-        exportable: true
+        status: "active",
+        exportable: true,
       };
 
       const nonExportableSession: SessionData = {
-        id: 'test',
+        id: "test",
         timestamp: Date.now(),
         messageCount: 0,
-        status: 'active',
-        exportable: false
+        status: "active",
+        exportable: false,
       };
 
       expect(isExportable(exportableSession)).toBe(true);
@@ -203,52 +215,52 @@ describe('SessionIndicator Component Logic', () => {
     });
   });
 
-  describe('Export/Import Data Structure', () => {
-    it('should generate valid export data', () => {
+  describe("Export/Import Data Structure", () => {
+    it("should generate valid export data", () => {
       const generateExportData = (session: SessionData) => {
         return {
-          version: '1.0.0',
+          version: "1.0.0",
           exportedAt: new Date().toISOString(),
           session: {
             id: session.id,
             timestamp: session.timestamp,
             messageCount: session.messageCount,
             status: session.status,
-            lastSaved: session.lastSaved
-          }
+            lastSaved: session.lastSaved,
+          },
         };
       };
 
       const mockSession: SessionData = {
-        id: 'test-export-session',
+        id: "test-export-session",
         timestamp: Date.now() - 60000,
         messageCount: 7,
-        status: 'active',
+        status: "active",
         exportable: true,
-        lastSaved: Date.now() - 30000
+        lastSaved: Date.now() - 30000,
       };
 
       const exportData = generateExportData(mockSession);
-      
-      expect(exportData).toHaveProperty('version');
-      expect(exportData).toHaveProperty('exportedAt');
-      expect(exportData).toHaveProperty('session');
-      expect(exportData.session.id).toBe('test-export-session');
+
+      expect(exportData).toHaveProperty("version");
+      expect(exportData).toHaveProperty("exportedAt");
+      expect(exportData).toHaveProperty("session");
+      expect(exportData.session.id).toBe("test-export-session");
       expect(exportData.session.messageCount).toBe(7);
-      expect(exportData.version).toBe('1.0.0');
+      expect(exportData.version).toBe("1.0.0");
     });
 
-    it('should validate import data structure', () => {
+    it("should validate import data structure", () => {
       const validateImportData = (data: string): boolean => {
         try {
           const parsed = JSON.parse(data);
           return (
-            typeof parsed === 'object' &&
-            typeof parsed.version === 'string' &&
-            typeof parsed.exportedAt === 'string' &&
-            typeof parsed.session === 'object' &&
-            typeof parsed.session.id === 'string' &&
-            typeof parsed.session.timestamp === 'number'
+            typeof parsed === "object" &&
+            typeof parsed.version === "string" &&
+            typeof parsed.exportedAt === "string" &&
+            typeof parsed.session === "object" &&
+            typeof parsed.session.id === "string" &&
+            typeof parsed.session.timestamp === "number"
           );
         } catch {
           return false;
@@ -256,25 +268,25 @@ describe('SessionIndicator Component Logic', () => {
       };
 
       const validData = JSON.stringify({
-        version: '1.0.0',
+        version: "1.0.0",
         exportedAt: new Date().toISOString(),
         session: {
-          id: 'imported-session',
+          id: "imported-session",
           timestamp: Date.now(),
           messageCount: 12,
-          status: 'saved'
-        }
+          status: "saved",
+        },
       });
 
-      const invalidData = 'not json';
+      const invalidData = "not json";
 
       expect(validateImportData(validData)).toBe(true);
       expect(validateImportData(invalidData)).toBe(false);
     });
   });
 
-  describe('Auto-save Logic', () => {
-    it('should validate auto-save intervals', () => {
+  describe("Auto-save Logic", () => {
+    it("should validate auto-save intervals", () => {
       const validateAutoSaveInterval = (interval?: number): boolean => {
         if (interval === undefined) return true;
         return interval >= 5000 && interval <= 300000; // 5s to 5min
@@ -286,69 +298,77 @@ describe('SessionIndicator Component Logic', () => {
       expect(validateAutoSaveInterval(600000)).toBe(false);
     });
 
-    it('should determine save state', () => {
-      const getSaveState = (session?: SessionData, lastSaved?: number): string => {
-        if (!session) return 'no-session';
-        if (session.status === 'saving') return 'saving';
-        if (session.status === 'error') return 'error';
-        if (lastSaved && Date.now() - lastSaved < 60000) return 'saved';
-        return 'unsaved';
+    it("should determine save state", () => {
+      const getSaveState = (
+        session?: SessionData,
+        lastSaved?: number,
+      ): string => {
+        if (!session) return "no-session";
+        if (session.status === "saving") return "saving";
+        if (session.status === "error") return "error";
+        if (lastSaved && Date.now() - lastSaved < 60000) return "saved";
+        return "unsaved";
       };
 
       const activeSession: SessionData = {
-        id: 'test',
+        id: "test",
         timestamp: Date.now(),
         messageCount: 1,
-        status: 'active',
-        exportable: true
+        status: "active",
+        exportable: true,
       };
 
-      expect(getSaveState()).toBe('no-session');
-      expect(getSaveState({ ...activeSession, status: 'saving' })).toBe('saving');
-      expect(getSaveState({ ...activeSession, status: 'error' })).toBe('error');
-      expect(getSaveState(activeSession, Date.now() - 30000)).toBe('saved');
-      expect(getSaveState(activeSession)).toBe('unsaved');
+      expect(getSaveState()).toBe("no-session");
+      expect(getSaveState({ ...activeSession, status: "saving" })).toBe(
+        "saving",
+      );
+      expect(getSaveState({ ...activeSession, status: "error" })).toBe("error");
+      expect(getSaveState(activeSession, Date.now() - 30000)).toBe("saved");
+      expect(getSaveState(activeSession)).toBe("unsaved");
     });
   });
 
-  describe('Session Lifecycle', () => {
-    it('should handle session state transitions', () => {
-      const transitionSession = (session: SessionData, action: string): SessionData => {
+  describe("Session Lifecycle", () => {
+    it("should handle session state transitions", () => {
+      const transitionSession = (
+        session: SessionData,
+        action: string,
+      ): SessionData => {
         switch (action) {
-          case 'start_save':
-            return { ...session, status: 'saving' };
-          case 'complete_save':
-            return { ...session, status: 'saved', lastSaved: Date.now() };
-          case 'error_save':
-            return { ...session, status: 'error' };
-          case 'activate':
-            return { ...session, status: 'active' };
+          case "start_save":
+            return { ...session, status: "saving" };
+          case "complete_save":
+            return { ...session, status: "saved", lastSaved: Date.now() };
+          case "error_save":
+            return { ...session, status: "error" };
+          case "activate":
+            return { ...session, status: "active" };
           default:
             return session;
         }
       };
 
       let session: SessionData = {
-        id: 'test',
+        id: "test",
         timestamp: Date.now(),
         messageCount: 5,
-        status: 'active',
-        exportable: true
+        status: "active",
+        exportable: true,
       };
 
       // Test state transitions
-      session = transitionSession(session, 'start_save');
-      expect(session.status).toBe('saving');
+      session = transitionSession(session, "start_save");
+      expect(session.status).toBe("saving");
 
-      session = transitionSession(session, 'complete_save');
-      expect(session.status).toBe('saved');
+      session = transitionSession(session, "complete_save");
+      expect(session.status).toBe("saved");
       expect(session.lastSaved).toBeDefined();
 
-      session = transitionSession(session, 'error_save');
-      expect(session.status).toBe('error');
+      session = transitionSession(session, "error_save");
+      expect(session.status).toBe("error");
 
-      session = transitionSession(session, 'activate');
-      expect(session.status).toBe('active');
+      session = transitionSession(session, "activate");
+      expect(session.status).toBe("active");
     });
   });
 });

@@ -1,12 +1,12 @@
-import { minimatch } from 'minimatch';
+import { minimatch } from "minimatch";
 import {
   Rule,
   PermissionQuery,
   PermissionResult,
   PermissionAction,
   Profile,
-  PermissionContext
-} from './types.js';
+  PermissionContext,
+} from "./types.js";
 
 export interface RuleEngineOptions {
   enableCache: boolean;
@@ -23,7 +23,7 @@ export class RuleEngine {
       enableCache: true,
       cacheTimeout: 5 * 60 * 1000, // 5 minutes
       debugMode: false,
-      ...options
+      ...options,
     };
   }
 
@@ -34,13 +34,13 @@ export class RuleEngine {
     query: PermissionQuery,
     rules: Rule[],
     defaults: Record<string, PermissionAction>,
-    profile?: Profile
+    profile?: Profile,
   ): Promise<PermissionResult> {
     const timestamp = new Date();
-    
+
     // Sort rules by priority (higher first)
     const sortedRules = this.sortRulesByPriority(rules);
-    
+
     // Evaluate rules in order
     for (const rule of sortedRules) {
       if (await this.ruleMatches(rule, query)) {
@@ -50,7 +50,10 @@ export class RuleEngine {
         }
 
         // Check conditional rules
-        if (rule.conditions && !(await this.evaluateConditions(rule.conditions, query))) {
+        if (
+          rule.conditions &&
+          !(await this.evaluateConditions(rule.conditions, query))
+        ) {
           continue; // Skip rule with failed conditions
         }
 
@@ -60,7 +63,7 @@ export class RuleEngine {
           profile,
           reason: rule.reason || this.generateReason(rule, query),
           confidence: 1.0,
-          timestamp
+          timestamp,
         };
       }
     }
@@ -72,14 +75,17 @@ export class RuleEngine {
       profile,
       reason: `No specific rule found, using default: ${defaultAction}`,
       confidence: 0.5,
-      timestamp
+      timestamp,
     };
   }
 
   /**
    * Check if a rule matches the given query
    */
-  private async ruleMatches(rule: Rule, query: PermissionQuery): Promise<boolean> {
+  private async ruleMatches(
+    rule: Rule,
+    query: PermissionQuery,
+  ): Promise<boolean> {
     const { match } = rule;
 
     // Tool matching
@@ -88,7 +94,11 @@ export class RuleEngine {
     }
 
     // Operation matching
-    if (match.operation && query.operation && !this.matchesPattern(query.operation, match.operation)) {
+    if (
+      match.operation &&
+      query.operation &&
+      !this.matchesPattern(query.operation, match.operation)
+    ) {
       return false;
     }
 
@@ -98,7 +108,11 @@ export class RuleEngine {
     }
 
     // Command matching (supports regex)
-    if (match.command && query.command && !this.matchesCommand(query.command, match.command)) {
+    if (
+      match.command &&
+      query.command &&
+      !this.matchesCommand(query.command, match.command)
+    ) {
       return false;
     }
 
@@ -111,9 +125,9 @@ export class RuleEngine {
   private matchesPattern(value: string, pattern: string): boolean {
     // Convert simple pattern to regex
     const regexPattern = pattern
-      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
-      .replace(/\\\*/g, '.*') // Convert * to .*
-      .replace(/\\\?/g, '.'); // Convert ? to .
+      .replace(/[.*+?^${}()|[\]\\]/g, "\\$&") // Escape special chars
+      .replace(/\\\*/g, ".*") // Convert * to .*
+      .replace(/\\\?/g, "."); // Convert ? to .
 
     const regex = this.getCompiledRegex(`^${regexPattern}$`);
     return regex.test(value);
@@ -124,12 +138,14 @@ export class RuleEngine {
    */
   private matchesPath(filePath: string, pattern: string): boolean {
     // Support multiple patterns separated by |
-    const patterns = pattern.split('|');
-    return patterns.some(p => minimatch(filePath, p.trim(), {
-      dot: true, // Match files starting with .
-      matchBase: true, // Match basename against pattern
-      noext: false // Don't ignore extension
-    }));
+    const patterns = pattern.split("|");
+    return patterns.some((p) =>
+      minimatch(filePath, p.trim(), {
+        dot: true, // Match files starting with .
+        matchBase: true, // Match basename against pattern
+        noext: false, // Don't ignore extension
+      }),
+    );
   }
 
   /**
@@ -154,7 +170,7 @@ export class RuleEngine {
         this.compiledPatterns.set(pattern, new RegExp(pattern));
       } catch (error) {
         // Invalid regex, create literal match
-        const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         this.compiledPatterns.set(pattern, new RegExp(escaped));
       }
     }
@@ -171,27 +187,38 @@ export class RuleEngine {
   /**
    * Evaluate conditional rules
    */
-  private async evaluateConditions(conditions: any[], query: PermissionQuery): Promise<boolean> {
+  private async evaluateConditions(
+    conditions: any[],
+    query: PermissionQuery,
+  ): Promise<boolean> {
     for (const condition of conditions) {
       switch (condition.type) {
-        case 'time':
+        case "time":
           if (!this.evaluateTimeCondition(condition.value)) {
             return false;
           }
           break;
-        
-        case 'environment':
-          if (!this.evaluateEnvironmentCondition(condition.value, this.convertToPermissionContext(query.context))) {
+
+        case "environment":
+          if (
+            !this.evaluateEnvironmentCondition(
+              condition.value,
+              this.convertToPermissionContext(query.context),
+            )
+          ) {
             return false;
           }
           break;
-        
-        case 'file_size':
-          if (query.path && !(await this.evaluateFileSizeCondition(query.path, condition.value))) {
+
+        case "file_size":
+          if (
+            query.path &&
+            !(await this.evaluateFileSizeCondition(query.path, condition.value))
+          ) {
             return false;
           }
           break;
-        
+
         default:
           // Unknown condition type, assume failed
           return false;
@@ -203,13 +230,16 @@ export class RuleEngine {
   /**
    * Evaluate time-based conditions
    */
-  private evaluateTimeCondition(timeRange: { start: string; end: string }): boolean {
+  private evaluateTimeCondition(timeRange: {
+    start: string;
+    end: string;
+  }): boolean {
     const now = new Date();
     const currentTime = now.getHours() * 100 + now.getMinutes();
-    
+
     const start = this.parseTime(timeRange.start);
     const end = this.parseTime(timeRange.end);
-    
+
     if (start <= end) {
       return currentTime >= start && currentTime <= end;
     } else {
@@ -221,33 +251,47 @@ export class RuleEngine {
   /**
    * Evaluate environment variable conditions
    */
-  private convertToPermissionContext(auditContext?: any): PermissionContext | undefined {
+  private convertToPermissionContext(
+    auditContext?: any,
+  ): PermissionContext | undefined {
     if (!auditContext) return undefined;
-    
+
     return {
-      workingDirectory: auditContext.workspace_path || auditContext.workingDirectory || process.cwd(),
+      workingDirectory:
+        auditContext.workspace_path ||
+        auditContext.workingDirectory ||
+        process.cwd(),
       timestamp: new Date(),
       environment: auditContext.environment || {},
       currentBranch: auditContext.git_context?.branch,
-      gitRepository: auditContext.git_context ? {
-        root: auditContext.git_context.repository || '',
-        remotes: []
-      } : undefined
+      gitRepository: auditContext.git_context
+        ? {
+            root: auditContext.git_context.repository || "",
+            remotes: [],
+          }
+        : undefined,
     };
   }
 
-  private evaluateEnvironmentCondition(envCondition: { key: string; value: string }, context?: PermissionContext): boolean {
+  private evaluateEnvironmentCondition(
+    envCondition: { key: string; value: string },
+    context?: PermissionContext,
+  ): boolean {
     // Check context environment first, then fall back to process.env
-    const envValue = context?.environment?.[envCondition.key] ?? process.env[envCondition.key];
+    const envValue =
+      context?.environment?.[envCondition.key] ?? process.env[envCondition.key];
     return envValue === envCondition.value;
   }
 
   /**
    * Evaluate file size conditions
    */
-  private async evaluateFileSizeCondition(filePath: string, sizeLimit: number): Promise<boolean> {
+  private async evaluateFileSizeCondition(
+    filePath: string,
+    sizeLimit: number,
+  ): Promise<boolean> {
     try {
-      const fs = await import('fs/promises');
+      const fs = await import("fs/promises");
       const stats = await fs.stat(filePath);
       return stats.size <= sizeLimit;
     } catch (error) {
@@ -260,14 +304,17 @@ export class RuleEngine {
    * Parse time string to minutes from midnight
    */
   private parseTime(timeStr: string): number {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+    const [hours, minutes] = timeStr.split(":").map(Number);
     return hours * 100 + minutes;
   }
 
   /**
    * Get default action for a tool
    */
-  private getDefaultAction(tool: string, defaults: Record<string, PermissionAction>): PermissionAction {
+  private getDefaultAction(
+    tool: string,
+    defaults: Record<string, PermissionAction>,
+  ): PermissionAction {
     // Try exact match first
     if (defaults[tool]) {
       return defaults[tool];
@@ -281,7 +328,7 @@ export class RuleEngine {
     }
 
     // Global default
-    return 'confirm';
+    return "confirm";
   }
 
   /**
@@ -289,24 +336,24 @@ export class RuleEngine {
    */
   private generateReason(rule: Rule, query: PermissionQuery): string {
     const parts: string[] = [];
-    
+
     if (rule.match.tool) {
       parts.push(`tool '${rule.match.tool}'`);
     }
-    
+
     if (rule.match.path) {
       parts.push(`path '${rule.match.path}'`);
     }
-    
+
     if (rule.match.command) {
       parts.push(`command pattern '${rule.match.command}'`);
     }
-    
+
     if (rule.match.operation) {
       parts.push(`operation '${rule.match.operation}'`);
     }
 
-    const matchDescription = parts.join(', ');
+    const matchDescription = parts.join(", ");
     return `Rule matched: ${matchDescription} → ${rule.action}`;
   }
 
@@ -318,11 +365,11 @@ export class RuleEngine {
 
     // Check required fields
     if (!rule.match) {
-      errors.push('Rule must have match criteria');
+      errors.push("Rule must have match criteria");
     }
 
-    if (!rule.action || !['allow', 'deny', 'confirm'].includes(rule.action)) {
-      errors.push('Rule must have valid action (allow, deny, or confirm)');
+    if (!rule.action || !["allow", "deny", "confirm"].includes(rule.action)) {
+      errors.push("Rule must have valid action (allow, deny, or confirm)");
     }
 
     // Validate patterns
@@ -343,18 +390,21 @@ export class RuleEngine {
     }
 
     // Validate priority
-    if (rule.priority !== undefined && (rule.priority < 0 || rule.priority > 1000)) {
-      errors.push('Rule priority must be between 0 and 1000');
+    if (
+      rule.priority !== undefined &&
+      (rule.priority < 0 || rule.priority > 1000)
+    ) {
+      errors.push("Rule priority must be between 0 and 1000");
     }
 
     // Validate expiration
     if (rule.expiration && rule.expiration <= new Date()) {
-      errors.push('Rule expiration date must be in the future');
+      errors.push("Rule expiration date must be in the future");
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -371,7 +421,7 @@ export class RuleEngine {
   getCacheStats(): { size: number; patterns: string[] } {
     return {
       size: this.compiledPatterns.size,
-      patterns: Array.from(this.compiledPatterns.keys())
+      patterns: Array.from(this.compiledPatterns.keys()),
     };
   }
 }

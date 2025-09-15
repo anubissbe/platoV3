@@ -11,12 +11,15 @@ Enable advanced mouse interactions in Plato's terminal UI to achieve pixel-perfe
 ## User Stories
 
 ### Story 1: Interactive Click Actions
+
 As a Plato user, I want to click on UI elements (buttons, slash command suggestions, menu items, conversation bubbles) to interact with them directly, so that I can navigate the interface more intuitively without relying solely on keyboard shortcuts. The workflow includes detecting mouse clicks on specific screen coordinates, mapping those coordinates to interactive elements, executing appropriate actions (e.g., inserting slash commands, selecting suggestions, triggering confirmations), and providing immediate visual feedback to confirm user interactions.
 
-### Story 2: Precision Text Selection and Copy Operations  
+### Story 2: Precision Text Selection and Copy Operations
+
 As a Plato user, I want to select specific text portions with precise mouse drag operations and use system-standard copy mechanisms, so that I can efficiently extract conversation content, code snippets, or command outputs for external use. The workflow includes implementing character-level selection granularity, highlighting selected regions with proper terminal color codes, supporting both click-drag selection and triple-click line selection, and seamlessly integrating with system clipboard operations across platforms (Windows WSL, Linux, macOS).
 
 ### Story 3: Smooth Content Navigation
+
 As a Plato user, I want to use mouse wheel scrolling to navigate through conversation history and long responses with precise control, so that I can quickly access previous context without losing my current position or disrupting the conversation flow. The workflow includes capturing scroll wheel events with configurable sensitivity, maintaining scroll position state across UI updates, providing smooth scrolling animation effects, and supporting both line-by-line and page-by-page navigation modes.
 
 ## Spec Scope

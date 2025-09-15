@@ -23,4 +23,3 @@ export class Session {
     return this.history.slice();
   }
 }
-

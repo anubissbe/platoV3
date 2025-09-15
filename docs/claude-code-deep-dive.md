@@ -1,9 +1,11 @@
 **Executive Summary**
+
 - Claude Code is a bundled Node CLI that renders a React-based terminal UI and orchestrates an agent with tools via MCP (Model Context Protocol). The shipped package includes a binary-like `cli.js`, an SDK (`sdk.mjs` + `sdk.d.ts`) exposing a high-level `query()` API, and vendor assets (VSIX, JetBrains jars, ripgrep, `yoga.wasm`).
 - The SDK spawns the CLI with carefully composed flags, using stream-json I/O for precise, machine-readable message passing. MCP servers are configurable via stdio, SSE, HTTP, or in-process SDK instances.
 - The agent enforces permission modes, gated tool execution, and workspace trust. Sessions can resume/continue, and the CLI supports `--print` for non-interactive output.
 
 **Package Layout (installed)**
+
 - `/usr/lib/node_modules/@anthropic-ai/claude-code`
   - `cli.js`: bundled/minified runtime with React and terminal renderer (uses `yoga.wasm`).
   - `sdk.mjs`, `sdk.d.ts`: SDK transport and type definitions.
@@ -11,6 +13,7 @@
   - `package.json`: `bin: { "claude": "cli.js" }`, ESM, Node ≥ 18.
 
 **CLI Behavior and Flags**
+
 - Defaults to interactive session (React TUI). Use `--print` for non-interactive.
 - Selected flags (from `--help` and SDK wiring):
   - `--model <model>`: Select provider model/alias.
@@ -29,6 +32,7 @@
   - Diagnostics: `--debug [filter]`, `--verbose`, `doctor`, `update`, `install`, `setup-token`.
 
 **SDK: High‑Level Flow**
+
 - API:
   - `query({ prompt, options }) => AsyncGenerator<SDKMessage>`
   - `tool(...)` (define zod-typed tool for SDK MCP)
@@ -61,6 +65,7 @@
   - `canUseTool` requires streaming input; with it, SDK forces `--permission-prompt-tool stdio` and forbids also setting `permissionPromptToolName` (throws otherwise).
 
 **SDK Types (selected)**
+
 - Messages (`SDKMessage` union):
   - `SDKSystemMessage` (subtype: `init`): `{ apiKeySource, cwd, tools: string[], mcp_servers: {name,status}[], model, permissionMode, slash_commands, output_style }`
   - `SDKUserMessage`: `{ type: 'user', message: APIUserMessage, parent_tool_use_id }`
@@ -85,11 +90,13 @@
   - `sdk`: `{ type: 'sdk', name: string }` (SDK augments with `instance: McpServer` for in-process servers)
 
 **MCP and Tools**
+
 - The CLI manages external MCP servers declared via `--mcp-config` (user/global/project/local scopes) and respects `--strict-mcp-config` to ignore any other auto-discovered configs.
 - The SDK’s `createSdkMcpServer()` constructs an in-process MCP server (via `@modelcontextprotocol/sdk/server/mcp`), enables tools capability, and registers tools declared with `tool()` (zod schemas + async handlers returning `CallToolResult`).
 - At spawn, SDK splits SDK-internal MCP servers from external ones: it passes a minimized `{ type: 'sdk', name }` to the CLI while keeping the actual instance locally. The `Query` object then bridges SDK tool calls over the process boundary.
 
 **Process Transport Details**
+
 - Always sets `--output-format stream-json` and `--verbose` for the child.
 - For string prompt: appends `--print -- <prompt>` (skips workspace trust prompts by design).
 - For streaming prompt: appends `--input-format stream-json` and wires `Query.streamInput(...)` to write stdin events.
@@ -97,6 +104,7 @@
 - Supports spawning a native binary path (no `node` wrapper) or default `node`/`bun` executable.
 
 **Interactive TUI (from `cli.js` characteristics)**
+
 - React renderer with Yoga layout (`yoga.wasm`); handles keyboard/mouse input and draws panels/components.
 - Onboarding and policy-update flows gate first runs or version changes.
 - Workspace trust/permission modals; bypass mode enforced with safety checks (root/sudo blocked unless sandboxed).
@@ -105,108 +113,117 @@
 - Telemetry events (examples): `tengu_flicker`, `tengu_startup_telemetry`, `tengu_init`, `tengu_continue`, `tengu_remote_create_session`, `tengu_exit`.
 
 **Session and Model Handling**
+
 - Model selection precedence: CLI flag `--model` > `ANTHROPIC_MODEL` > settings file.
 - Fallback model must differ from the primary; flagged at SDK level and CLI enforces provider constraints.
 - Session controls: `--continue` for last session; `--resume [id]` for a specific saved session. `--session-id` sets a UUID if needed.
 - Session end reports include cost, token usage, duration, and permission denials (see `SDKResultMessage`).
 
 **Stream‑JSON Protocol (Observed Contracts)**
+
 - Output events (one per line), JSON objects conforming to `SDKMessage` union:
   - System init example:
     {
-      "type": "system",
-      "subtype": "init",
-      "session_id": "...",
-      "uuid": "...",
-      "apiKeySource": "user",
-      "cwd": "/path",
-      "tools": ["Bash(git:*)", "Edit"],
-      "mcp_servers": [{"name":"serverA","status":"connected"}],
-      "model": "claude-sonnet-4-20250514",
-      "permissionMode": "default",
-      "slash_commands": ["/config", "/bug"],
-      "output_style": "..."
+    "type": "system",
+    "subtype": "init",
+    "session_id": "...",
+    "uuid": "...",
+    "apiKeySource": "user",
+    "cwd": "/path",
+    "tools": ["Bash(git:*)", "Edit"],
+    "mcp_servers": [{"name":"serverA","status":"connected"}],
+    "model": "claude-sonnet-4-20250514",
+    "permissionMode": "default",
+    "slash_commands": ["/config", "/bug"],
+    "output_style": "..."
     }
   - Assistant message example:
     {
-      "type": "assistant",
-      "session_id": "...",
-      "uuid": "...",
-      "parent_tool_use_id": null,
-      "message": {
-        "role": "assistant",
-        "content": [ { "type": "text", "text": "Hello" } ],
-        "model": "...",
-        "id": "...",
-        "stop_reason": "end_turn"
-      }
+    "type": "assistant",
+    "session_id": "...",
+    "uuid": "...",
+    "parent_tool_use_id": null,
+    "message": {
+    "role": "assistant",
+    "content": [ { "type": "text", "text": "Hello" } ],
+    "model": "...",
+    "id": "...",
+    "stop_reason": "end_turn"
+    }
     }
   - Result (success) example:
     {
-      "type": "result",
-      "session_id": "...",
-      "uuid": "...",
-      "subtype": "success",
-      "is_error": false,
-      "num_turns": 3,
-      "duration_ms": 21500,
-      "duration_api_ms": 8200,
-      "result": "...final text...",
-      "total_cost_usd": 0.0123,
-      "usage": { "input_tokens": 1234, "output_tokens": 567 },
-      "permission_denials": []
+    "type": "result",
+    "session_id": "...",
+    "uuid": "...",
+    "subtype": "success",
+    "is_error": false,
+    "num_turns": 3,
+    "duration_ms": 21500,
+    "duration_api_ms": 8200,
+    "result": "...final text...",
+    "total_cost_usd": 0.0123,
+    "usage": { "input_tokens": 1234, "output_tokens": 567 },
+    "permission_denials": []
     }
 - Streaming input (when `--input-format stream-json`): caller sends `SDKUserMessage` objects on stdin (with required fields: `type:'user'`, `session_id`, `parent_tool_use_id|null`, and `message` shaped like Anthropic user message param).
 
 **Permissions & Hooks in Practice**
+
 - Permission modes gate when the UI prompts or auto-accepts changes and tool runs.
 - `--permission-prompt-tool` selects the prompt implementation (e.g., `stdio`); when SDK’s `canUseTool` is provided, it enforces `stdio` and disallows any other prompt tool to avoid ambiguity.
 - Hooks can be registered (SDK-only) by event; each receives a typed payload and returns `HookJSONOutput` which can alter flow, suppress output, provide system messages, or annotate permission decisions.
 
 **IDE & External Integration**
+
 - VS Code: `vendor/claude-code.vsix` ships the extension for direct integration.
 - JetBrains: multiple jars under `vendor/claude-code-jetbrains-plugin/lib/`.
 - CLI `--ide` mode tries to auto-connect when exactly one valid IDE is available.
 
 **Updater & Diagnostics**
+
 - `claude update`, `claude install [stable|latest|<ver>]`: manages native builds and updates.
 - `claude doctor`: validates auto-updater health and environment.
 - Settings migration flows and iTerm/Terminal state restoration paths are present for macOS terminals (string indicators in `cli.js`).
 
 **Privacy**
+
 - As per README: feedback (accept/reject, bug reports) may be collected for product improvements; transcripts stored 30 days; no training of generative models on feedback.
 
 **Environment and Settings**
+
 - Key env vars: `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `DEBUG`, CI detection. Changelog references `MCP_TIMEOUT` and `MCP_TOOL_TIMEOUT`.
 - Settings precedence: CLI flags > env > settings file.
 - `--settings` accepts JSON string or file path; JSON is validated inside CLI.
 
 **Limitations of This Analysis**
+
 - `cli.js` is minified; while we can verify flags, flows, and embedded frameworks (React + Yoga), we cannot map one-to-one source files or internal component hierarchies.
 - The SDK (`sdk.d.ts`/`sdk.mjs`) provides authoritative external contracts; all behavioral specifics included above are derived from these and from observable CLI behavior.
 
 **Reference: MCP Config JSON Example**
 {
-  "mcpServers": {
-    "docs": { "type": "sse", "url": "http://localhost:2024/sse", "headers": {"Authorization": "Bearer ..."} },
-    "local": { "type": "stdio", "command": "my-mcp", "args": ["--flag"], "env": {"X": "Y"} },
-    "sdk-tools": { "type": "sdk", "name": "sdk-tools" }
-  }
+"mcpServers": {
+"docs": { "type": "sse", "url": "http://localhost:2024/sse", "headers": {"Authorization": "Bearer ..."} },
+"local": { "type": "stdio", "command": "my-mcp", "args": ["--flag"], "env": {"X": "Y"} },
+"sdk-tools": { "type": "sdk", "name": "sdk-tools" }
+}
 }
 
 **Reference: Hook Output Example (PreToolUse)**
 {
-  "continue": true,
-  "systemMessage": "Be careful with deletes.",
-  "permissionDecision": "ask",
-  "hookSpecificOutput": {
-    "hookEventName": "PreToolUse",
-    "permissionDecision": "ask",
-    "permissionDecisionReason": "High-risk command"
-  }
+"continue": true,
+"systemMessage": "Be careful with deletes.",
+"permissionDecision": "ask",
+"hookSpecificOutput": {
+"hookEventName": "PreToolUse",
+"permissionDecision": "ask",
+"permissionDecisionReason": "High-risk command"
+}
 }
 
 **Settings Schema Overview**
+
 - Source: `--settings <file-or-json>` merges with env and CLI; CLI flags take precedence.
 - Common fields (aligned with SDK Options and CLI flags):
   - `model: string` — default model alias/id.
@@ -224,21 +241,22 @@
   - `verbose?: boolean` — enable verbose logging.
 - Example settings JSON:
   {
-    "model": "sonnet",
-    "fallbackModel": "haiku",
-    "permissionMode": "default",
-    "appendSystemPrompt": "Prefer small, safe diffs.",
-    "allowedTools": ["Edit", "Bash(git:*)"],
-    "disallowedTools": ["NetworkRequest"],
-    "additionalDirectories": ["docs", "scripts"],
-    "maxTurns": 12,
-    "mcpServers": {
-      "notes": { "type": "sse", "url": "http://localhost:2121/sse" }
-    },
-    "strictMcpConfig": true
+  "model": "sonnet",
+  "fallbackModel": "haiku",
+  "permissionMode": "default",
+  "appendSystemPrompt": "Prefer small, safe diffs.",
+  "allowedTools": ["Edit", "Bash(git:*)"],
+  "disallowedTools": ["NetworkRequest"],
+  "additionalDirectories": ["docs", "scripts"],
+  "maxTurns": 12,
+  "mcpServers": {
+  "notes": { "type": "sse", "url": "http://localhost:2121/sse" }
+  },
+  "strictMcpConfig": true
   }
 
 **CLI Flag Catalog + Validation Notes**
+
 - Core session flags:
   - `--model <id>`: Sets model; overrides env/settings.
   - `--fallback-model <id>`: Must differ from `--model` (validated both in SDK and CLI).
@@ -273,29 +291,30 @@
 
 **ASCII Architecture Diagram**
 Caller/Script
-  |
-  v
-SDK `query()`  --(Options)-->  ProcessTransport  --(spawn+flags)-->  `cli.js` (Claude CLI)
-  |                                                         |
-  |<-- stream-json (stdout) ------------------------------- |
-  |                                                         v
-  |                                                 React TUI (Yoga)
-  |                                                         |
-  |                                                 Agent Orchestrator
-  |                                                         |
-  |                                     +-------------------+------------------+
-  |                                     |                                      |
-  |                                 MCP Clients                           Local Tools
-  |                         (stdio / sse / http / sdk)            (Edit, Bash, Git, Search)
-  |                                     |                                      |
-  |                           External MCP Servers                  FS / Git / Processes
-  |                                     |                                      |
-  +------------------------------ stream results -------------------------------+
-                                        |
-                                        v
-                                   SDK `Query` -> Caller
+|
+v
+SDK `query()` --(Options)--> ProcessTransport --(spawn+flags)--> `cli.js` (Claude CLI)
+| |
+|<-- stream-json (stdout) ------------------------------- |
+| v
+| React TUI (Yoga)
+| |
+| Agent Orchestrator
+| |
+| +-------------------+------------------+
+| | |
+| MCP Clients Local Tools
+| (stdio / sse / http / sdk) (Edit, Bash, Git, Search)
+| | |
+| External MCP Servers FS / Git / Processes
+| | |
++------------------------------ stream results -------------------------------+
+|
+v
+SDK `Query` -> Caller
 
 **Slash Commands**
+
 - Observed/Documented:
   - `/bug`: Opens bug reporting flow (also mentioned in README).
   - `/config`: Opens settings UI; toggles features like themes, compaction, vim mode.
@@ -304,8 +323,9 @@ SDK `query()`  --(Options)-->  ProcessTransport  --(spawn+flags)-->  `cli.js` (C
   - On session start, the first `system:init` message includes `slash_commands: string[]` listing all available commands for the build. Capture that field from stream-json to present a canonical list.
 
 **Built‑in Tools (Representative)**
+
 - Edit: Applies file edits/patches; surfaces diffs and asks permission based on `permissionMode`.
-- Bash(git:*): Executes shell commands, often scoped to git workflows; high-sensitivity, gated by permission prompts and tool allowlists.
+- Bash(git:\*): Executes shell commands, often scoped to git workflows; high-sensitivity, gated by permission prompts and tool allowlists.
 - Search (ripgrep): Uses bundled ripgrep to index/search the workspace for context and navigation.
 - Git: High-level workflows (e.g., create branch, commit, revert) orchestrated via shell and git libs; typically behind permission prompts.
 - Notes:
@@ -313,6 +333,7 @@ SDK `query()`  --(Options)-->  ProcessTransport  --(spawn+flags)-->  `cli.js` (C
   - Tool calls can be intercepted via hooks (`PreToolUse`, `PostToolUse`) or `canUseTool` to enforce policies.
 
 **Resume/Continue Examples**
+
 - Continue last session:
   - `claude --continue`
   - Behavior: Loads most recent conversation (messages + checkpoints) and resumes in the TUI. Emits telemetry for continue events. Exits with message if none found.
@@ -323,6 +344,7 @@ SDK `query()`  --(Options)-->  ProcessTransport  --(spawn+flags)-->  `cli.js` (C
   - `--resume`/`--continue` respect `--permission-mode`, tool filters, and `--model` overrides for the resumed run.
 
 **IDE Attach Flow**
+
 - Auto-attach:
   - `claude --ide`
   - Behavior: If exactly one valid IDE is available (VS Code extension or JetBrains plugin installed and reachable), the CLI auto-connects on startup.
@@ -333,8 +355,8 @@ SDK `query()`  --(Options)-->  ProcessTransport  --(spawn+flags)-->  `cli.js` (C
   - When multiple IDEs are detected, the CLI avoids auto-connecting; connect from the IDE side.
   - IDE attach provides editor actions (open file, apply edits, navigate), streamed via the same orchestration layer.
 
-
 **Complete SDK Type Reference**
+
 - NonNullableUsage: Makes all fields of Anthropic `Usage` non-null. Used on `SDKResultMessage.usage`.
 - ApiKeySource: `'user' | 'project' | 'org' | 'temporary'`.
 - ConfigScope: `'local' | 'user' | 'project'` (used internally for settings scopes).
@@ -406,80 +428,82 @@ SDK `query()`  --(Options)-->  ProcessTransport  --(spawn+flags)-->  `cli.js` (C
   - `createSdkMcpServer({ name:string; version?:string; tools?: Array<SdkMcpToolDefinition<any>> }): McpSdkServerConfigWithInstance`
 
 **Stream‑JSON: Additional Examples**
+
 - User message (streaming input stdin payload):
   {
-    "type": "user",
-    "session_id": "3c7f...",
-    "parent_tool_use_id": null,
-    "message": {
-      "role": "user",
-      "content": [ { "type": "text", "text": "List files changed since last commit" } ]
-    }
+  "type": "user",
+  "session_id": "3c7f...",
+  "parent_tool_use_id": null,
+  "message": {
+  "role": "user",
+  "content": [ { "type": "text", "text": "List files changed since last commit" } ]
+  }
   }
 - Assistant message initiating a tool (illustrative Anthropic message shape):
   {
-    "type": "assistant",
-    "session_id": "3c7f...",
-    "uuid": "...",
-    "parent_tool_use_id": null,
-    "message": {
-      "role": "assistant",
-      "content": [
-        { "type": "text", "text": "I will check git status." },
-        { "type": "tool_use", "id": "tool_abc123", "name": "Bash(git:*)", "input": { "cmd": "git status --porcelain" } }
-      ]
-    }
+  "type": "assistant",
+  "session_id": "3c7f...",
+  "uuid": "...",
+  "parent_tool_use_id": null,
+  "message": {
+  "role": "assistant",
+  "content": [
+  { "type": "text", "text": "I will check git status." },
+  { "type": "tool_use", "id": "tool_abc123", "name": "Bash(git:*)", "input": { "cmd": "git status --porcelain" } }
+  ]
+  }
   }
 - Tool result streamed back (assistant or system mediated):
   {
-    "type": "assistant",
-    "session_id": "3c7f...",
-    "uuid": "...",
-    "parent_tool_use_id": "tool_abc123",
-    "message": {
-      "role": "assistant",
-      "content": [
-        { "type": "tool_result", "tool_use_id": "tool_abc123", "content": [ { "type":"text", "text":"M src/app.ts" } ] }
-      ]
-    }
+  "type": "assistant",
+  "session_id": "3c7f...",
+  "uuid": "...",
+  "parent_tool_use_id": "tool_abc123",
+  "message": {
+  "role": "assistant",
+  "content": [
+  { "type": "tool_result", "tool_use_id": "tool_abc123", "content": [ { "type":"text", "text":"M src/app.ts" } ] }
+  ]
+  }
   }
 - Permission prompt decision via hooks (SDK):
   Hook returns `HookJSONOutput` with `permissionDecision:"allow"` or `"ask"`, optionally adding `updatedPermissions` through a `PermissionUpdate` array.
 - Result (error due to max turns):
   {
-    "type": "result",
-    "session_id": "3c7f...",
-    "uuid": "...",
-    "subtype": "error_max_turns",
-    "is_error": true,
-    "num_turns": 20,
-    "duration_ms": 600000,
-    "duration_api_ms": 240000,
-    "total_cost_usd": 0.2345,
-    "usage": { "input_tokens": 50000, "output_tokens": 20000 },
-    "permission_denials": [ { "tool_name":"Edit", "tool_use_id":"t1", "tool_input":{} } ]
+  "type": "result",
+  "session_id": "3c7f...",
+  "uuid": "...",
+  "subtype": "error_max_turns",
+  "is_error": true,
+  "num_turns": 20,
+  "duration_ms": 600000,
+  "duration_api_ms": 240000,
+  "total_cost_usd": 0.2345,
+  "usage": { "input_tokens": 50000, "output_tokens": 20000 },
+  "permission_denials": [ { "tool_name":"Edit", "tool_use_id":"t1", "tool_input":{} } ]
   }
 
 **MCP: Example Payloads (Standard Protocol)**
+
 - Tools list (server -> client):
   {
-    "method": "tools/list",
-    "tools": [ { "name":"Edit", "description":"Apply patches", "input_schema": {"type":"object","properties":{...}} } ]
+  "method": "tools/list",
+  "tools": [ { "name":"Edit", "description":"Apply patches", "input_schema": {"type":"object","properties":{...}} } ]
   }
 - Tool call (client -> server):
   {
-    "method": "tools/call",
-    "name": "Edit",
-    "arguments": { "patch": "...unified diff..." }
+  "method": "tools/call",
+  "name": "Edit",
+  "arguments": { "patch": "...unified diff..." }
   }
 - Prompts list (server -> client):
   {
-    "method": "prompts/list",
-    "prompts": [ { "name":"explain", "title":"Explain Selection", "description":"Explain the highlighted code" } ]
+  "method": "prompts/list",
+  "prompts": [ { "name":"explain", "title":"Explain Selection", "description":"Explain the highlighted code" } ]
   }
 - Prompt get (client -> server):
   {
-    "method": "prompts/get",
-    "name": "explain",
-    "arguments": { "selection": "function hello(){}" }
+  "method": "prompts/get",
+  "name": "explain",
+  "arguments": { "selection": "function hello(){}" }
   }

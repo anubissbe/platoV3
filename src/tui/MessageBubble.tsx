@@ -1,8 +1,8 @@
-import React from 'react';
-import { Box, Text } from 'ink';
+import React from "react";
+import { Box, Text } from "ink";
 
-export type MessageRole = 'user' | 'assistant' | 'system';
-export type MessageStatus = 'streaming' | 'complete' | 'error' | 'pending';
+export type MessageRole = "user" | "assistant" | "system";
+export type MessageStatus = "streaming" | "complete" | "error" | "pending";
 
 export interface MessageMetadata {
   model?: string;
@@ -43,29 +43,29 @@ export class MessageBubble {
 
   getRoleIndicator(): string {
     switch (this.role) {
-      case 'user':
-        return '👤';
-      case 'assistant':
-        return '🤖';
-      case 'system':
-        return '⚙️';
+      case "user":
+        return "👤";
+      case "assistant":
+        return "🤖";
+      case "system":
+        return "⚙️";
     }
   }
 
   getRoleColor(): string {
     switch (this.role) {
-      case 'user':
-        return 'blue';
-      case 'assistant':
-        return 'green';
-      case 'system':
-        return 'yellow';
+      case "user":
+        return "blue";
+      case "assistant":
+        return "green";
+      case "system":
+        return "yellow";
     }
   }
 
   getFormattedTime(): string {
-    const hours = this.timestamp.getHours().toString().padStart(2, '0');
-    const minutes = this.timestamp.getMinutes().toString().padStart(2, '0');
+    const hours = this.timestamp.getHours().toString().padStart(2, "0");
+    const minutes = this.timestamp.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
   }
 
@@ -81,22 +81,22 @@ export class MessageBubble {
     if (hours > 0) return `${hours}h ago`;
     if (minutes > 0) return `${minutes}m ago`;
     if (seconds > 0) return `${seconds}s ago`;
-    return 'just now';
+    return "just now";
   }
 
   getContentLines(): string[] {
-    return this.content.split('\n');
+    return this.content.split("\n");
   }
 
   getTruncatedContent(maxLength: number): string {
     if (this.content.length <= maxLength) {
       return this.content;
     }
-    return this.content.substring(0, maxLength) + '...';
+    return this.content.substring(0, maxLength) + "...";
   }
 
   hasCodeBlocks(): boolean {
-    return this.content.includes('```');
+    return this.content.includes("```");
   }
 
   getCodeBlocks(): CodeBlock[] {
@@ -106,7 +106,7 @@ export class MessageBubble {
 
     while ((match = regex.exec(this.content)) !== null) {
       blocks.push({
-        language: match[1] || 'plaintext',
+        language: match[1] || "plaintext",
         code: match[2].trim(),
       });
     }
@@ -116,24 +116,24 @@ export class MessageBubble {
 
   getStatusIndicator(): string {
     switch (this.status) {
-      case 'streaming':
-        return '⏳';
-      case 'complete':
-        return '✅';
-      case 'error':
-        return '❌';
-      case 'pending':
-        return '⏸️';
+      case "streaming":
+        return "⏳";
+      case "complete":
+        return "✅";
+      case "error":
+        return "❌";
+      case "pending":
+        return "⏸️";
       default:
-        return '';
+        return "";
     }
   }
 
   getFormattedMetadata(): string {
-    if (!this.metadata) return '';
+    if (!this.metadata) return "";
 
     const parts: string[] = [];
-    
+
     if (this.metadata.model) {
       parts.push(`Model: ${this.metadata.model}`);
     }
@@ -141,10 +141,10 @@ export class MessageBubble {
       parts.push(`Tokens: ${this.metadata.tokens}`);
     }
     if (this.metadata.toolCalls && this.metadata.toolCalls.length > 0) {
-      parts.push(`Tools: ${this.metadata.toolCalls.join(', ')}`);
+      parts.push(`Tools: ${this.metadata.toolCalls.join(", ")}`);
     }
 
-    return parts.join(' | ');
+    return parts.join(" | ");
   }
 }
 
@@ -155,13 +155,20 @@ export const MessageBubbleComponent: React.FC<MessageBubbleProps> = ({
   status,
   metadata,
 }) => {
-  const bubble = new MessageBubble({ role, content, timestamp, status, metadata });
+  const bubble = new MessageBubble({
+    role,
+    content,
+    timestamp,
+    status,
+    metadata,
+  });
 
   return (
     <Box flexDirection="column" marginBottom={1}>
       <Box>
         <Text color={bubble.getRoleColor()}>
-          {bubble.getRoleIndicator()} {role.charAt(0).toUpperCase() + role.slice(1)}
+          {bubble.getRoleIndicator()}{" "}
+          {role.charAt(0).toUpperCase() + role.slice(1)}
         </Text>
         <Text dimColor> · {bubble.getFormattedTime()}</Text>
         {status && <Text> {bubble.getStatusIndicator()}</Text>}

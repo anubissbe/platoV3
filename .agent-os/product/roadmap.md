@@ -5,7 +5,7 @@
 The following features have been implemented to achieve initial Claude Code parity:
 
 - [x] **Core TUI Application** - React/Ink terminal interface with raw mode input handling
-- [x] **GitHub Copilot Integration** - OAuth device flow authentication and token management  
+- [x] **GitHub Copilot Integration** - OAuth device flow authentication and token management
 - [x] **35 Slash Commands** - Full command set matching Claude Code functionality
 - [x] **Patch Engine** - Unified diff processing with Git apply/revert capabilities
 - [x] **MCP Server Support** - Tool-call bridge for Model Context Protocol servers
@@ -97,13 +97,15 @@ The following features have been implemented to achieve initial Claude Code pari
 ## Future Considerations
 
 ### Potential Phase 4: Enterprise Features
+
 - Team licensing and management
 - Advanced security controls
 - Integration with enterprise development workflows
 - Custom model hosting support
 
 ### Potential Phase 5: AI Innovation
+
 - Advanced code analysis and refactoring
-- Intelligent project architecture suggestions  
+- Intelligent project architecture suggestions
 - Automated testing and quality assurance
 - Code review and collaboration AI

@@ -3,16 +3,16 @@
  * and directory traversal prevention for PlatoV3 native tools
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { 
-  PathNormalizationResult, 
-  PathSecurityResult, 
-  PathValidationError, 
+import * as fs from "fs/promises";
+import * as path from "path";
+import {
+  PathNormalizationResult,
+  PathSecurityResult,
+  PathValidationError,
   SecurityThreat,
   ToolError,
-  ErrorClass
-} from './types.js';
+  ErrorClass,
+} from "./types.js";
 
 export class PathValidator {
   private readonly workspaceRoot: string;
@@ -33,30 +33,30 @@ export class PathValidator {
         return {
           success: false,
           error: {
-            type: 'PATH_TOO_LONG',
+            type: "PATH_TOO_LONG",
             message: `Path exceeds maximum length of ${this.maxPathLength} characters`,
-            severity: 'medium',
-            path: inputPath
-          }
+            severity: "medium",
+            path: inputPath,
+          },
         };
       }
 
       // Resolve path - if absolute, use as-is; if relative, resolve from workspace
-      const resolvedPath = path.isAbsolute(inputPath) 
+      const resolvedPath = path.isAbsolute(inputPath)
         ? path.resolve(inputPath)
         : path.resolve(this.workspaceRoot, inputPath);
-      
+
       // Check for workspace boundary violation
       if (!this.isWithinWorkspace(resolvedPath)) {
         return {
           success: false,
           error: {
-            type: 'SYMLINK_TRAVERSAL',
+            type: "SYMLINK_TRAVERSAL",
             message: `Path resolves outside workspace boundary: ${resolvedPath}`,
-            severity: 'critical',
+            severity: "critical",
             path: inputPath,
-            target: resolvedPath
-          }
+            target: resolvedPath,
+          },
         };
       }
 
@@ -65,7 +65,7 @@ export class PathValidator {
       if (!symlinkResult.success) {
         return {
           success: false,
-          error: symlinkResult.error
+          error: symlinkResult.error,
         };
       }
 
@@ -74,18 +74,17 @@ export class PathValidator {
         normalizedPath: symlinkResult.resolvedPath,
         isWithinWorkspace: true,
         isSymlink: symlinkResult.isSymlink,
-        symlinkTarget: symlinkResult.symlinkTarget
+        symlinkTarget: symlinkResult.symlinkTarget,
       };
-
     } catch (error) {
       return {
         success: false,
         error: {
-          type: 'PERMISSION_DENIED',
+          type: "PERMISSION_DENIED",
           message: `Path validation failed: ${(error as Error).message}`,
-          severity: 'high',
-          path: inputPath
-        }
+          severity: "high",
+          path: inputPath,
+        },
       };
     }
   }
@@ -97,20 +96,20 @@ export class PathValidator {
     const threats: SecurityThreat[] = [];
 
     // Check for directory traversal attempts
-    if (inputPath.includes('../') || inputPath.includes('..\\')) {
+    if (inputPath.includes("../") || inputPath.includes("..\\")) {
       threats.push({
-        type: 'DIRECTORY_TRAVERSAL',
-        message: 'Directory traversal pattern detected',
-        severity: 'critical'
+        type: "DIRECTORY_TRAVERSAL",
+        message: "Directory traversal pattern detected",
+        severity: "critical",
       });
     }
 
     // Check for null bytes
-    if (inputPath.includes('\x00')) {
+    if (inputPath.includes("\x00")) {
       threats.push({
-        type: 'NULL_BYTE',
-        message: 'Null byte detected in path',
-        severity: 'high'
+        type: "NULL_BYTE",
+        message: "Null byte detected in path",
+        severity: "high",
       });
     }
 
@@ -118,9 +117,9 @@ export class PathValidator {
     const controlCharPattern = /[\x00-\x1f\x7f]/;
     if (controlCharPattern.test(inputPath)) {
       threats.push({
-        type: 'SUSPICIOUS_CHARS',
-        message: 'Control characters detected in path',
-        severity: 'medium'
+        type: "SUSPICIOUS_CHARS",
+        message: "Control characters detected in path",
+        severity: "medium",
       });
     }
 
@@ -128,25 +127,29 @@ export class PathValidator {
     const scriptPatterns = /<script|javascript:|vbscript:|data:/i;
     if (scriptPatterns.test(inputPath)) {
       threats.push({
-        type: 'XSS_ATTEMPT',
-        message: 'Potential script injection detected',
-        severity: 'high'
+        type: "XSS_ATTEMPT",
+        message: "Potential script injection detected",
+        severity: "high",
       });
     }
 
     // Check for CRLF injection patterns
-    if (inputPath.includes('\r\n') || inputPath.includes('\r') || inputPath.includes('\n')) {
+    if (
+      inputPath.includes("\r\n") ||
+      inputPath.includes("\r") ||
+      inputPath.includes("\n")
+    ) {
       threats.push({
-        type: 'CRLF_INJECTION',
-        message: 'CRLF sequence detected in path',
-        severity: 'medium'
+        type: "CRLF_INJECTION",
+        message: "CRLF sequence detected in path",
+        severity: "medium",
       });
     }
 
     return {
       safe: threats.length === 0,
       threats,
-      normalizedPath: path.normalize(inputPath)
+      normalizedPath: path.normalize(inputPath),
     };
   }
 
@@ -172,12 +175,12 @@ export class PathValidator {
         return {
           success: false,
           error: {
-            type: 'CIRCULAR_SYMLINK',
-            message: `Circular symlink detected: ${Array.from(visitedPaths).join(' -> ')} -> ${currentPath}`,
-            severity: 'high',
+            type: "CIRCULAR_SYMLINK",
+            message: `Circular symlink detected: ${Array.from(visitedPaths).join(" -> ")} -> ${currentPath}`,
+            severity: "high",
             path: targetPath,
-            target: currentPath
-          }
+            target: currentPath,
+          },
         };
       }
 
@@ -185,14 +188,17 @@ export class PathValidator {
 
       try {
         const stat = await fs.lstat(currentPath);
-        
+
         if (stat.isSymbolicLink()) {
           isSymlink = true;
           const linkTarget = await fs.readlink(currentPath);
-          
+
           // Resolve the symlink target relative to the symlink's directory
-          const resolvedTarget = path.resolve(path.dirname(currentPath), linkTarget);
-          
+          const resolvedTarget = path.resolve(
+            path.dirname(currentPath),
+            linkTarget,
+          );
+
           if (!symlinkTarget) {
             symlinkTarget = resolvedTarget;
           }
@@ -202,12 +208,12 @@ export class PathValidator {
             return {
               success: false,
               error: {
-                type: 'SYMLINK_TRAVERSAL',
+                type: "SYMLINK_TRAVERSAL",
                 message: `Symlink points outside workspace: ${currentPath} -> ${resolvedTarget}`,
-                severity: 'critical',
+                severity: "critical",
                 path: targetPath,
-                target: resolvedTarget
-              }
+                target: resolvedTarget,
+              },
             };
           }
 
@@ -219,34 +225,34 @@ export class PathValidator {
         }
       } catch (error: any) {
         // Handle broken symlinks or permission errors
-        if (error.code === 'ENOENT') {
+        if (error.code === "ENOENT") {
           // CRITICAL FIX: Only treat as broken symlink if we actually encountered a symlink
           if (isSymlink) {
             return {
               success: false,
               error: {
-                type: 'BROKEN_SYMLINK',
+                type: "BROKEN_SYMLINK",
                 message: `Broken symlink detected: ${currentPath}`,
-                severity: 'medium',
+                severity: "medium",
                 path: targetPath,
-                target: currentPath
-              }
+                target: currentPath,
+              },
             };
           } else {
             // File doesn't exist but that's not an error for path validation
             break;
           }
         }
-        
+
         return {
           success: false,
           error: {
-            type: 'PERMISSION_DENIED',
+            type: "PERMISSION_DENIED",
             message: `Cannot access symlink target: ${error.message}`,
-            severity: 'high',
+            severity: "high",
             path: targetPath,
-            target: currentPath
-          }
+            target: currentPath,
+          },
         };
       }
     }
@@ -255,11 +261,11 @@ export class PathValidator {
       return {
         success: false,
         error: {
-          type: 'CIRCULAR_SYMLINK',
+          type: "CIRCULAR_SYMLINK",
           message: `Symlink depth limit exceeded (${this.maxSymlinkDepth})`,
-          severity: 'high',
-          path: targetPath
-        }
+          severity: "high",
+          path: targetPath,
+        },
       };
     }
 
@@ -267,7 +273,7 @@ export class PathValidator {
       success: true,
       resolvedPath: currentPath,
       isSymlink,
-      symlinkTarget
+      symlinkTarget,
     };
   }
 
@@ -278,12 +284,12 @@ export class PathValidator {
     try {
       const normalizedWorkspace = path.resolve(this.workspaceRoot);
       const normalizedTarget = path.resolve(targetPath);
-      
+
       // Get relative path to check if it goes outside workspace
       const relativePath = path.relative(normalizedWorkspace, normalizedTarget);
-      
+
       // If relative path starts with '..', it's outside workspace
-      return !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
+      return !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
     } catch (error) {
       // If normalization fails, deny access
       return false;
@@ -301,7 +307,7 @@ export class PathValidator {
     return {
       maxPathLength: this.maxPathLength,
       maxSymlinkDepth: this.maxSymlinkDepth,
-      workspaceRoot: this.workspaceRoot
+      workspaceRoot: this.workspaceRoot,
     };
   }
 
@@ -310,13 +316,13 @@ export class PathValidator {
    */
   createScopedValidator(subdirectory: string): PathValidator {
     const scopedRoot = path.resolve(this.workspaceRoot, subdirectory);
-    
+
     // Ensure the scoped root is within the original workspace
     if (!this.isWithinWorkspace(scopedRoot)) {
       throw new ToolError(
         ErrorClass.VALIDATION,
-        'INVALID_SCOPE',
-        `Scoped directory is outside workspace: ${scopedRoot}`
+        "INVALID_SCOPE",
+        `Scoped directory is outside workspace: ${scopedRoot}`,
       );
     }
 

@@ -3,14 +3,14 @@
  * Handles long-running operations in background threads/workers to maintain UI responsiveness
  */
 
-import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
-import { EventEmitter } from 'events';
-import { SemanticIndex, FileAnalyzer } from './semantic-index.js';
-import { FileRelevanceScorer } from './relevance-scorer.js';
-import { ContentSampler } from './content-sampler.js';
-import { FileIndex, RelevanceScore } from './types.js';
-import * as path from 'path';
-import * as fs from 'fs/promises';
+import { Worker, isMainThread, parentPort, workerData } from "worker_threads";
+import { EventEmitter } from "events";
+import { SemanticIndex, FileAnalyzer } from "./semantic-index.js";
+import { FileRelevanceScorer } from "./relevance-scorer.js";
+import { ContentSampler } from "./content-sampler.js";
+import { FileIndex, RelevanceScore } from "./types.js";
+import * as path from "path";
+import * as fs from "fs/promises";
 
 export interface BackgroundTask {
   id: string;
@@ -51,13 +51,13 @@ export interface ProcessingStats {
  * Task types for background processing
  */
 export enum BackgroundTaskType {
-  FILE_ANALYSIS = 'file_analysis',
-  BATCH_INDEXING = 'batch_indexing',
-  RELEVANCE_SCORING = 'relevance_scoring',
-  CONTENT_SAMPLING = 'content_sampling',
-  INDEX_SERIALIZATION = 'index_serialization',
-  SYMBOL_EXTRACTION = 'symbol_extraction',
-  IMPORT_GRAPH_BUILD = 'import_graph_build'
+  FILE_ANALYSIS = "file_analysis",
+  BATCH_INDEXING = "batch_indexing",
+  RELEVANCE_SCORING = "relevance_scoring",
+  CONTENT_SAMPLING = "content_sampling",
+  INDEX_SERIALIZATION = "index_serialization",
+  SYMBOL_EXTRACTION = "symbol_extraction",
+  IMPORT_GRAPH_BUILD = "import_graph_build",
 }
 
 /**
@@ -67,8 +67,10 @@ export class WorkerPool extends EventEmitter {
   private workers: Map<number, Worker> = new Map();
   private availableWorkers: Set<number> = new Set();
   private taskQueue: BackgroundTask[] = [];
-  private activeTasks: Map<string, { workerId: number; startTime: number }> = new Map();
-  private taskCallbacks: Map<string, { resolve: Function; reject: Function }> = new Map();
+  private activeTasks: Map<string, { workerId: number; startTime: number }> =
+    new Map();
+  private taskCallbacks: Map<string, { resolve: Function; reject: Function }> =
+    new Map();
   private stats: ProcessingStats = {
     totalTasks: 0,
     completedTasks: 0,
@@ -76,17 +78,20 @@ export class WorkerPool extends EventEmitter {
     averageExecutionTime: 0,
     activeWorkers: 0,
     queuedTasks: 0,
-    memoryUsage: 0
+    memoryUsage: 0,
   };
   private nextTaskId = 1;
 
   constructor(private options: WorkerPoolOptions = {}) {
     super();
     this.options = {
-      maxWorkers: Math.max(2, Math.min(8, Math.floor(require('os').cpus().length * 0.75))),
+      maxWorkers: Math.max(
+        2,
+        Math.min(8, Math.floor(require("os").cpus().length * 0.75)),
+      ),
       taskTimeout: 30000, // 30 seconds
-      workerScript: path.join(__dirname, 'background-worker.js'),
-      ...options
+      workerScript: path.join(__dirname, "background-worker.js"),
+      ...options,
     };
   }
 
@@ -95,13 +100,13 @@ export class WorkerPool extends EventEmitter {
    */
   async initialize(): Promise<void> {
     const workerCount = this.options.maxWorkers!;
-    
+
     for (let i = 0; i < workerCount; i++) {
       await this.createWorker(i);
     }
-    
+
     this.stats.activeWorkers = workerCount;
-    this.emit('initialized', { workerCount });
+    this.emit("initialized", { workerCount });
   }
 
   /**
@@ -111,17 +116,17 @@ export class WorkerPool extends EventEmitter {
     type: BackgroundTaskType | string,
     data: any,
     priority: number = 50,
-    timeout?: number
+    timeout?: number,
   ): Promise<T> {
     const taskId = `task_${this.nextTaskId++}_${Date.now()}`;
-    
+
     const task: BackgroundTask = {
       id: taskId,
       type,
       priority,
       data,
       timestamp: Date.now(),
-      timeout: timeout || this.options.taskTimeout
+      timeout: timeout || this.options.taskTimeout,
     };
 
     return new Promise<T>((resolve, reject) => {
@@ -133,16 +138,18 @@ export class WorkerPool extends EventEmitter {
   /**
    * Submit multiple tasks and wait for all to complete
    */
-  async submitBatch<T>(tasks: Array<{
-    type: BackgroundTaskType | string;
-    data: any;
-    priority?: number;
-    timeout?: number;
-  }>): Promise<T[]> {
-    const promises = tasks.map(task => 
-      this.submitTask<T>(task.type, task.data, task.priority, task.timeout)
+  async submitBatch<T>(
+    tasks: Array<{
+      type: BackgroundTaskType | string;
+      data: any;
+      priority?: number;
+      timeout?: number;
+    }>,
+  ): Promise<T[]> {
+    const promises = tasks.map((task) =>
+      this.submitTask<T>(task.type, task.data, task.priority, task.timeout),
     );
-    
+
     return Promise.all(promises);
   }
 
@@ -161,26 +168,30 @@ export class WorkerPool extends EventEmitter {
   async shutdown(): Promise<void> {
     // Cancel pending tasks
     for (const [taskId, callbacks] of this.taskCallbacks) {
-      callbacks.reject(new Error('Worker pool shutting down'));
+      callbacks.reject(new Error("Worker pool shutting down"));
     }
     this.taskCallbacks.clear();
 
     // Terminate workers
-    const terminationPromises = Array.from(this.workers.values()).map(worker => 
-      new Promise<void>((resolve) => {
-        worker.terminate().then(() => resolve()).catch(() => resolve());
-      })
+    const terminationPromises = Array.from(this.workers.values()).map(
+      (worker) =>
+        new Promise<void>((resolve) => {
+          worker
+            .terminate()
+            .then(() => resolve())
+            .catch(() => resolve());
+        }),
     );
 
     await Promise.allSettled(terminationPromises);
-    
+
     this.workers.clear();
     this.availableWorkers.clear();
     this.taskQueue = [];
     this.activeTasks.clear();
     this.stats.activeWorkers = 0;
-    
-    this.emit('shutdown');
+
+    this.emit("shutdown");
   }
 
   /**
@@ -197,24 +208,23 @@ export class WorkerPool extends EventEmitter {
     try {
       const worker = new Worker(this.options.workerScript!, {
         ...this.options.workerOptions,
-        workerData: { workerId }
+        workerData: { workerId },
       });
 
-      worker.on('message', (message) => {
+      worker.on("message", (message) => {
         this.handleWorkerMessage(workerId, message);
       });
 
-      worker.on('error', (error) => {
+      worker.on("error", (error) => {
         this.handleWorkerError(workerId, error);
       });
 
-      worker.on('exit', (code) => {
+      worker.on("exit", (code) => {
         this.handleWorkerExit(workerId, code);
       });
 
       this.workers.set(workerId, worker);
       this.availableWorkers.add(workerId);
-      
     } catch (error) {
       console.error(`Failed to create worker ${workerId}:`, error);
       throw error;
@@ -230,10 +240,10 @@ export class WorkerPool extends EventEmitter {
         break;
       }
     }
-    
+
     this.taskQueue.splice(insertIndex, 0, task);
     this.stats.totalTasks++;
-    
+
     this.processQueue();
   }
 
@@ -241,7 +251,7 @@ export class WorkerPool extends EventEmitter {
     while (this.taskQueue.length > 0 && this.availableWorkers.size > 0) {
       const task = this.taskQueue.shift()!;
       const workerId = Array.from(this.availableWorkers)[0];
-      
+
       this.assignTaskToWorker(task, workerId);
     }
   }
@@ -259,18 +269,18 @@ export class WorkerPool extends EventEmitter {
     }, task.timeout || this.options.taskTimeout!);
 
     worker.postMessage({
-      type: 'task',
+      type: "task",
       task,
-      timeoutId
+      timeoutId,
     });
 
-    this.emit('taskStarted', { taskId: task.id, workerId, type: task.type });
+    this.emit("taskStarted", { taskId: task.id, workerId, type: task.type });
   }
 
   private handleWorkerMessage(workerId: number, message: any): void {
-    if (message.type === 'taskComplete') {
+    if (message.type === "taskComplete") {
       this.handleTaskComplete(workerId, message.result);
-    } else if (message.type === 'taskError') {
+    } else if (message.type === "taskError") {
       this.handleTaskError(workerId, message.error);
     }
   }
@@ -298,8 +308,13 @@ export class WorkerPool extends EventEmitter {
     this.activeTasks.delete(taskId);
     this.availableWorkers.add(workerId);
 
-    this.emit('taskCompleted', { taskId, workerId, duration, result: result.result });
-    
+    this.emit("taskCompleted", {
+      taskId,
+      workerId,
+      duration,
+      result: result.result,
+    });
+
     // Process next task
     this.processQueue();
   }
@@ -322,8 +337,8 @@ export class WorkerPool extends EventEmitter {
     this.activeTasks.delete(taskId);
     this.availableWorkers.add(workerId);
 
-    this.emit('taskFailed', { taskId, workerId, error });
-    
+    this.emit("taskFailed", { taskId, workerId, error });
+
     // Process next task
     this.processQueue();
   }
@@ -338,22 +353,22 @@ export class WorkerPool extends EventEmitter {
     // Reject promise
     const callbacks = this.taskCallbacks.get(taskId);
     if (callbacks) {
-      callbacks.reject(new Error('Task timeout'));
+      callbacks.reject(new Error("Task timeout"));
       this.taskCallbacks.delete(taskId);
     }
 
     // Terminate and recreate worker
     this.recreateWorker(workerId);
-    
+
     // Clean up
     this.activeTasks.delete(taskId);
 
-    this.emit('taskTimeout', { taskId, workerId });
+    this.emit("taskTimeout", { taskId, workerId });
   }
 
   private handleWorkerError(workerId: number, error: Error): void {
     console.error(`Worker ${workerId} error:`, error);
-    
+
     // Find and fail active task
     const activeTask = this.findActiveTaskByWorker(workerId);
     if (activeTask) {
@@ -389,7 +404,9 @@ export class WorkerPool extends EventEmitter {
     }
   }
 
-  private findActiveTaskByWorker(workerId: number): [string, { workerId: number; startTime: number }] | null {
+  private findActiveTaskByWorker(
+    workerId: number,
+  ): [string, { workerId: number; startTime: number }] | null {
     for (const [taskId, taskInfo] of this.activeTasks) {
       if (taskInfo.workerId === workerId) {
         return [taskId, taskInfo];
@@ -401,8 +418,9 @@ export class WorkerPool extends EventEmitter {
   private updateAverageExecutionTime(duration: number): void {
     const completed = this.stats.completedTasks;
     const currentAvg = this.stats.averageExecutionTime;
-    
-    this.stats.averageExecutionTime = (currentAvg * (completed - 1) + duration) / completed;
+
+    this.stats.averageExecutionTime =
+      (currentAvg * (completed - 1) + duration) / completed;
   }
 }
 
@@ -416,12 +434,14 @@ export class BackgroundContextProcessor extends EventEmitter {
   constructor(options: WorkerPoolOptions = {}) {
     super();
     this.workerPool = new WorkerPool(options);
-    
+
     // Forward events
-    this.workerPool.on('taskStarted', (data) => this.emit('taskStarted', data));
-    this.workerPool.on('taskCompleted', (data) => this.emit('taskCompleted', data));
-    this.workerPool.on('taskFailed', (data) => this.emit('taskFailed', data));
-    this.workerPool.on('taskTimeout', (data) => this.emit('taskTimeout', data));
+    this.workerPool.on("taskStarted", (data) => this.emit("taskStarted", data));
+    this.workerPool.on("taskCompleted", (data) =>
+      this.emit("taskCompleted", data),
+    );
+    this.workerPool.on("taskFailed", (data) => this.emit("taskFailed", data));
+    this.workerPool.on("taskTimeout", (data) => this.emit("taskTimeout", data));
   }
 
   /**
@@ -429,10 +449,10 @@ export class BackgroundContextProcessor extends EventEmitter {
    */
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    
+
     await this.workerPool.initialize();
     this.initialized = true;
-    this.emit('initialized');
+    this.emit("initialized");
   }
 
   /**
@@ -440,11 +460,11 @@ export class BackgroundContextProcessor extends EventEmitter {
    */
   async analyzeFilesAsync(filePaths: string[]): Promise<FileIndex[]> {
     this.ensureInitialized();
-    
-    const tasks = filePaths.map(filePath => ({
+
+    const tasks = filePaths.map((filePath) => ({
       type: BackgroundTaskType.FILE_ANALYSIS,
       data: { filePath },
-      priority: 70
+      priority: 70,
     }));
 
     return this.workerPool.submitBatch<FileIndex>(tasks);
@@ -454,15 +474,15 @@ export class BackgroundContextProcessor extends EventEmitter {
    * Build index in background
    */
   async buildIndexAsync(
-    filePaths: string[], 
-    batchSize: number = 50
+    filePaths: string[],
+    batchSize: number = 50,
   ): Promise<{ index: string; stats: any }> {
     this.ensureInitialized();
 
     return this.workerPool.submitTask<{ index: string; stats: any }>(
       BackgroundTaskType.BATCH_INDEXING,
       { filePaths, batchSize },
-      90 // High priority
+      90, // High priority
     );
   }
 
@@ -471,14 +491,14 @@ export class BackgroundContextProcessor extends EventEmitter {
    */
   async scoreRelevanceAsync(
     filePaths: string[],
-    context: any
+    context: any,
   ): Promise<RelevanceScore[]> {
     this.ensureInitialized();
 
     return this.workerPool.submitTask<RelevanceScore[]>(
       BackgroundTaskType.RELEVANCE_SCORING,
       { filePaths, context },
-      60
+      60,
     );
   }
 
@@ -487,14 +507,14 @@ export class BackgroundContextProcessor extends EventEmitter {
    */
   async sampleContentAsync(
     files: Array<{ path: string; content: string }>,
-    options: any
+    options: any,
   ): Promise<any[]> {
     this.ensureInitialized();
 
     return this.workerPool.submitTask<any[]>(
       BackgroundTaskType.CONTENT_SAMPLING,
       { files, options },
-      50
+      50,
     );
   }
 
@@ -507,7 +527,7 @@ export class BackgroundContextProcessor extends EventEmitter {
     return this.workerPool.submitTask<string>(
       BackgroundTaskType.INDEX_SERIALIZATION,
       { indexData },
-      30
+      30,
     );
   }
 
@@ -515,14 +535,14 @@ export class BackgroundContextProcessor extends EventEmitter {
    * Extract symbols in background
    */
   async extractSymbolsAsync(
-    files: Array<{ path: string; content: string }>
+    files: Array<{ path: string; content: string }>,
   ): Promise<any[]> {
     this.ensureInitialized();
 
     return this.workerPool.submitTask<any[]>(
       BackgroundTaskType.SYMBOL_EXTRACTION,
       { files },
-      80
+      80,
     );
   }
 
@@ -535,7 +555,7 @@ export class BackgroundContextProcessor extends EventEmitter {
     return this.workerPool.submitTask<any>(
       BackgroundTaskType.IMPORT_GRAPH_BUILD,
       { fileIndexes },
-      40
+      40,
     );
   }
 
@@ -552,12 +572,14 @@ export class BackgroundContextProcessor extends EventEmitter {
   async shutdown(): Promise<void> {
     await this.workerPool.shutdown();
     this.initialized = false;
-    this.emit('shutdown');
+    this.emit("shutdown");
   }
 
   private ensureInitialized(): void {
     if (!this.initialized) {
-      throw new Error('BackgroundProcessor not initialized. Call initialize() first.');
+      throw new Error(
+        "BackgroundProcessor not initialized. Call initialize() first.",
+      );
     }
   }
 }
@@ -578,17 +600,17 @@ export class TaskScheduler extends EventEmitter {
    * Schedule periodic index cleanup
    */
   scheduleIndexCleanup(intervalMs: number = 5 * 60 * 1000): void {
-    this.schedule('indexCleanup', intervalMs, async () => {
+    this.schedule("indexCleanup", intervalMs, async () => {
       try {
         // This would clean up expired cache entries, compact data, etc.
-        this.emit('cleanupStarted');
-        
+        this.emit("cleanupStarted");
+
         // Placeholder for cleanup operations
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        this.emit('cleanupCompleted');
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        this.emit("cleanupCompleted");
       } catch (error) {
-        this.emit('cleanupFailed', error);
+        this.emit("cleanupFailed", error);
       }
     });
   }
@@ -597,9 +619,9 @@ export class TaskScheduler extends EventEmitter {
    * Schedule periodic statistics collection
    */
   scheduleStatsCollection(intervalMs: number = 30 * 1000): void {
-    this.schedule('statsCollection', intervalMs, () => {
+    this.schedule("statsCollection", intervalMs, () => {
       const stats = this.processor.getStats();
-      this.emit('statsCollected', stats);
+      this.emit("statsCollected", stats);
     });
   }
 
@@ -607,9 +629,9 @@ export class TaskScheduler extends EventEmitter {
    * Schedule custom task
    */
   schedule(
-    name: string, 
-    intervalMs: number, 
-    task: () => void | Promise<void>
+    name: string,
+    intervalMs: number,
+    task: () => void | Promise<void>,
   ): void {
     // Clear existing schedule
     this.unschedule(name);
@@ -618,12 +640,12 @@ export class TaskScheduler extends EventEmitter {
       try {
         await task();
       } catch (error) {
-        this.emit('scheduledTaskError', { name, error });
+        this.emit("scheduledTaskError", { name, error });
       }
     }, intervalMs);
 
     this.intervals.set(name, interval);
-    this.emit('taskScheduled', { name, intervalMs });
+    this.emit("taskScheduled", { name, intervalMs });
   }
 
   /**
@@ -634,7 +656,7 @@ export class TaskScheduler extends EventEmitter {
     if (interval) {
       clearInterval(interval);
       this.intervals.delete(name);
-      this.emit('taskUnscheduled', { name });
+      this.emit("taskUnscheduled", { name });
       return true;
     }
     return false;
@@ -646,7 +668,7 @@ export class TaskScheduler extends EventEmitter {
   clearAll(): void {
     for (const [name, interval] of this.intervals) {
       clearInterval(interval);
-      this.emit('taskUnscheduled', { name });
+      this.emit("taskUnscheduled", { name });
     }
     this.intervals.clear();
   }

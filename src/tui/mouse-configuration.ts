@@ -39,12 +39,17 @@ export class MouseConfiguration {
    * Update configuration from partial config
    */
   update(config: Partial<MouseConfig>): void {
-    if (config.mouseScroll !== undefined) this.scrollEnabled = config.mouseScroll;
+    if (config.mouseScroll !== undefined)
+      this.scrollEnabled = config.mouseScroll;
     if (config.mouseClick !== undefined) this.clickEnabled = config.mouseClick;
-    if (config.mouseSelection !== undefined) this.selectionEnabled = config.mouseSelection;
-    if (config.scrollSensitivity !== undefined) this.scrollSensitivity = config.scrollSensitivity;
-    if (config.doubleClickDelay !== undefined) this.doubleClickDelay = config.doubleClickDelay;
-    if (config.dragThreshold !== undefined) this.dragThreshold = config.dragThreshold;
+    if (config.mouseSelection !== undefined)
+      this.selectionEnabled = config.mouseSelection;
+    if (config.scrollSensitivity !== undefined)
+      this.scrollSensitivity = config.scrollSensitivity;
+    if (config.doubleClickDelay !== undefined)
+      this.doubleClickDelay = config.doubleClickDelay;
+    if (config.dragThreshold !== undefined)
+      this.dragThreshold = config.dragThreshold;
   }
 
   /**
@@ -73,19 +78,19 @@ export class MouseConfiguration {
    */
   get(key: string, defaultValue?: any): any {
     switch (key) {
-      case 'mouseMode':
+      case "mouseMode":
         return this.savedConfig.mouseMode ?? true;
-      case 'scrollEnabled':
+      case "scrollEnabled":
         return this.scrollEnabled;
-      case 'clickEnabled':
+      case "clickEnabled":
         return this.clickEnabled;
-      case 'selectionEnabled':
+      case "selectionEnabled":
         return this.selectionEnabled;
-      case 'scrollSensitivity':
+      case "scrollSensitivity":
         return this.scrollSensitivity;
-      case 'doubleClickDelay':
+      case "doubleClickDelay":
         return this.doubleClickDelay;
-      case 'dragThreshold':
+      case "dragThreshold":
         return this.dragThreshold;
       default:
         return defaultValue;
@@ -97,39 +102,39 @@ export class MouseConfiguration {
    */
   set(key: string, value: any): void {
     switch (key) {
-      case 'mouseMode':
+      case "mouseMode":
         this.savedConfig.mouseMode = value;
         break;
-      case 'scrollEnabled':
+      case "scrollEnabled":
         this.scrollEnabled = value;
         break;
-      case 'clickEnabled':
+      case "clickEnabled":
         this.clickEnabled = value;
         break;
-      case 'selectionEnabled':
+      case "selectionEnabled":
         this.selectionEnabled = value;
         break;
-      case 'scrollSensitivity':
+      case "scrollSensitivity":
         if (value < 0 || value > 10) {
-          throw new Error('Scroll sensitivity must be between 0 and 10');
+          throw new Error("Scroll sensitivity must be between 0 and 10");
         }
         this.scrollSensitivity = value;
         break;
-      case 'doubleClickDelay':
+      case "doubleClickDelay":
         if (value <= 0) {
-          throw new Error('Double click delay must be positive');
+          throw new Error("Double click delay must be positive");
         }
         this.doubleClickDelay = value;
         break;
-      case 'dragThreshold':
+      case "dragThreshold":
         if (value < 0) {
-          throw new Error('Drag threshold must be non-negative');
+          throw new Error("Drag threshold must be non-negative");
         }
         this.dragThreshold = value;
         break;
-      case 'doubleClickThreshold':
+      case "doubleClickThreshold":
         if (value <= 0) {
-          throw new Error('Double click threshold must be positive');
+          throw new Error("Double click threshold must be positive");
         }
         break;
       default:
@@ -142,12 +147,18 @@ export class MouseConfiguration {
    */
   async load(): Promise<void> {
     // For testing, restore from saved config
-    if (this.savedConfig.mouseScroll !== undefined) this.scrollEnabled = this.savedConfig.mouseScroll;
-    if (this.savedConfig.mouseClick !== undefined) this.clickEnabled = this.savedConfig.mouseClick;
-    if (this.savedConfig.mouseSelection !== undefined) this.selectionEnabled = this.savedConfig.mouseSelection;
-    if (this.savedConfig.scrollSensitivity !== undefined) this.scrollSensitivity = this.savedConfig.scrollSensitivity;
-    if (this.savedConfig.doubleClickDelay !== undefined) this.doubleClickDelay = this.savedConfig.doubleClickDelay;
-    if (this.savedConfig.dragThreshold !== undefined) this.dragThreshold = this.savedConfig.dragThreshold;
+    if (this.savedConfig.mouseScroll !== undefined)
+      this.scrollEnabled = this.savedConfig.mouseScroll;
+    if (this.savedConfig.mouseClick !== undefined)
+      this.clickEnabled = this.savedConfig.mouseClick;
+    if (this.savedConfig.mouseSelection !== undefined)
+      this.selectionEnabled = this.savedConfig.mouseSelection;
+    if (this.savedConfig.scrollSensitivity !== undefined)
+      this.scrollSensitivity = this.savedConfig.scrollSensitivity;
+    if (this.savedConfig.doubleClickDelay !== undefined)
+      this.doubleClickDelay = this.savedConfig.doubleClickDelay;
+    if (this.savedConfig.dragThreshold !== undefined)
+      this.dragThreshold = this.savedConfig.dragThreshold;
   }
 
   /**

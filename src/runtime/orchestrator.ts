@@ -3,14 +3,14 @@
  * Manages conversation flow, tool calls, and integrations
  */
 
-import fs from 'node:fs/promises';
-import path from 'path';
+import fs from "node:fs/promises";
+import path from "path";
 
-import { loadConfig, setConfigValue } from '../config.js';
-import { PermissionManager } from '../permissions/PermissionManager.js';
-import { ProfileManager } from '../permissions/ProfileManager.js';
-import { AuditLogger } from '../permissions/AuditLogger.js';
-import { PermissionQuery } from '../permissions/types.js';
+import { loadConfig, setConfigValue } from "../config.js";
+import { PermissionManager } from "../permissions/PermissionManager.js";
+import { ProfileManager } from "../permissions/ProfileManager.js";
+import { AuditLogger } from "../permissions/AuditLogger.js";
+import { PermissionQuery } from "../permissions/types.js";
 import {
   emitTurnStart,
   emitStreamStart,
@@ -21,16 +21,16 @@ import {
   emitPatchExtract,
   emitPatchApplyStart,
   emitPatchApplyEnd,
-} from './status-events.js';
-import { MemoryManager } from '../memory/manager.js';
-import { SessionData } from '../memory/types.js';
-import { chatCompletions } from '../providers/chat.js';
-import { chatStreamGenerator } from '../providers/chat-stream.js';
+} from "./status-events.js";
+import { MemoryManager } from "../memory/manager.js";
+import { SessionData } from "../memory/types.js";
+import { chatCompletions } from "../providers/chat.js";
+import { chatStreamGenerator } from "../providers/chat-stream.js";
 
 // Simple utility to ensure plato directory exists
 async function ensurePlatoDir(): Promise<void> {
   try {
-    await fs.mkdir('.plato', { recursive: true });
+    await fs.mkdir(".plato", { recursive: true });
   } catch (error) {
     // Directory might already exist
   }
@@ -44,7 +44,7 @@ async function runHooks(hookType: string): Promise<void> {
 
 // Simple patch application - stub implementations
 async function applyPatch(diff: string): Promise<void> {
-  throw new Error('Patch application not implemented');
+  throw new Error("Patch application not implemented");
 }
 
 async function dryRunApply(diff: string): Promise<void> {
@@ -52,14 +52,28 @@ async function dryRunApply(diff: string): Promise<void> {
 }
 
 // Export orchestrator event type for compatibility
-export type OrchestratorEvent = { 
-  type: 'tool-start'|'tool-end'|'info'|'turn_start'|'stream_start'|'stream_end'|'turn_end'|'error'|'pre_prompt_hooks'|'post_response_hooks'|'stream_delta'|'patch_extract'|'patch_apply_start'|'patch_apply_end'; 
+export type OrchestratorEvent = {
+  type:
+    | "tool-start"
+    | "tool-end"
+    | "info"
+    | "turn_start"
+    | "stream_start"
+    | "stream_end"
+    | "turn_end"
+    | "error"
+    | "pre_prompt_hooks"
+    | "post_response_hooks"
+    | "stream_delta"
+    | "patch_extract"
+    | "patch_apply_start"
+    | "patch_apply_end";
   data?: any;
   message?: string;
 };
 
 export interface Msg {
-  role: 'user' | 'assistant' | 'system' | 'tool';
+  role: "user" | "assistant" | "system" | "tool";
   content: string;
 }
 
@@ -74,7 +88,7 @@ class Orchestrator {
     input: 0,
     output: 0,
     inputTokens: 0,
-    outputTokens: 0
+    outputTokens: 0,
   };
   private transcriptMode = false;
   private backgroundMode = false;
@@ -92,23 +106,26 @@ class Orchestrator {
         // Create minimal ProfileManager and AuditLogger
         const profileManager = new ProfileManager();
         const auditLogger = new AuditLogger();
-        
+
         // Initialize with minimal options
         const options = {
           profileManager,
           auditLogger,
           enableSafetyGuards: false,
-          enableRiskAssessment: false
+          enableRiskAssessment: false,
         };
-        
+
         this.permissionManager = new PermissionManager(options);
       } catch (error) {
         // If permission system fails to initialize, create a stub that allows everything
-        console.warn('Permission system initialization failed, using permissive stub:', error);
+        console.warn(
+          "Permission system initialization failed, using permissive stub:",
+          error,
+        );
         this.permissionManager = {
           async checkPermission() {
-            return { action: 'allow' as const, reason: 'Stub implementation' };
-          }
+            return { action: "allow" as const, reason: "Stub implementation" };
+          },
         } as any;
       }
     }
@@ -127,7 +144,7 @@ class Orchestrator {
    */
   private async ensureMemoryManager(): Promise<MemoryManager> {
     if (!this.memoryManager) {
-      this.memoryManager = new MemoryManager({ memoryDir: '.plato/memory' });
+      this.memoryManager = new MemoryManager({ memoryDir: ".plato/memory" });
       await this.memoryManager.initialize();
     }
     return this.memoryManager;
@@ -153,7 +170,8 @@ class Orchestrator {
    * Add message to conversation history
    */
   addToHistory(role: string, content: string): void {
-    const validRole = role === 'tool' ? 'assistant' : (role as 'user' | 'assistant' | 'system');
+    const validRole =
+      role === "tool" ? "assistant" : (role as "user" | "assistant" | "system");
     this.history.push({ role: validRole, content });
   }
 
@@ -195,7 +213,7 @@ class Orchestrator {
       input: this.tokenMetrics.input || 0,
       output: this.tokenMetrics.output || 0,
       turns: Math.floor(this.history.length / 2) || 0,
-      durationMs: 0 // Add duration tracking if needed
+      durationMs: 0, // Add duration tracking if needed
     };
   }
 
@@ -226,7 +244,7 @@ class Orchestrator {
       input: 0,
       output: 0,
       inputTokens: 0,
-      outputTokens: 0
+      outputTokens: 0,
     };
     this.transcriptMode = false;
     this.backgroundMode = false;
@@ -252,40 +270,49 @@ class Orchestrator {
       tokens: {
         input: this.tokenMetrics.inputTokens,
         output: this.tokenMetrics.outputTokens,
-        total: this.tokenMetrics.inputTokens + this.tokenMetrics.outputTokens
+        total: this.tokenMetrics.inputTokens + this.tokenMetrics.outputTokens,
       },
-      turns: Math.floor(this.history.length / 2)
+      turns: Math.floor(this.history.length / 2),
     };
   }
 
   /**
    * Basic chat completion handler
    */
-  async chat(message: string, onEvent?: (e: OrchestratorEvent) => void): Promise<string> {
+  async chat(
+    message: string,
+    onEvent?: (e: OrchestratorEvent) => void,
+  ): Promise<string> {
     const startTime = Date.now();
-    
+
     try {
-      emitTurnStart('user', message);
-      onEvent?.({ type: 'turn_start', message: 'Starting conversation...' });
+      emitTurnStart("user", message);
+      onEvent?.({ type: "turn_start", message: "Starting conversation..." });
 
       // Add user message to history
-      this.addToHistory('user', message);
+      this.addToHistory("user", message);
 
       // Run pre-prompt hooks
-      await runHooks('pre_prompt');
-      onEvent?.({ type: 'pre_prompt_hooks', message: 'Running pre-prompt hooks...' });
+      await runHooks("pre_prompt");
+      onEvent?.({
+        type: "pre_prompt_hooks",
+        message: "Running pre-prompt hooks...",
+      });
 
       // Get chat completion
       let response: { content: string; usage?: any };
-      if (process.env.NODE_ENV === 'test') {
-        response = { content: 'test response', usage: { prompt_tokens: 10, completion_tokens: 20 } };
+      if (process.env.NODE_ENV === "test") {
+        response = {
+          content: "test response",
+          usage: { prompt_tokens: 10, completion_tokens: 20 },
+        };
       } else {
         const messages = this.getHistory();
         response = await chatCompletions(messages);
       }
 
       // Add response to history
-      this.addToHistory('assistant', response.content);
+      this.addToHistory("assistant", response.content);
 
       // Update token metrics
       if (response.usage) {
@@ -294,18 +321,21 @@ class Orchestrator {
       }
 
       // Run post-response hooks
-      await runHooks('post_response');
-      onEvent?.({ type: 'post_response_hooks', message: 'Running post-response hooks...' });
+      await runHooks("post_response");
+      onEvent?.({
+        type: "post_response_hooks",
+        message: "Running post-response hooks...",
+      });
 
       const endTime = Date.now();
       emitResponseTime(endTime - startTime);
-      emitTurnEnd('assistant', response.content);
-      onEvent?.({ type: 'turn_end', message: 'Conversation turn completed' });
+      emitTurnEnd("assistant", response.content);
+      onEvent?.({ type: "turn_end", message: "Conversation turn completed" });
 
       return response.content;
     } catch (error: any) {
       emitError(error.message);
-      onEvent?.({ type: 'error', message: `Chat error: ${error.message}` });
+      onEvent?.({ type: "error", message: `Chat error: ${error.message}` });
       throw error;
     }
   }
@@ -313,64 +343,79 @@ class Orchestrator {
   /**
    * Streaming chat handler
    */
-  async *streamMessage(message: string, onEvent?: (e: OrchestratorEvent) => void): AsyncGenerator<string, void, unknown> {
+  async *streamMessage(
+    message: string,
+    onEvent?: (e: OrchestratorEvent) => void,
+  ): AsyncGenerator<string, void, unknown> {
     const startTime = Date.now();
     let charactersStreamed = 0;
-    
+
     try {
-      emitTurnStart('user', message);
+      emitTurnStart("user", message);
       emitStreamStart();
-      onEvent?.({ type: 'turn_start', message: 'Starting streaming conversation...' });
-      onEvent?.({ type: 'stream_start', message: 'Stream started' });
+      onEvent?.({
+        type: "turn_start",
+        message: "Starting streaming conversation...",
+      });
+      onEvent?.({ type: "stream_start", message: "Stream started" });
 
       // Add user message to history
-      this.addToHistory('user', message);
+      this.addToHistory("user", message);
 
       // Run pre-prompt hooks
-      await runHooks('pre_prompt');
-      onEvent?.({ type: 'pre_prompt_hooks', message: 'Running pre-prompt hooks...' });
+      await runHooks("pre_prompt");
+      onEvent?.({
+        type: "pre_prompt_hooks",
+        message: "Running pre-prompt hooks...",
+      });
 
       // Get streaming completion
-      let fullResponse = '';
-      
-      if (process.env.NODE_ENV === 'test') {
+      let fullResponse = "";
+
+      if (process.env.NODE_ENV === "test") {
         // Mock streaming for tests
-        const testResponse = 'test streaming response';
+        const testResponse = "test streaming response";
         for (let i = 0; i < testResponse.length; i += 5) {
           const chunk = testResponse.slice(i, i + 5);
           fullResponse += chunk;
           charactersStreamed += chunk.length;
-          onEvent?.({ type: 'stream_delta', data: chunk });
+          onEvent?.({ type: "stream_delta", data: chunk });
           yield chunk;
         }
       } else {
         const messages = this.getHistory();
         const streamGenerator = chatStreamGenerator(messages);
-        
+
         for await (const chunk of streamGenerator) {
           fullResponse += chunk;
           charactersStreamed += chunk.length;
-          onEvent?.({ type: 'stream_delta', data: chunk });
+          onEvent?.({ type: "stream_delta", data: chunk });
           yield chunk;
         }
       }
 
       // Add full response to history
-      this.addToHistory('assistant', fullResponse);
+      this.addToHistory("assistant", fullResponse);
 
       // Run post-response hooks
-      await runHooks('post_response');
-      onEvent?.({ type: 'post_response_hooks', message: 'Running post-response hooks...' });
+      await runHooks("post_response");
+      onEvent?.({
+        type: "post_response_hooks",
+        message: "Running post-response hooks...",
+      });
 
       const endTime = Date.now();
       emitResponseTime(endTime - startTime);
       emitStreamEnd(charactersStreamed);
-      emitTurnEnd('assistant', fullResponse);
-      onEvent?.({ type: 'stream_end', message: 'Stream completed' });
-      onEvent?.({ type: 'turn_end', message: 'Streaming conversation turn completed' });
+      emitTurnEnd("assistant", fullResponse);
+      onEvent?.({ type: "stream_end", message: "Stream completed" });
+      onEvent?.({
+        type: "turn_end",
+        message: "Streaming conversation turn completed",
+      });
     } catch (error: any) {
       emitError(error.message);
-      onEvent?.({ type: 'error', message: `Stream error: ${error.message}` });
+      onEvent?.({ type: "error", message: `Stream error: ${error.message}` });
       throw error;
     }
   }
@@ -390,7 +435,7 @@ class Orchestrator {
       input: 0,
       output: 0,
       inputTokens: 0,
-      outputTokens: 0
+      outputTokens: 0,
     };
   }
 
@@ -400,51 +445,57 @@ class Orchestrator {
   async checkToolPermission(
     toolName: string,
     input: any,
-    context?: any
+    context?: any,
   ): Promise<{ allowed: boolean; reason?: string }> {
     try {
       const permissionMgr = await this.ensurePermissionManager();
-      
+
       const query: PermissionQuery = {
         tool: toolName,
-        action: 'execute',
+        action: "execute",
         arguments: input,
         context: {
-          source: 'orchestrator' as const,
+          source: "orchestrator" as const,
           workspace_path: process.cwd(),
           environment: {
             node_env: process.env.NODE_ENV,
             platform: process.platform,
             node_version: process.version,
           },
-          correlation_id: 'orch-' + Date.now(),
+          correlation_id: "orch-" + Date.now(),
           ...context,
         },
       };
 
       const result = await permissionMgr.checkPermission(query);
-      
+
       return {
-        allowed: result.action === 'allow',
+        allowed: result.action === "allow",
         reason: result.reason,
       };
     } catch (error) {
-      console.warn('Tool permission check failed:', error);
+      console.warn("Tool permission check failed:", error);
       // Fallback: allow operation but log warning
-      return { allowed: true, reason: 'Permission system unavailable' };
+      return { allowed: true, reason: "Permission system unavailable" };
     }
   }
 
   /**
    * Handle tool calls (stub implementation)
    */
-  async handleToolCall(toolCall: any, onEvent?: (e: OrchestratorEvent) => void): Promise<any> {
-    onEvent?.({ type: 'tool-start', message: `Executing tool: ${toolCall.name}` });
-    
+  async handleToolCall(
+    toolCall: any,
+    onEvent?: (e: OrchestratorEvent) => void,
+  ): Promise<any> {
+    onEvent?.({
+      type: "tool-start",
+      message: `Executing tool: ${toolCall.name}`,
+    });
+
     // Tool call handling is managed by tool-orchestration.ts
-    onEvent?.({ type: 'tool-end', message: 'Tool execution completed' });
-    
-    return { success: true, result: 'Tool call handled' };
+    onEvent?.({ type: "tool-end", message: "Tool execution completed" });
+
+    return { success: true, result: "Tool call handled" };
   }
 
   /**
@@ -458,19 +509,31 @@ class Orchestrator {
   /**
    * Apply patches
    */
-  async applyPatches(patches: string[], onEvent?: (e: OrchestratorEvent) => void): Promise<void> {
+  async applyPatches(
+    patches: string[],
+    onEvent?: (e: OrchestratorEvent) => void,
+  ): Promise<void> {
     emitPatchApplyStart(patches.length);
-    onEvent?.({ type: 'patch_apply_start', message: `Applying ${patches.length} patches...` });
+    onEvent?.({
+      type: "patch_apply_start",
+      message: `Applying ${patches.length} patches...`,
+    });
 
     try {
       for (const patch of patches) {
         await applyPatch(patch);
       }
       emitPatchApplyEnd(true);
-      onEvent?.({ type: 'patch_apply_end', message: 'Patches applied successfully' });
+      onEvent?.({
+        type: "patch_apply_end",
+        message: "Patches applied successfully",
+      });
     } catch (error: any) {
       emitPatchApplyEnd(false, error.message);
-      onEvent?.({ type: 'patch_apply_end', message: `Patch application failed: ${error.message}` });
+      onEvent?.({
+        type: "patch_apply_end",
+        message: `Patch application failed: ${error.message}`,
+      });
       throw error;
     }
   }
@@ -478,14 +541,20 @@ class Orchestrator {
   /**
    * Process message with full orchestration
    */
-  async processMessage(message: string, onEvent?: (e: OrchestratorEvent) => void): Promise<string> {
+  async processMessage(
+    message: string,
+    onEvent?: (e: OrchestratorEvent) => void,
+  ): Promise<string> {
     return await this.chat(message, onEvent);
   }
 
   /**
    * Process message with streaming
    */
-  async *processMessageStream(message: string, onEvent?: (e: OrchestratorEvent) => void): AsyncGenerator<string, void, unknown> {
+  async *processMessageStream(
+    message: string,
+    onEvent?: (e: OrchestratorEvent) => void,
+  ): AsyncGenerator<string, void, unknown> {
     yield* this.streamMessage(message, onEvent);
   }
 
@@ -510,7 +579,7 @@ class Orchestrator {
   // Stream cancellation
   async cancelStream(): Promise<void> {
     // Stub implementation - would cancel ongoing streaming
-    console.log('Stream cancelled');
+    console.log("Stream cancelled");
   }
 
   // Memory operations
@@ -530,27 +599,33 @@ class Orchestrator {
   }
 
   // History operations
-  async compactHistoryWithFocus(focus?: string): Promise<{ originalLength: number; newLength: number }> {
+  async compactHistoryWithFocus(
+    focus?: string,
+  ): Promise<{ originalLength: number; newLength: number }> {
     const originalLength = this.history.length;
-    
-    console.log(`Compacting history with focus: ${focus || 'none'}`);
+
+    console.log(`Compacting history with focus: ${focus || "none"}`);
     // Basic compaction - keep last 50 messages
     if (this.history.length > 50) {
       this.history = this.history.slice(-50);
     }
-    
+
     return { originalLength, newLength: this.history.length };
   }
 
   // Streaming with callback
-  async respondStream(message: string, onDelta: (delta: any) => void, onEvent?: (evt: any) => void): Promise<void> {
+  async respondStream(
+    message: string,
+    onDelta: (delta: any) => void,
+    onEvent?: (evt: any) => void,
+  ): Promise<void> {
     try {
       const stream = this.processMessageStream(message);
       for await (const chunk of stream) {
         onDelta(chunk);
       }
     } catch (error) {
-      console.error('Streaming error:', error);
+      console.error("Streaming error:", error);
     }
   }
 
@@ -572,9 +647,12 @@ class Orchestrator {
   }
 
   // Image operations
-  async pasteImageFromClipboard(): Promise<{ success: boolean; message: string }> {
+  async pasteImageFromClipboard(): Promise<{
+    success: boolean;
+    message: string;
+  }> {
     // Stub implementation - would handle image pasting
-    return { success: false, message: 'Image pasting not implemented' };
+    return { success: false, message: "Image pasting not implemented" };
   }
 
   /**
@@ -616,21 +694,26 @@ class Orchestrator {
     cost?: number;
   }): void;
   updateTokenMetrics(
-    inputOrMetrics: number | {
-      inputTokens?: number;
-      outputTokens?: number;
-      totalTokens?: number;
-      cost?: number;
-    },
-    outputTokens?: number
+    inputOrMetrics:
+      | number
+      | {
+          inputTokens?: number;
+          outputTokens?: number;
+          totalTokens?: number;
+          cost?: number;
+        },
+    outputTokens?: number,
   ): void {
-    if (typeof inputOrMetrics === 'number' && typeof outputTokens === 'number') {
+    if (
+      typeof inputOrMetrics === "number" &&
+      typeof outputTokens === "number"
+    ) {
       // Handle (inputTokens, outputTokens) signature
       this.tokenMetrics.inputTokens += inputOrMetrics;
       this.tokenMetrics.input += inputOrMetrics;
       this.tokenMetrics.outputTokens += outputTokens;
       this.tokenMetrics.output += outputTokens;
-    } else if (typeof inputOrMetrics === 'object') {
+    } else if (typeof inputOrMetrics === "object") {
       // Handle metrics object signature
       const metrics = inputOrMetrics;
       if (metrics.inputTokens !== undefined) {
@@ -648,25 +731,63 @@ class Orchestrator {
   /**
    * Stub implementations for missing methods
    */
-  async bridgeTool(): Promise<void> { /* stub */ }
-  async configureAutoApply(): Promise<void> { /* stub */ }
-  async getCurrentSession(): Promise<any> { return null; }
-  async handleCommand(): Promise<void> { /* stub */ }
-  async handleSlashCommand(): Promise<void> { /* stub */ }
-  async initializeSession(): Promise<void> { /* stub */ }
-  async loadConfig(): Promise<any> { return await loadConfig(); }
-  async loadMemory(): Promise<void> { /* stub */ }
-  async saveConfig(): Promise<void> { /* stub */ }
-  async setModel(): Promise<void> { /* stub */ }
-  async shutdown(): Promise<void> { /* stub */ }
-  async startup(): Promise<void> { /* stub */ }
-  async updateStats(): Promise<void> { /* stub */ }
-  async validateSession(): Promise<boolean> { return true; }
-  emit(event: string, ...args: any[]): void { /* stub */ }
-  getServerCapabilities(): any[] { return []; }
-  listTools(): any[] { return []; }
-  on(event: string, listener: (...args: any[]) => void): void { /* stub */ }
-  setMaxListeners(n: number): void { /* stub */ }
+  async bridgeTool(): Promise<void> {
+    /* stub */
+  }
+  async configureAutoApply(): Promise<void> {
+    /* stub */
+  }
+  async getCurrentSession(): Promise<any> {
+    return null;
+  }
+  async handleCommand(): Promise<void> {
+    /* stub */
+  }
+  async handleSlashCommand(): Promise<void> {
+    /* stub */
+  }
+  async initializeSession(): Promise<void> {
+    /* stub */
+  }
+  async loadConfig(): Promise<any> {
+    return await loadConfig();
+  }
+  async loadMemory(): Promise<void> {
+    /* stub */
+  }
+  async saveConfig(): Promise<void> {
+    /* stub */
+  }
+  async setModel(): Promise<void> {
+    /* stub */
+  }
+  async shutdown(): Promise<void> {
+    /* stub */
+  }
+  async startup(): Promise<void> {
+    /* stub */
+  }
+  async updateStats(): Promise<void> {
+    /* stub */
+  }
+  async validateSession(): Promise<boolean> {
+    return true;
+  }
+  emit(event: string, ...args: any[]): void {
+    /* stub */
+  }
+  getServerCapabilities(): any[] {
+    return [];
+  }
+  listTools(): any[] {
+    return [];
+  }
+  on(event: string, listener: (...args: any[]) => void): void {
+    /* stub */
+  }
+  setMaxListeners(n: number): void {
+    /* stub */
+  }
 }
 
 // Create and export singleton instance

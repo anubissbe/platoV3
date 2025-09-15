@@ -6,7 +6,7 @@
   - [x] 1.1 Write tests for Jest configuration setup
   - [x] 1.2 Install Jest and related dependencies (jest, @types/jest, ts-jest)
   - [x] 1.3 Create Jest configuration files (jest.config.js, jest.setup.ts)
-  - [x] 1.4 Set up test directory structure (src/__tests__/)
+  - [x] 1.4 Set up test directory structure (src/**tests**/)
   - [x] 1.5 Configure TypeScript for test files (tsconfig.test.json)
   - [x] 1.6 Add npm test scripts to package.json
   - [x] 1.7 Create test helper utilities and mock factories
@@ -27,7 +27,7 @@
   - [x] 3.2 Create tests for authentication commands (/login, /logout, /status)
   - [x] 3.3 Create tests for core commands (/help, /init, /memory)
   - [x] 3.4 Create tests for configuration commands (/config, /model, /permissions) (Implemented: command-framework.test.ts covers all config commands)
-  - [x] 3.5 Create tests for advanced commands (/agents, /mcp, /ide, /vim) (Implemented: command-framework.test.ts covers all advanced commands) 
+  - [x] 3.5 Create tests for advanced commands (/agents, /mcp, /ide, /vim) (Implemented: command-framework.test.ts covers all advanced commands)
   - [x] 3.6 Create tests for utility commands (/todos, /export, /compact, /bug) (Implemented: command-framework.test.ts covers all utility commands)
   - [x] 3.7 Validate command output formats match Claude Code (Implemented: integration parity tests validate output format compatibility)
   - [x] 3.8 Verify all tests pass (68 slash command tests passing)

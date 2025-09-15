@@ -1,6 +1,6 @@
-import { EventEmitter } from 'events';
-import * as path from 'path';
-import { PermissionQuery, PermissionResult } from './types.js';
+import { EventEmitter } from "events";
+import * as path from "path";
+import { PermissionQuery, PermissionResult } from "./types.js";
 
 /**
  * Safety guard system to prevent dangerous operations
@@ -9,20 +9,20 @@ import { PermissionQuery, PermissionResult } from './types.js';
 export class SafetyGuard extends EventEmitter {
   // Protected system paths that should never be modified
   private static readonly PROTECTED_PATHS = [
-    '/etc',
-    '/sys',
-    '/proc',
-    '/boot',
-    '/dev',
-    '/usr/bin',
-    '/usr/sbin',
-    '/bin',
-    '/sbin',
-    '/lib',
-    '/lib64',
-    '/Windows/System32',
-    '/System',
-    '/.git/objects',
+    "/etc",
+    "/sys",
+    "/proc",
+    "/boot",
+    "/dev",
+    "/usr/bin",
+    "/usr/sbin",
+    "/bin",
+    "/sbin",
+    "/lib",
+    "/lib64",
+    "/Windows/System32",
+    "/System",
+    "/.git/objects",
   ];
 
   // Dangerous command patterns
@@ -37,13 +37,14 @@ export class SafetyGuard extends EventEmitter {
   ];
 
   // Rate limiting configuration
-  private rateLimits: Map<string, { count: number; resetTime: number }> = new Map();
+  private rateLimits: Map<string, { count: number; resetTime: number }> =
+    new Map();
   private readonly RATE_LIMIT_WINDOW = 60000; // 1 minute
   private readonly RATE_LIMITS = {
-    'fs_delete': 10,
-    'fs_write': 30,
-    'exec': 5,
-    'http': 20,
+    fs_delete: 10,
+    fs_write: 30,
+    exec: 5,
+    http: 20,
   };
 
   // Operation snapshots for rollback
@@ -55,8 +56,9 @@ export class SafetyGuard extends EventEmitter {
    */
   isProtectedPath(filePath: string): boolean {
     const normalized = path.normalize(filePath);
-    return SafetyGuard.PROTECTED_PATHS.some(protectedPath => 
-      normalized.startsWith(protectedPath) || normalized === protectedPath
+    return SafetyGuard.PROTECTED_PATHS.some(
+      (protectedPath) =>
+        normalized.startsWith(protectedPath) || normalized === protectedPath,
     );
   }
 
@@ -74,8 +76,8 @@ export class SafetyGuard extends EventEmitter {
         valid: false,
         reason: `Protected system path: ${query.path}`,
         suggestions: [
-          'Use a different path outside system directories',
-          'Consider using a sandbox or container environment',
+          "Use a different path outside system directories",
+          "Consider using a sandbox or container environment",
         ],
       };
     }
@@ -88,9 +90,9 @@ export class SafetyGuard extends EventEmitter {
             valid: false,
             reason: `Dangerous command pattern detected: ${pattern.source}`,
             suggestions: [
-              'Review the command for safety',
-              'Use safer alternatives',
-              'Run in a sandboxed environment',
+              "Review the command for safety",
+              "Use safer alternatives",
+              "Run in a sandboxed environment",
             ],
           };
         }
@@ -105,7 +107,7 @@ export class SafetyGuard extends EventEmitter {
         reason: `Rate limit exceeded for ${query.tool}`,
         suggestions: [
           `Wait ${Math.ceil(rateCheck.retryAfter / 1000)} seconds`,
-          'Batch operations to reduce frequency',
+          "Batch operations to reduce frequency",
         ],
       };
     }
@@ -170,7 +172,7 @@ export class SafetyGuard extends EventEmitter {
       data: JSON.parse(JSON.stringify(data)), // Deep clone
     });
 
-    this.emit('snapshotCreated', { id, size: this.snapshots.size });
+    this.emit("snapshotCreated", { id, size: this.snapshots.size });
   }
 
   /**
@@ -182,7 +184,7 @@ export class SafetyGuard extends EventEmitter {
       throw new Error(`Snapshot ${id} not found`);
     }
 
-    this.emit('rollback', { id, snapshot });
+    this.emit("rollback", { id, snapshot });
     return snapshot.data;
   }
 
@@ -198,32 +200,35 @@ export class SafetyGuard extends EventEmitter {
     let riskScore = 0;
 
     // Check for recursive deletion
-    if (query.tool === 'fs_delete' && query.metadata?.recursive) {
-      patterns.push('Recursive deletion');
+    if (query.tool === "fs_delete" && query.metadata?.recursive) {
+      patterns.push("Recursive deletion");
       riskScore += 30;
     }
 
     // Check for wildcard operations
-    if (query.path && query.path.includes('*')) {
-      patterns.push('Wildcard operation');
+    if (query.path && query.path.includes("*")) {
+      patterns.push("Wildcard operation");
       riskScore += 20;
     }
 
     // Check for system file modifications
     if (query.path && /\.(dll|so|dylib|sys)$/i.test(query.path)) {
-      patterns.push('System file modification');
+      patterns.push("System file modification");
       riskScore += 40;
     }
 
     // Check for database operations
-    if (query.command && /DROP|TRUNCATE|DELETE.*WHERE.*1.*=.*1/i.test(query.command)) {
-      patterns.push('Dangerous database operation');
+    if (
+      query.command &&
+      /DROP|TRUNCATE|DELETE.*WHERE.*1.*=.*1/i.test(query.command)
+    ) {
+      patterns.push("Dangerous database operation");
       riskScore += 50;
     }
 
     // Check for network operations
-    if (query.tool === 'http' && query.metadata?.method === 'DELETE') {
-      patterns.push('HTTP DELETE operation');
+    if (query.tool === "http" && query.metadata?.method === "DELETE") {
+      patterns.push("HTTP DELETE operation");
       riskScore += 25;
     }
 
@@ -249,28 +254,29 @@ export class SafetyGuard extends EventEmitter {
 
     // Path protection check
     const pathCheck = {
-      name: 'Path Protection',
+      name: "Path Protection",
       passed: !query.path || !this.isProtectedPath(query.path),
-      message: query.path && this.isProtectedPath(query.path)
-        ? `Protected path: ${query.path}`
-        : 'Path is safe',
+      message:
+        query.path && this.isProtectedPath(query.path)
+          ? `Protected path: ${query.path}`
+          : "Path is safe",
     };
     checks.push(pathCheck);
 
     // Pattern detection check
     const patternCheck = this.detectDangerousPatterns(query);
     checks.push({
-      name: 'Pattern Detection',
+      name: "Pattern Detection",
       passed: !patternCheck.dangerous,
       message: patternCheck.dangerous
-        ? `Dangerous patterns: ${patternCheck.patterns.join(', ')}`
-        : 'No dangerous patterns detected',
+        ? `Dangerous patterns: ${patternCheck.patterns.join(", ")}`
+        : "No dangerous patterns detected",
     });
 
     // Rate limit check
     const rateCheck = this.checkRateLimit(query.tool);
     checks.push({
-      name: 'Rate Limiting',
+      name: "Rate Limiting",
       passed: rateCheck.allowed,
       message: rateCheck.allowed
         ? `${rateCheck.remaining} operations remaining`
@@ -280,13 +286,13 @@ export class SafetyGuard extends EventEmitter {
     // Validation check
     const validation = this.validateOperation(query);
     checks.push({
-      name: 'Operation Validation',
+      name: "Operation Validation",
       passed: validation.valid,
-      message: validation.reason || 'Operation is valid',
+      message: validation.reason || "Operation is valid",
     });
 
-    const passed = checks.every(check => check.passed);
-    this.emit('preFlightComplete', { query, passed, checks });
+    const passed = checks.every((check) => check.passed);
+    this.emit("preFlightComplete", { query, passed, checks });
 
     return { passed, checks };
   }
@@ -308,10 +314,12 @@ export class SafetyGuard extends EventEmitter {
           key,
           {
             count: value.count,
-            remaining: (this.RATE_LIMITS[key as keyof typeof this.RATE_LIMITS] || 0) - value.count,
+            remaining:
+              (this.RATE_LIMITS[key as keyof typeof this.RATE_LIMITS] || 0) -
+              value.count,
             resetsIn: Math.max(0, value.resetTime - Date.now()),
           },
-        ])
+        ]),
       ),
       snapshots: this.snapshots.size,
     };
@@ -322,7 +330,7 @@ export class SafetyGuard extends EventEmitter {
    */
   resetRateLimits(): void {
     this.rateLimits.clear();
-    this.emit('rateLimitsReset');
+    this.emit("rateLimitsReset");
   }
 
   /**
@@ -331,6 +339,6 @@ export class SafetyGuard extends EventEmitter {
   clearSnapshots(): void {
     const count = this.snapshots.size;
     this.snapshots.clear();
-    this.emit('snapshotsCleared', { count });
+    this.emit("snapshotsCleared", { count });
   }
 }

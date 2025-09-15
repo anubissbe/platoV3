@@ -24,7 +24,8 @@ RUN npm install -g \
     typescript \
     tsx \
     @modelcontextprotocol/server-nodejs \
-    ink-testing-library
+    ink-testing-library \
+    @anthropic-ai/claude-code
 
 # Copy package files first for better caching
 COPY package*.json ./
@@ -58,7 +59,7 @@ const server = new Server({
 const ALLOWED_COMMANDS = [
   'git', 'node', 'npm', 'pnpm', 'tsx', 
   'jest', 'cat', 'ls', 'pwd', 'echo',
-  './bin/plato', 'pnpm test', 'pnpm build'
+  './bin/plato', 'pnpm test', 'pnpm build', 'claude'
 ];
 
 // Tool: Execute shell command
@@ -157,6 +158,39 @@ server.addTool({
       { cwd: '/workspace' }
     );
     return { stdout, stderr };
+  }
+});
+
+// Tool: Run Claude TUI in PTY
+server.addTool({
+  name: 'run_claude_pty',
+  description: 'Run Claude Code in a PTY and interact with it',
+  parameters: {
+    type: 'object',
+    properties: {
+      input: { type: 'string', description: 'Input to send to Claude' },
+      timeout: { type: 'number', description: 'Timeout in seconds' }
+    }
+  },
+  handler: async ({ input = '', timeout = 10 }) => {
+    return new Promise((resolve) => {
+      const proc = spawn('claude', [], {
+        cwd: '/workspace',
+        env: { ...process.env, TERM: 'xterm-256color' },
+        shell: true
+      });
+      let output = '';
+      const timer = setTimeout(() => {
+        proc.kill();
+        resolve({ output, timedOut: true });
+      }, timeout * 1000);
+      proc.stdout.on('data', (data) => { output += data.toString(); });
+      proc.stderr.on('data', (data) => { output += data.toString(); });
+      proc.on('close', () => { clearTimeout(timer); resolve({ output, timedOut: false }); });
+      if (input) {
+        setTimeout(() => { proc.stdin.write(input); }, 1000);
+      }
+    });
   }
 });
 

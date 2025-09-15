@@ -6,6 +6,7 @@
 **Target State**: Rich terminal interface with Claude Code visual parity
 
 ### Technical Stack
+
 - **Frontend**: React 18 + Ink 4 for terminal rendering
 - **Styling**: Styled components with Claude Code color scheme
 - **State Management**: React hooks + Context API
@@ -15,6 +16,7 @@
 ## Core Components Architecture
 
 ### 1. Application Entry Point
+
 ```typescript
 // src/cli.ts (modified)
 async function main() {
@@ -29,6 +31,7 @@ async function main() {
 ```
 
 ### 2. TUI Application Structure
+
 ```typescript
 // src/tui/app.tsx
 export function App() {
@@ -44,6 +47,7 @@ export function App() {
 ```
 
 ### 3. Component Hierarchy
+
 ```
 App
 ├── Header
@@ -69,6 +73,7 @@ App
 ### Phase 1: Critical Fixes
 
 #### TypeScript Compilation Issues
+
 ```typescript
 // Fix duplicate function declarations in keyboard-handler.tsx
 // Remove or consolidate duplicate handlers:
@@ -77,21 +82,24 @@ App
 // - handleAddDirCommand, handleCostCommand, etc.
 
 // Fix import/export issues
-import { Component } from 'react';
-import { Box, Text } from 'ink';
+import { Component } from "react";
+import { Box, Text } from "ink";
 // Ensure all imports have proper type definitions
 ```
 
 #### Entry Point Modification
+
 ```typescript
 // src/cli.ts modifications
-import { runTui } from './tui/app.js';
+import { runTui } from "./tui/app.js";
 
 // Terminal capability detection
 function isTerminalCapable(): boolean {
-  return process.stdin.isTTY && 
-         process.stdout.isTTY &&
-         process.stdin.setRawMode !== undefined;
+  return (
+    process.stdin.isTTY &&
+    process.stdout.isTTY &&
+    process.stdin.setRawMode !== undefined
+  );
 }
 
 // WSL and Docker compatibility
@@ -105,11 +113,12 @@ function getTerminalEnvironment() {
 ### Phase 2: Visual Parity Components
 
 #### Header Bar Implementation
+
 ```typescript
 // src/tui/components/Header.tsx
 export function Header() {
   const { model, tokens, connectionStatus } = useAppState();
-  
+
   return (
     <Box borderStyle="single" borderColor="blue" padding={1}>
       <Box flexDirection="row" justifyContent="space-between">
@@ -128,12 +137,13 @@ export function Header() {
 ```
 
 #### Conversation Area with Mouse Integration
+
 ```typescript
 // src/tui/components/ConversationArea.tsx
 export function ConversationArea() {
   const scrollControllerRef = useRef<ScrollController>();
   const { messages, isStreaming } = useConversation();
-  
+
   useEffect(() => {
     // Initialize mouse wheel scrolling
     const scrollController = new ScrollController({
@@ -142,10 +152,10 @@ export function ConversationArea() {
       boundaryFeedback: true
     });
     scrollControllerRef.current = scrollController;
-    
+
     return () => scrollController.dispose();
   }, []);
-  
+
   return (
     <Box flexDirection="column" flexGrow={1} overflow="hidden">
       <VirtualScrollList
@@ -160,12 +170,13 @@ export function ConversationArea() {
 ```
 
 #### Multi-line Input System
+
 ```typescript
 // src/tui/components/InputArea.tsx
 export function InputArea() {
   const [input, setInput] = useState('');
   const [isMultiLine, setIsMultiLine] = useState(false);
-  
+
   return (
     <Box borderStyle="single" borderColor="gray" padding={1}>
       <Box flexDirection="column">
@@ -187,11 +198,12 @@ export function InputArea() {
 ### Phase 3: Interactive Features
 
 #### Real-time Streaming with Typewriter Effect
+
 ```typescript
 // src/tui/components/StreamingMessage.tsx
 export function StreamingMessage({ content }: { content: string }) {
   const [displayedContent, setDisplayedContent] = useState('');
-  
+
   useEffect(() => {
     let index = 0;
     const interval = setInterval(() => {
@@ -202,10 +214,10 @@ export function StreamingMessage({ content }: { content: string }) {
         clearInterval(interval);
       }
     }, 25); // 40 characters per second for natural reading pace
-    
+
     return () => clearInterval(interval);
   }, [content]);
-  
+
   return (
     <Box>
       <Text>{displayedContent}</Text>
@@ -218,6 +230,7 @@ export function StreamingMessage({ content }: { content: string }) {
 ```
 
 #### Enhanced Mouse Support
+
 ```typescript
 // Enhanced mouse event handling
 export function useMouseSupport() {
@@ -225,25 +238,25 @@ export function useMouseSupport() {
     const handleMouseEvent = (data: Buffer) => {
       const sequence = data.toString();
       const mouseEvents = MouseEventHandler.parseMouseSequence(sequence);
-      
-      mouseEvents.forEach(event => {
+
+      mouseEvents.forEach((event) => {
         if (event.type === MouseEventType.SCROLL) {
           // Integrate with scroll controller
           scrollController.handleWheelEvent(event);
         }
       });
     };
-    
-    process.stdin.on('data', handleMouseEvent);
-    
+
+    process.stdin.on("data", handleMouseEvent);
+
     // Enable mouse tracking
-    process.stdout.write('\x1b[?1000h'); // Basic mouse tracking
-    process.stdout.write('\x1b[?1006h'); // SGR extended mode
-    
+    process.stdout.write("\x1b[?1000h"); // Basic mouse tracking
+    process.stdout.write("\x1b[?1006h"); // SGR extended mode
+
     return () => {
-      process.stdin.off('data', handleMouseEvent);
-      process.stdout.write('\x1b[?1000l');
-      process.stdout.write('\x1b[?1006l');
+      process.stdin.off("data", handleMouseEvent);
+      process.stdout.write("\x1b[?1000l");
+      process.stdout.write("\x1b[?1006l");
     };
   }, []);
 }
@@ -252,6 +265,7 @@ export function useMouseSupport() {
 ## Performance Considerations
 
 ### Virtual Scrolling Implementation
+
 ```typescript
 // src/tui/components/VirtualScrollList.tsx
 export function VirtualScrollList<T>({
@@ -262,18 +276,18 @@ export function VirtualScrollList<T>({
 }: VirtualScrollListProps<T>) {
   const [scrollPosition, setScrollPosition] = useState(0);
   const [containerHeight, setContainerHeight] = useState(10);
-  
+
   const visibleStartIndex = Math.max(0, scrollPosition - bufferSize);
   const visibleEndIndex = Math.min(
     items.length - 1,
     scrollPosition + containerHeight + bufferSize
   );
-  
+
   const visibleItems = items.slice(visibleStartIndex, visibleEndIndex + 1);
-  
+
   return (
     <Box flexDirection="column">
-      {visibleItems.map((item, index) => 
+      {visibleItems.map((item, index) =>
         renderItem(item, visibleStartIndex + index)
       )}
     </Box>
@@ -282,6 +296,7 @@ export function VirtualScrollList<T>({
 ```
 
 ### Component Memoization
+
 ```typescript
 // Optimize re-renders with React.memo
 export const MessageComponent = React.memo(function MessageComponent({
@@ -314,6 +329,7 @@ export const MessageComponent = React.memo(function MessageComponent({
 ## Testing Strategy
 
 ### Compilation Testing
+
 ```bash
 # Continuous compilation checking
 npm run build:watch
@@ -326,6 +342,7 @@ npm run test:tui-launch
 ```
 
 ### Visual Testing
+
 ```typescript
 // src/__tests__/visual-regression.test.ts
 describe('Visual Regression Tests', () => {
@@ -333,7 +350,7 @@ describe('Visual Regression Tests', () => {
     const { container } = render(<Header />);
     expect(container).toMatchSnapshot();
   });
-  
+
   test('conversation area with messages', async () => {
     const messages = mockMessages();
     const { container } = render(
@@ -345,10 +362,11 @@ describe('Visual Regression Tests', () => {
 ```
 
 ### Cross-platform Testing
+
 ```bash
 # Test environments
 npm run test:wsl
-npm run test:docker  
+npm run test:docker
 npm run test:native
 
 # Performance benchmarking
@@ -359,6 +377,7 @@ npm run benchmark:scrolling
 ## Deployment and Rollout
 
 ### Development Workflow
+
 1. Fix compilation errors in development branch
 2. Implement core components with visual tests
 3. Add mouse integration and performance optimization
@@ -366,6 +385,7 @@ npm run benchmark:scrolling
 5. Beta release with select users for feedback
 
 ### Rollout Strategy
+
 1. **Phase 1**: Internal testing with fixed TUI compilation
 2. **Phase 2**: Beta release with core visual parity
 3. **Phase 3**: Full release with advanced features

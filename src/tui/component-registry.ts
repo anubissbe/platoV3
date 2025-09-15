@@ -3,13 +3,13 @@
  * Manages registration and tracking of clickable components in terminal UI
  */
 
-import { MouseEvent } from './mouse-types.js';
-import { 
-  ClickableComponent, 
-  ComponentBounds, 
+import { MouseEvent } from "./mouse-types.js";
+import {
+  ClickableComponent,
+  ComponentBounds,
   ComponentValidator,
-  ComponentState 
-} from './interactive-components.js';
+  ComponentState,
+} from "./interactive-components.js";
 
 /**
  * Component registration result
@@ -28,7 +28,7 @@ export interface RegistrationResult {
  */
 export interface ComponentQuery {
   /** Component type filter */
-  type?: ClickableComponent['type'] | ClickableComponent['type'][];
+  type?: ClickableComponent["type"] | ClickableComponent["type"][];
   /** Enabled state filter */
   enabled?: boolean;
   /** Visible state filter */
@@ -56,7 +56,7 @@ interface SpatialNode {
  * Component change event
  */
 export interface ComponentChangeEvent {
-  type: 'added' | 'updated' | 'removed' | 'enabled' | 'disabled' | 'moved';
+  type: "added" | "updated" | "removed" | "enabled" | "disabled" | "moved";
   componentId: string;
   component?: ClickableComponent;
   previousComponent?: ClickableComponent;
@@ -111,13 +111,15 @@ const DEFAULT_REGISTRY_CONFIG: RegistryConfig = {
   enableChangeEvents: true,
   maxChangeEvents: 100,
   enablePerformanceMonitoring: true,
-  debug: false
+  debug: false,
 };
 
 /**
  * Component change listener
  */
-export type ComponentChangeListener = (event: ComponentChangeEvent) => void | Promise<void>;
+export type ComponentChangeListener = (
+  event: ComponentChangeEvent,
+) => void | Promise<void>;
 
 /**
  * Component Registry System
@@ -130,11 +132,16 @@ export class ComponentRegistry {
   private changeEvents: ComponentChangeEvent[] = [];
   private changeListeners: ComponentChangeListener[] = [];
   private lookupTimes: number[] = [];
-  private terminalBounds: ComponentBounds = { x: 0, y: 0, width: 80, height: 24 };
+  private terminalBounds: ComponentBounds = {
+    x: 0,
+    y: 0,
+    width: 80,
+    height: 24,
+  };
 
   constructor(config: Partial<RegistryConfig> = {}) {
     this.config = { ...DEFAULT_REGISTRY_CONFIG, ...config };
-    
+
     if (this.config.enableSpatialIndex) {
       this.rebuildSpatialIndex();
     }
@@ -150,7 +157,7 @@ export class ComponentRegistry {
       if (!validation.valid) {
         return {
           success: false,
-          error: `Component validation failed: ${validation.errors.join(', ')}`
+          error: `Component validation failed: ${validation.errors.join(", ")}`,
         };
       }
 
@@ -158,7 +165,7 @@ export class ComponentRegistry {
       if (this.components.has(component.id)) {
         return {
           success: false,
-          error: `Component with ID '${component.id}' already exists`
+          error: `Component with ID '${component.id}' already exists`,
         };
       }
 
@@ -176,25 +183,27 @@ export class ComponentRegistry {
       // Fire change event
       if (this.config.enableChangeEvents) {
         this.fireChangeEvent({
-          type: 'added',
+          type: "added",
           componentId: component.id,
           component: { ...component },
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
 
       if (this.config.debug) {
-        console.debug(`[ComponentRegistry] Registered component: ${component.id} (${component.type})`);
+        console.debug(
+          `[ComponentRegistry] Registered component: ${component.id} (${component.type})`,
+        );
       }
 
       return {
         success: true,
-        warnings: warnings.length > 0 ? warnings : undefined
+        warnings: warnings.length > 0 ? warnings : undefined,
       };
     } catch (error) {
       return {
         success: false,
-        error: `Registration failed: ${error instanceof Error ? error.message : error}`
+        error: `Registration failed: ${error instanceof Error ? error.message : error}`,
       };
     }
   }
@@ -219,15 +228,17 @@ export class ComponentRegistry {
     // Fire change event
     if (this.config.enableChangeEvents) {
       this.fireChangeEvent({
-        type: 'removed',
+        type: "removed",
         componentId,
         previousComponent: component,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
     if (this.config.debug) {
-      console.debug(`[ComponentRegistry] Unregistered component: ${componentId}`);
+      console.debug(
+        `[ComponentRegistry] Unregistered component: ${componentId}`,
+      );
     }
 
     return true;
@@ -236,12 +247,15 @@ export class ComponentRegistry {
   /**
    * Update an existing component
    */
-  update(componentId: string, updates: Partial<ClickableComponent>): RegistrationResult {
+  update(
+    componentId: string,
+    updates: Partial<ClickableComponent>,
+  ): RegistrationResult {
     const existingComponent = this.components.get(componentId);
     if (!existingComponent) {
       return {
         success: false,
-        error: `Component '${componentId}' not found`
+        error: `Component '${componentId}' not found`,
       };
     }
 
@@ -249,7 +263,7 @@ export class ComponentRegistry {
     const updatedComponent: ClickableComponent = {
       ...existingComponent,
       ...updates,
-      id: componentId // Prevent ID changes
+      id: componentId, // Prevent ID changes
     };
 
     // Validate updated component
@@ -257,12 +271,14 @@ export class ComponentRegistry {
     if (!validation.valid) {
       return {
         success: false,
-        error: `Updated component validation failed: ${validation.errors.join(', ')}`
+        error: `Updated component validation failed: ${validation.errors.join(", ")}`,
       };
     }
 
     // Check for overlaps if bounds changed
-    const warnings = updates.bounds ? this.checkForOverlaps(updatedComponent) : [];
+    const warnings = updates.bounds
+      ? this.checkForOverlaps(updatedComponent)
+      : [];
 
     // Update component
     const previousComponent = { ...existingComponent };
@@ -277,11 +293,11 @@ export class ComponentRegistry {
     // Fire change event
     if (this.config.enableChangeEvents) {
       this.fireChangeEvent({
-        type: 'updated',
+        type: "updated",
         componentId,
         component: updatedComponent,
         previousComponent,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
@@ -291,7 +307,7 @@ export class ComponentRegistry {
 
     return {
       success: true,
-      warnings: warnings.length > 0 ? warnings : undefined
+      warnings: warnings.length > 0 ? warnings : undefined,
     };
   }
 
@@ -299,8 +315,10 @@ export class ComponentRegistry {
    * Find component at specific coordinates
    */
   findAt(x: number, y: number): ClickableComponent | null {
-    const startTime = this.config.enablePerformanceMonitoring ? performance.now() : 0;
-    
+    const startTime = this.config.enablePerformanceMonitoring
+      ? performance.now()
+      : 0;
+
     try {
       if (this.config.enableSpatialIndex && this.spatialIndex) {
         return this.findAtUsingSpatialIndex(x, y);
@@ -318,7 +336,10 @@ export class ComponentRegistry {
   /**
    * Find component using spatial index
    */
-  private findAtUsingSpatialIndex(x: number, y: number): ClickableComponent | null {
+  private findAtUsingSpatialIndex(
+    x: number,
+    y: number,
+  ): ClickableComponent | null {
     if (!this.spatialIndex) return null;
 
     const candidates = new Set<string>();
@@ -330,11 +351,13 @@ export class ComponentRegistry {
 
     for (const componentId of candidates) {
       const component = this.components.get(componentId);
-      if (component && 
-          component.isEnabled && 
-          component.isVisible &&
-          ComponentBounds.contains(component.bounds, x, y) &&
-          component.priority > highestPriority) {
+      if (
+        component &&
+        component.isEnabled &&
+        component.isVisible &&
+        ComponentBounds.contains(component.bounds, x, y) &&
+        component.priority > highestPriority
+      ) {
         bestMatch = component;
         highestPriority = component.priority;
       }
@@ -350,7 +373,7 @@ export class ComponentRegistry {
     node: SpatialNode,
     x: number,
     y: number,
-    results: Set<string>
+    results: Set<string>,
   ): void {
     // Check if point is in node bounds
     if (!ComponentBounds.contains(node.bounds, x, y)) {
@@ -378,10 +401,12 @@ export class ComponentRegistry {
     let highestPriority = -1;
 
     for (const component of this.components.values()) {
-      if (component.isEnabled && 
-          component.isVisible &&
-          ComponentBounds.contains(component.bounds, x, y) &&
-          component.priority > highestPriority) {
+      if (
+        component.isEnabled &&
+        component.isVisible &&
+        ComponentBounds.contains(component.bounds, x, y) &&
+        component.priority > highestPriority
+      ) {
         bestMatch = component;
         highestPriority = component.priority;
       }
@@ -409,40 +434,67 @@ export class ComponentRegistry {
   /**
    * Check if component matches query criteria
    */
-  private matchesCriteria(component: ClickableComponent, criteria: ComponentQuery): boolean {
+  private matchesCriteria(
+    component: ClickableComponent,
+    criteria: ComponentQuery,
+  ): boolean {
     // Type filter
     if (criteria.type !== undefined) {
-      const types = Array.isArray(criteria.type) ? criteria.type : [criteria.type];
+      const types = Array.isArray(criteria.type)
+        ? criteria.type
+        : [criteria.type];
       if (!types.includes(component.type)) {
         return false;
       }
     }
 
     // Enabled filter
-    if (criteria.enabled !== undefined && component.isEnabled !== criteria.enabled) {
+    if (
+      criteria.enabled !== undefined &&
+      component.isEnabled !== criteria.enabled
+    ) {
       return false;
     }
 
     // Visible filter
-    if (criteria.visible !== undefined && component.isVisible !== criteria.visible) {
+    if (
+      criteria.visible !== undefined &&
+      component.isVisible !== criteria.visible
+    ) {
       return false;
     }
 
     // Priority filters
-    if (criteria.minPriority !== undefined && component.priority < criteria.minPriority) {
+    if (
+      criteria.minPriority !== undefined &&
+      component.priority < criteria.minPriority
+    ) {
       return false;
     }
-    if (criteria.maxPriority !== undefined && component.priority > criteria.maxPriority) {
+    if (
+      criteria.maxPriority !== undefined &&
+      component.priority > criteria.maxPriority
+    ) {
       return false;
     }
 
     // Bounds intersection
-    if (criteria.intersectsBounds && !ComponentBounds.overlaps(component.bounds, criteria.intersectsBounds)) {
+    if (
+      criteria.intersectsBounds &&
+      !ComponentBounds.overlaps(component.bounds, criteria.intersectsBounds)
+    ) {
       return false;
     }
 
     // Contains point
-    if (criteria.containsPoint && !ComponentBounds.contains(component.bounds, criteria.containsPoint.x, criteria.containsPoint.y)) {
+    if (
+      criteria.containsPoint &&
+      !ComponentBounds.contains(
+        component.bounds,
+        criteria.containsPoint.x,
+        criteria.containsPoint.y,
+      )
+    ) {
       return false;
     }
 
@@ -490,10 +542,10 @@ export class ComponentRegistry {
     // Fire change event
     if (this.config.enableChangeEvents && wasEnabled !== enabled) {
       this.fireChangeEvent({
-        type: enabled ? 'enabled' : 'disabled',
+        type: enabled ? "enabled" : "disabled",
         componentId,
         component: { ...component },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
@@ -519,7 +571,7 @@ export class ComponentRegistry {
     if (!component) {
       return {
         success: false,
-        error: `Component '${componentId}' not found`
+        error: `Component '${componentId}' not found`,
       };
     }
 
@@ -527,7 +579,7 @@ export class ComponentRegistry {
     if (!ComponentBounds.isValid(newBounds)) {
       return {
         success: false,
-        error: 'Invalid bounds specified'
+        error: "Invalid bounds specified",
       };
     }
 
@@ -543,10 +595,10 @@ export class ComponentRegistry {
     // Fire change event
     if (this.config.enableChangeEvents) {
       this.fireChangeEvent({
-        type: 'moved',
+        type: "moved",
         componentId,
         component: { ...component },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     }
 
@@ -558,10 +610,10 @@ export class ComponentRegistry {
    */
   clear(): void {
     const componentIds = Array.from(this.components.keys());
-    
+
     this.components.clear();
     this.spatialIndex = null;
-    
+
     if (this.config.enableSpatialIndex) {
       this.rebuildSpatialIndex();
     }
@@ -570,15 +622,17 @@ export class ComponentRegistry {
     if (this.config.enableChangeEvents) {
       for (const componentId of componentIds) {
         this.fireChangeEvent({
-          type: 'removed',
+          type: "removed",
           componentId,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         });
       }
     }
 
     if (this.config.debug) {
-      console.debug(`[ComponentRegistry] Cleared ${componentIds.length} components`);
+      console.debug(
+        `[ComponentRegistry] Cleared ${componentIds.length} components`,
+      );
     }
   }
 
@@ -587,12 +641,16 @@ export class ComponentRegistry {
    */
   private checkForOverlaps(component: ClickableComponent): string[] {
     const warnings: string[] = [];
-    
+
     for (const other of this.components.values()) {
-      if (other.id !== component.id &&
-          other.priority === component.priority &&
-          ComponentBounds.overlaps(component.bounds, other.bounds)) {
-        warnings.push(`Overlaps with component '${other.id}' at same priority level`);
+      if (
+        other.id !== component.id &&
+        other.priority === component.priority &&
+        ComponentBounds.overlaps(component.bounds, other.bounds)
+      ) {
+        warnings.push(
+          `Overlaps with component '${other.id}' at same priority level`,
+        );
       }
     }
 
@@ -607,7 +665,7 @@ export class ComponentRegistry {
 
     this.spatialIndex = {
       bounds: this.terminalBounds,
-      components: new Set(this.components.keys())
+      components: new Set(this.components.keys()),
     };
 
     if (this.components.size > this.config.minComponentsPerNode) {
@@ -615,7 +673,9 @@ export class ComponentRegistry {
     }
 
     if (this.config.debug) {
-      console.debug(`[ComponentRegistry] Rebuilt spatial index with ${this.components.size} components`);
+      console.debug(
+        `[ComponentRegistry] Rebuilt spatial index with ${this.components.size} components`,
+      );
     }
   }
 
@@ -623,7 +683,10 @@ export class ComponentRegistry {
    * Subdivide spatial index node
    */
   private subdivideSpatialIndex(node: SpatialNode, depth: number): void {
-    if (depth >= this.config.maxSpatialDepth || node.components.size <= this.config.minComponentsPerNode) {
+    if (
+      depth >= this.config.maxSpatialDepth ||
+      node.components.size <= this.config.minComponentsPerNode
+    ) {
       return;
     }
 
@@ -635,24 +698,44 @@ export class ComponentRegistry {
     node.children = [
       // Top-left
       {
-        bounds: { x: bounds.x, y: bounds.y, width: midX - bounds.x, height: midY - bounds.y },
-        components: new Set()
+        bounds: {
+          x: bounds.x,
+          y: bounds.y,
+          width: midX - bounds.x,
+          height: midY - bounds.y,
+        },
+        components: new Set(),
       },
       // Top-right
       {
-        bounds: { x: midX, y: bounds.y, width: bounds.x + bounds.width - midX, height: midY - bounds.y },
-        components: new Set()
+        bounds: {
+          x: midX,
+          y: bounds.y,
+          width: bounds.x + bounds.width - midX,
+          height: midY - bounds.y,
+        },
+        components: new Set(),
       },
       // Bottom-left
       {
-        bounds: { x: bounds.x, y: midY, width: midX - bounds.x, height: bounds.y + bounds.height - midY },
-        components: new Set()
+        bounds: {
+          x: bounds.x,
+          y: midY,
+          width: midX - bounds.x,
+          height: bounds.y + bounds.height - midY,
+        },
+        components: new Set(),
       },
       // Bottom-right
       {
-        bounds: { x: midX, y: midY, width: bounds.x + bounds.width - midX, height: bounds.y + bounds.height - midY },
-        components: new Set()
-      }
+        bounds: {
+          x: midX,
+          y: midY,
+          width: bounds.x + bounds.width - midX,
+          height: bounds.y + bounds.height - midY,
+        },
+        components: new Set(),
+      },
     ];
 
     // Distribute components to children
@@ -712,7 +795,7 @@ export class ComponentRegistry {
         listener(event);
       } catch (error) {
         if (this.config.debug) {
-          console.error('[ComponentRegistry] Error in change listener:', error);
+          console.error("[ComponentRegistry] Error in change listener:", error);
         }
       }
     }
@@ -723,7 +806,7 @@ export class ComponentRegistry {
    */
   private updateLookupTime(time: number): void {
     this.lookupTimes.push(time);
-    
+
     // Keep only last 100 measurements
     if (this.lookupTimes.length > 100) {
       this.lookupTimes.shift();
@@ -752,7 +835,7 @@ export class ComponentRegistry {
    */
   setTerminalBounds(width: number, height: number): void {
     this.terminalBounds = { x: 0, y: 0, width, height };
-    
+
     if (this.config.enableSpatialIndex) {
       this.rebuildSpatialIndex();
     }
@@ -767,14 +850,17 @@ export class ComponentRegistry {
     let visibleComponents = 0;
 
     for (const component of this.components.values()) {
-      componentsByType[component.type] = (componentsByType[component.type] || 0) + 1;
+      componentsByType[component.type] =
+        (componentsByType[component.type] || 0) + 1;
       if (component.isEnabled) enabledComponents++;
       if (component.isVisible) visibleComponents++;
     }
 
-    const averageLookupTime = this.lookupTimes.length > 0 
-      ? this.lookupTimes.reduce((sum, time) => sum + time, 0) / this.lookupTimes.length
-      : 0;
+    const averageLookupTime =
+      this.lookupTimes.length > 0
+        ? this.lookupTimes.reduce((sum, time) => sum + time, 0) /
+          this.lookupTimes.length
+        : 0;
 
     return {
       totalComponents: this.components.size,
@@ -782,7 +868,7 @@ export class ComponentRegistry {
       visibleComponents,
       componentsByType,
       spatialIndexDepth: this.calculateSpatialIndexDepth(),
-      averageLookupTime
+      averageLookupTime,
     };
   }
 
@@ -812,11 +898,13 @@ export class ComponentRegistry {
    */
   updateConfig(config: Partial<RegistryConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     // Rebuild spatial index if settings changed
-    if (config.enableSpatialIndex !== undefined || 
-        config.maxSpatialDepth !== undefined || 
-        config.minComponentsPerNode !== undefined) {
+    if (
+      config.enableSpatialIndex !== undefined ||
+      config.maxSpatialDepth !== undefined ||
+      config.minComponentsPerNode !== undefined
+    ) {
       this.rebuildSpatialIndex();
     }
   }
@@ -838,7 +926,7 @@ export class ComponentRegistry {
       changeEventsCount: this.changeEvents.length,
       changeListenersCount: this.changeListeners.length,
       lookupTimesCount: this.lookupTimes.length,
-      hasSpatialIndex: this.spatialIndex !== null
+      hasSpatialIndex: this.spatialIndex !== null,
     };
   }
 

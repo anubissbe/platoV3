@@ -1,17 +1,26 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { FileAnalyzer, SymbolExtractor, SemanticIndex } from '../../../context/semantic-index';
-import { FileIndex, SymbolInfo, SymbolType, ImportGraph } from '../../../context/types.js';
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import {
+  FileAnalyzer,
+  SymbolExtractor,
+  SemanticIndex,
+} from "../../../context/semantic-index";
+import {
+  FileIndex,
+  SymbolInfo,
+  SymbolType,
+  ImportGraph,
+} from "../../../context/types.js";
 
-describe('FileAnalyzer', () => {
+describe("FileAnalyzer", () => {
   let analyzer: FileAnalyzer;
 
   beforeEach(() => {
     analyzer = new FileAnalyzer();
   });
 
-  describe('analyzeFile', () => {
-    it('should analyze TypeScript file and extract symbols', async () => {
-      const filePath = 'test.ts';
+  describe("analyzeFile", () => {
+    it("should analyze TypeScript file and extract symbols", async () => {
+      const filePath = "test.ts";
       const content = `
         export class TestClass {
           constructor(private value: string) {}
@@ -42,41 +51,41 @@ describe('FileAnalyzer', () => {
       expect(result.symbols).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'TestClass',
+            name: "TestClass",
             type: SymbolType.Class,
             exported: true,
-            line: expect.any(Number)
+            line: expect.any(Number),
           }),
           expect.objectContaining({
-            name: 'testFunction',
+            name: "testFunction",
             type: SymbolType.Function,
             exported: true,
-            line: expect.any(Number)
+            line: expect.any(Number),
           }),
           expect.objectContaining({
-            name: 'TEST_CONSTANT',
+            name: "TEST_CONSTANT",
             type: SymbolType.Variable,
             exported: true,
-            line: expect.any(Number)
+            line: expect.any(Number),
           }),
           expect.objectContaining({
-            name: 'TestInterface',
+            name: "TestInterface",
             type: SymbolType.Interface,
             exported: true,
-            line: expect.any(Number)
+            line: expect.any(Number),
           }),
           expect.objectContaining({
-            name: 'TestType',
+            name: "TestType",
             type: SymbolType.Type,
             exported: true,
-            line: expect.any(Number)
-          })
-        ])
+            line: expect.any(Number),
+          }),
+        ]),
       );
     });
 
-    it('should extract imports from TypeScript file', async () => {
-      const filePath = 'test.ts';
+    it("should extract imports from TypeScript file", async () => {
+      const filePath = "test.ts";
       const content = `
         import { Component } from 'react';
         import * as fs from 'fs';
@@ -90,16 +99,16 @@ describe('FileAnalyzer', () => {
       const result = await analyzer.analyzeFile(filePath, content);
 
       expect(result.imports).toEqual([
-        'react',
-        'fs',
-        'path',
-        './config',
-        './styles.css'
+        "react",
+        "fs",
+        "path",
+        "./config",
+        "./styles.css",
       ]);
     });
 
-    it('should extract exports from TypeScript file', async () => {
-      const filePath = 'test.ts';
+    it("should extract exports from TypeScript file", async () => {
+      const filePath = "test.ts";
       const content = `
         export { foo, bar } from './utils';
         export * from './types';
@@ -109,26 +118,26 @@ describe('FileAnalyzer', () => {
 
       const result = await analyzer.analyzeFile(filePath, content);
 
-      expect(result.exports).toContain('foo');
-      expect(result.exports).toContain('bar');
-      expect(result.exports).toContain('default');
-      expect(result.exports).toContain('value');
+      expect(result.exports).toContain("foo");
+      expect(result.exports).toContain("bar");
+      expect(result.exports).toContain("default");
+      expect(result.exports).toContain("value");
     });
 
-    it('should calculate file hash for change detection', async () => {
-      const filePath = 'test.ts';
-      const content = 'export const value = 42;';
-      
+    it("should calculate file hash for change detection", async () => {
+      const filePath = "test.ts";
+      const content = "export const value = 42;";
+
       const result1 = await analyzer.analyzeFile(filePath, content);
       const result2 = await analyzer.analyzeFile(filePath, content);
-      const result3 = await analyzer.analyzeFile(filePath, content + '\n');
+      const result3 = await analyzer.analyzeFile(filePath, content + "\n");
 
       expect(result1.hash).toBe(result2.hash);
       expect(result1.hash).not.toBe(result3.hash);
     });
 
-    it('should handle JavaScript files', async () => {
-      const filePath = 'test.js';
+    it("should handle JavaScript files", async () => {
+      const filePath = "test.js";
       const content = `
         function myFunction() {
           return 'hello';
@@ -148,23 +157,23 @@ describe('FileAnalyzer', () => {
       expect(result.symbols).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'myFunction',
-            type: SymbolType.Function
+            name: "myFunction",
+            type: SymbolType.Function,
           }),
           expect.objectContaining({
-            name: 'myVariable',
-            type: SymbolType.Variable
+            name: "myVariable",
+            type: SymbolType.Variable,
           }),
           expect.objectContaining({
-            name: 'MyClass',
-            type: SymbolType.Class
-          })
-        ])
+            name: "MyClass",
+            type: SymbolType.Class,
+          }),
+        ]),
       );
     });
 
-    it('should handle Python files', async () => {
-      const filePath = 'test.py';
+    it("should handle Python files", async () => {
+      const filePath = "test.py";
       const content = `
         import os
         from typing import List, Optional
@@ -187,27 +196,27 @@ describe('FileAnalyzer', () => {
       expect(result.symbols).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'MyClass',
-            type: SymbolType.Class
+            name: "MyClass",
+            type: SymbolType.Class,
           }),
           expect.objectContaining({
-            name: 'my_function',
-            type: SymbolType.Function
+            name: "my_function",
+            type: SymbolType.Function,
           }),
           expect.objectContaining({
-            name: 'MY_CONSTANT',
-            type: SymbolType.Variable
-          })
-        ])
+            name: "MY_CONSTANT",
+            type: SymbolType.Variable,
+          }),
+        ]),
       );
-      
-      expect(result.imports).toContain('os');
-      expect(result.imports).toContain('typing');
+
+      expect(result.imports).toContain("os");
+      expect(result.imports).toContain("typing");
     });
 
-    it('should handle unsupported file types gracefully', async () => {
-      const filePath = 'test.txt';
-      const content = 'This is plain text';
+    it("should handle unsupported file types gracefully", async () => {
+      const filePath = "test.txt";
+      const content = "This is plain text";
 
       const result = await analyzer.analyzeFile(filePath, content);
 
@@ -219,15 +228,15 @@ describe('FileAnalyzer', () => {
   });
 });
 
-describe('SymbolExtractor', () => {
+describe("SymbolExtractor", () => {
   let extractor: SymbolExtractor;
 
   beforeEach(() => {
     extractor = new SymbolExtractor();
   });
 
-  describe('extractSymbols', () => {
-    it('should extract nested class members', () => {
+  describe("extractSymbols", () => {
+    it("should extract nested class members", () => {
       const content = `
         class OuterClass {
           private innerValue: string;
@@ -244,29 +253,29 @@ describe('SymbolExtractor', () => {
         }
       `;
 
-      const symbols = extractor.extractSymbols(content, 'typescript');
+      const symbols = extractor.extractSymbols(content, "typescript");
 
       expect(symbols).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'OuterClass',
+            name: "OuterClass",
             type: SymbolType.Class,
             members: expect.arrayContaining([
               expect.objectContaining({
-                name: 'innerValue',
-                type: SymbolType.Property
+                name: "innerValue",
+                type: SymbolType.Property,
               }),
               expect.objectContaining({
-                name: 'outerMethod',
-                type: SymbolType.Method
-              })
-            ])
-          })
-        ])
+                name: "outerMethod",
+                type: SymbolType.Method,
+              }),
+            ]),
+          }),
+        ]),
       );
     });
 
-    it('should extract arrow functions', () => {
+    it("should extract arrow functions", () => {
       const content = `
         const arrowFunc = (x: number) => x * 2;
         export const asyncArrow = async () => {
@@ -274,25 +283,25 @@ describe('SymbolExtractor', () => {
         };
       `;
 
-      const symbols = extractor.extractSymbols(content, 'typescript');
+      const symbols = extractor.extractSymbols(content, "typescript");
 
       expect(symbols).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'arrowFunc',
+            name: "arrowFunc",
             type: SymbolType.Function,
-            exported: false
+            exported: false,
           }),
           expect.objectContaining({
-            name: 'asyncArrow',
+            name: "asyncArrow",
             type: SymbolType.Function,
-            exported: true
-          })
-        ])
+            exported: true,
+          }),
+        ]),
       );
     });
 
-    it('should extract enum symbols', () => {
+    it("should extract enum symbols", () => {
       const content = `
         export enum Color {
           Red = 'red',
@@ -301,20 +310,20 @@ describe('SymbolExtractor', () => {
         }
       `;
 
-      const symbols = extractor.extractSymbols(content, 'typescript');
+      const symbols = extractor.extractSymbols(content, "typescript");
 
       expect(symbols).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'Color',
+            name: "Color",
             type: SymbolType.Enum,
-            exported: true
-          })
-        ])
+            exported: true,
+          }),
+        ]),
       );
     });
 
-    it('should extract namespace symbols', () => {
+    it("should extract namespace symbols", () => {
       const content = `
         namespace Utils {
           export function helper() {}
@@ -322,208 +331,208 @@ describe('SymbolExtractor', () => {
         }
       `;
 
-      const symbols = extractor.extractSymbols(content, 'typescript');
+      const symbols = extractor.extractSymbols(content, "typescript");
 
       expect(symbols).toEqual(
         expect.arrayContaining([
           expect.objectContaining({
-            name: 'Utils',
-            type: SymbolType.Namespace
-          })
-        ])
+            name: "Utils",
+            type: SymbolType.Namespace,
+          }),
+        ]),
       );
     });
   });
 
-  describe('language detection', () => {
-    it('should auto-detect TypeScript from file extension', () => {
-      const language = extractor.detectLanguage('file.ts');
-      expect(language).toBe('typescript');
+  describe("language detection", () => {
+    it("should auto-detect TypeScript from file extension", () => {
+      const language = extractor.detectLanguage("file.ts");
+      expect(language).toBe("typescript");
     });
 
-    it('should auto-detect JavaScript from file extension', () => {
-      const language = extractor.detectLanguage('file.js');
-      expect(language).toBe('javascript');
+    it("should auto-detect JavaScript from file extension", () => {
+      const language = extractor.detectLanguage("file.js");
+      expect(language).toBe("javascript");
     });
 
-    it('should auto-detect Python from file extension', () => {
-      const language = extractor.detectLanguage('file.py');
-      expect(language).toBe('python');
+    it("should auto-detect Python from file extension", () => {
+      const language = extractor.detectLanguage("file.py");
+      expect(language).toBe("python");
     });
 
-    it('should auto-detect Go from file extension', () => {
-      const language = extractor.detectLanguage('file.go');
-      expect(language).toBe('go');
+    it("should auto-detect Go from file extension", () => {
+      const language = extractor.detectLanguage("file.go");
+      expect(language).toBe("go");
     });
 
-    it('should return unknown for unsupported extensions', () => {
-      const language = extractor.detectLanguage('file.xyz');
-      expect(language).toBe('unknown');
+    it("should return unknown for unsupported extensions", () => {
+      const language = extractor.detectLanguage("file.xyz");
+      expect(language).toBe("unknown");
     });
   });
 });
 
-describe('SemanticIndex', () => {
+describe("SemanticIndex", () => {
   let index: SemanticIndex;
 
   beforeEach(() => {
     index = new SemanticIndex();
   });
 
-  describe('addFile', () => {
-    it('should add file to index', async () => {
+  describe("addFile", () => {
+    it("should add file to index", async () => {
       const fileIndex: FileIndex = {
-        path: 'test.ts',
+        path: "test.ts",
         symbols: [
           {
-            name: 'TestClass',
+            name: "TestClass",
             type: SymbolType.Class,
             line: 1,
-            exported: true
-          }
+            exported: true,
+          },
         ],
-        imports: ['react'],
-        exports: ['TestClass'],
-        hash: 'abc123',
-        size: 1024
+        imports: ["react"],
+        exports: ["TestClass"],
+        hash: "abc123",
+        size: 1024,
       };
 
       await index.addFile(fileIndex);
 
-      expect(index.hasFile('test.ts')).toBe(true);
-      expect(index.getFile('test.ts')).toEqual(fileIndex);
+      expect(index.hasFile("test.ts")).toBe(true);
+      expect(index.getFile("test.ts")).toEqual(fileIndex);
     });
 
-    it('should update existing file in index', async () => {
+    it("should update existing file in index", async () => {
       const fileIndex1: FileIndex = {
-        path: 'test.ts',
+        path: "test.ts",
         symbols: [],
         imports: [],
         exports: [],
-        hash: 'abc123',
-        size: 1024
+        hash: "abc123",
+        size: 1024,
       };
 
       const fileIndex2: FileIndex = {
         ...fileIndex1,
-        hash: 'def456',
-        size: 2048
+        hash: "def456",
+        size: 2048,
       };
 
       await index.addFile(fileIndex1);
       await index.addFile(fileIndex2);
 
-      expect(index.getFile('test.ts')).toEqual(fileIndex2);
+      expect(index.getFile("test.ts")).toEqual(fileIndex2);
     });
 
-    it('should update symbol references', async () => {
+    it("should update symbol references", async () => {
       const fileIndex: FileIndex = {
-        path: 'test.ts',
+        path: "test.ts",
         symbols: [
           {
-            name: 'TestClass',
+            name: "TestClass",
             type: SymbolType.Class,
             line: 1,
-            exported: true
-          }
+            exported: true,
+          },
         ],
         imports: [],
-        exports: ['TestClass'],
-        hash: 'abc123',
-        size: 1024
+        exports: ["TestClass"],
+        hash: "abc123",
+        size: 1024,
       };
 
       await index.addFile(fileIndex);
 
-      const references = index.getSymbolReferences('TestClass');
+      const references = index.getSymbolReferences("TestClass");
       expect(references).toEqual([
         {
-          file: 'test.ts',
+          file: "test.ts",
           line: 1,
           type: SymbolType.Class,
-          exported: true
-        }
+          exported: true,
+        },
       ]);
     });
   });
 
-  describe('removeFile', () => {
-    it('should remove file from index', async () => {
+  describe("removeFile", () => {
+    it("should remove file from index", async () => {
       const fileIndex: FileIndex = {
-        path: 'test.ts',
+        path: "test.ts",
         symbols: [
           {
-            name: 'TestClass',
+            name: "TestClass",
             type: SymbolType.Class,
             line: 1,
-            exported: true
-          }
+            exported: true,
+          },
         ],
         imports: [],
-        exports: ['TestClass'],
-        hash: 'abc123',
-        size: 1024
+        exports: ["TestClass"],
+        hash: "abc123",
+        size: 1024,
       };
 
       await index.addFile(fileIndex);
-      expect(index.hasFile('test.ts')).toBe(true);
+      expect(index.hasFile("test.ts")).toBe(true);
 
-      index.removeFile('test.ts');
-      expect(index.hasFile('test.ts')).toBe(false);
+      index.removeFile("test.ts");
+      expect(index.hasFile("test.ts")).toBe(false);
     });
 
-    it('should remove symbol references when file is removed', async () => {
+    it("should remove symbol references when file is removed", async () => {
       const fileIndex: FileIndex = {
-        path: 'test.ts',
+        path: "test.ts",
         symbols: [
           {
-            name: 'TestClass',
+            name: "TestClass",
             type: SymbolType.Class,
             line: 1,
-            exported: true
-          }
+            exported: true,
+          },
         ],
         imports: [],
-        exports: ['TestClass'],
-        hash: 'abc123',
-        size: 1024
+        exports: ["TestClass"],
+        hash: "abc123",
+        size: 1024,
       };
 
       await index.addFile(fileIndex);
-      expect(index.getSymbolReferences('TestClass')).toHaveLength(1);
+      expect(index.getSymbolReferences("TestClass")).toHaveLength(1);
 
-      index.removeFile('test.ts');
-      expect(index.getSymbolReferences('TestClass')).toEqual([]);
+      index.removeFile("test.ts");
+      expect(index.getSymbolReferences("TestClass")).toEqual([]);
     });
   });
 
-  describe('buildImportGraph', () => {
-    it('should build import graph from file imports', async () => {
+  describe("buildImportGraph", () => {
+    it("should build import graph from file imports", async () => {
       const file1: FileIndex = {
-        path: 'a.ts',
+        path: "a.ts",
         symbols: [],
-        imports: ['./b', './c'],
+        imports: ["./b", "./c"],
         exports: [],
-        hash: 'hash1',
-        size: 100
+        hash: "hash1",
+        size: 100,
       };
 
       const file2: FileIndex = {
-        path: 'b.ts',
+        path: "b.ts",
         symbols: [],
-        imports: ['./c'],
+        imports: ["./c"],
         exports: [],
-        hash: 'hash2',
-        size: 200
+        hash: "hash2",
+        size: 200,
       };
 
       const file3: FileIndex = {
-        path: 'c.ts',
+        path: "c.ts",
         symbols: [],
         imports: [],
         exports: [],
-        hash: 'hash3',
-        size: 300
+        hash: "hash3",
+        size: 300,
       };
 
       await index.addFile(file1);
@@ -532,39 +541,39 @@ describe('SemanticIndex', () => {
 
       const graph = index.buildImportGraph();
 
-      expect(graph.get('a.ts')).toEqual({
-        imports: ['./b', './c'],
-        importedBy: []
+      expect(graph.get("a.ts")).toEqual({
+        imports: ["./b", "./c"],
+        importedBy: [],
       });
 
-      expect(graph.get('b.ts')).toEqual({
-        imports: ['./c'],
-        importedBy: ['a.ts']
+      expect(graph.get("b.ts")).toEqual({
+        imports: ["./c"],
+        importedBy: ["a.ts"],
       });
 
-      expect(graph.get('c.ts')).toEqual({
+      expect(graph.get("c.ts")).toEqual({
         imports: [],
-        importedBy: ['a.ts', 'b.ts']
+        importedBy: ["a.ts", "b.ts"],
       });
     });
 
-    it('should handle circular dependencies', async () => {
+    it("should handle circular dependencies", async () => {
       const file1: FileIndex = {
-        path: 'a.ts',
+        path: "a.ts",
         symbols: [],
-        imports: ['./b'],
+        imports: ["./b"],
         exports: [],
-        hash: 'hash1',
-        size: 100
+        hash: "hash1",
+        size: 100,
       };
 
       const file2: FileIndex = {
-        path: 'b.ts',
+        path: "b.ts",
         symbols: [],
-        imports: ['./a'],
+        imports: ["./a"],
         exports: [],
-        hash: 'hash2',
-        size: 200
+        hash: "hash2",
+        size: 200,
       };
 
       await index.addFile(file1);
@@ -572,34 +581,34 @@ describe('SemanticIndex', () => {
 
       const graph = index.buildImportGraph();
 
-      expect(graph.get('a.ts')).toEqual({
-        imports: ['./b'],
-        importedBy: ['b.ts']
+      expect(graph.get("a.ts")).toEqual({
+        imports: ["./b"],
+        importedBy: ["b.ts"],
       });
 
-      expect(graph.get('b.ts')).toEqual({
-        imports: ['./a'],
-        importedBy: ['a.ts']
+      expect(graph.get("b.ts")).toEqual({
+        imports: ["./a"],
+        importedBy: ["a.ts"],
       });
     });
   });
 
-  describe('serialization', () => {
-    it('should serialize and deserialize index', async () => {
+  describe("serialization", () => {
+    it("should serialize and deserialize index", async () => {
       const fileIndex: FileIndex = {
-        path: 'test.ts',
+        path: "test.ts",
         symbols: [
           {
-            name: 'TestClass',
+            name: "TestClass",
             type: SymbolType.Class,
             line: 1,
-            exported: true
-          }
+            exported: true,
+          },
         ],
-        imports: ['react'],
-        exports: ['TestClass'],
-        hash: 'abc123',
-        size: 1024
+        imports: ["react"],
+        exports: ["TestClass"],
+        hash: "abc123",
+        size: 1024,
       };
 
       await index.addFile(fileIndex);
@@ -607,10 +616,10 @@ describe('SemanticIndex', () => {
       const serialized = index.serialize();
       const newIndex = SemanticIndex.deserialize(serialized);
 
-      expect(newIndex.hasFile('test.ts')).toBe(true);
-      expect(newIndex.getFile('test.ts')).toEqual(fileIndex);
-      expect(newIndex.getSymbolReferences('TestClass')).toEqual(
-        index.getSymbolReferences('TestClass')
+      expect(newIndex.hasFile("test.ts")).toBe(true);
+      expect(newIndex.getFile("test.ts")).toEqual(fileIndex);
+      expect(newIndex.getSymbolReferences("TestClass")).toEqual(
+        index.getSymbolReferences("TestClass"),
       );
     });
   });

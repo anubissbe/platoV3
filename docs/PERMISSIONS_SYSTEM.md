@@ -13,27 +13,29 @@ The PlatoV3 permissions system is a rule-based access control mechanism that gov
 ### Core Components
 
 **Files**:
+
 - `src/tools/permissions.ts` - Main permissions implementation
 - `src/__tests__/unit/tools/permissions.test.ts` - Comprehensive test suite (345 lines)
 - `~/.config/plato/config.yaml` - Global user configuration
 - `.plato/config.yaml` - Project-specific configuration
 
 **Key Types**:
+
 ```typescript
 type Rule = {
   match: { tool?: string; path?: string; command?: string };
-  action: 'allow' | 'deny' | 'confirm';
+  action: "allow" | "deny" | "confirm";
 };
 
 type Permissions = {
-  defaults?: Record<string, 'allow'|'deny'|'confirm'>;
+  defaults?: Record<string, "allow" | "deny" | "confirm">;
   rules?: Rule[];
 };
 
-type PermissionQuery = { 
-  tool: string; 
-  path?: string; 
-  command?: string 
+type PermissionQuery = {
+  tool: string;
+  path?: string;
+  command?: string;
 };
 ```
 
@@ -45,6 +47,7 @@ type PermissionQuery = {
 2. **Project Config**: `.plato/config.yaml` (in project root)
 
 **Merging Behavior**:
+
 - Global configuration loaded first
 - Project configuration merged over global (spread operator merge)
 - Project settings override global settings for the same keys
@@ -55,13 +58,13 @@ type PermissionQuery = {
 ```yaml
 permissions:
   defaults:
-    mcp_tool: allow      # Tool-specific default action
+    mcp_tool: allow # Tool-specific default action
     fs_patch: confirm
     browser: deny
   rules:
     - match:
         tool: mcp_tool
-        path: "/safe/*"    # Glob pattern matching
+        path: "/safe/*" # Glob pattern matching
       action: allow
     - match:
         tool: mcp_tool
@@ -82,24 +85,33 @@ permissions:
 ### Rule Matching Criteria
 
 **Tool Matching**: Exact string match
+
 ```typescript
 if (r.match.tool && r.match.tool !== q.tool) continue;
 ```
 
 **Path Matching**: Glob pattern support
+
 ```typescript
 function matchGlob(target: string, glob: string): boolean {
-  const esc = glob.replace(/[.+^${}()|[\]\\]/g, '\\$&')
-                  .replace(/\*\*/g, '.*')
-                  .replace(/\*/g, '[^/]*');
-  const re = new RegExp('^' + esc + '$');
+  const esc = glob
+    .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+    .replace(/\*\*/g, ".*")
+    .replace(/\*/g, "[^/]*");
+  const re = new RegExp("^" + esc + "$");
   return re.test(target);
 }
 ```
 
 **Command Matching**: Regular expression support
+
 ```typescript
-if (r.match.command && q.command && !new RegExp(r.match.command).test(q.command)) continue;
+if (
+  r.match.command &&
+  q.command &&
+  !new RegExp(r.match.command).test(q.command)
+)
+  continue;
 ```
 
 ## API Reference
@@ -107,11 +119,13 @@ if (r.match.command && q.command && !new RegExp(r.match.command).test(q.command)
 ### Core Functions
 
 **`loadPermissions(): Promise<Permissions>`**
+
 - Loads and merges global and project configurations
 - Returns empty object `{}` if no configuration found or on parse error
 - Silent failure mode - no exceptions thrown for missing files
 
 **`checkPermission(query: PermissionQuery): Promise<'allow'|'deny'|'confirm'>`**
+
 - Primary permission checking function
 - Implements full resolution logic with fallbacks
 - Supports tool, path, and command criteria
@@ -119,23 +133,28 @@ if (r.match.command && q.command && !new RegExp(r.match.command).test(q.command)
 ### Project Management Functions
 
 **`getProjectPermissions(): Promise<Permissions>`**
+
 - Returns only project-level permissions
 - Used for project-specific permission management
 
 **`savePermissions(permissions: Permissions): Promise<void>`**
+
 - Saves permissions to project configuration file
 - Creates `.plato/config.yaml` if it doesn't exist
 - Preserves other configuration sections
 
 **`setDefault(tool: string, action: 'allow'|'deny'|'confirm'): Promise<void>`**
+
 - Sets default action for a specific tool
 - Updates project configuration only
 
 **`addPermissionRule(rule: Rule): Promise<void>`**
+
 - Adds a new permission rule to project configuration
 - Appends to existing rules array
 
 **`removePermissionRule(index: number): Promise<void>`**
+
 - Removes rule at specified index from project configuration
 - Safe operation - ignores invalid indices
 
@@ -144,13 +163,14 @@ if (r.match.command && q.command && !new RegExp(r.match.command).test(q.command)
 ### Validated Behaviors (from Unit Tests)
 
 ✅ **Global + Project Merging**:
+
 ```yaml
 # Global: ~/.config/plato/config.yaml
 permissions:
   defaults:
     fs_patch: confirm
-    
-# Project: .plato/config.yaml  
+
+# Project: .plato/config.yaml
 permissions:
   defaults:
     mcp_tool: allow
@@ -161,22 +181,26 @@ permissions:
 # Result: Both defaults present, project rules included
 ```
 
-✅ **Missing File Handling**: 
+✅ **Missing File Handling**:
+
 - Missing configuration files return empty object `{}`
 - No exceptions thrown, silent failure mode
 - Ultimate fallback to `allow` for unknown tools
 
 ✅ **YAML Error Handling**:
+
 - Malformed YAML returns empty object `{}`
 - Parse errors caught and handled gracefully
 - No interruption to permission checking flow
 
 ✅ **Environment Variable Override**:
+
 - `PLATO_SKIP_PERMISSIONS=true` bypasses all permission checks
 - Returns `allow` for any permission query
 - Useful for debugging and emergency access
 
 ✅ **Dangerous Mode Integration**:
+
 - Integrates with main config system (`src/config.js`)
 - Respects `privacy.skip_all_prompts` and `privacy.dangerous_mode`
 - Consistent with CLI-wide safety mechanisms
@@ -189,15 +213,15 @@ permissions:
 rules:
   - match:
       tool: mcp_tool
-      path: "/safe/*"           # Matches /safe/file.txt
-    action: allow
-  - match:
-      tool: mcp_tool  
-      path: "**/*.json"         # Matches any .json file at any depth
+      path: "/safe/*" # Matches /safe/file.txt
     action: allow
   - match:
       tool: mcp_tool
-      path: "/project/**/config/*.yaml"  # Complex nested pattern
+      path: "**/*.json" # Matches any .json file at any depth
+    action: allow
+  - match:
+      tool: mcp_tool
+      path: "/project/**/config/*.yaml" # Complex nested pattern
     action: allow
 ```
 
@@ -207,11 +231,11 @@ rules:
 rules:
   - match:
       tool: mcp_tool
-      command: "^(delete|remove|rm)_.*"  # Dangerous operations
+      command: "^(delete|remove|rm)_.*" # Dangerous operations
     action: deny
   - match:
       tool: mcp_tool
-      command: "system_.*"              # System commands
+      command: "system_.*" # System commands
     action: confirm
 ```
 
@@ -234,33 +258,33 @@ This minimal configuration allows all MCP tool operations, which is appropriate 
 # ~/.config/plato/config.yaml (global security baseline)
 permissions:
   defaults:
-    mcp_tool: confirm      # Require confirmation for MCP operations
-    fs_patch: deny         # Deny file system changes by default
-    browser: allow         # Allow browser automation
-    shell: deny           # Deny shell operations by default
+    mcp_tool: confirm # Require confirmation for MCP operations
+    fs_patch: deny # Deny file system changes by default
+    browser: allow # Allow browser automation
+    shell: deny # Deny shell operations by default
   rules:
     # Allow safe read operations
     - match:
         tool: fs_patch
         command: "read_.*"
       action: allow
-    
+
     # Allow operations in safe directories
     - match:
         tool: fs_patch
         path: "/tmp/*"
       action: allow
     - match:
-        tool: fs_patch  
+        tool: fs_patch
         path: "*/test/*"
       action: allow
-    
+
     # Deny dangerous operations explicitly
     - match:
         tool: mcp_tool
         command: ".*delete.*|.*remove.*|.*destroy.*"
       action: deny
-      
+
     # Confirm system operations
     - match:
         tool: shell
@@ -277,7 +301,7 @@ The permissions system has comprehensive unit test coverage (345 lines) that val
 - ✅ Configuration loading and merging
 - ✅ Rule precedence and matching logic
 - ✅ Glob pattern matching for paths
-- ✅ Regex pattern matching for commands  
+- ✅ Regex pattern matching for commands
 - ✅ YAML parsing error handling
 - ✅ Permission modification operations
 - ✅ Edge cases and error conditions
@@ -299,18 +323,21 @@ Integration tests with real configuration files revealed that the current implem
 ### Common Issues
 
 **Permission Always Returns 'allow'**:
+
 1. Check if `PLATO_SKIP_PERMISSIONS=true` is set
 2. Verify config files exist and are readable
 3. Check YAML syntax validity
 4. Ensure project directory contains `.plato/config.yaml`
 
 **Rules Not Matching**:
+
 1. Verify rule order (first match wins)
 2. Test glob patterns with simple cases first
 3. Check regex syntax for command patterns
 4. Confirm tool names match exactly
 
 **Configuration Not Loading**:
+
 1. Verify file paths: `~/.config/plato/config.yaml` and `.plato/config.yaml`
 2. Check file permissions and ownership
 3. Validate YAML syntax
@@ -325,7 +352,7 @@ const { loadPermissions } = require('./dist/tools/permissions.js');
 loadPermissions().then(p => console.log(JSON.stringify(p, null, 2)));
 "
 
-# Test permission checking  
+# Test permission checking
 node -e "
 const { checkPermission } = require('./dist/tools/permissions.js');
 checkPermission({ tool: 'mcp', path: '/test' }).then(r => console.log(r));
@@ -353,6 +380,7 @@ checkPermission({ tool: 'mcp', path: '/test' }).then(r => console.log(r));
 ### Backward Compatibility
 
 The current implementation maintains backward compatibility with:
+
 - Empty or missing configuration files
 - Simple tool-based defaults (e.g., `mcp: allow`)
 - Legacy configuration structures
@@ -360,8 +388,9 @@ The current implementation maintains backward compatibility with:
 ### Future Enhancements
 
 Potential improvements identified:
+
 1. **File System Integration**: Resolve integration test issues for better real-world validation
-2. **Configuration Validation**: Add schema validation for configuration files  
+2. **Configuration Validation**: Add schema validation for configuration files
 3. **Audit Logging**: Track permission decisions for security analysis
 4. **UI Integration**: Configuration management interface
 5. **Performance Optimization**: Cache loaded configurations

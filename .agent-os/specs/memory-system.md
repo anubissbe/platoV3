@@ -7,6 +7,7 @@ The memory system must provide persistent storage of conversation context, proje
 ## Requirements
 
 ### Storage Location
+
 - **Directory**: `.plato/memory/`
 - **Format**: JSON files with automatic rotation
 - **Size Limit**: 10MB per memory file with compression
@@ -21,7 +22,7 @@ interface MemorySystem {
     history: ConversationMemory[];
     maxHistory: 10; // Keep last 10 conversations
   };
-  
+
   // Project understanding
   project: {
     structure: ProjectStructure;
@@ -29,7 +30,7 @@ interface MemorySystem {
     patterns: CodePatterns;
     lastUpdated: Date;
   };
-  
+
   // User preferences learned over time
   preferences: {
     codeStyle: StylePreferences;
@@ -64,6 +65,7 @@ interface ProjectStructure {
 ## Implementation
 
 ### File Structure
+
 ```
 .plato/memory/
 ├── current.json      # Active conversation memory
@@ -81,19 +83,21 @@ interface ProjectStructure {
 class MemoryManager {
   // Load memory on startup
   async loadMemory(): Promise<MemorySystem>;
-  
+
   // Save current state
   async saveMemory(memory: Partial<MemorySystem>): Promise<void>;
-  
+
   // Get specific memory
-  async getMemory(type: 'conversation' | 'project' | 'preferences'): Promise<any>;
-  
+  async getMemory(
+    type: "conversation" | "project" | "preferences",
+  ): Promise<any>;
+
   // Clear memory with optional type filter
   async clearMemory(type?: string): Promise<void>;
-  
+
   // Rotate old memories
   async rotateMemory(): Promise<void>;
-  
+
   // Compress memories over size limit
   async compressMemory(): Promise<void>;
 }
@@ -102,18 +106,21 @@ class MemoryManager {
 ## Behavior
 
 ### Auto-Save Triggers
+
 1. After each assistant response
 2. On session end
 3. Every 5 minutes during active use
 4. Before clearing or rotating
 
 ### Memory Rotation
+
 1. When current.json exceeds 1MB
 2. After 24 hours of conversation
 3. On explicit user request
 4. Keep max 10 historical conversations
 
 ### Compression Strategy
+
 1. Remove redundant context entries
 2. Summarize old conversations
 3. Compress JSON with gzip when > 5MB
@@ -122,6 +129,7 @@ class MemoryManager {
 ## Integration Points
 
 ### With Orchestrator
+
 ```typescript
 // In orchestrator.ts
 async getMemory(): Promise<any> {
@@ -134,23 +142,25 @@ async clearMemory(): Promise<void> {
 ```
 
 ### With Session Manager
+
 ```typescript
 // Auto-save on response
-orchestrator.on('response', async (data) => {
+orchestrator.on("response", async (data) => {
   await memoryManager.saveMemory({
     conversations: {
-      current: getCurrentConversation()
-    }
+      current: getCurrentConversation(),
+    },
   });
 });
 ```
 
 ### With Context Manager
+
 ```typescript
 // Track file access patterns
-contextManager.on('fileAccess', async (path) => {
+contextManager.on("fileAccess", async (path) => {
   await memoryManager.updatePreferences({
-    frequentFiles: addFileAccess(path)
+    frequentFiles: addFileAccess(path),
   });
 });
 ```
@@ -158,16 +168,21 @@ contextManager.on('fileAccess', async (path) => {
 ## Claude Code Compatibility
 
 ### Import/Export Format
+
 Must be able to import Claude Code memory exports:
+
 ```json
 {
   "version": "1.0",
   "type": "claude-code-memory",
-  "data": { /* memory contents */ }
+  "data": {
+    /* memory contents */
+  }
 }
 ```
 
 ### Migration Path
+
 1. Detect `.claude/memory/` directory
 2. Import existing memories
 3. Convert to Plato format

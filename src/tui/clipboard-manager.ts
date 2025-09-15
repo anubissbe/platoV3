@@ -3,11 +3,11 @@
  * Cross-platform clipboard operations for text selection copy functionality
  */
 
-import { exec, spawn } from 'child_process';
-import { promisify } from 'util';
-import * as os from 'os';
-import * as fs from 'fs';
-import * as path from 'path';
+import { exec, spawn } from "child_process";
+import { promisify } from "util";
+import * as os from "os";
+import * as fs from "fs";
+import * as path from "path";
 
 const execAsync = promisify(exec);
 
@@ -34,7 +34,7 @@ export interface ClipboardConfig {
   /** Enable clipboard functionality */
   enabled: boolean;
   /** Preferred clipboard method */
-  preferredMethod: 'auto' | 'native' | 'fallback';
+  preferredMethod: "auto" | "native" | "fallback";
   /** Timeout for clipboard operations (ms) */
   operationTimeout: number;
   /** Enable clipboard history */
@@ -58,7 +58,7 @@ export interface ClipboardEntry {
   /** Content */
   content: string;
   /** Content type */
-  type: 'text' | 'selection' | 'rich';
+  type: "text" | "selection" | "rich";
   /** Source of the content */
   source: string;
   /** Timestamp */
@@ -86,37 +86,39 @@ export interface ClipboardMethods {
  */
 const DEFAULT_CLIPBOARD_CONFIG: ClipboardConfig = {
   enabled: true,
-  preferredMethod: 'auto',
+  preferredMethod: "auto",
   operationTimeout: 5000,
   enableHistory: true,
   maxHistorySize: 50,
   enableFormatDetection: true,
   fallbackToFiles: true,
-  debug: false
+  debug: false,
 };
 
 /**
  * Platform detection utilities
  */
 export class PlatformDetector {
-  static getPlatform(): 'windows' | 'macos' | 'linux' | 'unknown' {
+  static getPlatform(): "windows" | "macos" | "linux" | "unknown" {
     const platform = os.platform();
     switch (platform) {
-      case 'win32':
-        return 'windows';
-      case 'darwin':
-        return 'macos';
-      case 'linux':
-        return 'linux';
+      case "win32":
+        return "windows";
+      case "darwin":
+        return "macos";
+      case "linux":
+        return "linux";
       default:
-        return 'unknown';
+        return "unknown";
     }
   }
 
   static isWSL(): boolean {
     try {
-      return fs.existsSync('/proc/version') && 
-             fs.readFileSync('/proc/version', 'utf8').includes('Microsoft');
+      return (
+        fs.existsSync("/proc/version") &&
+        fs.readFileSync("/proc/version", "utf8").includes("Microsoft")
+      );
     } catch {
       return false;
     }
@@ -128,9 +130,11 @@ export class PlatformDetector {
 
   static isContainer(): boolean {
     try {
-      return fs.existsSync('/.dockerenv') ||
-             (fs.existsSync('/proc/1/cgroup') && 
-              fs.readFileSync('/proc/1/cgroup', 'utf8').includes('docker'));
+      return (
+        fs.existsSync("/.dockerenv") ||
+        (fs.existsSync("/proc/1/cgroup") &&
+          fs.readFileSync("/proc/1/cgroup", "utf8").includes("docker"))
+      );
     } catch {
       return false;
     }
@@ -148,7 +152,7 @@ export class PlatformDetector {
       isWSL: this.isWSL(),
       isSSH: this.isSSH(),
       isContainer: this.isContainer(),
-      hasDisplay: !!(process.env.DISPLAY || process.env.WAYLAND_DISPLAY)
+      hasDisplay: !!(process.env.DISPLAY || process.env.WAYLAND_DISPLAY),
     };
   }
 }
@@ -168,18 +172,18 @@ export class ClipboardMethods {
           // Use PowerShell for reliable clipboard access
           const command = `powershell.exe -Command "Set-Clipboard -Value '${text.replace(/'/g, "''")}'`;
           await execAsync(command, { timeout: 5000 });
-          
+
           return {
             success: true,
             duration: Date.now() - startTime,
-            method: 'powershell'
+            method: "powershell",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'powershell'
+            method: "powershell",
           };
         }
       },
@@ -187,27 +191,32 @@ export class ClipboardMethods {
       async paste(): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          const { stdout } = await execAsync('powershell.exe -Command "Get-Clipboard"', { timeout: 5000 });
-          
+          const { stdout } = await execAsync(
+            'powershell.exe -Command "Get-Clipboard"',
+            { timeout: 5000 },
+          );
+
           return {
             success: true,
             data: stdout.trim(),
             duration: Date.now() - startTime,
-            method: 'powershell'
+            method: "powershell",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'powershell'
+            method: "powershell",
           };
         }
       },
 
       async isAvailable(): Promise<boolean> {
         try {
-          await execAsync('powershell.exe -Command "echo test"', { timeout: 2000 });
+          await execAsync('powershell.exe -Command "echo test"', {
+            timeout: 2000,
+          });
           return true;
         } catch {
           return false;
@@ -217,22 +226,25 @@ export class ClipboardMethods {
       async clear(): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          await execAsync('powershell.exe -Command "Set-Clipboard -Value \'\'"', { timeout: 5000 });
-          
+          await execAsync(
+            "powershell.exe -Command \"Set-Clipboard -Value ''\"",
+            { timeout: 5000 },
+          );
+
           return {
             success: true,
             duration: Date.now() - startTime,
-            method: 'powershell'
+            method: "powershell",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'powershell'
+            method: "powershell",
           };
         }
-      }
+      },
     };
   }
 
@@ -244,28 +256,28 @@ export class ClipboardMethods {
       async copy(text: string): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          const child = spawn('pbcopy');
+          const child = spawn("pbcopy");
           child.stdin.write(text);
           child.stdin.end();
-          
+
           await new Promise((resolve, reject) => {
-            child.on('close', (code) => {
+            child.on("close", (code) => {
               if (code === 0) resolve(undefined);
               else reject(new Error(`pbcopy failed with code ${code}`));
             });
           });
-          
+
           return {
             success: true,
             duration: Date.now() - startTime,
-            method: 'pbcopy'
+            method: "pbcopy",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'pbcopy'
+            method: "pbcopy",
           };
         }
       },
@@ -273,27 +285,27 @@ export class ClipboardMethods {
       async paste(): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          const { stdout } = await execAsync('pbpaste', { timeout: 5000 });
-          
+          const { stdout } = await execAsync("pbpaste", { timeout: 5000 });
+
           return {
             success: true,
             data: stdout,
             duration: Date.now() - startTime,
-            method: 'pbpaste'
+            method: "pbpaste",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'pbpaste'
+            method: "pbpaste",
           };
         }
       },
 
       async isAvailable(): Promise<boolean> {
         try {
-          await execAsync('which pbcopy', { timeout: 2000 });
+          await execAsync("which pbcopy", { timeout: 2000 });
           return true;
         } catch {
           return false;
@@ -303,31 +315,31 @@ export class ClipboardMethods {
       async clear(): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          const child = spawn('pbcopy');
-          child.stdin.write('');
+          const child = spawn("pbcopy");
+          child.stdin.write("");
           child.stdin.end();
-          
+
           await new Promise((resolve, reject) => {
-            child.on('close', (code) => {
+            child.on("close", (code) => {
               if (code === 0) resolve(undefined);
               else reject(new Error(`pbcopy failed with code ${code}`));
             });
           });
-          
+
           return {
             success: true,
             duration: Date.now() - startTime,
-            method: 'pbcopy'
+            method: "pbcopy",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'pbcopy'
+            method: "pbcopy",
           };
         }
-      }
+      },
     };
   }
 
@@ -338,72 +350,80 @@ export class ClipboardMethods {
     return {
       async copy(text: string): Promise<ClipboardResult> {
         const startTime = Date.now();
-        
+
         // Try multiple clipboard methods
-        const methods = ['xclip -selection clipboard', 'xsel --clipboard --input', 'wl-copy'];
-        
+        const methods = [
+          "xclip -selection clipboard",
+          "xsel --clipboard --input",
+          "wl-copy",
+        ];
+
         for (const method of methods) {
           try {
             const child = spawn(method, { shell: true });
             child.stdin.write(text);
             child.stdin.end();
-            
+
             await new Promise((resolve, reject) => {
-              child.on('close', (code) => {
+              child.on("close", (code) => {
                 if (code === 0) resolve(undefined);
                 else reject(new Error(`${method} failed with code ${code}`));
               });
             });
-            
+
             return {
               success: true,
               duration: Date.now() - startTime,
-              method: method.split(' ')[0]
+              method: method.split(" ")[0],
             };
           } catch {
             continue; // Try next method
           }
         }
-        
+
         return {
           success: false,
-          error: 'No clipboard method available (tried xclip, xsel, wl-copy)',
+          error: "No clipboard method available (tried xclip, xsel, wl-copy)",
           duration: Date.now() - startTime,
-          method: 'none'
+          method: "none",
         };
       },
 
       async paste(): Promise<ClipboardResult> {
         const startTime = Date.now();
-        
-        const methods = ['xclip -selection clipboard -o', 'xsel --clipboard --output', 'wl-paste'];
-        
+
+        const methods = [
+          "xclip -selection clipboard -o",
+          "xsel --clipboard --output",
+          "wl-paste",
+        ];
+
         for (const method of methods) {
           try {
             const { stdout } = await execAsync(method, { timeout: 5000 });
-            
+
             return {
               success: true,
               data: stdout,
               duration: Date.now() - startTime,
-              method: method.split(' ')[0]
+              method: method.split(" ")[0],
             };
           } catch {
             continue; // Try next method
           }
         }
-        
+
         return {
           success: false,
-          error: 'No clipboard method available for reading',
+          error: "No clipboard method available for reading",
           duration: Date.now() - startTime,
-          method: 'none'
+          method: "none",
         };
       },
 
       async isAvailable(): Promise<boolean> {
-        const methods = ['xclip', 'xsel', 'wl-copy'];
-        
+        const methods = ["xclip", "xsel", "wl-copy"];
+
         for (const method of methods) {
           try {
             await execAsync(`which ${method}`, { timeout: 2000 });
@@ -412,49 +432,53 @@ export class ClipboardMethods {
             continue;
           }
         }
-        
+
         return false;
       },
 
       async clear(): Promise<ClipboardResult> {
         const startTime = Date.now();
-        
-        const methods = ['xclip -selection clipboard', 'xsel --clipboard --clear', 'wl-copy'];
-        
+
+        const methods = [
+          "xclip -selection clipboard",
+          "xsel --clipboard --clear",
+          "wl-copy",
+        ];
+
         for (const method of methods) {
           try {
-            if (method.includes('xsel') && method.includes('clear')) {
+            if (method.includes("xsel") && method.includes("clear")) {
               await execAsync(method, { timeout: 5000 });
             } else {
               const child = spawn(method, { shell: true });
-              child.stdin.write('');
+              child.stdin.write("");
               child.stdin.end();
-              
+
               await new Promise((resolve, reject) => {
-                child.on('close', (code) => {
+                child.on("close", (code) => {
                   if (code === 0) resolve(undefined);
                   else reject(new Error(`${method} failed with code ${code}`));
                 });
               });
             }
-            
+
             return {
               success: true,
               duration: Date.now() - startTime,
-              method: method.split(' ')[0]
+              method: method.split(" ")[0],
             };
           } catch {
             continue;
           }
         }
-        
+
         return {
           success: false,
-          error: 'No clipboard method available for clearing',
+          error: "No clipboard method available for clearing",
           duration: Date.now() - startTime,
-          method: 'none'
+          method: "none",
         };
-      }
+      },
     };
   }
 
@@ -466,28 +490,28 @@ export class ClipboardMethods {
       async copy(text: string): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          const child = spawn('clip.exe');
+          const child = spawn("clip.exe");
           child.stdin.write(text);
           child.stdin.end();
-          
+
           await new Promise((resolve, reject) => {
-            child.on('close', (code) => {
+            child.on("close", (code) => {
               if (code === 0) resolve(undefined);
               else reject(new Error(`clip.exe failed with code ${code}`));
             });
           });
-          
+
           return {
             success: true,
             duration: Date.now() - startTime,
-            method: 'clip.exe'
+            method: "clip.exe",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'clip.exe'
+            method: "clip.exe",
           };
         }
       },
@@ -495,27 +519,30 @@ export class ClipboardMethods {
       async paste(): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          const { stdout } = await execAsync('powershell.exe -Command "Get-Clipboard"', { timeout: 5000 });
-          
+          const { stdout } = await execAsync(
+            'powershell.exe -Command "Get-Clipboard"',
+            { timeout: 5000 },
+          );
+
           return {
             success: true,
-            data: stdout.replace(/\r\n/g, '\n').replace(/\r/g, '\n'),
+            data: stdout.replace(/\r\n/g, "\n").replace(/\r/g, "\n"),
             duration: Date.now() - startTime,
-            method: 'powershell.exe'
+            method: "powershell.exe",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'powershell.exe'
+            method: "powershell.exe",
           };
         }
       },
 
       async isAvailable(): Promise<boolean> {
         try {
-          await execAsync('which clip.exe', { timeout: 2000 });
+          await execAsync("which clip.exe", { timeout: 2000 });
           return true;
         } catch {
           return false;
@@ -525,31 +552,31 @@ export class ClipboardMethods {
       async clear(): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          const child = spawn('clip.exe');
-          child.stdin.write('');
+          const child = spawn("clip.exe");
+          child.stdin.write("");
           child.stdin.end();
-          
+
           await new Promise((resolve, reject) => {
-            child.on('close', (code) => {
+            child.on("close", (code) => {
               if (code === 0) resolve(undefined);
               else reject(new Error(`clip.exe failed with code ${code}`));
             });
           });
-          
+
           return {
             success: true,
             duration: Date.now() - startTime,
-            method: 'clip.exe'
+            method: "clip.exe",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'clip.exe'
+            method: "clip.exe",
           };
         }
-      }
+      },
     };
   }
 
@@ -557,25 +584,25 @@ export class ClipboardMethods {
    * Fallback clipboard methods using temporary files
    */
   static fallback(): ClipboardMethods {
-    const clipboardFile = path.join(os.tmpdir(), 'plato-clipboard.txt');
-    
+    const clipboardFile = path.join(os.tmpdir(), "plato-clipboard.txt");
+
     return {
       async copy(text: string): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          await fs.promises.writeFile(clipboardFile, text, 'utf8');
-          
+          await fs.promises.writeFile(clipboardFile, text, "utf8");
+
           return {
             success: true,
             duration: Date.now() - startTime,
-            method: 'file'
+            method: "file",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'file'
+            method: "file",
           };
         }
       },
@@ -583,20 +610,20 @@ export class ClipboardMethods {
       async paste(): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          const data = await fs.promises.readFile(clipboardFile, 'utf8');
-          
+          const data = await fs.promises.readFile(clipboardFile, "utf8");
+
           return {
             success: true,
             data,
             duration: Date.now() - startTime,
-            method: 'file'
+            method: "file",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'file'
+            method: "file",
           };
         }
       },
@@ -608,22 +635,22 @@ export class ClipboardMethods {
       async clear(): Promise<ClipboardResult> {
         const startTime = Date.now();
         try {
-          await fs.promises.writeFile(clipboardFile, '', 'utf8');
-          
+          await fs.promises.writeFile(clipboardFile, "", "utf8");
+
           return {
             success: true,
             duration: Date.now() - startTime,
-            method: 'file'
+            method: "file",
           };
         } catch (error) {
           return {
             success: false,
             error: error instanceof Error ? error.message : String(error),
             duration: Date.now() - startTime,
-            method: 'file'
+            method: "file",
           };
         }
-      }
+      },
     };
   }
 }
@@ -648,8 +675,8 @@ export class ClipboardManager {
    */
   private detectBestMethods(): ClipboardMethods {
     const envInfo = PlatformDetector.getEnvironmentInfo();
-    
-    if (this.config.preferredMethod === 'fallback') {
+
+    if (this.config.preferredMethod === "fallback") {
       return ClipboardMethods.fallback();
     }
 
@@ -660,11 +687,11 @@ export class ClipboardManager {
 
     // Platform-specific methods
     switch (envInfo.platform) {
-      case 'windows':
+      case "windows":
         return ClipboardMethods.windows();
-      case 'macos':
+      case "macos":
         return ClipboardMethods.macos();
-      case 'linux':
+      case "linux":
         return ClipboardMethods.linux();
       default:
         return ClipboardMethods.fallback();
@@ -674,21 +701,28 @@ export class ClipboardManager {
   /**
    * Copy text to clipboard
    */
-  async copyText(text: string, source: string = 'manual'): Promise<ClipboardResult> {
+  async copyText(
+    text: string,
+    source: string = "manual",
+  ): Promise<ClipboardResult> {
     if (!this.config.enabled) {
       return {
         success: false,
-        error: 'Clipboard functionality is disabled',
+        error: "Clipboard functionality is disabled",
         duration: 0,
-        method: 'none'
+        method: "none",
       };
     }
 
     // Try primary method
     let result = await this.methods.copy(text);
-    
+
     // Fallback if primary method failed and fallback is enabled
-    if (!result.success && this.config.fallbackToFiles && this.methods !== ClipboardMethods.fallback()) {
+    if (
+      !result.success &&
+      this.config.fallbackToFiles &&
+      this.methods !== ClipboardMethods.fallback()
+    ) {
       const fallbackMethods = ClipboardMethods.fallback();
       result = await fallbackMethods.copy(text);
       result.method = `fallback-${result.method}`;
@@ -696,7 +730,7 @@ export class ClipboardManager {
 
     // Add to history if successful
     if (result.success && this.config.enableHistory) {
-      this.addToHistory(text, 'text', source);
+      this.addToHistory(text, "text", source);
     }
 
     if (this.config.debug) {
@@ -713,17 +747,21 @@ export class ClipboardManager {
     if (!this.config.enabled) {
       return {
         success: false,
-        error: 'Clipboard functionality is disabled',
+        error: "Clipboard functionality is disabled",
         duration: 0,
-        method: 'none'
+        method: "none",
       };
     }
 
     // Try primary method
     let result = await this.methods.paste();
-    
+
     // Fallback if primary method failed
-    if (!result.success && this.config.fallbackToFiles && this.methods !== ClipboardMethods.fallback()) {
+    if (
+      !result.success &&
+      this.config.fallbackToFiles &&
+      this.methods !== ClipboardMethods.fallback()
+    ) {
       const fallbackMethods = ClipboardMethods.fallback();
       result = await fallbackMethods.paste();
       result.method = `fallback-${result.method}`;
@@ -743,14 +781,14 @@ export class ClipboardManager {
     if (!this.config.enabled) {
       return {
         success: false,
-        error: 'Clipboard functionality is disabled',
+        error: "Clipboard functionality is disabled",
         duration: 0,
-        method: 'none'
+        method: "none",
       };
     }
 
     const result = await this.methods.clear();
-    
+
     if (this.config.debug) {
       console.debug(`[ClipboardManager] Clear result:`, result);
     }
@@ -772,18 +810,22 @@ export class ClipboardManager {
   /**
    * Add entry to clipboard history
    */
-  private addToHistory(content: string, type: ClipboardEntry['type'], source: string): void {
+  private addToHistory(
+    content: string,
+    type: ClipboardEntry["type"],
+    source: string,
+  ): void {
     const entry: ClipboardEntry = {
       id: this.generateEntryId(),
       content,
       type,
       source,
       timestamp: Date.now(),
-      size: content.length
+      size: content.length,
     };
 
     // Remove duplicate if exists
-    const existingIndex = this.history.findIndex(e => e.content === content);
+    const existingIndex = this.history.findIndex((e) => e.content === content);
     if (existingIndex >= 0) {
       this.history.splice(existingIndex, 1);
       this.historyMap.delete(this.history[existingIndex]?.id);
@@ -796,7 +838,7 @@ export class ClipboardManager {
     // Trim to max size
     if (this.history.length > this.config.maxHistorySize) {
       const removed = this.history.splice(this.config.maxHistorySize);
-      removed.forEach(item => this.historyMap.delete(item.id));
+      removed.forEach((item) => this.historyMap.delete(item.id));
     }
   }
 
@@ -829,13 +871,13 @@ export class ClipboardManager {
     if (!entry) {
       return {
         success: false,
-        error: 'History entry not found',
+        error: "History entry not found",
         duration: 0,
-        method: 'history'
+        method: "history",
       };
     }
 
-    return await this.copyText(entry.content, 'history');
+    return await this.copyText(entry.content, "history");
   }
 
   /**
@@ -851,7 +893,7 @@ export class ClipboardManager {
    */
   updateConfig(config: Partial<ClipboardConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     // Re-detect methods if preferred method changed
     if (config.preferredMethod) {
       this.methods = this.detectBestMethods();
@@ -881,7 +923,7 @@ export class ClipboardManager {
       environmentInfo: this.getEnvironmentInfo(),
       historySize: this.history.length,
       maxHistorySize: this.config.maxHistorySize,
-      methodsAvailable: this.methods !== null
+      methodsAvailable: this.methods !== null,
     };
   }
 
@@ -894,10 +936,10 @@ export class ClipboardManager {
     clearTest: ClipboardResult;
     available: boolean;
   }> {
-    const testText = 'Plato clipboard test';
-    
+    const testText = "Plato clipboard test";
+
     const available = await this.isAvailable();
-    const copyTest = await this.copyText(testText, 'test');
+    const copyTest = await this.copyText(testText, "test");
     const pasteTest = await this.pasteText();
     const clearTest = await this.clearClipboard();
 
@@ -905,7 +947,7 @@ export class ClipboardManager {
       copyTest,
       pasteTest,
       clearTest,
-      available
+      available,
     };
   }
 }

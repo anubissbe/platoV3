@@ -1,10 +1,10 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { exec } from "child_process";
+import { promisify } from "util";
 import {
   CustomCommand,
   CommandExecutionResult,
   CommandExecutionOptions,
-} from './types.js';
+} from "./types.js";
 
 const execAsync = promisify(exec);
 
@@ -13,8 +13,8 @@ const execAsync = promisify(exec);
  */
 export async function executeCustomCommand(
   command: CustomCommand,
-  args: string = '',
-  options: CommandExecutionOptions = {}
+  args: string = "",
+  options: CommandExecutionOptions = {},
 ): Promise<CommandExecutionResult> {
   const {
     timeout = 30000,
@@ -52,7 +52,7 @@ export async function executeCustomCommand(
     const duration = Date.now() - startTime;
 
     // Handle timeout specifically
-    if (error.killed && error.signal === 'SIGTERM') {
+    if (error.killed && error.signal === "SIGTERM") {
       return {
         success: false,
         error: `Command timed out after ${timeout}ms`,
@@ -76,15 +76,11 @@ export async function executeCustomCommand(
  */
 export async function executeCustomCommandStreaming(
   command: CustomCommand,
-  args: string = '',
+  args: string = "",
   onOutput: (chunk: string) => void,
-  options: CommandExecutionOptions = {}
+  options: CommandExecutionOptions = {},
 ): Promise<CommandExecutionResult> {
-  const {
-    timeout = 30000,
-    cwd = process.cwd(),
-    env = process.env,
-  } = options;
+  const { timeout = 30000, cwd = process.cwd(), env = process.env } = options;
 
   // Substitute $ARGUMENTS placeholder
   let script = command.script;
@@ -94,8 +90,8 @@ export async function executeCustomCommandStreaming(
 
   return new Promise((resolve) => {
     const startTime = Date.now();
-    let output = '';
-    let errorOutput = '';
+    let output = "";
+    let errorOutput = "";
     let timedOut = false;
 
     const child = exec(script, {
@@ -106,23 +102,23 @@ export async function executeCustomCommandStreaming(
     // Set up timeout
     const timeoutHandle = setTimeout(() => {
       timedOut = true;
-      child.kill('SIGTERM');
+      child.kill("SIGTERM");
     }, timeout);
 
     // Handle stdout
-    child.stdout?.on('data', (chunk) => {
+    child.stdout?.on("data", (chunk) => {
       const text = chunk.toString();
       output += text;
       onOutput(text);
     });
 
     // Handle stderr
-    child.stderr?.on('data', (chunk) => {
+    child.stderr?.on("data", (chunk) => {
       errorOutput += chunk.toString();
     });
 
     // Handle process exit
-    child.on('exit', (code, signal) => {
+    child.on("exit", (code, signal) => {
       clearTimeout(timeoutHandle);
       const duration = Date.now() - startTime;
 
@@ -155,10 +151,10 @@ export async function executeCustomCommandStreaming(
     });
 
     // Handle process error
-    child.on('error', (error) => {
+    child.on("error", (error) => {
       clearTimeout(timeoutHandle);
       const duration = Date.now() - startTime;
-      
+
       resolve({
         success: false,
         error: error.message,
@@ -172,20 +168,25 @@ export async function executeCustomCommandStreaming(
 /**
  * Validate a command before execution
  */
-export function validateCommand(command: CustomCommand, args?: string): string[] {
+export function validateCommand(
+  command: CustomCommand,
+  args?: string,
+): string[] {
   const errors: string[] = [];
 
   if (!command.script) {
-    errors.push('Command has no script to execute');
+    errors.push("Command has no script to execute");
   }
 
   if (command.hasArguments && !args) {
     // Warning, not an error
-    console.warn(`Command "${command.name}" expects arguments but none provided`);
+    console.warn(
+      `Command "${command.name}" expects arguments but none provided`,
+    );
   }
 
   if (!command.name) {
-    errors.push('Command has no name');
+    errors.push("Command has no name");
   }
 
   return errors;
@@ -196,23 +197,22 @@ export function validateCommand(command: CustomCommand, args?: string): string[]
  */
 export function prepareEnvironment(
   command: CustomCommand,
-  baseEnv: NodeJS.ProcessEnv = process.env
+  baseEnv: NodeJS.ProcessEnv = process.env,
 ): Record<string, string> {
   const env: Record<string, string> = {};
-  
+
   // Filter out undefined values from process.env
   Object.entries(baseEnv).forEach(([key, value]) => {
     if (value !== undefined) {
       env[key] = value;
     }
   });
-  
+
   return {
     ...env,
     PLATO_COMMAND: command.name,
     PLATO_COMMAND_FILE: command.filePath || "",
   };
-
 }
 /**
  * Parse command arguments from user input
@@ -224,7 +224,7 @@ export function parseCommandArguments(input: string): {
 } {
   const parts = input.trim().split(/\s+/);
   const commandName = parts[0];
-  const args = parts.slice(1).join(' ');
+  const args = parts.slice(1).join(" ");
 
   return { commandName, args };
 }
@@ -241,12 +241,12 @@ export class CommandRunner {
 
   async run(
     command: CustomCommand,
-    args: string = '',
-    options?: CommandExecutionOptions
+    args: string = "",
+    options?: CommandExecutionOptions,
   ): Promise<CommandExecutionResult> {
     const mergedOptions = { ...this.defaultOptions, ...options };
     const env = prepareEnvironment(command, mergedOptions.env);
-    
+
     return executeCustomCommand(command, args, {
       ...mergedOptions,
       env,
@@ -255,13 +255,13 @@ export class CommandRunner {
 
   async runStreaming(
     command: CustomCommand,
-    args: string = '',
+    args: string = "",
     onOutput: (chunk: string) => void,
-    options?: CommandExecutionOptions
+    options?: CommandExecutionOptions,
   ): Promise<CommandExecutionResult> {
     const mergedOptions = { ...this.defaultOptions, ...options };
     const env = prepareEnvironment(command, mergedOptions.env);
-    
+
     return executeCustomCommandStreaming(command, args, onOutput, {
       ...mergedOptions,
       env,

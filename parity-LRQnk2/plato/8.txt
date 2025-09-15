@@ -1,0 +1,26 @@
+ plato | copilot ○ unknown                         0 msgs | 1s | ○ disconnected
+ Tokens:--
+────────────────────────────────────────────────────────────────────────────────
+
+
+
+
+
+
+            Welcome to Plato! Start a conversation by typing below.
+
+
+                        Type /help for available commands
+
+
+
+
+
+
+🖱️  MOUSE | comprehensive-testing | new
+
+ /memory
+
+
+
+

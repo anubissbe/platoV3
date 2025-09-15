@@ -3,9 +3,9 @@
  * Scores files based on multiple factors to determine relevance to current context
  */
 
-import { SemanticIndex } from './semantic-index';
-import { RelevanceScore, RelevanceReason, FileIndex } from './types.js';
-import * as path from 'path';
+import { SemanticIndex } from "./semantic-index";
+import { RelevanceScore, RelevanceReason, FileIndex } from "./types.js";
+import * as path from "path";
 
 export interface ScoringContext {
   currentFile: string;
@@ -41,47 +41,53 @@ export class FileRelevanceScorer {
     let confidence = 0.5;
 
     // Direct reference scoring (highest weight)
-    const directScore = this.scoreDirectReference(filePath, context.currentFile);
+    const directScore = this.scoreDirectReference(
+      filePath,
+      context.currentFile,
+    );
     if (directScore > 0) {
-      score += directScore * 85;  // Increased from 40 to 85
-      reasons.push('direct_reference');
+      score += directScore * 85; // Increased from 40 to 85
+      reasons.push("direct_reference");
       confidence = Math.max(confidence, 0.9);
     }
 
     // Symbol matching
     const symbolScore = this.scoreSymbolMatch(filePath, context.userQuery);
     if (symbolScore > 0) {
-      score += symbolScore * 65;  // Increased from 25 to 65
-      reasons.push('symbol_match');
+      score += symbolScore * 65; // Increased from 25 to 65
+      reasons.push("symbol_match");
       confidence = Math.max(confidence, 0.75);
     }
 
     // Import chain distance
     const chainScore = this.scoreImportChain(filePath, context.currentFile);
     if (chainScore > 0) {
-      score += chainScore * 40;  // Increased from 20 to 40
-      reasons.push('import_chain');
+      score += chainScore * 40; // Increased from 20 to 40
+      reasons.push("import_chain");
       confidence = Math.max(confidence, 0.7);
     }
 
     // Recent access
     if (context.recentFiles.includes(filePath)) {
-      const recencyBoost = 30 * (1 - context.recentFiles.indexOf(filePath) / context.recentFiles.length);  // Increased from 15 to 30
+      const recencyBoost =
+        30 *
+        (1 -
+          context.recentFiles.indexOf(filePath) / context.recentFiles.length); // Increased from 15 to 30
       score += recencyBoost;
-      reasons.push('recent_access');
+      reasons.push("recent_access");
       confidence = Math.max(confidence, 0.6);
     }
 
     // User patterns
     const patternScore = this.scoreUserPattern(filePath, context.currentFile);
     if (patternScore > 0) {
-      score += patternScore * 35;  // Increased from 10 to 35
-      reasons.push('user_pattern');
+      score += patternScore * 35; // Increased from 10 to 35
+      reasons.push("user_pattern");
     }
 
     // Size penalty for large utility files
     const sizePenalty = this.calculateSizePenalty(filePath);
-    score *= (1 - sizePenalty);
+    score *= 1 - sizePenalty;
 
     // Ensure score is within bounds
     score = Math.max(0, Math.min(100, score));
@@ -90,7 +96,7 @@ export class FileRelevanceScorer {
       file: filePath,
       score: Math.round(score),
       reasons,
-      confidence
+      confidence,
     };
   }
 
@@ -98,19 +104,19 @@ export class FileRelevanceScorer {
    * Score multiple files and return sorted by relevance
    */
   scoreMultipleFiles(
-    files: string[], 
+    files: string[],
     context: ScoringContext,
-    options?: ScoringOptions
+    options?: ScoringOptions,
   ): RelevanceScore[] {
-    const scores = files.map(file => this.scoreFile(file, context));
-    
+    const scores = files.map((file) => this.scoreFile(file, context));
+
     // Sort by score descending
     scores.sort((a, b) => b.score - a.score);
 
     // Apply filters
     let filtered = scores;
     if (options?.minScore !== undefined) {
-      filtered = filtered.filter(s => s.score >= options.minScore!);
+      filtered = filtered.filter((s) => s.score >= options.minScore!);
     }
     if (options?.maxFiles !== undefined) {
       filtered = filtered.slice(0, options.maxFiles);
@@ -128,11 +134,11 @@ export class FileRelevanceScorer {
     }
 
     const history = this.userHistory[contextFile];
-    
+
     // Add to history if not already recent
     if (!history.includes(accessedFile)) {
       history.unshift(accessedFile);
-      
+
       // Limit history size per context
       if (history.length > this.HISTORY_LIMIT_PER_CONTEXT) {
         history.pop();
@@ -157,7 +163,10 @@ export class FileRelevanceScorer {
     this.userHistory = {};
   }
 
-  private scoreDirectReference(targetFile: string, currentFile: string): number {
+  private scoreDirectReference(
+    targetFile: string,
+    currentFile: string,
+  ): number {
     const currentIndex = this.index.getFile(currentFile);
     if (!currentIndex) return 0;
 
@@ -165,14 +174,16 @@ export class FileRelevanceScorer {
     // Match both exact paths and relative imports
     const targetBasename = path.basename(targetFile, path.extname(targetFile));
     const targetDir = path.dirname(targetFile);
-    
+
     for (const imp of currentIndex.imports) {
       // Handle relative imports like './utils'
-      if (imp.startsWith('.')) {
+      if (imp.startsWith(".")) {
         const resolvedPath = this.resolveImportPath(currentFile, imp);
-        if (resolvedPath === targetFile || 
-            resolvedPath === targetFile.replace(/\.(ts|js|tsx|jsx)$/, '') ||
-            resolvedPath.endsWith(targetBasename)) {
+        if (
+          resolvedPath === targetFile ||
+          resolvedPath === targetFile.replace(/\.(ts|js|tsx|jsx)$/, "") ||
+          resolvedPath.endsWith(targetBasename)
+        ) {
           return 1.0;
         }
       }
@@ -185,18 +196,22 @@ export class FileRelevanceScorer {
     // Check if target file imports current
     const targetIndex = this.index.getFile(targetFile);
     if (targetIndex) {
-      const currentBasename = path.basename(currentFile, path.extname(currentFile));
-      
+      const currentBasename = path.basename(
+        currentFile,
+        path.extname(currentFile),
+      );
+
       for (const imp of targetIndex.imports) {
-        if (imp.startsWith('.')) {
+        if (imp.startsWith(".")) {
           const resolvedPath = this.resolveImportPath(targetFile, imp);
-          if (resolvedPath === currentFile || 
-              resolvedPath === currentFile.replace(/\.(ts|js|tsx|jsx)$/, '') ||
-              resolvedPath.endsWith(currentBasename)) {
+          if (
+            resolvedPath === currentFile ||
+            resolvedPath === currentFile.replace(/\.(ts|js|tsx|jsx)$/, "") ||
+            resolvedPath.endsWith(currentBasename)
+          ) {
             return 0.8;
           }
-        }
-        else if (imp === currentFile || imp.endsWith(currentBasename)) {
+        } else if (imp === currentFile || imp.endsWith(currentBasename)) {
           return 0.8;
         }
       }
@@ -217,21 +232,26 @@ export class FileRelevanceScorer {
     let matchScore = 0;
     for (const symbol of fileIndex.symbols) {
       const symbolLower = symbol.name.toLowerCase();
-      
+
       // Exact match
-      if (queryTokens.some(token => symbolLower === token)) {
+      if (queryTokens.some((token) => symbolLower === token)) {
         matchScore += 1.0;
       }
       // Partial match
-      else if (queryTokens.some(token => symbolLower.includes(token) || token.includes(symbolLower))) {
+      else if (
+        queryTokens.some(
+          (token) => symbolLower.includes(token) || token.includes(symbolLower),
+        )
+      ) {
         matchScore += 0.5;
       }
     }
 
     // Normalize by number of symbols (favor focused files)
-    const normalizedScore = fileIndex.symbols.length > 0 
-      ? matchScore / Math.sqrt(fileIndex.symbols.length)
-      : 0;
+    const normalizedScore =
+      fileIndex.symbols.length > 0
+        ? matchScore / Math.sqrt(fileIndex.symbols.length)
+        : 0;
 
     return Math.min(1.0, normalizedScore);
   }
@@ -239,22 +259,26 @@ export class FileRelevanceScorer {
   private scoreImportChain(targetFile: string, currentFile: string): number {
     // Build import graph if not available
     const graph = this.index.buildImportGraph();
-    
+
     // Normalize file paths for consistency
-    const normalizedTarget = targetFile.replace(/\.(ts|js|tsx|jsx)$/, '');
-    const normalizedCurrent = currentFile.replace(/\.(ts|js|tsx|jsx)$/, '');
-    
+    const normalizedTarget = targetFile.replace(/\.(ts|js|tsx|jsx)$/, "");
+    const normalizedCurrent = currentFile.replace(/\.(ts|js|tsx|jsx)$/, "");
+
     // Try with both normalized and original paths
     let distance = this.findShortestDistance(graph, currentFile, targetFile);
     if (distance === -1) {
-      distance = this.findShortestDistance(graph, normalizedCurrent, normalizedTarget);
+      distance = this.findShortestDistance(
+        graph,
+        normalizedCurrent,
+        normalizedTarget,
+      );
     }
-    
+
     // Also try with just the base names if full paths don't work
     if (distance === -1) {
       const currentBase = path.basename(currentFile, path.extname(currentFile));
       const targetBase = path.basename(targetFile, path.extname(targetFile));
-      
+
       // Find entries in graph that end with these basenames
       for (const [key, value] of graph.entries()) {
         if (key.endsWith(currentBase) || key.endsWith(normalizedCurrent)) {
@@ -281,7 +305,7 @@ export class FileRelevanceScorer {
     if (!history || !history.includes(targetFile)) return 0;
 
     const index = history.indexOf(targetFile);
-    const recencyScore = 1 - (index / history.length);
+    const recencyScore = 1 - index / history.length;
     return recencyScore;
   }
 
@@ -306,16 +330,18 @@ export class FileRelevanceScorer {
   private findShortestDistance(
     graph: Map<string, { imports: string[]; importedBy: string[] }>,
     start: string,
-    end: string
+    end: string,
   ): number {
     if (start === end) return 0;
 
     const visited = new Set<string>();
-    const queue: { file: string; distance: number }[] = [{ file: start, distance: 0 }];
+    const queue: { file: string; distance: number }[] = [
+      { file: start, distance: 0 },
+    ];
 
     while (queue.length > 0) {
       const current = queue.shift()!;
-      
+
       if (current.file === end) {
         return current.distance;
       }
@@ -339,7 +365,7 @@ export class FileRelevanceScorer {
   }
 
   private resolveImportPath(fromFile: string, importPath: string): string {
-    if (importPath.startsWith('.')) {
+    if (importPath.startsWith(".")) {
       const dir = path.dirname(fromFile);
       return path.join(dir, importPath);
     }
@@ -351,7 +377,7 @@ export class FileRelevanceScorer {
     if (entries.length > this.MAX_HISTORY_SIZE) {
       // Remove oldest entries
       const toRemove = entries.slice(0, entries.length - this.MAX_HISTORY_SIZE);
-      toRemove.forEach(key => delete this.userHistory[key]);
+      toRemove.forEach((key) => delete this.userHistory[key]);
     }
   }
 }

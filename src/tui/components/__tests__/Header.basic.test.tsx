@@ -1,53 +1,53 @@
-import React from 'react';
-import { describe, it, expect, jest } from '@jest/globals';
-import { Header } from '../Header.js';
+import React from "react";
+import { describe, it, expect, jest } from "@jest/globals";
+import { Header } from "../Header.js";
 
 // Mock the style manager
-jest.mock('../../../styles/manager.js', () => ({
+jest.mock("../../../styles/manager.js", () => ({
   getStyleManager: jest.fn(() => ({
     getStyle: jest.fn(() => ({
       theme: {
-        primary: 'cyan',
-        secondary: 'gray',
-        success: 'green',
-        error: 'red',
-        warning: 'yellow',
-        info: 'blue'
+        primary: "cyan",
+        secondary: "gray",
+        success: "green",
+        error: "red",
+        warning: "yellow",
+        info: "blue",
       },
       formatting: {
         bold: false,
         italic: false,
-        underline: false
-      }
-    }))
-  }))
+        underline: false,
+      },
+    })),
+  })),
 }));
 
-describe('Header Component - Basic Tests', () => {
+describe("Header Component - Basic Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('creates Header component without crashing', () => {
+  it("creates Header component without crashing", () => {
     expect(() => {
       React.createElement(Header, {});
     }).not.toThrow();
   });
 
-  it('accepts all expected props without TypeScript errors', () => {
+  it("accepts all expected props without TypeScript errors", () => {
     const props = {
-      model: 'gpt-4',
-      provider: 'copilot',
-      providerStatus: 'connected' as const,
+      model: "gpt-4",
+      provider: "copilot",
+      providerStatus: "connected" as const,
       tokens: 1250,
       maxTokens: 4000,
-      connectionStatus: 'connected' as const,
+      connectionStatus: "connected" as const,
       latency: 120,
       showKeyboardShortcuts: true,
       sessionInfo: {
         startTime: new Date(),
-        messageCount: 5
-      }
+        messageCount: 5,
+      },
     };
 
     expect(() => {
@@ -55,18 +55,18 @@ describe('Header Component - Basic Tests', () => {
     }).not.toThrow();
   });
 
-  it('has default props that work correctly', () => {
+  it("has default props that work correctly", () => {
     expect(() => {
       React.createElement(Header, {});
     }).not.toThrow();
   });
 
-  it('handles undefined optional props gracefully', () => {
+  it("handles undefined optional props gracefully", () => {
     const props = {
       tokens: undefined,
       maxTokens: undefined,
       rateLimit: undefined,
-      error: undefined
+      error: undefined,
     };
 
     expect(() => {
@@ -74,11 +74,11 @@ describe('Header Component - Basic Tests', () => {
     }).not.toThrow();
   });
 
-  describe('Helper functions', () => {
+  describe("Helper functions", () => {
     // Test helper functions by importing the module
-    const { getDurationString } = require('../Header.js');
+    const { getDurationString } = require("../Header.js");
 
-    it('formats duration correctly', () => {
+    it("formats duration correctly", () => {
       // This would test the getDurationString helper
       // But since it's not exported, we'll test the component behavior
       expect(true).toBe(true); // Placeholder

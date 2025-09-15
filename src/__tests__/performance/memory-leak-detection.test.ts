@@ -4,8 +4,15 @@
  * Tests memory patterns, garbage collection, and leak prevention mechanisms
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { MemoryManager } from '../../tui/PerformanceMonitor';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from "@jest/globals";
+import { MemoryManager } from "../../tui/PerformanceMonitor";
 
 interface MemorySnapshot {
   timestamp: number;
@@ -27,15 +34,15 @@ class MemoryLeakDetector {
   takeSnapshot(): MemorySnapshot {
     const memoryUsage = process.memoryUsage();
     const stats = this.memoryManager.getStats();
-    
+
     const snapshot: MemorySnapshot = {
       timestamp: Date.now(),
       heapUsed: memoryUsage.heapUsed,
       heapTotal: memoryUsage.heapTotal,
       trackedObjects: stats.trackedObjects,
-      generation: this.generation++
+      generation: this.generation++,
     };
-    
+
     this.snapshots.push(snapshot);
     return snapshot;
   }
@@ -51,44 +58,49 @@ class MemoryLeakDetector {
         isLeaking: false,
         growthRate: 0,
         confidence: 0,
-        recommendation: 'Need more snapshots for analysis'
+        recommendation: "Need more snapshots for analysis",
       };
     }
 
     // Calculate memory growth trend
     const recentSnapshots = this.snapshots.slice(-5);
-    const memoryGrowth = recentSnapshots.map((snapshot, i) => {
-      if (i === 0) return 0;
-      return snapshot.heapUsed - recentSnapshots[i - 1].heapUsed;
-    }).slice(1);
+    const memoryGrowth = recentSnapshots
+      .map((snapshot, i) => {
+        if (i === 0) return 0;
+        return snapshot.heapUsed - recentSnapshots[i - 1].heapUsed;
+      })
+      .slice(1);
 
-    const averageGrowth = memoryGrowth.reduce((a, b) => a + b, 0) / memoryGrowth.length;
+    const averageGrowth =
+      memoryGrowth.reduce((a, b) => a + b, 0) / memoryGrowth.length;
     const growthRate = averageGrowth / (1024 * 1024); // MB per snapshot
 
     // Simple leak detection heuristic
-    const positiveGrowthCount = memoryGrowth.filter(g => g > 0).length;
+    const positiveGrowthCount = memoryGrowth.filter((g) => g > 0).length;
     const confidence = positiveGrowthCount / memoryGrowth.length;
-    
+
     const isLeaking = growthRate > 0.5 && confidence > 0.7; // Growing >0.5MB per snapshot with high confidence
 
-    let recommendation = 'Memory usage appears stable';
+    let recommendation = "Memory usage appears stable";
     if (isLeaking) {
-      recommendation = 'Potential memory leak detected. Review object lifecycle and cleanup.';
+      recommendation =
+        "Potential memory leak detected. Review object lifecycle and cleanup.";
     } else if (growthRate > 0.1) {
-      recommendation = 'Minor memory growth observed. Monitor for continued growth.';
+      recommendation =
+        "Minor memory growth observed. Monitor for continued growth.";
     }
 
     return {
       isLeaking,
       growthRate,
       confidence,
-      recommendation
+      recommendation,
     };
   }
 
   detectPotentialLeaks(): Array<{
     type: string;
-    severity: 'low' | 'medium' | 'high';
+    severity: "low" | "medium" | "high";
     description: string;
     evidence: any;
   }> {
@@ -99,10 +111,10 @@ class MemoryLeakDetector {
     // Check for object accumulation
     if (detectionResult.potentialLeaks.length > 0) {
       leaks.push({
-        type: 'object_accumulation',
-        severity: 'medium' as const,
+        type: "object_accumulation",
+        severity: "medium" as const,
         description: `${detectionResult.potentialLeaks.length} large objects detected`,
-        evidence: detectionResult.potentialLeaks
+        evidence: detectionResult.potentialLeaks,
       });
     }
 
@@ -110,20 +122,23 @@ class MemoryLeakDetector {
     const trendAnalysis = this.analyzeMemoryTrend();
     if (trendAnalysis.isLeaking) {
       leaks.push({
-        type: 'memory_growth',
-        severity: 'high' as const,
+        type: "memory_growth",
+        severity: "high" as const,
         description: `Consistent memory growth detected (${trendAnalysis.growthRate.toFixed(2)} MB/snapshot)`,
-        evidence: { growthRate: trendAnalysis.growthRate, confidence: trendAnalysis.confidence }
+        evidence: {
+          growthRate: trendAnalysis.growthRate,
+          confidence: trendAnalysis.confidence,
+        },
       });
     }
 
     // Check for excessive object tracking
     if (stats.trackedObjects > 1000) {
       leaks.push({
-        type: 'excessive_tracking',
-        severity: 'medium' as const,
+        type: "excessive_tracking",
+        severity: "medium" as const,
         description: `High number of tracked objects: ${stats.trackedObjects}`,
-        evidence: { trackedObjects: stats.trackedObjects }
+        evidence: { trackedObjects: stats.trackedObjects },
       });
     }
 
@@ -147,7 +162,7 @@ class LeakyClass {
   private listeners: Array<() => void> = [];
 
   constructor(size: number = 1000) {
-    this.data = new Array(size).fill('x'.repeat(100));
+    this.data = new Array(size).fill("x".repeat(100));
     LeakyClass.instances.push(this); // Intentional leak - not cleaned up
   }
 
@@ -171,7 +186,7 @@ class ProperClass {
   private static instances: WeakSet<ProperClass> = new WeakSet();
 
   constructor(size: number = 1000) {
-    this.data = new Array(size).fill('x'.repeat(100));
+    this.data = new Array(size).fill("x".repeat(100));
     ProperClass.instances.add(this);
   }
 
@@ -189,23 +204,23 @@ class ProperClass {
   }
 }
 
-describe('Memory Leak Detection and Prevention', () => {
+describe("Memory Leak Detection and Prevention", () => {
   let detector: MemoryLeakDetector;
   let originalMemoryUsage: () => NodeJS.MemoryUsage;
 
   beforeEach(() => {
     detector = new MemoryLeakDetector();
-    
+
     // Mock process.memoryUsage for consistent testing
     originalMemoryUsage = process.memoryUsage;
     let mockHeapUsed = 30000000; // 30MB baseline
-    
+
     (process as any).memoryUsage = jest.fn(() => ({
       rss: mockHeapUsed + 10000000,
       heapUsed: mockHeapUsed,
       heapTotal: mockHeapUsed + 5000000,
       external: 2000000,
-      arrayBuffers: 1000000
+      arrayBuffers: 1000000,
     }));
 
     // Allow controlled memory growth simulation
@@ -221,33 +236,35 @@ describe('Memory Leak Detection and Prevention', () => {
     jest.restoreAllMocks();
   });
 
-  describe('Basic Memory Leak Detection', () => {
-    it('should detect growing heap usage patterns', async () => {
-      const memoryUsage = process.memoryUsage as jest.MockedFunction<typeof process.memoryUsage> & {
+  describe("Basic Memory Leak Detection", () => {
+    it("should detect growing heap usage patterns", async () => {
+      const memoryUsage = process.memoryUsage as jest.MockedFunction<
+        typeof process.memoryUsage
+      > & {
         mockMemoryGrowth: (growth: number) => void;
       };
 
       // Create baseline snapshots
       detector.takeSnapshot();
       memoryUsage.mockMemoryGrowth(1024 * 1024); // 1MB growth
-      
+
       detector.takeSnapshot();
       memoryUsage.mockMemoryGrowth(1024 * 1024); // Another 1MB growth
-      
+
       detector.takeSnapshot();
       memoryUsage.mockMemoryGrowth(1024 * 1024); // Another 1MB growth
-      
+
       detector.takeSnapshot();
 
       const analysis = detector.analyzeMemoryTrend();
-      
+
       expect(analysis.isLeaking).toBe(true);
       expect(analysis.growthRate).toBeGreaterThan(0.5); // Growing >0.5MB per snapshot
       expect(analysis.confidence).toBeGreaterThan(0.7);
-      expect(analysis.recommendation).toContain('leak detected');
+      expect(analysis.recommendation).toContain("leak detected");
     });
 
-    it('should not flag stable memory usage as leaks', async () => {
+    it("should not flag stable memory usage as leaks", async () => {
       // Create snapshots with stable memory
       for (let i = 0; i < 5; i++) {
         detector.takeSnapshot();
@@ -257,15 +274,15 @@ describe('Memory Leak Detection and Prevention', () => {
       }
 
       const analysis = detector.analyzeMemoryTrend();
-      
+
       expect(analysis.isLeaking).toBe(false);
       expect(Math.abs(analysis.growthRate)).toBeLessThan(0.1);
-      expect(analysis.recommendation).toContain('stable');
+      expect(analysis.recommendation).toContain("stable");
     });
 
-    it('should detect potential leaks through object tracking', async () => {
+    it("should detect potential leaks through object tracking", async () => {
       const memoryManager = new MemoryManager();
-      
+
       // Create many large objects without cleanup
       for (let i = 0; i < 15; i++) {
         const largeObject = new Array(1000).fill(`data_${i}`);
@@ -277,67 +294,71 @@ describe('Memory Leak Detection and Prevention', () => {
     });
   });
 
-  describe('Memory Leak Scenarios', () => {
-    it('should detect closure-based memory leaks', async () => {
+  describe("Memory Leak Scenarios", () => {
+    it("should detect closure-based memory leaks", async () => {
       const memoryManager = new MemoryManager();
       const closures: Array<() => void> = [];
 
       // Create closures that retain references to large data
       for (let i = 0; i < 10; i++) {
         const largeData = new Array(1000).fill(`closure_data_${i}`);
-        
+
         const closure = () => {
           return largeData.length; // Closure retains reference to largeData
         };
-        
+
         closures.push(closure);
         memoryManager.track(`closure_${i}`, largeData);
       }
 
       // Simulate usage of closures
-      closures.forEach(closure => closure());
+      closures.forEach((closure) => closure());
 
       const initialSnapshot = detector.takeSnapshot();
-      
+
       // Add more closures without cleanup
       for (let i = 10; i < 20; i++) {
         const largeData = new Array(1000).fill(`closure_data_${i}`);
-        
+
         const closure = () => {
           return largeData.length;
         };
-        
+
         closures.push(closure);
         memoryManager.track(`closure_${i}`, largeData);
       }
 
       const finalSnapshot = detector.takeSnapshot();
-      
-      expect(finalSnapshot.trackedObjects).toBeGreaterThan(initialSnapshot.trackedObjects);
-      
+
+      expect(finalSnapshot.trackedObjects).toBeGreaterThan(
+        initialSnapshot.trackedObjects,
+      );
+
       const potentialLeaks = detector.detectPotentialLeaks();
-      expect(potentialLeaks.some(leak => leak.type === 'object_accumulation')).toBe(true);
+      expect(
+        potentialLeaks.some((leak) => leak.type === "object_accumulation"),
+      ).toBe(true);
     });
 
-    it('should detect event listener memory leaks', async () => {
+    it("should detect event listener memory leaks", async () => {
       const memoryManager = new MemoryManager();
       const objects: Array<{ listeners: Array<() => void> }> = [];
 
       // Simulate event listener accumulation
       for (let i = 0; i < 20; i++) {
         const obj = { listeners: [] as Array<() => void> };
-        
+
         // Add multiple listeners without cleanup
         for (let j = 0; j < 5; j++) {
           const largeData = new Array(200).fill(`listener_data_${i}_${j}`);
-          
+
           obj.listeners.push(() => {
             console.log(largeData[0]); // Retains reference to largeData
           });
-          
+
           memoryManager.track(`listener_${i}_${j}`, largeData);
         }
-        
+
         objects.push(obj);
       }
 
@@ -345,7 +366,7 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(leaks.potentialLeaks.length).toBeGreaterThan(50); // 20 objects * 5 listeners
     });
 
-    it('should detect DOM-like reference leaks', async () => {
+    it("should detect DOM-like reference leaks", async () => {
       interface MockElement {
         parent?: MockElement;
         children: MockElement[];
@@ -359,20 +380,20 @@ describe('Memory Leak Detection and Prevention', () => {
       for (let i = 0; i < 10; i++) {
         const parent: MockElement = {
           children: [],
-          data: new Array(500).fill(`parent_data_${i}`)
+          data: new Array(500).fill(`parent_data_${i}`),
         };
-        
+
         for (let j = 0; j < 5; j++) {
           const child: MockElement = {
             parent, // Circular reference
             children: [],
-            data: new Array(300).fill(`child_data_${i}_${j}`)
+            data: new Array(300).fill(`child_data_${i}_${j}`),
           };
-          
+
           parent.children.push(child);
           memoryManager.track(`element_${i}_${j}`, child);
         }
-        
+
         elements.push(parent);
         memoryManager.track(`parent_${i}`, parent);
       }
@@ -382,8 +403,8 @@ describe('Memory Leak Detection and Prevention', () => {
     });
   });
 
-  describe('Memory Cleanup and Prevention', () => {
-    it('should properly cleanup with dispose pattern', async () => {
+  describe("Memory Cleanup and Prevention", () => {
+    it("should properly cleanup with dispose pattern", async () => {
       const memoryManager = new MemoryManager();
       const instances: ProperClass[] = [];
 
@@ -398,7 +419,7 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(beforeCleanup.trackedObjects).toBe(10);
 
       // Proper cleanup
-      instances.forEach(instance => {
+      instances.forEach((instance) => {
         instance.dispose();
       });
 
@@ -411,9 +432,9 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(afterCleanup.trackedObjects).toBe(0);
     });
 
-    it('should detect improper cleanup patterns', async () => {
+    it("should detect improper cleanup patterns", async () => {
       const memoryManager = new MemoryManager();
-      
+
       // Create leaky instances
       for (let i = 0; i < 10; i++) {
         const leakyInstance = new LeakyClass(500);
@@ -437,12 +458,16 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(afterProperCleanup).toBe(0);
     });
 
-    it('should use object pooling to prevent allocations', async () => {
+    it("should use object pooling to prevent allocations", async () => {
       const memoryManager = new MemoryManager();
-      const pool = memoryManager.createPool('test_pool', () => new Array(100).fill('x'), { maxSize: 5 });
+      const pool = memoryManager.createPool(
+        "test_pool",
+        () => new Array(100).fill("x"),
+        { maxSize: 5 },
+      );
 
       const acquired: any[] = [];
-      
+
       // Acquire more objects than pool size
       for (let i = 0; i < 10; i++) {
         acquired.push(pool.acquire());
@@ -452,34 +477,34 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(pool.size()).toBe(0); // Pool should be empty
 
       // Release objects
-      acquired.forEach(obj => pool.release(obj));
+      acquired.forEach((obj) => pool.release(obj));
 
       expect(pool.size()).toBe(5); // Should only keep maxSize objects
     });
 
-    it('should enforce memory limits to prevent runaway allocation', async () => {
+    it("should enforce memory limits to prevent runaway allocation", async () => {
       const memoryManager = new MemoryManager();
       memoryManager.setMemoryLimit(5000); // 5KB limit
 
       const allocateLargeObjects = () => {
         for (let i = 0; i < 100; i++) {
-          const largeObject = new Array(100).fill('x');
+          const largeObject = new Array(100).fill("x");
           memoryManager.track(`limit_test_${i}`, largeObject);
         }
       };
 
-      expect(allocateLargeObjects).toThrow('Memory limit exceeded');
+      expect(allocateLargeObjects).toThrow("Memory limit exceeded");
     });
   });
 
-  describe('Garbage Collection Testing', () => {
-    it('should trigger garbage collection when thresholds are met', async () => {
+  describe("Garbage Collection Testing", () => {
+    it("should trigger garbage collection when thresholds are met", async () => {
       const memoryManager = new MemoryManager();
       memoryManager.setGCThreshold(1000); // 1KB threshold
 
       // Allocate objects
       for (let i = 0; i < 20; i++) {
-        const obj = new Array(100).fill('x');
+        const obj = new Array(100).fill("x");
         memoryManager.track(`gc_test_${i}`, obj);
       }
 
@@ -495,7 +520,7 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(afterGC.trackedObjects).toBe(beforeGC.trackedObjects - 10);
     });
 
-    it('should handle memory pressure gracefully', async () => {
+    it("should handle memory pressure gracefully", async () => {
       const memoryManager = new MemoryManager();
       const pressureEvents: any[] = [];
 
@@ -507,7 +532,7 @@ describe('Memory Leak Detection and Prevention', () => {
 
       // Allocate to trigger pressure warnings
       for (let i = 0; i < 15; i++) {
-        const obj = new Array(100).fill('x');
+        const obj = new Array(100).fill("x");
         memoryManager.track(`pressure_test_${i}`, obj);
       }
 
@@ -515,25 +540,25 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(pressureEvents[0]).toMatchObject({
         usage: expect.any(Number),
         limit: 2000,
-        percentage: expect.any(Number)
+        percentage: expect.any(Number),
       });
       expect(pressureEvents[0].percentage).toBeGreaterThan(80);
     });
   });
 
-  describe('Real-world Leak Scenarios', () => {
-    it('should detect setTimeout/setInterval leaks', async () => {
+  describe("Real-world Leak Scenarios", () => {
+    it("should detect setTimeout/setInterval leaks", async () => {
       const memoryManager = new MemoryManager();
       const timers: NodeJS.Timeout[] = [];
 
       // Create timers that hold references to large objects
       for (let i = 0; i < 10; i++) {
         const largeData = new Array(1000).fill(`timer_data_${i}`);
-        
+
         const timer = setInterval(() => {
           largeData[0]; // Access to prevent optimization
         }, 1000);
-        
+
         timers.push(timer);
         memoryManager.track(`timer_data_${i}`, largeData);
       }
@@ -543,10 +568,10 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(leaks.potentialLeaks.length).toBe(10);
 
       // Proper cleanup
-      timers.forEach(timer => clearInterval(timer));
+      timers.forEach((timer) => clearInterval(timer));
     });
 
-    it('should handle WeakMap/WeakSet patterns correctly', async () => {
+    it("should handle WeakMap/WeakSet patterns correctly", async () => {
       const memoryManager = new MemoryManager();
       const weakMap = new WeakMap();
       const strongMap = new Map();
@@ -557,13 +582,13 @@ describe('Memory Leak Detection and Prevention', () => {
       for (let i = 0; i < 10; i++) {
         const obj = { data: new Array(100).fill(`weak_test_${i}`) };
         objects.push(obj);
-        
+
         // Weak reference - should allow GC
         weakMap.set(obj, `weak_value_${i}`);
-        
+
         // Strong reference - prevents GC
         strongMap.set(`key_${i}`, obj);
-        
+
         memoryManager.track(`weak_object_${i}`, obj);
       }
 
@@ -584,16 +609,16 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(afterCleanup.trackedObjects).toBe(0);
     });
 
-    it('should detect module-level variable leaks', async () => {
+    it("should detect module-level variable leaks", async () => {
       const memoryManager = new MemoryManager();
-      
+
       // Simulate module-level variables that accumulate
       const moduleCache: { [key: string]: any } = {};
-      
+
       for (let i = 0; i < 50; i++) {
         const cacheKey = `module_item_${i}`;
         const largeValue = new Array(200).fill(`cached_data_${i}`);
-        
+
         moduleCache[cacheKey] = largeValue;
         memoryManager.track(cacheKey, largeValue);
       }
@@ -603,9 +628,11 @@ describe('Memory Leak Detection and Prevention', () => {
     });
   });
 
-  describe('Memory Monitoring and Alerting', () => {
-    it('should monitor memory trends over time', async () => {
-      const memoryUsage = process.memoryUsage as jest.MockedFunction<typeof process.memoryUsage> & {
+  describe("Memory Monitoring and Alerting", () => {
+    it("should monitor memory trends over time", async () => {
+      const memoryUsage = process.memoryUsage as jest.MockedFunction<
+        typeof process.memoryUsage
+      > & {
         mockMemoryGrowth: (growth: number) => void;
       };
 
@@ -621,7 +648,9 @@ describe('Memory Leak Detection and Prevention', () => {
 
       // Check that memory is consistently growing
       for (let i = 1; i < allSnapshots.length; i++) {
-        expect(allSnapshots[i].heapUsed).toBeGreaterThan(allSnapshots[i - 1].heapUsed);
+        expect(allSnapshots[i].heapUsed).toBeGreaterThan(
+          allSnapshots[i - 1].heapUsed,
+        );
       }
 
       const trend = detector.analyzeMemoryTrend();
@@ -629,33 +658,39 @@ describe('Memory Leak Detection and Prevention', () => {
       expect(trend.growthRate).toBeGreaterThan(0.4); // Should be ~0.5MB per snapshot
     });
 
-    it('should provide actionable leak detection reports', async () => {
+    it("should provide actionable leak detection reports", async () => {
       const memoryManager = new MemoryManager();
-      
+
       // Create various types of potential leaks
-      
+
       // 1. Large object accumulation
       for (let i = 0; i < 20; i++) {
-        memoryManager.track(`large_${i}`, new Array(1000).fill('x'));
+        memoryManager.track(`large_${i}`, new Array(1000).fill("x"));
       }
-      
+
       // 2. Excessive small objects
       for (let i = 0; i < 100; i++) {
         memoryManager.track(`small_${i}`, { data: `small_${i}` });
       }
 
       const leaks = detector.detectPotentialLeaks();
-      
-      expect(leaks.length).toBeGreaterThan(0);
-      
-      const objectAccumulationLeak = leaks.find(leak => leak.type === 'object_accumulation');
-      expect(objectAccumulationLeak).toBeDefined();
-      expect(objectAccumulationLeak?.severity).toBe('medium');
-      expect(objectAccumulationLeak?.description).toContain('large objects');
 
-      const excessiveTrackingLeak = leaks.find(leak => leak.type === 'excessive_tracking');
+      expect(leaks.length).toBeGreaterThan(0);
+
+      const objectAccumulationLeak = leaks.find(
+        (leak) => leak.type === "object_accumulation",
+      );
+      expect(objectAccumulationLeak).toBeDefined();
+      expect(objectAccumulationLeak?.severity).toBe("medium");
+      expect(objectAccumulationLeak?.description).toContain("large objects");
+
+      const excessiveTrackingLeak = leaks.find(
+        (leak) => leak.type === "excessive_tracking",
+      );
       expect(excessiveTrackingLeak).toBeDefined();
-      expect(excessiveTrackingLeak?.evidence.trackedObjects).toBeGreaterThan(100);
+      expect(excessiveTrackingLeak?.evidence.trackedObjects).toBeGreaterThan(
+        100,
+      );
     });
   });
 });

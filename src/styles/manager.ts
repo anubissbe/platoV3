@@ -1,17 +1,17 @@
 // Style manager for output styling
 
-import { OutputStyle, OutputStyleTheme, StyleType } from './types.js';
-import { BUILTIN_STYLES, defaultStyle } from './builtin.js';
-import { loadConfig, saveConfig } from '../config.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { OutputStyle, OutputStyleTheme, StyleType } from "./types.js";
+import { BUILTIN_STYLES, defaultStyle } from "./builtin.js";
+import { loadConfig, saveConfig } from "../config.js";
+import * as fs from "fs/promises";
+import * as path from "path";
 
 export class StyleManager {
   private currentStyle: OutputStyle;
   private customStyles: Map<string, OutputStyle>;
   private configPath: string;
 
-  constructor(configPath: string = '.plato/config.json') {
+  constructor(configPath: string = ".plato/config.json") {
     this.currentStyle = defaultStyle;
     this.customStyles = new Map();
     this.configPath = configPath;
@@ -21,14 +21,14 @@ export class StyleManager {
     try {
       await this.loadCustomStyles();
       const config = await loadConfig();
-      
+
       // Load active style from config
       if (config.outputStyle?.active) {
         await this.setStyle(config.outputStyle.active);
       }
     } catch (error) {
       // Use default style if loading fails
-      console.error('Failed to load styles, using default:', error);
+      console.error("Failed to load styles, using default:", error);
       this.currentStyle = defaultStyle;
     }
   }
@@ -36,7 +36,7 @@ export class StyleManager {
   private async loadCustomStyles(): Promise<void> {
     try {
       const config = await loadConfig();
-      
+
       if (config.outputStyle?.custom) {
         for (const style of config.outputStyle.custom) {
           this.customStyles.set(style.name, style);
@@ -51,11 +51,11 @@ export class StyleManager {
     // Check built-in styles first
     if (BUILTIN_STYLES[name as keyof typeof BUILTIN_STYLES]) {
       this.currentStyle = BUILTIN_STYLES[name as keyof typeof BUILTIN_STYLES];
-    } 
+    }
     // Then check custom styles
     else if (this.customStyles.has(name)) {
       this.currentStyle = this.customStyles.get(name)!;
-    } 
+    }
     // Fall back to default
     else {
       throw new Error(`Style '${name}' not found`);
@@ -68,19 +68,36 @@ export class StyleManager {
   private async saveActiveStyle(name: string): Promise<void> {
     try {
       const config = await loadConfig();
-      
+
       if (!config.outputStyle) {
-        config.outputStyle = { active: 'default', custom: [] };
+        config.outputStyle = { active: "default", custom: [] };
       }
-      
+
       config.outputStyle.active = name;
       await saveConfig(config);
     } catch (error) {
-      console.error('Failed to save active style:', error);
+      console.error("Failed to save active style:", error);
     }
   }
 
   getStyle(): OutputStyle {
+    // On static/quiet TUI (Windows Terminal), return a borderless/minimal formatting
+    if (
+      process.env.PLATO_STATIC_TUI === "1" ||
+      process.env.PLATO_QUIET_TUI === "1"
+    ) {
+      return {
+        ...this.currentStyle,
+        formatting: {
+          ...this.currentStyle.formatting,
+          borderStyle: "none",
+          padding: 0,
+          margin: 0,
+          showIcons: false,
+          showTimestamps: false,
+        },
+      } as OutputStyle;
+    }
     return this.currentStyle;
   }
 
@@ -88,10 +105,14 @@ export class StyleManager {
     return this.currentStyle.name;
   }
 
-  async createCustomStyle(name: string, baseOn: string, customizations: Partial<OutputStyle>): Promise<void> {
+  async createCustomStyle(
+    name: string,
+    baseOn: string,
+    customizations: Partial<OutputStyle>,
+  ): Promise<void> {
     // Start with base style
     let baseStyle: OutputStyle;
-    
+
     if (BUILTIN_STYLES[baseOn as keyof typeof BUILTIN_STYLES]) {
       baseStyle = BUILTIN_STYLES[baseOn as keyof typeof BUILTIN_STYLES];
     } else if (this.customStyles.has(baseOn)) {
@@ -107,21 +128,21 @@ export class StyleManager {
       name,
       theme: {
         ...baseStyle.theme,
-        ...(customizations.theme || {})
+        ...(customizations.theme || {}),
       },
       formatting: {
         ...baseStyle.formatting,
-        ...(customizations.formatting || {})
+        ...(customizations.formatting || {}),
       },
       components: {
         ...baseStyle.components,
-        ...(customizations.components || {})
-      }
+        ...(customizations.components || {}),
+      },
     };
 
     // Save to custom styles
     this.customStyles.set(name, newStyle);
-    
+
     // Persist to config
     await this.saveCustomStyle(newStyle);
   }
@@ -129,20 +150,22 @@ export class StyleManager {
   private async saveCustomStyle(style: OutputStyle): Promise<void> {
     try {
       const config = await loadConfig();
-      
+
       if (!config.outputStyle) {
-        config.outputStyle = { active: 'default', custom: [] };
+        config.outputStyle = { active: "default", custom: [] };
       }
-      
+
       // Remove existing style with same name if exists
-      config.outputStyle.custom = (config.outputStyle.custom || []).filter(s => s.name !== style.name);
-      
+      config.outputStyle.custom = (config.outputStyle.custom || []).filter(
+        (s) => s.name !== style.name,
+      );
+
       // Add new style
       config.outputStyle.custom.push(style);
-      
+
       await saveConfig(config);
     } catch (error) {
-      console.error('Failed to save custom style:', error);
+      console.error("Failed to save custom style:", error);
       throw error;
     }
   }
@@ -157,18 +180,25 @@ export class StyleManager {
     // Remove from config
     try {
       const config = await loadConfig();
-      
+
       if (config.outputStyle?.custom) {
-        config.outputStyle.custom = config.outputStyle.custom.filter(s => s.name !== name);
+        config.outputStyle.custom = config.outputStyle.custom.filter(
+          (s) => s.name !== name,
+        );
         await saveConfig(config);
       }
     } catch (error) {
-      console.error('Failed to delete custom style:', error);
+      console.error("Failed to delete custom style:", error);
       throw error;
     }
   }
 
-  listStyles(): { name: string; description: string; active: boolean; custom: boolean }[] {
+  listStyles(): {
+    name: string;
+    description: string;
+    active: boolean;
+    custom: boolean;
+  }[] {
     const styles = [];
 
     // Add built-in styles
@@ -177,7 +207,7 @@ export class StyleManager {
         name: style.name,
         description: style.description,
         active: this.currentStyle.name === style.name,
-        custom: false
+        custom: false,
       });
     }
 
@@ -187,7 +217,7 @@ export class StyleManager {
         name: style.name,
         description: style.description,
         active: this.currentStyle.name === style.name,
-        custom: true
+        custom: true,
       });
     }
 
@@ -199,34 +229,37 @@ export class StyleManager {
     return color ? text : text; // Color will be applied by Ink components
   }
 
-  formatComponent(component: keyof OutputStyle['components'], data: Record<string, any>): string {
+  formatComponent(
+    component: keyof OutputStyle["components"],
+    data: Record<string, any>,
+  ): string {
     const comp = this.currentStyle.components[component];
-    
+
     if (!comp) {
-      return '';
+      return "";
     }
 
     // Get the appropriate format string
     let format: string;
-    if (component === 'fileWrite' && data.success) {
+    if (component === "fileWrite" && data.success) {
       format = (comp as any).success;
-    } else if ('format' in comp) {
+    } else if ("format" in comp) {
       format = comp.format;
-    } else if ('text' in comp) {
+    } else if ("text" in comp) {
       format = comp.text;
     } else {
-      return '';
+      return "";
     }
 
     // Add timestamp if needed
     if (this.currentStyle.formatting.showTimestamps && !data.timestamp) {
-      data.timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      data.timestamp = new Date().toISOString().split("T")[1].split(".")[0];
     }
 
     // Replace placeholders
     let result = format;
     for (const [key, value] of Object.entries(data)) {
-      result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+      result = result.replace(new RegExp(`\\{${key}\\}`, "g"), String(value));
     }
 
     // Add icon if present
@@ -239,44 +272,55 @@ export class StyleManager {
   }
 
   getThemeColor(type: keyof OutputStyleTheme): string {
-    return this.currentStyle.theme[type] || 'white';
+    return this.currentStyle.theme[type] || "white";
   }
 
-  getFormatting(): OutputStyle['formatting'] {
+  getFormatting(): OutputStyle["formatting"] {
     return this.currentStyle.formatting;
   }
 
   // Helper to apply style to Ink component props
-  getComponentProps(componentType: 'Box' | 'Text' | 'Spinner', props?: any): any {
-    const style = this.currentStyle;
-    
-    switch(componentType) {
-      case 'Box':
+  getComponentProps(
+    componentType: "Box" | "Text" | "Spinner",
+    props?: any,
+  ): any {
+    const style = this.getStyle();
+
+    switch (componentType) {
+      case "Box":
         return {
-          borderStyle: style.formatting.borderStyle === 'none' ? undefined : style.formatting.borderStyle,
-          borderColor: style.formatting.borderStyle === 'none' ? undefined : style.theme.border,
+          borderStyle:
+            style.formatting.borderStyle === "none"
+              ? undefined
+              : style.formatting.borderStyle,
+          borderColor:
+            style.formatting.borderStyle === "none"
+              ? undefined
+              : style.theme.border,
           padding: style.formatting.padding,
           margin: style.formatting.margin,
-          ...props
+          ...props,
         };
-      
-      case 'Text':
-        const colorType = props?.type || 'primary';
+
+      case "Text":
+        const colorType = props?.type || "primary";
         return {
-          color: style.theme[colorType as keyof OutputStyleTheme] || style.theme.primary,
+          color:
+            style.theme[colorType as keyof OutputStyleTheme] ||
+            style.theme.primary,
           bold: style.formatting.bold && props?.bold !== false,
           italic: style.formatting.italic && props?.italic !== false,
           underline: style.formatting.underline && props?.underline !== false,
-          ...props
+          ...props,
         };
-      
-      case 'Spinner':
+
+      case "Spinner":
         return {
           color: style.theme.spinner,
-          type: 'dots',
-          ...props
+          type: "dots",
+          ...props,
         };
-      
+
       default:
         return props;
     }

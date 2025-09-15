@@ -17,17 +17,22 @@ export interface TerminalCoordinates {
   y: number;
 }
 
-export type MouseButton = 'left' | 'right' | 'middle' | 'scroll_up' | 'scroll_down';
+export type MouseButton =
+  | "left"
+  | "right"
+  | "middle"
+  | "scroll_up"
+  | "scroll_down";
 
-export type MouseEventType = 
-  | 'click'
-  | 'drag_start'
-  | 'drag'
-  | 'drag_end'
-  | 'scroll'
-  | 'move'
-  | 'hover'
-  | 'leave';
+export type MouseEventType =
+  | "click"
+  | "drag_start"
+  | "drag"
+  | "drag_end"
+  | "scroll"
+  | "move"
+  | "hover"
+  | "leave";
 
 export interface MouseModifiers {
   shift: boolean;
@@ -73,7 +78,7 @@ export interface MouseBounds {
 
 export interface MouseProtocolConfig {
   /** Mouse protocol mode */
-  mode: 'sgr' | 'utf8' | 'urxvt';
+  mode: "sgr" | "utf8" | "urxvt";
   /** Whether to enable mouse tracking */
   enableTracking: boolean;
   /** Whether to enable button event tracking */
@@ -127,7 +132,7 @@ export interface MouseEventCaptureSystem {
   /**
    * Configure mouse protocol mode
    */
-  handleProtocolMode(mode: MouseProtocolConfig['mode']): void;
+  handleProtocolMode(mode: MouseProtocolConfig["mode"]): void;
 
   /**
    * Process event queue and return processed events
@@ -145,17 +150,17 @@ export interface MouseEventCaptureSystem {
  */
 export interface PlatformMouseCapabilities {
   /** Platform name */
-  platform: 'windows' | 'darwin' | 'linux' | 'unknown';
+  platform: "windows" | "darwin" | "linux" | "unknown";
   /** Whether running in WSL */
   isWSL: boolean;
   /** Whether running in container */
   isContainer: boolean;
   /** Supported mouse protocols */
-  supportedProtocols: MouseProtocolConfig['mode'][];
+  supportedProtocols: MouseProtocolConfig["mode"][];
   /** Maximum coordinate values */
   maxCoordinates: MouseCoordinates;
   /** Native mouse support level */
-  supportLevel: 'full' | 'partial' | 'minimal' | 'none';
+  supportLevel: "full" | "partial" | "minimal" | "none";
 }
 
 /**
@@ -229,24 +234,24 @@ export class MouseEventError extends Error {
   constructor(
     message: string,
     public code: string,
-    public sequence?: string
+    public sequence?: string,
   ) {
     super(message);
-    this.name = 'MouseEventError';
+    this.name = "MouseEventError";
   }
 }
 
 export class MouseProtocolError extends MouseEventError {
   constructor(message: string, sequence?: string) {
-    super(message, 'PROTOCOL_ERROR', sequence);
-    this.name = 'MouseProtocolError';
+    super(message, "PROTOCOL_ERROR", sequence);
+    this.name = "MouseProtocolError";
   }
 }
 
 export class MouseBoundsError extends MouseEventError {
   constructor(message: string, coords?: MouseCoordinates) {
-    super(message, 'BOUNDS_ERROR');
-    this.name = 'MouseBoundsError';
+    super(message, "BOUNDS_ERROR");
+    this.name = "MouseBoundsError";
   }
 }
 
@@ -254,18 +259,18 @@ export class MouseBoundsError extends MouseEventError {
  * Default configurations
  */
 export const DEFAULT_MOUSE_CONFIG: MouseProtocolConfig = {
-  mode: 'sgr',
+  mode: "sgr",
   enableTracking: true,
   enableButtons: true,
   enableMotion: false, // Disabled by default to reduce noise
-  enableFocus: false
+  enableFocus: false,
 };
 
 export const DEFAULT_PROCESSING_OPTIONS: MouseEventProcessingOptions = {
   throttleMs: 16, // 60fps
   validateBounds: true,
   debug: false,
-  maxQueueSize: 100
+  maxQueueSize: 100,
 };
 
 /**
@@ -273,26 +278,26 @@ export const DEFAULT_PROCESSING_OPTIONS: MouseEventProcessingOptions = {
  */
 export const MOUSE_SEQUENCES = {
   // Enable mouse tracking
-  ENABLE_TRACKING: '\x1b[?1000h',
-  DISABLE_TRACKING: '\x1b[?1000l',
-  
+  ENABLE_TRACKING: "\x1b[?1000h",
+  DISABLE_TRACKING: "\x1b[?1000l",
+
   // Enable button tracking
-  ENABLE_BUTTONS: '\x1b[?1002h',
-  DISABLE_BUTTONS: '\x1b[?1002l',
-  
+  ENABLE_BUTTONS: "\x1b[?1002h",
+  DISABLE_BUTTONS: "\x1b[?1002l",
+
   // Enable SGR mode (preferred)
-  ENABLE_SGR: '\x1b[?1006h',
-  DISABLE_SGR: '\x1b[?1006l',
-  
+  ENABLE_SGR: "\x1b[?1006h",
+  DISABLE_SGR: "\x1b[?1006l",
+
   // Enable UTF-8 mode
-  ENABLE_UTF8: '\x1b[?1005h',
-  DISABLE_UTF8: '\x1b[?1005l',
-  
+  ENABLE_UTF8: "\x1b[?1005h",
+  DISABLE_UTF8: "\x1b[?1005l",
+
   // Enable urxvt mode
-  ENABLE_URXVT: '\x1b[?1015h',
-  DISABLE_URXVT: '\x1b[?1015l',
-  
+  ENABLE_URXVT: "\x1b[?1015h",
+  DISABLE_URXVT: "\x1b[?1015l",
+
   // Focus events
-  ENABLE_FOCUS: '\x1b[?1004h',
-  DISABLE_FOCUS: '\x1b[?1004l'
+  ENABLE_FOCUS: "\x1b[?1004h",
+  DISABLE_FOCUS: "\x1b[?1004l",
 } as const;

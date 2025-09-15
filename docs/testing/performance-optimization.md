@@ -7,12 +7,14 @@ This document outlines the test performance optimizations implemented for PlatoV
 ## Performance Issues Identified
 
 ### 1. Slow Test Suites
+
 - **bash-tool.test.ts**: 42.954s (real file operations)
 - **Large test files**: 600-1000+ lines creating setup overhead
 - **Serial execution**: Shared resources causing bottlenecks
 - **Heavy mocking**: Complex fs mocking in jest.setup.ts
 
 ### 2. Configuration Issues
+
 - **Default timeout**: 30s per test (too high)
 - **Verbose output**: Excessive logging slowing execution
 - **Coverage collection**: Enabled by default adding overhead
@@ -21,6 +23,7 @@ This document outlines the test performance optimizations implemented for PlatoV
 ## Optimizations Implemented
 
 ### 1. Fast Test Configuration (`jest.config.fast.cjs`)
+
 ```javascript
 // KEY OPTIMIZATIONS:
 maxWorkers: '50%',           // Use half CPU cores
@@ -32,17 +35,20 @@ cache: true,                 // Enable Jest cache
 ```
 
 ### 2. Lightweight Setup (`jest.setup.fast.ts`)
+
 - **Minimal fs mocking**: Essential mocks only
 - **Fast temp directory handling**: Optimized cleanup
 - **Reduced mock complexity**: Simple implementations
 - **Performance-focused cleanup**: Fast afterEach/afterAll
 
 ### 3. Test Categorization
+
 - **Unit tests**: Fast configuration (excluded slow tests)
 - **Integration tests**: Separate configuration with full setup
 - **Performance tests**: Dedicated benchmarking suite
 
 ### 4. Optimized NPM Scripts
+
 ```json
 {
   "test:fast": "jest --config=jest.config.fast.cjs",
@@ -56,12 +62,13 @@ cache: true,                 // Enable Jest cache
 ## Performance Results
 
 | Configuration | Duration | Tests Run | Improvement |
-|--------------|----------|-----------|-------------|
-| Original     | 120+ sec | 107 tests | Baseline    |
-| Fast Config  | ~14 sec  | 99 tests  | 87% faster  |
-| Quick Config | ~8 sec   | 99 tests  | 93% faster  |
+| ------------- | -------- | --------- | ----------- |
+| Original      | 120+ sec | 107 tests | Baseline    |
+| Fast Config   | ~14 sec  | 99 tests  | 87% faster  |
+| Quick Config  | ~8 sec   | 99 tests  | 93% faster  |
 
 ### Test Execution Strategy
+
 1. **Development**: Use `npm run test:fast` (14s)
 2. **Quick checks**: Use `npm run test:quick` (8s)
 3. **Full validation**: Use `npm run test:performance` (22s total)
@@ -70,6 +77,7 @@ cache: true,                 // Enable Jest cache
 ## Usage Recommendations
 
 ### Development Workflow
+
 ```bash
 # Quick development checks
 npm run test:quick
@@ -85,6 +93,7 @@ npm run test:fast-watch
 ```
 
 ### CI/CD Integration
+
 ```bash
 # Fast CI pipeline (pull requests)
 npm run test:fast
@@ -99,16 +108,19 @@ npm run test:integration-only
 ## Key Improvements
 
 ### 1. Test Isolation
+
 - **Excluded slow tests**: bash-tool.test.ts runs separately
 - **Categorized by speed**: Unit vs integration tests
 - **Parallel execution**: 50-75% CPU utilization
 
-### 2. Mock Optimization  
+### 2. Mock Optimization
+
 - **Lightweight fs mocking**: Essential operations only
 - **Fast temp directory handling**: Real directories for integration tests
 - **Simplified execa mocking**: Basic command mocking
 
 ### 3. Configuration Tuning
+
 - **Reduced timeouts**: 15s vs 30s default
 - **Disabled verbose output**: Faster execution
 - **Cache enabled**: Reuse compiled modules
@@ -117,30 +129,35 @@ npm run test:integration-only
 ## Performance Monitoring
 
 ### Manual Benchmarking
+
 ```bash
 # Run performance analysis
 npx tsx scripts/test-performance.ts
 ```
 
 ### Metrics to Track
+
 - **Total execution time**: Target <20s for full suite
-- **Pass rate**: Maintain >90% success rate  
+- **Pass rate**: Maintain >90% success rate
 - **Test coverage**: 80% minimum for critical paths
 - **Memory usage**: Monitor for memory leaks
 
 ## Future Optimizations
 
 ### 1. Test Parallelization
+
 - **Worker threads**: Increase maxWorkers for larger machines
 - **Test sharding**: Split tests across CI workers
 - **Async operations**: Optimize async test patterns
 
 ### 2. Mock Improvements
+
 - **Selective mocking**: Mock only what's needed per test
 - **Mock caching**: Reuse mock setups across tests
 - **Real integration**: Use real implementations where safe
 
 ### 3. Test Architecture
+
 - **Smaller test files**: Break down large test suites
 - **Shared fixtures**: Reuse test data across suites
 - **Test utilities**: Common testing helpers
@@ -148,12 +165,14 @@ npx tsx scripts/test-performance.ts
 ## Troubleshooting
 
 ### Common Issues
+
 1. **Tests timing out**: Reduce timeout or optimize test logic
 2. **Mock failures**: Check fs mock compatibility
 3. **TypeScript errors**: Ensure proper type imports
 4. **Memory issues**: Clean up test resources properly
 
 ### Debug Commands
+
 ```bash
 # Run with debugging
 npm run test:fast -- --detectOpenHandles
@@ -168,6 +187,7 @@ npm run test:coverage
 ## Conclusion
 
 The test performance optimizations achieved:
+
 - **87% reduction** in test execution time
 - **Maintained test coverage** and reliability
 - **Improved developer experience** with faster feedback

@@ -7,9 +7,12 @@
     "args": [
       "run",
       "--rm",
-      "-v", "${PWD}:/workspace",
-      "-w", "/workspace",
-      "--name", "plato-mcp",
+      "-v",
+      "${PWD}:/workspace",
+      "-w",
+      "/workspace",
+      "--name",
+      "plato-mcp",
       "plato-mcp:latest"
     ]
   },

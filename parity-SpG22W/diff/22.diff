@@ -1,0 +1,38 @@
+--- parity-SpG22W/claude/22.txt	2025-09-15 14:23:17.826099648 +0200
++++ parity-SpG22W/plato/22.txt	2025-09-15 14:23:17.822125904 +0200
+@@ -1,19 +1,19 @@
+-╭───────────────────────────────────────────────────╮
+-│ ✻ Welcome to Claude Code!                         │
+-│                                                   │
+-│   /help for help, /status for your current setup  │
+-│                                                   │
+-│   cwd: /opt/projects/platoV3/parity-SpG22W/work   │
+-╰───────────────────────────────────────────────────╯
+-
+-────────────────────────────────────────────────────────────────────────────────
+- > 
+-────────────────────────────────────────────────────────────────────────────────
+-  ? for shortcuts
+-
+-
+-
+-
++╭──────────────────────────────────────────────────────────────────────────────╮
++│                                                                              │
++│ Do you trust the files in this folder?                                       │
++│                                                                              │
++│ /opt/projects/platoV3/parity-SpG22W/work                                     │
++│                                                                              │
++│ Claude Code may read, write, or execute files contained in this directory.   │
++│ This can pose security risks, so only use files from trusted sources.        │
++│                                                                              │
++│ Learn more ( https://docs.anthropic.com/s/claude-code-security )             │
++│                                                                              │
++│ ❯ 1. Yes, proceed                                                            │
++│   2. No, exit                                                                │
++│                                                                              │
++╰──────────────────────────────────────────────────────────────────────────────╯
++   Enter to confirm · Esc to exit
+ 
+ 
+ 

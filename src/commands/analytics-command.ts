@@ -3,14 +3,14 @@
  * Provides /analytics command with subcommands for cost tracking analytics
  */
 
-import { AnalyticsManager } from '../services/analytics-manager.js';
-import type { 
-  CostMetric, 
-  AnalyticsSummary, 
+import { AnalyticsManager } from "../services/analytics-manager.js";
+import type {
+  CostMetric,
+  AnalyticsSummary,
   DateRange,
   AnalyticsQueryOptions,
-  ExportFormat 
-} from '../services/analytics-types.js';
+  ExportFormat,
+} from "../services/analytics-types.js";
 
 export interface AnalyticsCommandOptions {
   orchestrator: any; // RuntimeOrchestrator
@@ -18,14 +18,23 @@ export interface AnalyticsCommandOptions {
 }
 
 export class AnalyticsCommand {
-  public readonly name = '/analytics';
-  public readonly summary = 'View and manage cost tracking analytics';
-  public readonly subcommands = ['summary', 'history', 'export', 'reset', 'help'];
-  
+  public readonly name = "/analytics";
+  public readonly summary = "View and manage cost tracking analytics";
+  public readonly subcommands = [
+    "summary",
+    "history",
+    "export",
+    "reset",
+    "help",
+  ];
+
   private analyticsManager: AnalyticsManager;
   private setLines: (fn: (prev: string[]) => string[]) => void;
 
-  constructor(orchestrator: any, setLines: (fn: (prev: string[]) => string[]) => void) {
+  constructor(
+    orchestrator: any,
+    setLines: (fn: (prev: string[]) => string[]) => void,
+  ) {
     this.analyticsManager = orchestrator.analyticsManager;
     this.setLines = setLines;
   }
@@ -34,34 +43,36 @@ export class AnalyticsCommand {
    * Execute analytics command with subcommand and arguments
    */
   async execute(args: string): Promise<void> {
-    const parts = args.trim().split(' ');
-    const subcommand = parts[0] || 'help';
+    const parts = args.trim().split(" ");
+    const subcommand = parts[0] || "help";
     const subArgs = parts.slice(1);
 
     try {
       switch (subcommand) {
-        case 'summary':
+        case "summary":
           await this.handleSummary(subArgs);
           break;
-        case 'history':
+        case "history":
           await this.handleHistory(subArgs);
           break;
-        case 'export':
+        case "export":
           await this.handleExport(subArgs);
           break;
-        case 'reset':
+        case "reset":
           await this.handleReset(subArgs);
           break;
-        case 'help':
+        case "help":
         default:
           this.showHelp();
           break;
       }
     } catch (error) {
-      this.setLines(prev => prev.concat(
-        '❌ Error executing analytics command:',
-        `  ${error instanceof Error ? error.message : String(error)}`
-      ));
+      this.setLines((prev) =>
+        prev.concat(
+          "❌ Error executing analytics command:",
+          `  ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      );
     }
   }
 
@@ -69,14 +80,16 @@ export class AnalyticsCommand {
    * Handle summary subcommand - show aggregated statistics
    */
   private async handleSummary(args: string[]): Promise<void> {
-    const period = args[0] || 'day';
-    const validPeriods = ['day', 'week', 'month', 'all'];
-    
+    const period = args[0] || "day";
+    const validPeriods = ["day", "week", "month", "all"];
+
     if (!validPeriods.includes(period)) {
-      this.setLines(prev => prev.concat(
-        `Invalid period: ${period}`,
-        `Valid periods: ${validPeriods.join(', ')}`
-      ));
+      this.setLines((prev) =>
+        prev.concat(
+          `Invalid period: ${period}`,
+          `Valid periods: ${validPeriods.join(", ")}`,
+        ),
+      );
       return;
     }
 
@@ -90,32 +103,32 @@ export class AnalyticsCommand {
   private async handleHistory(args: string[]): Promise<void> {
     // Parse date range
     const dateRange = this.parseDateRange(args);
-    
+
     // Build query options
     const options: AnalyticsQueryOptions = {};
     if (dateRange) {
       options.dateRange = dateRange;
     }
-    
+
     // Parse other arguments
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       const nextArg = args[i + 1];
-      
+
       switch (arg) {
-        case '--model':
+        case "--model":
           if (nextArg) {
             options.model = nextArg;
             i++;
           }
           break;
-        case '--provider':
-          if (nextArg && ['copilot', 'openai', 'claude'].includes(nextArg)) {
-            options.provider = nextArg as 'copilot' | 'openai' | 'claude';
+        case "--provider":
+          if (nextArg && ["copilot", "openai", "claude"].includes(nextArg)) {
+            options.provider = nextArg as "copilot" | "openai" | "claude";
             i++;
           }
           break;
-        case '--limit':
+        case "--limit":
           if (nextArg) {
             options.limit = parseInt(nextArg, 10);
             i++;
@@ -125,22 +138,26 @@ export class AnalyticsCommand {
     }
 
     // Get metrics from manager
-    const effectiveDateRange = options.dateRange || { 
+    const effectiveDateRange = options.dateRange || {
       start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      end: new Date()
+      end: new Date(),
     };
     let metrics = await this.analyticsManager.getMetrics(
-      effectiveDateRange.start.getTime(), 
-      effectiveDateRange.end.getTime()
+      effectiveDateRange.start.getTime(),
+      effectiveDateRange.end.getTime(),
     );
-    
+
     // Apply additional filtering
     metrics = this.filterMetrics(metrics, args);
-    
+
     // Determine display format
-    const format = args.includes('--format') && args[args.indexOf('--format') + 1] === 'table' ? 'table' : 'list';
-    
-    if (format === 'table') {
+    const format =
+      args.includes("--format") &&
+      args[args.indexOf("--format") + 1] === "table"
+        ? "table"
+        : "list";
+
+    if (format === "table") {
       this.displayMetricsTable(metrics, options.limit);
     } else {
       this.displayMetricsList(metrics, options.limit);
@@ -152,13 +169,15 @@ export class AnalyticsCommand {
    */
   private async handleExport(args: string[]): Promise<void> {
     if (args.length < 2) {
-      this.setLines(prev => prev.concat(
-        'Usage: /analytics export <format> <filename> [options]',
-        'Formats: json, csv',
-        'Options:',
-        '  --from <date>  Start date (YYYY-MM-DD)',
-        '  --to <date>    End date (YYYY-MM-DD)'
-      ));
+      this.setLines((prev) =>
+        prev.concat(
+          "Usage: /analytics export <format> <filename> [options]",
+          "Formats: json, csv",
+          "Options:",
+          "  --from <date>  Start date (YYYY-MM-DD)",
+          "  --to <date>    End date (YYYY-MM-DD)",
+        ),
+      );
       return;
     }
 
@@ -170,14 +189,14 @@ export class AnalyticsCommand {
     for (let i = 2; i < args.length; i++) {
       const arg = args[i];
       const nextArg = args[i + 1];
-      
-      if (arg === '--from' && nextArg) {
+
+      if (arg === "--from" && nextArg) {
         if (!options.dateRange) {
           options.dateRange = { start: new Date(), end: new Date() };
         }
         options.dateRange.start = new Date(nextArg);
         i++;
-      } else if (arg === '--to' && nextArg) {
+      } else if (arg === "--to" && nextArg) {
         if (!options.dateRange) {
           options.dateRange = { start: new Date(), end: new Date() };
         }
@@ -187,19 +206,28 @@ export class AnalyticsCommand {
     }
 
     try {
-      const data = await this.analyticsManager.exportData(format, options.dateRange);
-      
+      const data = await this.analyticsManager.exportData(
+        format,
+        options.dateRange,
+      );
+
       // Write to file
-      const fs = await import('fs/promises');
-      await fs.writeFile(filename, data, 'utf-8');
-      
-      this.setLines(prev => prev.concat(
-        `✅ Analytics data exported to ${filename}`,
-        `  Format: ${format.toUpperCase()}`,
-        options.dateRange ? `  Date range: ${options.dateRange.start?.toLocaleDateString()} - ${options.dateRange.end?.toLocaleDateString()}` : ''
-      ));
+      const fs = await import("fs/promises");
+      await fs.writeFile(filename, data, "utf-8");
+
+      this.setLines((prev) =>
+        prev.concat(
+          `✅ Analytics data exported to ${filename}`,
+          `  Format: ${format.toUpperCase()}`,
+          options.dateRange
+            ? `  Date range: ${options.dateRange.start?.toLocaleDateString()} - ${options.dateRange.end?.toLocaleDateString()}`
+            : "",
+        ),
+      );
     } catch (error) {
-      throw new Error(`Failed to export data: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to export data: ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
   }
 
@@ -207,21 +235,21 @@ export class AnalyticsCommand {
    * Handle reset subcommand - reset analytics data
    */
   private async handleReset(args: string[]): Promise<void> {
-    const force = args.includes('--force');
+    const force = args.includes("--force");
     let dateRange: DateRange | undefined;
 
     // Parse date range if provided
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       const nextArg = args[i + 1];
-      
-      if (arg === '--from' && nextArg) {
+
+      if (arg === "--from" && nextArg) {
         if (!dateRange) {
           dateRange = { start: new Date(), end: new Date() };
         }
         dateRange.start = new Date(nextArg);
         i++;
-      } else if (arg === '--to' && nextArg) {
+      } else if (arg === "--to" && nextArg) {
         if (!dateRange) {
           dateRange = { start: new Date(), end: new Date() };
         }
@@ -231,28 +259,32 @@ export class AnalyticsCommand {
     }
 
     if (!force) {
-      this.setLines(prev => prev.concat(
-        '⚠️  Warning: This will permanently delete analytics data!',
-        dateRange 
-          ? `  Date range: ${dateRange.start?.toLocaleDateString()} - ${dateRange.end?.toLocaleDateString()}`
-          : '  All data will be deleted',
-        '',
-        'To confirm, run: /analytics reset --force',
-        dateRange ? '  Or specify a date range with --from and --to' : ''
-      ));
+      this.setLines((prev) =>
+        prev.concat(
+          "⚠️  Warning: This will permanently delete analytics data!",
+          dateRange
+            ? `  Date range: ${dateRange.start?.toLocaleDateString()} - ${dateRange.end?.toLocaleDateString()}`
+            : "  All data will be deleted",
+          "",
+          "To confirm, run: /analytics reset --force",
+          dateRange ? "  Or specify a date range with --from and --to" : "",
+        ),
+      );
       return;
     }
 
     // Note: resetData method needs to be implemented in AnalyticsManager
     // For now, we'll just show a success message
     // await this.analyticsManager.resetData(dateRange);
-    
-    this.setLines(prev => prev.concat(
-      '✅ Analytics data reset successfully',
-      dateRange 
-        ? `  Date range: ${dateRange.start?.toLocaleDateString()} - ${dateRange.end?.toLocaleDateString()}`
-        : '  All data has been deleted'
-    ));
+
+    this.setLines((prev) =>
+      prev.concat(
+        "✅ Analytics data reset successfully",
+        dateRange
+          ? `  Date range: ${dateRange.start?.toLocaleDateString()} - ${dateRange.end?.toLocaleDateString()}`
+          : "  All data has been deleted",
+      ),
+    );
   }
 
   /**
@@ -260,83 +292,96 @@ export class AnalyticsCommand {
    */
   private displaySummary(summary: AnalyticsSummary): void {
     const lines: string[] = [
-      '',
-      '📊 Analytics Summary',
-      '═══════════════════════════════════════',
-      '',
+      "",
+      "📊 Analytics Summary",
+      "═══════════════════════════════════════",
+      "",
       `📅 Period: ${summary.dateRange.start.toLocaleDateString()} - ${summary.dateRange.end.toLocaleDateString()}`,
-      '',
-      '💰 Cost Overview:',
+      "",
+      "💰 Cost Overview:",
       `  Total Cost: $${this.formatCostValue(summary.totalCost)}`,
       `  Sessions: ${summary.sessionCount}`,
       `  Avg per Session: $${this.formatCostValue(summary.avgCostPerSession)}`,
       `  Daily Average: $${this.formatCostValue(this.calculateDailyAverage(summary))}`,
-      '',
-      '🪙 Token Usage:',
+      "",
+      "🪙 Token Usage:",
       `  Total Tokens: ${summary.totalTokens.toLocaleString()}`,
       `  Input Tokens: ${this.calculateInputTokens(summary).toLocaleString()}`,
       `  Output Tokens: ${this.calculateOutputTokens(summary).toLocaleString()}`,
       `  Avg per Session: ${Math.round(summary.totalTokens / Math.max(summary.sessionCount, 1)).toLocaleString()}`,
       `  Token Efficiency: ${this.calculateTokenEfficiency(summary)}`,
-      ''
+      "",
     ];
 
     // Add provider breakdown if available
     if (Object.keys(summary.costByProvider).length > 0) {
-      lines.push('📦 Cost by Provider:');
-      const sortedProviders = Object.entries(summary.costByProvider)
-        .sort((a, b) => b[1] - a[1]); // Sort by cost descending
-      
+      lines.push("📦 Cost by Provider:");
+      const sortedProviders = Object.entries(summary.costByProvider).sort(
+        (a, b) => b[1] - a[1],
+      ); // Sort by cost descending
+
       for (const [provider, cost] of sortedProviders) {
-        const percentage = (cost / summary.totalCost * 100).toFixed(1);
+        const percentage = ((cost / summary.totalCost) * 100).toFixed(1);
         const bar = this.createProgressBar(cost / summary.totalCost, 20);
-        lines.push(`  ${provider}: $${this.formatCostValue(cost)} (${percentage}%)`);
+        lines.push(
+          `  ${provider}: $${this.formatCostValue(cost)} (${percentage}%)`,
+        );
         lines.push(`  ${bar}`);
       }
-      lines.push('');
+      lines.push("");
     }
 
     // Add model breakdown if available
     if (Object.keys(summary.costByModel).length > 0) {
-      lines.push('🤖 Cost by Model:');
+      lines.push("🤖 Cost by Model:");
       const sortedModels = Object.entries(summary.costByModel)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5); // Top 5 models
-      
+
       for (const [model, cost] of sortedModels) {
-        const percentage = (cost / summary.totalCost * 100).toFixed(1);
+        const percentage = ((cost / summary.totalCost) * 100).toFixed(1);
         const bar = this.createProgressBar(cost / summary.totalCost, 20);
-        lines.push(`  ${model}: $${this.formatCostValue(cost)} (${percentage}%)`);
+        lines.push(
+          `  ${model}: $${this.formatCostValue(cost)} (${percentage}%)`,
+        );
         lines.push(`  ${bar}`);
       }
-      
+
       if (Object.keys(summary.costByModel).length > 5) {
-        lines.push(`  ... and ${Object.keys(summary.costByModel).length - 5} more models`);
+        lines.push(
+          `  ... and ${Object.keys(summary.costByModel).length - 5} more models`,
+        );
       }
-      lines.push('');
+      lines.push("");
     }
 
     // Add trend analysis
-    lines.push('📈 Trend Analysis:');
+    lines.push("📈 Trend Analysis:");
     lines.push(`  Cost Trend: ${this.calculateTrend(summary)}`);
     lines.push(`  Peak Usage Time: ${this.calculatePeakUsageTime(summary)}`);
-    lines.push('');
+    lines.push("");
 
     // Add most expensive session if available
     if (summary.mostExpensiveSession) {
-      lines.push('💸 Most Expensive Session:');
+      lines.push("💸 Most Expensive Session:");
       lines.push(`  Session: ${summary.mostExpensiveSession.sessionId}`);
-      lines.push(`  Cost: $${this.formatCostValue(summary.mostExpensiveSession.cost)}`);
-      lines.push(`  Tokens: ${summary.mostExpensiveSession.tokens.toLocaleString()}`);
-      lines.push(`  Date: ${summary.mostExpensiveSession.timestamp.toLocaleString()}`);
-      lines.push('');
+      lines.push(
+        `  Cost: $${this.formatCostValue(summary.mostExpensiveSession.cost)}`,
+      );
+      lines.push(
+        `  Tokens: ${summary.mostExpensiveSession.tokens.toLocaleString()}`,
+      );
+      lines.push(
+        `  Date: ${summary.mostExpensiveSession.timestamp.toLocaleString()}`,
+      );
+      lines.push("");
     }
 
     // Add recommendations
-    lines.push('💡 Recommendations:');
+    lines.push("💡 Recommendations:");
     lines.push(...this.generateRecommendations(summary));
 
-    this.setLines(prev => prev.concat(...lines));
+    this.setLines((prev) => prev.concat(...lines));
   }
 
   /**
@@ -355,16 +400,20 @@ export class AnalyticsCommand {
   private createProgressBar(percentage: number, width: number): string {
     const filled = Math.round(percentage * width);
     const empty = width - filled;
-    return '  [' + '█'.repeat(filled) + '░'.repeat(empty) + ']';
+    return "  [" + "█".repeat(filled) + "░".repeat(empty) + "]";
   }
 
   /**
    * Calculate daily average cost
    */
   private calculateDailyAverage(summary: AnalyticsSummary): number {
-    const days = Math.max(1, Math.ceil(
-      (summary.dateRange.end.getTime() - summary.dateRange.start.getTime()) / (1000 * 60 * 60 * 24)
-    ));
+    const days = Math.max(
+      1,
+      Math.ceil(
+        (summary.dateRange.end.getTime() - summary.dateRange.start.getTime()) /
+          (1000 * 60 * 60 * 24),
+      ),
+    );
     return summary.totalCost / days;
   }
 
@@ -388,8 +437,9 @@ export class AnalyticsCommand {
    * Calculate token efficiency
    */
   private calculateTokenEfficiency(summary: AnalyticsSummary): string {
-    if (summary.totalTokens === 0) return 'N/A';
-    const costPerThousandTokens = (summary.totalCost / summary.totalTokens) * 1000;
+    if (summary.totalTokens === 0) return "N/A";
+    const costPerThousandTokens =
+      (summary.totalCost / summary.totalTokens) * 1000;
     return `$${this.formatCostValue(costPerThousandTokens)}/1K tokens`;
   }
 
@@ -399,9 +449,9 @@ export class AnalyticsCommand {
   private calculateTrend(summary: AnalyticsSummary): string {
     // This would need actual historical comparison
     const dailyAvg = this.calculateDailyAverage(summary);
-    if (dailyAvg < 0.1) return '📉 Low usage';
-    if (dailyAvg < 1) return '➡️ Moderate usage';
-    return '📈 High usage';
+    if (dailyAvg < 0.1) return "📉 Low usage";
+    if (dailyAvg < 1) return "➡️ Moderate usage";
+    return "📈 High usage";
   }
 
   /**
@@ -409,7 +459,7 @@ export class AnalyticsCommand {
    */
   private calculatePeakUsageTime(summary: AnalyticsSummary): string {
     // This would need actual time-based analysis
-    return '2:00 PM - 4:00 PM'; // Placeholder
+    return "2:00 PM - 4:00 PM"; // Placeholder
   }
 
   /**
@@ -420,22 +470,29 @@ export class AnalyticsCommand {
     const dailyAvg = this.calculateDailyAverage(summary);
 
     if (dailyAvg > 5) {
-      recommendations.push('  ⚠️ High daily cost detected. Consider using cheaper models for simple tasks.');
+      recommendations.push(
+        "  ⚠️ High daily cost detected. Consider using cheaper models for simple tasks.",
+      );
     }
 
     if (summary.totalTokens > 100000) {
-      recommendations.push('  💡 High token usage. Consider implementing context caching.');
+      recommendations.push(
+        "  💡 High token usage. Consider implementing context caching.",
+      );
     }
 
-    const expensiveModels = Object.entries(summary.costByModel || {})
-      .filter(([_, cost]) => cost > summary.totalCost * 0.5);
-    
+    const expensiveModels = Object.entries(summary.costByModel || {}).filter(
+      ([_, cost]) => cost > summary.totalCost * 0.5,
+    );
+
     if (expensiveModels.length > 0) {
-      recommendations.push(`  🔄 ${expensiveModels[0][0]} accounts for >50% of costs. Try alternative models.`);
+      recommendations.push(
+        `  🔄 ${expensiveModels[0][0]} accounts for >50% of costs. Try alternative models.`,
+      );
     }
 
     if (recommendations.length === 0) {
-      recommendations.push('  ✅ Usage patterns look optimal!');
+      recommendations.push("  ✅ Usage patterns look optimal!");
     }
 
     return recommendations;
@@ -446,35 +503,39 @@ export class AnalyticsCommand {
    */
   private displayMetricsList(metrics: CostMetric[], limit?: number): void {
     if (metrics.length === 0) {
-      this.setLines(prev => prev.concat('No analytics data found for the specified criteria.'));
+      this.setLines((prev) =>
+        prev.concat("No analytics data found for the specified criteria."),
+      );
       return;
     }
 
     const displayMetrics = limit ? metrics.slice(0, limit) : metrics;
     const lines: string[] = [
-      '',
-      '📈 Analytics History',
-      '═══════════════════════════════════════',
-      ''
+      "",
+      "📈 Analytics History",
+      "═══════════════════════════════════════",
+      "",
     ];
 
     if (limit && metrics.length > limit) {
       lines.push(`Showing ${limit} of ${metrics.length} records`);
-      lines.push('');
+      lines.push("");
     }
 
     for (const metric of displayMetrics) {
       lines.push(`${metric.timestamp.toLocaleString()}`);
       lines.push(`  Model: ${metric.provider}/${metric.model}`);
-      lines.push(`  Tokens: ${metric.totalTokens.toLocaleString()} (↑${metric.inputTokens} ↓${metric.outputTokens})`);
+      lines.push(
+        `  Tokens: ${metric.totalTokens.toLocaleString()} (↑${metric.inputTokens} ↓${metric.outputTokens})`,
+      );
       lines.push(`  Cost: $${metric.cost.toFixed(6)}`);
       if (metric.duration) {
         lines.push(`  Duration: ${(metric.duration / 1000).toFixed(2)}s`);
       }
-      lines.push('');
+      lines.push("");
     }
 
-    this.setLines(prev => prev.concat(...lines));
+    this.setLines((prev) => prev.concat(...lines));
   }
 
   /**
@@ -482,26 +543,30 @@ export class AnalyticsCommand {
    */
   private displayMetricsTable(metrics: CostMetric[], limit?: number): void {
     if (metrics.length === 0) {
-      this.setLines(prev => prev.concat('No analytics data found for the specified criteria.'));
+      this.setLines((prev) =>
+        prev.concat("No analytics data found for the specified criteria."),
+      );
       return;
     }
 
     const displayMetrics = limit ? metrics.slice(0, limit) : metrics;
-    const lines: string[] = [
-      '',
-      '📈 Analytics History (Table View)',
-      ''
-    ];
+    const lines: string[] = ["", "📈 Analytics History (Table View)", ""];
 
     if (limit && metrics.length > limit) {
       lines.push(`Showing ${limit} of ${metrics.length} records`);
-      lines.push('');
+      lines.push("");
     }
 
     // Table header
-    lines.push('┌────────────────────┬─────────────────┬──────────┬──────────┬──────────┐');
-    lines.push('│ Time               │ Model           │ Tokens   │ Cost     │ Duration │');
-    lines.push('├────────────────────┼─────────────────┼──────────┼──────────┼──────────┤');
+    lines.push(
+      "┌────────────────────┬─────────────────┬──────────┬──────────┬──────────┐",
+    );
+    lines.push(
+      "│ Time               │ Model           │ Tokens   │ Cost     │ Duration │",
+    );
+    lines.push(
+      "├────────────────────┼─────────────────┼──────────┼──────────┼──────────┤",
+    );
 
     // Table rows
     for (const metric of displayMetrics) {
@@ -511,14 +576,20 @@ export class AnalyticsCommand {
       const model = `${metric.model}`.substring(0, 15);
       const tokens = metric.totalTokens.toString().padStart(8);
       const cost = `$${metric.cost.toFixed(4)}`.padStart(8);
-      const duration = metric.duration ? `${(metric.duration / 1000).toFixed(1)}s`.padStart(8) : '      -  ';
-      
-      lines.push(`│ ${date.padEnd(18)} │ ${model.padEnd(15)} │ ${tokens} │ ${cost} │ ${duration} │`);
+      const duration = metric.duration
+        ? `${(metric.duration / 1000).toFixed(1)}s`.padStart(8)
+        : "      -  ";
+
+      lines.push(
+        `│ ${date.padEnd(18)} │ ${model.padEnd(15)} │ ${tokens} │ ${cost} │ ${duration} │`,
+      );
     }
 
-    lines.push('└────────────────────┴─────────────────┴──────────┴──────────┴──────────┘');
+    lines.push(
+      "└────────────────────┴─────────────────┴──────────┴──────────┴──────────┘",
+    );
 
-    this.setLines(prev => prev.concat(...lines));
+    this.setLines((prev) => prev.concat(...lines));
   }
 
   /**
@@ -526,12 +597,12 @@ export class AnalyticsCommand {
    */
   private parseDateRange(args: string[]): DateRange | undefined {
     let dateRange: DateRange | undefined;
-    
+
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       const nextArg = args[i + 1];
-      
-      if (arg === '--from' && nextArg) {
+
+      if (arg === "--from" && nextArg) {
         if (!dateRange) {
           dateRange = { start: new Date(), end: new Date() };
         }
@@ -539,7 +610,7 @@ export class AnalyticsCommand {
         if (isNaN(dateRange.start.getTime())) {
           throw new Error(`Invalid start date: ${nextArg}`);
         }
-      } else if (arg === '--to' && nextArg) {
+      } else if (arg === "--to" && nextArg) {
         if (!dateRange) {
           dateRange = { start: new Date(), end: new Date() };
         }
@@ -547,32 +618,32 @@ export class AnalyticsCommand {
         if (isNaN(dateRange.end.getTime())) {
           throw new Error(`Invalid end date: ${nextArg}`);
         }
-      } else if (arg === '--today') {
+      } else if (arg === "--today") {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         dateRange = { start: today, end: tomorrow };
-      } else if (arg === '--yesterday') {
+      } else if (arg === "--yesterday") {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         yesterday.setHours(0, 0, 0, 0);
         const today = new Date(yesterday);
         today.setDate(today.getDate() + 1);
         dateRange = { start: yesterday, end: today };
-      } else if (arg === '--week') {
+      } else if (arg === "--week") {
         const now = new Date();
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
         dateRange = { start: weekAgo, end: now };
-      } else if (arg === '--month') {
+      } else if (arg === "--month") {
         const now = new Date();
         const monthAgo = new Date();
         monthAgo.setMonth(monthAgo.getMonth() - 1);
         dateRange = { start: monthAgo, end: now };
       }
     }
-    
+
     return dateRange;
   }
 
@@ -581,22 +652,22 @@ export class AnalyticsCommand {
    */
   private filterMetrics(metrics: CostMetric[], args: string[]): CostMetric[] {
     let filtered = [...metrics];
-    
+
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       const nextArg = args[i + 1];
-      
-      if (arg === '--model' && nextArg) {
-        filtered = filtered.filter(m => 
-          m.model.toLowerCase().includes(nextArg.toLowerCase())
+
+      if (arg === "--model" && nextArg) {
+        filtered = filtered.filter((m) =>
+          m.model.toLowerCase().includes(nextArg.toLowerCase()),
         );
-      } else if (arg === '--provider' && nextArg) {
-        filtered = filtered.filter(m => 
-          m.provider.toLowerCase().includes(nextArg.toLowerCase())
+      } else if (arg === "--provider" && nextArg) {
+        filtered = filtered.filter((m) =>
+          m.provider.toLowerCase().includes(nextArg.toLowerCase()),
         );
       }
     }
-    
+
     return filtered;
   }
 
@@ -604,51 +675,53 @@ export class AnalyticsCommand {
    * Show help for analytics command
    */
   private showHelp(): void {
-    this.setLines(prev => prev.concat(
-      '',
-      '📊 Analytics Command Help',
-      '═══════════════════════════════════════',
-      '',
-      'Usage: /analytics <subcommand> [options]',
-      '',
-      'Available subcommands:',
-      '',
-      '  summary [period]     Show aggregated statistics',
-      '    Periods: day, week, month, all (default: day)',
-      '',
-      '  history [options]    Show detailed metrics history',
-      '    Date Range Options:',
-      '      --from <date>      Start date (YYYY-MM-DD)',
-      '      --to <date>        End date (YYYY-MM-DD)',
-      '      --today            Show today\'s data',
-      '      --yesterday        Show yesterday\'s data',
-      '      --week             Show last 7 days',
-      '      --month            Show last 30 days',
-      '    Filter Options:',
-      '      --model <name>     Filter by model name',
-      '      --provider <name>  Filter by provider',
-      '    Display Options:',
-      '      --limit <n>        Limit number of results',
-      '      --format <type>    Display format (table/list)',
-      '',
-      '  export <format> <file> [options]',
-      '    Export analytics data to file',
-      '    Formats: json, csv',
-      '    Options: --from, --to, --today, --yesterday, --week, --month',
-      '',
-      '  reset [options]      Reset analytics data',
-      '    --force            Skip confirmation',
-      '    --from <date>      Start date for deletion',
-      '    --to <date>        End date for deletion',
-      '',
-      'Examples:',
-      '  /analytics summary week',
-      '  /analytics history --today --model gpt-4',
-      '  /analytics history --week --format table',
-      '  /analytics history --from 2025-01-01 --to 2025-01-31',
-      '  /analytics export csv costs.csv --month',
-      '  /analytics reset --force',
-      ''
-    ));
+    this.setLines((prev) =>
+      prev.concat(
+        "",
+        "📊 Analytics Command Help",
+        "═══════════════════════════════════════",
+        "",
+        "Usage: /analytics <subcommand> [options]",
+        "",
+        "Available subcommands:",
+        "",
+        "  summary [period]     Show aggregated statistics",
+        "    Periods: day, week, month, all (default: day)",
+        "",
+        "  history [options]    Show detailed metrics history",
+        "    Date Range Options:",
+        "      --from <date>      Start date (YYYY-MM-DD)",
+        "      --to <date>        End date (YYYY-MM-DD)",
+        "      --today            Show today's data",
+        "      --yesterday        Show yesterday's data",
+        "      --week             Show last 7 days",
+        "      --month            Show last 30 days",
+        "    Filter Options:",
+        "      --model <name>     Filter by model name",
+        "      --provider <name>  Filter by provider",
+        "    Display Options:",
+        "      --limit <n>        Limit number of results",
+        "      --format <type>    Display format (table/list)",
+        "",
+        "  export <format> <file> [options]",
+        "    Export analytics data to file",
+        "    Formats: json, csv",
+        "    Options: --from, --to, --today, --yesterday, --week, --month",
+        "",
+        "  reset [options]      Reset analytics data",
+        "    --force            Skip confirmation",
+        "    --from <date>      Start date for deletion",
+        "    --to <date>        End date for deletion",
+        "",
+        "Examples:",
+        "  /analytics summary week",
+        "  /analytics history --today --model gpt-4",
+        "  /analytics history --week --format table",
+        "  /analytics history --from 2025-01-01 --to 2025-01-31",
+        "  /analytics export csv costs.csv --month",
+        "  /analytics reset --force",
+        "",
+      ),
+    );
   }
 }

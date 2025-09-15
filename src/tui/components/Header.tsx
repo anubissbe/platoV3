@@ -1,16 +1,19 @@
-import React from 'react';
-import { Box, Text } from 'ink';
-import { StyledBox, StyledText } from '../../styles/components.js';
-import { getStyleManager } from '../../styles/manager.js';
-import { SessionIndicator, SessionData } from './SessionIndicator.js';
-import { useResponsiveTerminalSize, useResponsiveStyles } from './ResponsiveContainer.js';
+import React from "react";
+import { Box, Text } from "ink";
+import { StyledBox, StyledText } from "../../styles/components.js";
+import { getStyleManager } from "../../styles/manager.js";
+import { SessionIndicator, SessionData } from "./SessionIndicator.js";
+import {
+  useResponsiveTerminalSize,
+  useResponsiveStyles,
+} from "./ResponsiveContainer.js";
 
 export interface HeaderProps {
   // Model information
   model?: string;
   provider?: string;
-  providerStatus?: 'connected' | 'connecting' | 'disconnected' | 'error';
-  
+  providerStatus?: "connected" | "connecting" | "disconnected" | "error";
+
   // Token usage and rate limiting
   tokens?: number;
   maxTokens?: number;
@@ -19,12 +22,12 @@ export interface HeaderProps {
     maxRequests: number;
     resetTime: Date;
   };
-  
+
   // Connection status
-  connectionStatus?: 'connected' | 'connecting' | 'disconnected' | 'error';
+  connectionStatus?: "connected" | "connecting" | "disconnected" | "error";
   latency?: number;
   error?: string;
-  
+
   // Status line integration
   statusLineConfig?: {
     mode?: string;
@@ -32,13 +35,13 @@ export interface HeaderProps {
     session?: string;
   };
   showKeyboardShortcuts?: boolean;
-  
+
   // Session information (legacy - for compatibility)
   sessionInfo?: {
     startTime: Date;
     messageCount: number;
   };
-  
+
   // Enhanced session management
   sessionData?: SessionData;
   showSessionIndicator?: boolean;
@@ -52,13 +55,13 @@ export interface HeaderProps {
  * Displays model info, token usage, connection status, and session details
  */
 export const Header: React.FC<HeaderProps> = ({
-  model = 'unknown',
-  provider = 'copilot',
-  providerStatus = 'disconnected',
+  model = "unknown",
+  provider = "copilot",
+  providerStatus = "disconnected",
   tokens,
   maxTokens,
   rateLimit,
-  connectionStatus = 'disconnected',
+  connectionStatus = "disconnected",
   latency,
   error,
   statusLineConfig,
@@ -68,7 +71,7 @@ export const Header: React.FC<HeaderProps> = ({
   showSessionIndicator = true,
   onSessionSave,
   onSessionExport,
-  onSessionImport
+  onSessionImport,
 }) => {
   const manager = getStyleManager();
   const style = manager.getStyle();
@@ -83,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   // Format token usage display
   const formatTokenUsage = () => {
-    if (!tokens) return '--';
+    if (!tokens) return "--";
     if (maxTokens) {
       const percentage = Math.round((tokens / maxTokens) * 100);
       return `${tokens}/${maxTokens} (${percentage}%)`;
@@ -95,42 +98,49 @@ export const Header: React.FC<HeaderProps> = ({
   const formatConnectionStatus = () => {
     const statusIcon = getConnectionStatusIcon(connectionStatus);
     let display = `${statusIcon} ${connectionStatus}`;
-    
-    if (connectionStatus === 'connected' && latency) {
-      const latencyColor = latency > 1000 ? 'warning' : 'success';
+
+    if (connectionStatus === "connected" && latency) {
+      const latencyColor = latency > 1000 ? "warning" : "success";
       display += ` ${latency}ms`;
     }
-    
-    if (connectionStatus === 'error' && error) {
+
+    if (connectionStatus === "error" && error) {
       display += ` (${error})`;
     }
-    
+
     return display;
   };
 
   // Format session information
   const formatSessionInfo = () => {
-    if (!sessionInfo) return '';
-    
+    if (!sessionInfo) return "";
+
     const duration = getDurationString(sessionInfo.startTime);
     return `${sessionInfo.messageCount} msgs | ${duration}`;
   };
 
   // Format rate limiting info
   const formatRateLimit = () => {
-    if (!rateLimit) return '';
-    
+    if (!rateLimit) return "";
+
     const remaining = rateLimit.maxRequests - rateLimit.requests;
     return `${remaining}/${rateLimit.maxRequests} requests`;
   };
 
   // Compact mode for mobile terminals
-  if (terminalSize.mode === 'compact') {
+  if (terminalSize.mode === "compact") {
+    const staticMode =
+      process.env.PLATO_STATIC_TUI === "1" ||
+      process.env.PLATO_QUIET_TUI === "1";
     return (
       <StyledBox noBorder>
         <Box flexDirection="column" width="100%">
           {/* Single line header for compact mode */}
-          <Box flexDirection="row" justifyContent="space-between" paddingX={responsiveStyles.padding}>
+          <Box
+            flexDirection="row"
+            justifyContent="space-between"
+            paddingX={responsiveStyles.padding}
+          >
             <StyledText type="primary" bold>
               plato
             </StyledText>
@@ -138,13 +148,11 @@ export const Header: React.FC<HeaderProps> = ({
               {getConnectionStatusIcon(connectionStatus)}
             </StyledText>
           </Box>
-          
-          {/* Bottom border */}
-          <Box width="100%">
-            <Text color="gray">
-              {'─'.repeat(terminalSize.columns)}
-            </Text>
-          </Box>
+          {!staticMode && (
+            <Box width="100%">
+              <Text color="gray">{"─".repeat(terminalSize.columns)}</Text>
+            </Box>
+          )}
         </Box>
       </StyledBox>
     );
@@ -155,7 +163,11 @@ export const Header: React.FC<HeaderProps> = ({
     <StyledBox noBorder>
       <Box flexDirection="column" width="100%">
         {/* Main header line */}
-        <Box flexDirection="row" justifyContent="space-between" paddingX={responsiveStyles.padding}>
+        <Box
+          flexDirection="row"
+          justifyContent="space-between"
+          paddingX={responsiveStyles.padding}
+        >
           {/* Left side: Brand and model info */}
           <Box flexDirection="row" alignItems="center">
             <StyledText type="primary" bold>
@@ -163,12 +175,8 @@ export const Header: React.FC<HeaderProps> = ({
             </StyledText>
             {responsiveStyles.showDetails && (
               <>
-                <StyledText type="secondary">
-                  {' | '}
-                </StyledText>
-                <StyledText type="info">
-                  {formatModelInfo()}
-                </StyledText>
+                <StyledText type="secondary">{" | "}</StyledText>
+                <StyledText type="info">{formatModelInfo()}</StyledText>
               </>
             )}
           </Box>
@@ -176,34 +184,32 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Right side: Connection and session info */}
           <Box flexDirection="row" alignItems="center">
             {/* Enhanced session indicator */}
-            {showSessionIndicator && sessionData && responsiveStyles.showTimestamps && (
-              <>
-                <SessionIndicator
-                  session={sessionData}
-                  showSaveStatus={responsiveStyles.showMetadata}
-                  showExportOption={Boolean(onSessionExport) && responsiveStyles.showMetadata}
-                  onSave={onSessionSave}
-                  onExport={onSessionExport}
-                  onImport={onSessionImport}
-                />
-                <StyledText type="secondary">
-                  {' | '}
-                </StyledText>
-              </>
-            )}
-            
+            {showSessionIndicator &&
+              sessionData &&
+              responsiveStyles.showTimestamps && (
+                <>
+                  <SessionIndicator
+                    session={sessionData}
+                    showSaveStatus={responsiveStyles.showMetadata}
+                    showExportOption={
+                      Boolean(onSessionExport) && responsiveStyles.showMetadata
+                    }
+                    onSave={onSessionSave}
+                    onExport={onSessionExport}
+                    onImport={onSessionImport}
+                  />
+                  <StyledText type="secondary">{" | "}</StyledText>
+                </>
+              )}
+
             {/* Legacy session info (fallback) */}
             {!sessionData && sessionInfo && responsiveStyles.showTimestamps && (
               <>
-                <StyledText type="secondary">
-                  {formatSessionInfo()}
-                </StyledText>
-                <StyledText type="secondary">
-                  {' | '}
-                </StyledText>
+                <StyledText type="secondary">{formatSessionInfo()}</StyledText>
+                <StyledText type="secondary">{" | "}</StyledText>
               </>
             )}
-            
+
             <StyledText type={getConnectionStatusType(connectionStatus)}>
               {formatConnectionStatus()}
             </StyledText>
@@ -212,22 +218,18 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Second line: Token usage and rate limiting - only in normal/expanded mode */}
         {responsiveStyles.showDetails && (
-          <Box flexDirection="row" justifyContent="space-between" paddingX={responsiveStyles.padding}>
+          <Box
+            flexDirection="row"
+            justifyContent="space-between"
+            paddingX={responsiveStyles.padding}
+          >
             <Box flexDirection="row">
-              <StyledText type="secondary">
-                Tokens: 
-              </StyledText>
-              <StyledText type="info">
-                {formatTokenUsage()}
-              </StyledText>
+              <StyledText type="secondary">Tokens:</StyledText>
+              <StyledText type="info">{formatTokenUsage()}</StyledText>
               {rateLimit && responsiveStyles.showMetadata && (
                 <>
-                  <StyledText type="secondary">
-                    {' | Rate: '}
-                  </StyledText>
-                  <StyledText type="info">
-                    {formatRateLimit()}
-                  </StyledText>
+                  <StyledText type="secondary">{" | Rate: "}</StyledText>
+                  <StyledText type="info">{formatRateLimit()}</StyledText>
                 </>
               )}
             </Box>
@@ -264,9 +266,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Bottom border */}
         <Box width="100%">
-          <Text color="gray">
-            {'─'.repeat(terminalSize.columns)}
-          </Text>
+          <Text color="gray">{"─".repeat(terminalSize.columns)}</Text>
         </Box>
       </Box>
     </StyledBox>
@@ -276,31 +276,48 @@ export const Header: React.FC<HeaderProps> = ({
 // Helper functions
 function getProviderStatusIcon(status: string): string {
   switch (status) {
-    case 'connected': return '●';
-    case 'connecting': return '◐';
-    case 'disconnected': return '○';
-    case 'error': return '✗';
-    default: return '○';
+    case "connected":
+      return "●";
+    case "connecting":
+      return "◐";
+    case "disconnected":
+      return "○";
+    case "error":
+      return "✗";
+    default:
+      return "○";
   }
 }
 
 function getConnectionStatusIcon(status: string): string {
   switch (status) {
-    case 'connected': return '✓';
-    case 'connecting': return '…';
-    case 'disconnected': return '○';
-    case 'error': return '✗';
-    default: return '○';
+    case "connected":
+      return "✓";
+    case "connecting":
+      return "…";
+    case "disconnected":
+      return "○";
+    case "error":
+      return "✗";
+    default:
+      return "○";
   }
 }
 
-function getConnectionStatusType(status: string): keyof import('../../styles/types.js').OutputStyleTheme {
+function getConnectionStatusType(
+  status: string,
+): keyof import("../../styles/types.js").OutputStyleTheme {
   switch (status) {
-    case 'connected': return 'success';
-    case 'connecting': return 'warning';
-    case 'disconnected': return 'secondary';
-    case 'error': return 'error';
-    default: return 'secondary';
+    case "connected":
+      return "success";
+    case "connecting":
+      return "warning";
+    case "disconnected":
+      return "secondary";
+    case "error":
+      return "error";
+    default:
+      return "secondary";
   }
 }
 
@@ -309,9 +326,9 @@ function getDurationString(startTime: Date): string {
   const diff = now.getTime() - startTime.getTime();
   const minutes = Math.floor(diff / 60000);
   const seconds = Math.floor((diff % 60000) / 1000);
-  
+
   if (minutes > 0) {
-    return `${minutes}m${seconds > 0 ? ` ${seconds}s` : ''}`;
+    return `${minutes}m${seconds > 0 ? ` ${seconds}s` : ""}`;
   }
   return `${seconds}s`;
 }

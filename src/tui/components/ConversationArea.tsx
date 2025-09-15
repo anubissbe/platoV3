@@ -1,12 +1,22 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { Box, Text } from 'ink';
-import { StyledBox, StyledText } from '../../styles/components.js';
-import { getStyleManager } from '../../styles/manager.js';
-import { ConversationRenderer, ConversationMessage } from '../conversation-renderer.js';
-import { ScrollController } from '../scroll-controller.js';
-import { StreamingMessage, StreamingConversationMessage, StreamingMessageManager } from './StreamingMessage.js';
-import { MouseSupportLayer } from './MouseContextMenu.js';
-import { useResponsiveTerminalSize, useResponsiveStyles } from './ResponsiveContainer.js';
+import React, { useEffect, useRef, useState, useMemo } from "react";
+import { Box, Text } from "ink";
+import { StyledBox, StyledText } from "../../styles/components.js";
+import { getStyleManager } from "../../styles/manager.js";
+import {
+  ConversationRenderer,
+  ConversationMessage,
+} from "../conversation-renderer.js";
+import { ScrollController } from "../scroll-controller.js";
+import {
+  StreamingMessage,
+  StreamingConversationMessage,
+  StreamingMessageManager,
+} from "./StreamingMessage.js";
+import { MouseSupportLayer } from "./MouseContextMenu.js";
+import {
+  useResponsiveTerminalSize,
+  useResponsiveStyles,
+} from "./ResponsiveContainer.js";
 
 export interface ConversationAreaProps {
   messages: ConversationMessage[];
@@ -17,7 +27,7 @@ export interface ConversationAreaProps {
   virtualScrolling?: boolean;
   accessibilityMode?: boolean;
   streamingMessage?: StreamingConversationMessage;
-  onScroll?: (event: { position: number; direction: 'up' | 'down' }) => void;
+  onScroll?: (event: { position: number; direction: "up" | "down" }) => void;
   onStreamComplete?: () => void;
   onStreamInterrupt?: () => void;
   onTextSelect?: (text: string) => void;
@@ -41,10 +51,14 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
   onStreamComplete,
   onStreamInterrupt,
   onTextSelect,
-  onRightClick
+  onRightClick,
 }) => {
+  const parity = process.env.PLATO_PARITY_MODE === "1";
+  const quiet = process.env.PLATO_QUIET_TUI === "1" || parity;
   const scrollControllerRef = useRef<ScrollController | undefined>(undefined);
-  const conversationRendererRef = useRef<ConversationRenderer | undefined>(undefined);
+  const conversationRendererRef = useRef<ConversationRenderer | undefined>(
+    undefined,
+  );
   const [scrollPosition, setScrollPosition] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
   const terminalSize = useResponsiveTerminalSize();
@@ -53,13 +67,13 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
   // Initialize scroll controller and conversation renderer
   useEffect(() => {
     const scrollController = new ScrollController({
-      scrollSensitivity: 3,
-      smoothScrolling: true,
-      scrollDuration: 200,
-      enableMomentum: true,
-      throttleInterval: 16, // 60fps
-      boundaryFeedback: true,
-      bounceEffect: false
+      scrollSensitivity: quiet ? 1 : 3,
+      smoothScrolling: quiet ? false : true,
+      scrollDuration: quiet ? 0 : 200,
+      enableMomentum: quiet ? false : true,
+      throttleInterval: quiet ? 80 : 16,
+      boundaryFeedback: quiet ? false : true,
+      bounceEffect: false,
     });
 
     const conversationRenderer = new ConversationRenderer({
@@ -69,19 +83,19 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
       indentSize: 2,
       showTimestamps,
       smoothScrolling: true,
-      showBoundaryIndicators: false
+      showBoundaryIndicators: false,
     });
 
     // Connect scroll controller to renderer
     scrollController.setRenderer(conversationRenderer);
 
     // Listen for scroll events
-    scrollController.on('scroll', (event) => {
+    scrollController.on("scroll", (event) => {
       setScrollPosition(event.position);
       setIsScrolling(true);
       onScroll?.({
         position: event.position,
-        direction: event.direction
+        direction: event.direction,
       });
 
       // Clear scrolling state after animation
@@ -105,7 +119,7 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
 
   // Calculate visible messages for virtual scrolling
   const visibleMessages = useMemo(() => {
-    if (!virtualScrolling || messages.length <= height) {
+    if (parity || !virtualScrolling || messages.length <= height) {
       return messages;
     }
 
@@ -115,22 +129,9 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
     return messages.slice(startIndex, endIndex);
   }, [messages, scrollPosition, height, virtualScrolling]);
 
-  // Handle empty conversation
+  // Handle empty conversation (Claude parity: no welcome placeholder)
   if (messages.length === 0) {
-    return (
-      <StyledBox flexDirection="column" height={height} padding={1}>
-        <Box flexDirection="column" alignItems="center" justifyContent="center" flexGrow={1}>
-          <StyledText type="secondary">
-            Welcome to Plato! Start a conversation by typing below.
-          </StyledText>
-          <Box marginTop={1}>
-            <StyledText type="secondary">
-              Type /help for available commands
-            </StyledText>
-          </Box>
-        </Box>
-      </StyledBox>
-    );
+    return <StyledBox flexDirection="column" height={height} padding={1} />;
   }
 
   return (
@@ -141,7 +142,7 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
     >
       <StyledBox flexDirection="column" height={height} width={width}>
         {/* Scroll indicator */}
-        {isScrolling && (
+        {isScrolling && !quiet && !parity && (
           <Box position="absolute">
             <Text color="gray">◐</Text>
           </Box>
@@ -159,32 +160,46 @@ export const ConversationArea: React.FC<ConversationAreaProps> = ({
               width={width - 4} // Account for padding
             />
           ))}
-          
-          {/* Streaming message display */}
-          {streamingMessage && (
-            <StreamingMessage
-              role={streamingMessage.role}
-              content={streamingMessage.content}
-              isStreaming={streamingMessage.isStreaming || false}
-              isComplete={streamingMessage.isComplete || false}
-              showTimestamp={showTimestamps}
-              timestamp={streamingMessage.timestamp}
-              onStreamComplete={onStreamComplete}
-              onStreamInterrupt={onStreamInterrupt}
-              width={width - 4}
-              speed={25} // 25ms per character as per tech spec
-            />
-          )}
+
+          {/* Streaming message display (only while actively streaming) */}
+          {(() => {
+            const staticMode =
+              process.env.PLATO_STATIC_TUI === "1" ||
+              process.env.PLATO_QUIET_TUI === "1";
+            if (!streamingMessage) return null;
+            // In static/quiet mode, avoid rendering streaming block to prevent duplication
+            if (staticMode) return null;
+            if (!streamingMessage.isStreaming) return null;
+            return (
+              <StreamingMessage
+                role={streamingMessage.role}
+                content={streamingMessage.content}
+                isStreaming={true}
+                isComplete={streamingMessage.isComplete || false}
+                showTimestamp={showTimestamps}
+                timestamp={streamingMessage.timestamp}
+                onStreamComplete={onStreamComplete}
+                onStreamInterrupt={onStreamInterrupt}
+                width={width - 4}
+                speed={25}
+              />
+            );
+          })()}
         </Box>
 
         {/* Scroll position indicator */}
         {messages.length > height && (
           <Box justifyContent="space-between" paddingX={1}>
             <StyledText type="secondary">
-              {Math.min(visibleMessages.length + Math.floor(scrollPosition / 3), messages.length)}/{messages.length}
+              {Math.min(
+                visibleMessages.length + Math.floor(scrollPosition / 3),
+                messages.length,
+              )}
+              /{messages.length}
             </StyledText>
             <StyledText type="secondary">
-              {scrollPosition > 0 && '↑'} {scrollPosition < messages.length * 3 - height && '↓'}
+              {scrollPosition > 0 && "↑"}{" "}
+              {scrollPosition < messages.length * 3 - height && "↓"}
             </StyledText>
           </Box>
         )}
@@ -204,145 +219,146 @@ interface MessageComponentProps {
   width: number;
 }
 
-const MessageComponent: React.FC<MessageComponentProps> = React.memo(({
-  message,
-  showTimestamp,
-  showMetadata,
-  accessibilityMode,
-  width
-}) => {
-  const manager = getStyleManager();
-  const style = manager.getStyle();
+const MessageComponent: React.FC<MessageComponentProps> = React.memo(
+  ({ message, showTimestamp, showMetadata, accessibilityMode, width }) => {
+    const manager = getStyleManager();
+    const style = manager.getStyle();
 
-  // Role-based styling
-  const getRoleDisplay = () => {
-    switch (message.role) {
-      case 'user':
-        return {
-          icon: '👤',
-          label: 'You',
-          color: 'info' as const,
-          prefix: accessibilityMode ? 'User says:' : ''
-        };
-      case 'assistant':
-        return {
-          icon: '🤖',
-          label: 'Assistant',
-          color: 'success' as const,
-          prefix: accessibilityMode ? 'Assistant responds:' : ''
-        };
-      case 'system':
-        return {
-          icon: '⚙️',
-          label: 'System',
-          color: 'warning' as const,
-          prefix: accessibilityMode ? 'System message:' : ''
-        };
-      default:
-        return {
-          icon: '💬',
-          label: 'Message',
-          color: 'primary' as const,
-          prefix: ''
-        };
-    }
-  };
-
-  // Format timestamp
-  const formatTimestamp = (timestamp: number) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    
-    if (diff < 60000) { // Less than 1 minute
-      return 'just now';
-    } else if (diff < 3600000) { // Less than 1 hour
-      const minutes = Math.floor(diff / 60000);
-      return `${minutes}m ago`;
-    } else if (diff < 86400000) { // Less than 1 day
-      const hours = Math.floor(diff / 3600000);
-      return `${hours}h ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
-  };
-
-  // Format metadata
-  const formatMetadata = () => {
-    if (!showMetadata || !message.metadata) return null;
-    
-    const parts = [];
-    if (message.metadata.model) parts.push(message.metadata.model);
-    if (message.metadata.tokensUsed) parts.push(`${message.metadata.tokensUsed} tokens`);
-    if (message.metadata.duration) parts.push(`${(message.metadata.duration / 1000).toFixed(1)}s`);
-    
-    return parts.join(' • ');
-  };
-
-  // Wrap text to fit width
-  const wrapText = (text: string, maxWidth: number) => {
-    const words = text.split(' ');
-    const lines: string[] = [];
-    let currentLine = '';
-
-    for (const word of words) {
-      if ((currentLine + word).length <= maxWidth) {
-        currentLine += (currentLine ? ' ' : '') + word;
-      } else {
-        if (currentLine) lines.push(currentLine);
-        currentLine = word;
+    // Role-based styling
+    const getRoleDisplay = () => {
+      switch (message.role) {
+        case "user":
+          return {
+            icon: "👤",
+            label: "You",
+            color: "info" as const,
+            prefix: accessibilityMode ? "User says:" : "",
+          };
+        case "assistant":
+          return {
+            icon: "🤖",
+            label: "Assistant",
+            color: "success" as const,
+            prefix: accessibilityMode ? "Assistant responds:" : "",
+          };
+        case "system":
+          return {
+            icon: "⚙️",
+            label: "System",
+            color: "warning" as const,
+            prefix: accessibilityMode ? "System message:" : "",
+          };
+        default:
+          return {
+            icon: "💬",
+            label: "Message",
+            color: "primary" as const,
+            prefix: "",
+          };
       }
-    }
-    
-    if (currentLine) lines.push(currentLine);
-    return lines;
-  };
+    };
 
-  const roleDisplay = getRoleDisplay();
-  const timestamp = formatTimestamp(message.timestamp);
-  const metadata = formatMetadata();
-  const wrappedLines = wrapText(message.content || '', width - 6); // Account for indentation
+    // Format timestamp
+    const formatTimestamp = (timestamp: number) => {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diff = now.getTime() - date.getTime();
 
-  return (
-    <Box flexDirection="column" marginY={1}>
-      {/* Message header */}
-      <Box flexDirection="row" marginBottom={0}>
-        <Box marginRight={1}>
-          <Text>{roleDisplay.icon}</Text>
-        </Box>
-        <Box flexDirection="row" alignItems="center">
-          <StyledText type={roleDisplay.color} bold>
-            {roleDisplay.label}
-          </StyledText>
-          {showTimestamp && (
-            <>
-              <StyledText type="secondary"> • </StyledText>
-              <StyledText type="secondary">{timestamp}</StyledText>
-            </>
-          )}
-          {metadata && (
-            <>
-              <StyledText type="secondary"> • </StyledText>
-              <StyledText type="secondary">{metadata}</StyledText>
-            </>
-          )}
-        </Box>
-      </Box>
+      if (diff < 60000) {
+        // Less than 1 minute
+        return "just now";
+      } else if (diff < 3600000) {
+        // Less than 1 hour
+        const minutes = Math.floor(diff / 60000);
+        return `${minutes}m ago`;
+      } else if (diff < 86400000) {
+        // Less than 1 day
+        const hours = Math.floor(diff / 3600000);
+        return `${hours}h ago`;
+      } else {
+        return date.toLocaleDateString();
+      }
+    };
 
-      {/* Message content */}
-      <Box flexDirection="column" marginLeft={3}>
-        {accessibilityMode && roleDisplay.prefix && (
-          <StyledText type="secondary">{roleDisplay.prefix}</StyledText>
-        )}
-        {wrappedLines.map((line, index) => (
-          <Box key={index}>
-            <MessageContentRenderer content={line} />
+    // Format metadata
+    const formatMetadata = () => {
+      if (!showMetadata || !message.metadata) return null;
+
+      const parts = [];
+      if (message.metadata.model) parts.push(message.metadata.model);
+      if (message.metadata.tokensUsed)
+        parts.push(`${message.metadata.tokensUsed} tokens`);
+      if (message.metadata.duration)
+        parts.push(`${(message.metadata.duration / 1000).toFixed(1)}s`);
+
+      return parts.join(" • ");
+    };
+
+    // Wrap text to fit width
+    const wrapText = (text: string, maxWidth: number) => {
+      const words = text.split(" ");
+      const lines: string[] = [];
+      let currentLine = "";
+
+      for (const word of words) {
+        if ((currentLine + word).length <= maxWidth) {
+          currentLine += (currentLine ? " " : "") + word;
+        } else {
+          if (currentLine) lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+
+      if (currentLine) lines.push(currentLine);
+      return lines;
+    };
+
+    const roleDisplay = getRoleDisplay();
+    const timestamp = formatTimestamp(message.timestamp);
+    const metadata = formatMetadata();
+    const wrappedLines = wrapText(message.content || "", width - 6); // Account for indentation
+
+    return (
+      <Box flexDirection="column" marginY={1}>
+        {/* Message header */}
+        <Box flexDirection="row" marginBottom={0}>
+          <Box marginRight={1}>
+            <Text>{roleDisplay.icon}</Text>
           </Box>
-        ))}
+          <Box flexDirection="row" alignItems="center">
+            <StyledText type={roleDisplay.color} bold>
+              {roleDisplay.label}
+            </StyledText>
+            {showTimestamp && (
+              <>
+                <StyledText type="secondary"> • </StyledText>
+                <StyledText type="secondary">{timestamp}</StyledText>
+              </>
+            )}
+            {metadata && (
+              <>
+                <StyledText type="secondary"> • </StyledText>
+                <StyledText type="secondary">{metadata}</StyledText>
+              </>
+            )}
+          </Box>
+        </Box>
+
+        {/* Message content */}
+        <Box flexDirection="column" marginLeft={3}>
+          {accessibilityMode && roleDisplay.prefix && (
+            <StyledText type="secondary">{roleDisplay.prefix}</StyledText>
+          )}
+          {wrappedLines.map((line, index) => (
+            <Box key={index}>
+              <MessageContentRenderer content={line} />
+            </Box>
+          ))}
+        </Box>
       </Box>
-    </Box>
-  );
-});
+    );
+  },
+);
 
 /**
  * MessageContentRenderer - Handles markdown and code rendering
@@ -351,18 +367,25 @@ interface MessageContentRendererProps {
   content: string;
 }
 
-const MessageContentRenderer: React.FC<MessageContentRendererProps> = ({ content }) => {
+const MessageContentRenderer: React.FC<MessageContentRendererProps> = ({
+  content,
+}) => {
   // Basic markdown detection
-  const isCodeBlock = content.trim().startsWith('```');
-  const isInlineCode = content.includes('`') && !isCodeBlock;
-  const isBold = content.includes('**');
-  const isItalic = content.includes('*') && !isBold;
+  const isCodeBlock = content.trim().startsWith("```");
+  const isInlineCode = content.includes("`") && !isCodeBlock;
+  const isBold = content.includes("**");
+  const isItalic = content.includes("*") && !isBold;
 
   // Code block handling
   if (isCodeBlock) {
-    const cleanContent = content.replace(/```\w*\n?|\n?```/g, '');
+    const cleanContent = content.replace(/```\w*\n?|\n?```/g, "");
     return (
-      <Box flexDirection="column" borderStyle="single" borderColor="gray" paddingX={1}>
+      <Box
+        flexDirection="column"
+        borderStyle="single"
+        borderColor="gray"
+        paddingX={1}
+      >
         <StyledText type="secondary">{cleanContent}</StyledText>
       </Box>
     );
@@ -370,11 +393,14 @@ const MessageContentRenderer: React.FC<MessageContentRendererProps> = ({ content
 
   // Inline code handling
   if (isInlineCode) {
-    const parts = content.split('`');
+    const parts = content.split("`");
     return (
       <Box flexDirection="row">
         {parts.map((part, index) => (
-          <Text key={index} backgroundColor={index % 2 === 1 ? 'gray' : undefined}>
+          <Text
+            key={index}
+            backgroundColor={index % 2 === 1 ? "gray" : undefined}
+          >
             {part}
           </Text>
         ))}
@@ -384,7 +410,7 @@ const MessageContentRenderer: React.FC<MessageContentRendererProps> = ({ content
 
   // Bold text
   if (isBold) {
-    const parts = content.split('**');
+    const parts = content.split("**");
     return (
       <Box flexDirection="row">
         {parts.map((part, index) => (

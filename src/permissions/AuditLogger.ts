@@ -1,9 +1,9 @@
-import { EventEmitter } from 'events';
-import fs from 'fs/promises';
-import { createWriteStream, createReadStream } from 'fs';
-import path from 'path';
-import { createGzip } from 'zlib';
-import { pipeline } from 'stream/promises';
+import { EventEmitter } from "events";
+import fs from "fs/promises";
+import { createWriteStream, createReadStream } from "fs";
+import path from "path";
+import { createGzip } from "zlib";
+import { pipeline } from "stream/promises";
 import {
   AuditEntry,
   PermissionQuery,
@@ -11,11 +11,15 @@ import {
   PermissionAction,
   AuditSearchCriteria,
   LogFormatOptions,
-  LogFormatter
-} from './types.js';
-import { createLogFormatter, createAuditContext, createAuditMetadata } from './LogFormatter.js';
-import { AuditIndexer } from './AuditIndexer.js';
-import { RetentionPolicy } from './RetentionPolicy.js';
+  LogFormatter,
+} from "./types.js";
+import {
+  createLogFormatter,
+  createAuditContext,
+  createAuditMetadata,
+} from "./LogFormatter.js";
+import { AuditIndexer } from "./AuditIndexer.js";
+import { RetentionPolicy } from "./RetentionPolicy.js";
 
 export interface AuditLoggerOptions {
   logDirectory?: string;
@@ -24,7 +28,7 @@ export interface AuditLoggerOptions {
   retentionDays?: number;
   compressionEnabled?: boolean;
   enableIndexing?: boolean;
-  logLevel?: 'debug' | 'info' | 'warn' | 'error';
+  logLevel?: "debug" | "info" | "warn" | "error";
   formatOptions?: LogFormatOptions;
   enableStructuredContext?: boolean;
   enablePerformanceMetrics?: boolean;
@@ -32,7 +36,6 @@ export interface AuditLoggerOptions {
   enableRetentionPolicies?: boolean;
   retentionPolicyOptions?: any; // From RetentionPolicy
 }
-
 
 export interface AuditStatistics {
   totalEntries: number;
@@ -46,7 +49,7 @@ export interface AuditStatistics {
 
 export class AuditLogger extends EventEmitter {
   private options: Required<AuditLoggerOptions>;
-  private currentLogFile: string = '';
+  private currentLogFile: string = "";
   private writeStream?: NodeJS.WritableStream;
   private indexCache: Map<string, any[]> = new Map();
   private rotationLock: boolean = false;
@@ -57,33 +60,47 @@ export class AuditLogger extends EventEmitter {
 
   constructor(options: AuditLoggerOptions = {}) {
     super();
-    
+
     this.options = {
-      logDirectory: options.logDirectory || path.join(process.cwd(), '.plato', 'audit-logs'),
+      logDirectory:
+        options.logDirectory ||
+        path.join(process.cwd(), ".plato", "audit-logs"),
       maxFileSize: options.maxFileSize || 10 * 1024 * 1024, // 10MB default
       maxArchiveFiles: options.maxArchiveFiles || 100,
       retentionDays: options.retentionDays || 90, // 90 days default
       compressionEnabled: options.compressionEnabled || true,
       enableIndexing: options.enableIndexing || true,
-      logLevel: options.logLevel || 'info',
-      formatOptions: options.formatOptions || { format: 'json', include_context: true, include_metadata: true },
+      logLevel: options.logLevel || "info",
+      formatOptions: options.formatOptions || {
+        format: "json",
+        include_context: true,
+        include_metadata: true,
+      },
       enableStructuredContext: options.enableStructuredContext !== false,
       enablePerformanceMetrics: options.enablePerformanceMetrics !== false,
       enableRiskAssessment: options.enableRiskAssessment !== false,
       enableRetentionPolicies: options.enableRetentionPolicies !== false,
-      retentionPolicyOptions: options.retentionPolicyOptions || {}
+      retentionPolicyOptions: options.retentionPolicyOptions || {},
     };
 
     this.formatter = createLogFormatter(this.options.formatOptions);
     this.indexer = new AuditIndexer({
-      indexDirectory: path.join(this.options.logDirectory, '..', 'audit-indexes'),
+      indexDirectory: path.join(
+        this.options.logDirectory,
+        "..",
+        "audit-indexes",
+      ),
       enableInMemoryCache: this.options.enableIndexing,
-      enablePerformanceTracking: true
+      enablePerformanceTracking: true,
     });
 
     this.retentionPolicy = new RetentionPolicy({
       ...this.options.retentionPolicyOptions,
-      archiveDirectory: path.join(this.options.logDirectory, '..', 'audit-archive')
+      archiveDirectory: path.join(
+        this.options.logDirectory,
+        "..",
+        "audit-archive",
+      ),
     });
   }
 
@@ -94,26 +111,26 @@ export class AuditLogger extends EventEmitter {
     try {
       // Create log directory
       await fs.mkdir(this.options.logDirectory, { recursive: true });
-      
+
       // Initialize indexer
       await this.indexer.initialize();
-      
+
       // Initialize retention policy
       if (this.options.enableRetentionPolicies) {
         await this.retentionPolicy.initialize();
       }
-      
+
       // Initialize current log file
       await this.initializeCurrentLogFile();
-      
+
       // Build search index if enabled
       if (this.options.enableIndexing) {
         await this.buildSearchIndex();
       }
 
-      this.emit('initialized');
+      this.emit("initialized");
     } catch (error) {
-      this.emit('error', error);
+      this.emit("error", error);
       throw error;
     }
   }
@@ -126,20 +143,20 @@ export class AuditLogger extends EventEmitter {
     result: PermissionResult,
     profile?: string,
     sessionId?: string,
-    userDecision?: 'approved' | 'denied' | 'skipped',
-    startTime?: number
+    userDecision?: "approved" | "denied" | "skipped",
+    startTime?: number,
   ): Promise<string> {
     const entryId = this.generateEntryId();
     const now = new Date();
-    
+
     // Create base audit context
-    const context = this.options.enableStructuredContext 
+    const context = this.options.enableStructuredContext
       ? this.enrichAuditContext(await this.createContextFromQuery(query))
       : createAuditContext();
 
     // Create metadata with performance metrics
     const metadata = createAuditMetadata(this.options.logLevel);
-    
+
     if (this.options.enablePerformanceMetrics && startTime) {
       metadata.duration_ms = Date.now() - startTime;
     }
@@ -161,11 +178,11 @@ export class AuditLogger extends EventEmitter {
       session_id: sessionId,
       user_decision: userDecision,
       context,
-      metadata
+      metadata,
     };
 
     await this.writeEntry(entry);
-    
+
     // Update search index if enabled
     if (this.options.enableIndexing) {
       this.updateIndex(entry);
@@ -186,7 +203,7 @@ export class AuditLogger extends EventEmitter {
     try {
       // Use indexer for efficient search
       const indexResults = await this.indexer.search(criteria);
-      
+
       // Convert index results to actual entries
       const entries: AuditEntry[] = [];
       for (const indexEntry of indexResults) {
@@ -198,10 +215,13 @@ export class AuditLogger extends EventEmitter {
 
       // Apply final filtering that couldn't be done at index level
       const filteredEntries = this.filterEntries(entries, criteria);
-      
+
       return filteredEntries;
     } catch (error) {
-      console.warn('Error using indexer, falling back to file search:', (error as Error).message);
+      console.warn(
+        "Error using indexer, falling back to file search:",
+        (error as Error).message,
+      );
       return this.fallbackSearch(criteria);
     }
   }
@@ -209,7 +229,9 @@ export class AuditLogger extends EventEmitter {
   /**
    * Fallback search method when indexing is not available
    */
-  private async fallbackSearch(criteria: AuditSearchCriteria): Promise<AuditEntry[]> {
+  private async fallbackSearch(
+    criteria: AuditSearchCriteria,
+  ): Promise<AuditEntry[]> {
     const logFiles = await this.getLogFiles();
     let allEntries: AuditEntry[] = [];
 
@@ -219,7 +241,10 @@ export class AuditLogger extends EventEmitter {
         allEntries = allEntries.concat(entries);
       } catch (error) {
         // Handle malformed log files gracefully
-        console.warn(`Error reading log file ${logFile}:`, (error as Error).message);
+        console.warn(
+          `Error reading log file ${logFile}:`,
+          (error as Error).message,
+        );
       }
     }
 
@@ -263,12 +288,15 @@ export class AuditLogger extends EventEmitter {
    */
   async applyRetentionPolicies(): Promise<any> {
     if (!this.options.enableRetentionPolicies) {
-      return { message: 'Retention policies are disabled' };
+      return { message: "Retention policies are disabled" };
     }
 
     // Get all entries for retention policy evaluation
     const entries = await this.searchEntries({});
-    return this.retentionPolicy.applyRetentionPolicies(entries, this.options.logDirectory);
+    return this.retentionPolicy.applyRetentionPolicies(
+      entries,
+      this.options.logDirectory,
+    );
   }
 
   /**
@@ -308,7 +336,11 @@ export class AuditLogger extends EventEmitter {
     let totalSize = 0;
     let oldestEntry: Date | undefined;
     let newestEntry: Date | undefined;
-    const actionCounts: Record<PermissionAction, number> = { allow: 0, deny: 0, confirm: 0 };
+    const actionCounts: Record<PermissionAction, number> = {
+      allow: 0,
+      deny: 0,
+      confirm: 0,
+    };
     const toolCounts: Record<string, number> = {};
 
     for (const logFile of logFiles) {
@@ -325,7 +357,7 @@ export class AuditLogger extends EventEmitter {
           actionCounts[entry.result.action]++;
 
           // Update tool counts
-          const tool = entry.query.tool || 'unknown';
+          const tool = entry.query.tool || "unknown";
           toolCounts[tool] = (toolCounts[tool] || 0) + 1;
 
           // Update date range
@@ -337,7 +369,10 @@ export class AuditLogger extends EventEmitter {
           }
         }
       } catch (error) {
-        console.warn(`Error processing log file ${logFile}:`, (error as Error).message);
+        console.warn(
+          `Error processing log file ${logFile}:`,
+          (error as Error).message,
+        );
       }
     }
 
@@ -348,7 +383,7 @@ export class AuditLogger extends EventEmitter {
       oldestEntry,
       newestEntry,
       actionCounts,
-      toolCounts
+      toolCounts,
     };
   }
 
@@ -360,15 +395,14 @@ export class AuditLogger extends EventEmitter {
       // Use retention policies if enabled
       if (this.options.enableRetentionPolicies) {
         const retentionStats = await this.applyRetentionPolicies();
-        this.emit('cleanupCompleted', retentionStats);
+        this.emit("cleanupCompleted", retentionStats);
         return;
       }
 
       // Fallback to traditional cleanup
       await this.traditionalCleanup();
-
     } catch (error) {
-      this.emit('cleanupError', error);
+      this.emit("cleanupError", error);
     }
   }
 
@@ -394,7 +428,10 @@ export class AuditLogger extends EventEmitter {
           filesToKeep.push(logFile);
         }
       } catch (error) {
-        console.warn(`Error checking file ${logFile}:`, (error as Error).message);
+        console.warn(
+          `Error checking file ${logFile}:`,
+          (error as Error).message,
+        );
       }
     }
 
@@ -404,14 +441,20 @@ export class AuditLogger extends EventEmitter {
         await fs.unlink(filePath);
         console.debug(`Deleted old audit log: ${filePath}`);
       } catch (error) {
-        console.warn(`Error deleting log file ${filePath}:`, (error as Error).message);
+        console.warn(
+          `Error deleting log file ${filePath}:`,
+          (error as Error).message,
+        );
       }
     }
 
     // Enforce max archive files limit
     if (filesToKeep.length > this.options.maxArchiveFiles) {
       const sortedFiles = filesToKeep.sort();
-      const extraFiles = sortedFiles.slice(0, filesToKeep.length - this.options.maxArchiveFiles);
+      const extraFiles = sortedFiles.slice(
+        0,
+        filesToKeep.length - this.options.maxArchiveFiles,
+      );
 
       for (const fileName of extraFiles) {
         try {
@@ -419,14 +462,17 @@ export class AuditLogger extends EventEmitter {
           await fs.unlink(filePath);
           console.debug(`Deleted excess audit log: ${filePath}`);
         } catch (error) {
-          console.warn(`Error deleting excess log file ${fileName}:`, (error as Error).message);
+          console.warn(
+            `Error deleting excess log file ${fileName}:`,
+            (error as Error).message,
+          );
         }
       }
     }
 
-    this.emit('cleanupCompleted', {
+    this.emit("cleanupCompleted", {
       deletedFiles: filesToDelete.length,
-      retainedFiles: filesToKeep.length
+      retainedFiles: filesToKeep.length,
     });
   }
 
@@ -454,9 +500,11 @@ export class AuditLogger extends EventEmitter {
   /**
    * Create context from permission query
    */
-  private async createContextFromQuery(query: PermissionQuery): Promise<import('./types').AuditContext> {
+  private async createContextFromQuery(
+    query: PermissionQuery,
+  ): Promise<import("./types").AuditContext> {
     const context = createAuditContext();
-    
+
     // Add query-specific context
     if (query.path) {
       context.workspace_path = path.dirname(query.path);
@@ -464,32 +512,40 @@ export class AuditLogger extends EventEmitter {
 
     // Try to get git context
     try {
-      const { execa } = await import('execa');
-      const { stdout: branch } = await execa('git', ['branch', '--show-current'], {
+      const { execa } = await import("execa");
+      const { stdout: branch } = await execa(
+        "git",
+        ["branch", "--show-current"],
+        {
+          cwd: context.workspace_path,
+          timeout: 5000,
+        },
+      );
+
+      const { stdout: commitHash } = await execa("git", ["rev-parse", "HEAD"], {
         cwd: context.workspace_path,
-        timeout: 5000
-      });
-      
-      const { stdout: commitHash } = await execa('git', ['rev-parse', 'HEAD'], {
-        cwd: context.workspace_path,
-        timeout: 5000
+        timeout: 5000,
       });
 
-      const { stdout: status } = await execa('git', ['status', '--porcelain'], {
+      const { stdout: status } = await execa("git", ["status", "--porcelain"], {
         cwd: context.workspace_path,
-        timeout: 5000
+        timeout: 5000,
       });
 
-      const { stdout: remote } = await execa('git', ['remote', 'get-url', 'origin'], {
-        cwd: context.workspace_path,
-        timeout: 5000
-      }).catch(() => ({ stdout: '' }));
+      const { stdout: remote } = await execa(
+        "git",
+        ["remote", "get-url", "origin"],
+        {
+          cwd: context.workspace_path,
+          timeout: 5000,
+        },
+      ).catch(() => ({ stdout: "" }));
 
       context.git_context = {
         branch: branch.trim(),
         commit_hash: commitHash.trim(),
         repository: remote.trim(),
-        is_clean: status.trim().length === 0
+        is_clean: status.trim().length === 0,
       };
     } catch (error) {
       // Git not available or not a git repository
@@ -501,10 +557,12 @@ export class AuditLogger extends EventEmitter {
   /**
    * Enrich audit context with additional information
    */
-  private enrichAuditContext(context: import('./types').AuditContext): import('./types').AuditContext {
+  private enrichAuditContext(
+    context: import("./types").AuditContext,
+  ): import("./types").AuditContext {
     // Add correlation ID for request tracking
     context.correlation_id = this.generateEntryId();
-    
+
     // Add request ID if available (could be set by upper layers)
     if (process.env.REQUEST_ID) {
       context.request_id = process.env.REQUEST_ID;
@@ -512,11 +570,11 @@ export class AuditLogger extends EventEmitter {
 
     // Determine source based on environment
     if (process.env.CI) {
-      context.source = 'system';
+      context.source = "system";
     } else if (process.env.HTTP_PORT || process.env.PORT) {
-      context.source = 'api';
+      context.source = "api";
     } else {
-      context.source = 'cli';
+      context.source = "cli";
     }
 
     return context;
@@ -525,38 +583,62 @@ export class AuditLogger extends EventEmitter {
   /**
    * Calculate risk score based on query and result
    */
-  private calculateRiskScore(query: PermissionQuery, result: PermissionResult): number {
+  private calculateRiskScore(
+    query: PermissionQuery,
+    result: PermissionResult,
+  ): number {
     let riskScore = 0;
 
     // Base risk by action
     switch (result.action) {
-      case 'allow':
+      case "allow":
         riskScore += 10;
         break;
-      case 'deny':
+      case "deny":
         riskScore += 30;
         break;
-      case 'confirm':
+      case "confirm":
         riskScore += 50;
         break;
     }
 
     // Risk by tool type
-    const highRiskTools = ['fs', 'exec', 'shell', 'network', 'process'];
-    if (highRiskTools.some(tool => query.tool.toLowerCase().includes(tool))) {
+    const highRiskTools = ["fs", "exec", "shell", "network", "process"];
+    if (highRiskTools.some((tool) => query.tool.toLowerCase().includes(tool))) {
       riskScore += 20;
     }
 
     // Risk by operation type
-    const highRiskOperations = ['delete', 'remove', 'write', 'execute', 'modify', 'chmod'];
-    if (query.operation && highRiskOperations.some(op => query.operation!.toLowerCase().includes(op))) {
+    const highRiskOperations = [
+      "delete",
+      "remove",
+      "write",
+      "execute",
+      "modify",
+      "chmod",
+    ];
+    if (
+      query.operation &&
+      highRiskOperations.some((op) =>
+        query.operation!.toLowerCase().includes(op),
+      )
+    ) {
       riskScore += 15;
     }
 
     // Risk by path sensitivity
     if (query.path) {
-      const sensitivePaths = ['/etc/', '/bin/', '/usr/', '/sys/', '/proc/', '~/', '.env', '.secret'];
-      if (sensitivePaths.some(path => query.path!.includes(path))) {
+      const sensitivePaths = [
+        "/etc/",
+        "/bin/",
+        "/usr/",
+        "/sys/",
+        "/proc/",
+        "~/",
+        ".env",
+        ".secret",
+      ];
+      if (sensitivePaths.some((path) => query.path!.includes(path))) {
         riskScore += 25;
       }
     }
@@ -574,47 +656,62 @@ export class AuditLogger extends EventEmitter {
   /**
    * Categorize audit entry for better organization
    */
-  private categorizeEntry(query: PermissionQuery, result: PermissionResult): 'permission' | 'security' | 'compliance' | 'performance' {
+  private categorizeEntry(
+    query: PermissionQuery,
+    result: PermissionResult,
+  ): "permission" | "security" | "compliance" | "performance" {
     // Security category
-    if (result.action === 'deny' || this.calculateRiskScore(query, result) > 70) {
-      return 'security';
+    if (
+      result.action === "deny" ||
+      this.calculateRiskScore(query, result) > 70
+    ) {
+      return "security";
     }
 
     // Performance category
-    if (query.operation?.includes('performance') || query.tool.includes('perf')) {
-      return 'performance';
+    if (
+      query.operation?.includes("performance") ||
+      query.tool.includes("perf")
+    ) {
+      return "performance";
     }
 
     // Compliance category
-    if (result.rule?.reason?.toLowerCase().includes('compliance') || 
-        result.rule?.reason?.toLowerCase().includes('policy')) {
-      return 'compliance';
+    if (
+      result.rule?.reason?.toLowerCase().includes("compliance") ||
+      result.rule?.reason?.toLowerCase().includes("policy")
+    ) {
+      return "compliance";
     }
 
     // Default to permission
-    return 'permission';
+    return "permission";
   }
 
   /**
    * Generate tags for better filtering and search
    */
-  private generateTags(query: PermissionQuery, result: PermissionResult, profile?: string): string[] {
+  private generateTags(
+    query: PermissionQuery,
+    result: PermissionResult,
+    profile?: string,
+  ): string[] {
     const tags: string[] = [];
 
     // Add tool-based tags
     tags.push(`tool:${query.tool}`);
-    
+
     if (query.operation) {
       tags.push(`operation:${query.operation}`);
     }
 
     // Add result-based tags
     tags.push(`action:${result.action}`);
-    
+
     if (result.confidence < 0.5) {
-      tags.push('low-confidence');
+      tags.push("low-confidence");
     } else if (result.confidence > 0.9) {
-      tags.push('high-confidence');
+      tags.push("high-confidence");
     }
 
     // Add profile tag
@@ -625,11 +722,11 @@ export class AuditLogger extends EventEmitter {
     // Add risk-based tags
     const riskScore = this.calculateRiskScore(query, result);
     if (riskScore > 70) {
-      tags.push('high-risk');
+      tags.push("high-risk");
     } else if (riskScore > 40) {
-      tags.push('medium-risk');
+      tags.push("medium-risk");
     } else {
-      tags.push('low-risk');
+      tags.push("low-risk");
     }
 
     // Add path-based tags
@@ -638,13 +735,13 @@ export class AuditLogger extends EventEmitter {
       if (extension) {
         tags.push(`file-type:${extension.slice(1)}`);
       }
-      
-      if (query.path.includes('.git')) {
-        tags.push('git-related');
+
+      if (query.path.includes(".git")) {
+        tags.push("git-related");
       }
-      
-      if (query.path.includes('test')) {
-        tags.push('test-related');
+
+      if (query.path.includes("test")) {
+        tags.push("test-related");
       }
     }
 
@@ -655,8 +752,11 @@ export class AuditLogger extends EventEmitter {
    * Initialize the current log file
    */
   private async initializeCurrentLogFile(): Promise<void> {
-    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    this.currentLogFile = path.join(this.options.logDirectory, `audit-${timestamp}.log`);
+    const timestamp = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    this.currentLogFile = path.join(
+      this.options.logDirectory,
+      `audit-${timestamp}.log`,
+    );
 
     // Check if rotation is needed
     try {
@@ -696,16 +796,16 @@ export class AuditLogger extends EventEmitter {
 
     // Format and write the entry
     const formattedEntry = this.formatter.format(entry);
-    const entryLine = formattedEntry + '\n';
-    await fs.appendFile(this.currentLogFile, entryLine, 'utf8');
-    
+    const entryLine = formattedEntry + "\n";
+    await fs.appendFile(this.currentLogFile, entryLine, "utf8");
+
     // Add to indexer if indexing is enabled
     if (this.options.enableIndexing) {
       const fileName = path.basename(this.currentLogFile);
       await this.indexer.addEntry(entry, fileName, currentPosition);
     }
-    
-    this.emit('entryLogged', entry);
+
+    this.emit("entryLogged", entry);
   }
 
   /**
@@ -717,10 +817,13 @@ export class AuditLogger extends EventEmitter {
     }
 
     this.rotationLock = true;
-    
+
     try {
-      const timestamp = new Date().toISOString().replace(/[:]/g, '-');
-      const rotatedFile = this.currentLogFile.replace('.log', `-${timestamp}.log`);
+      const timestamp = new Date().toISOString().replace(/[:]/g, "-");
+      const rotatedFile = this.currentLogFile.replace(
+        ".log",
+        `-${timestamp}.log`,
+      );
 
       // Move current log file to rotated name
       try {
@@ -736,9 +839,8 @@ export class AuditLogger extends EventEmitter {
 
       // Initialize new current log file
       await this.initializeCurrentLogFile();
-      
-      this.emit('logRotated', { rotatedFile });
 
+      this.emit("logRotated", { rotatedFile });
     } finally {
       this.rotationLock = false;
     }
@@ -758,10 +860,13 @@ export class AuditLogger extends EventEmitter {
 
       // Remove original file after successful compression
       await fs.unlink(filePath);
-      
+
       console.debug(`Compressed log file: ${filePath} -> ${gzipPath}`);
     } catch (error) {
-      console.warn(`Error compressing log file ${filePath}:`, (error as Error).message);
+      console.warn(
+        `Error compressing log file ${filePath}:`,
+        (error as Error).message,
+      );
     }
   }
 
@@ -771,9 +876,13 @@ export class AuditLogger extends EventEmitter {
   private async getLogFiles(): Promise<string[]> {
     try {
       const files = await fs.readdir(this.options.logDirectory);
-      return files.filter(file => 
-        file.startsWith('audit-') && (file.endsWith('.log') || file.endsWith('.log.gz'))
-      ).sort();
+      return files
+        .filter(
+          (file) =>
+            file.startsWith("audit-") &&
+            (file.endsWith(".log") || file.endsWith(".log.gz")),
+        )
+        .sort();
     } catch (error) {
       return [];
     }
@@ -784,11 +893,11 @@ export class AuditLogger extends EventEmitter {
    */
   private async readLogFile(fileName: string): Promise<AuditEntry[]> {
     const filePath = path.join(this.options.logDirectory, fileName);
-    
+
     try {
-      const content = await fs.readFile(filePath, 'utf8');
-      const lines = content.split('\n').filter(line => line.trim());
-      
+      const content = await fs.readFile(filePath, "utf8");
+      const lines = content.split("\n").filter((line) => line.trim());
+
       const entries: AuditEntry[] = [];
       for (const line of lines) {
         try {
@@ -801,10 +910,13 @@ export class AuditLogger extends EventEmitter {
           console.warn(`Error parsing audit entry: ${line}`);
         }
       }
-      
+
       return entries;
     } catch (error) {
-      console.warn(`Error reading log file ${filePath}:`, (error as Error).message);
+      console.warn(
+        `Error reading log file ${filePath}:`,
+        (error as Error).message,
+      );
       return [];
     }
   }
@@ -812,8 +924,11 @@ export class AuditLogger extends EventEmitter {
   /**
    * Filter entries based on enhanced search criteria
    */
-  private filterEntries(entries: AuditEntry[], criteria: AuditSearchCriteria): AuditEntry[] {
-    let filtered = entries.filter(entry => {
+  private filterEntries(
+    entries: AuditEntry[],
+    criteria: AuditSearchCriteria,
+  ): AuditEntry[] {
+    let filtered = entries.filter((entry) => {
       // Basic filters
       if (criteria.tool && entry.query.tool !== criteria.tool) {
         return false;
@@ -855,19 +970,27 @@ export class AuditLogger extends EventEmitter {
 
       if (criteria.tags && criteria.tags.length > 0) {
         const entryTags = entry.metadata?.tags || [];
-        const hasAllTags = criteria.tags.every(tag => entryTags.includes(tag));
+        const hasAllTags = criteria.tags.every((tag) =>
+          entryTags.includes(tag),
+        );
         if (!hasAllTags) {
           return false;
         }
       }
 
-      if (criteria.risk_score_min !== undefined && 
-          (entry.metadata?.risk_score === undefined || entry.metadata.risk_score < criteria.risk_score_min)) {
+      if (
+        criteria.risk_score_min !== undefined &&
+        (entry.metadata?.risk_score === undefined ||
+          entry.metadata.risk_score < criteria.risk_score_min)
+      ) {
         return false;
       }
 
-      if (criteria.risk_score_max !== undefined && 
-          (entry.metadata?.risk_score === undefined || entry.metadata.risk_score > criteria.risk_score_max)) {
+      if (
+        criteria.risk_score_max !== undefined &&
+        (entry.metadata?.risk_score === undefined ||
+          entry.metadata.risk_score > criteria.risk_score_max)
+      ) {
         return false;
       }
 
@@ -878,15 +1001,24 @@ export class AuditLogger extends EventEmitter {
         }
       }
 
-      if (criteria.cache_hit !== undefined && entry.metadata?.cache_hit !== criteria.cache_hit) {
+      if (
+        criteria.cache_hit !== undefined &&
+        entry.metadata?.cache_hit !== criteria.cache_hit
+      ) {
         return false;
       }
 
-      if (criteria.git_branch && entry.context?.git_context?.branch !== criteria.git_branch) {
+      if (
+        criteria.git_branch &&
+        entry.context?.git_context?.branch !== criteria.git_branch
+      ) {
         return false;
       }
 
-      if (criteria.workspace_path && !entry.context?.workspace_path?.includes(criteria.workspace_path)) {
+      if (
+        criteria.workspace_path &&
+        !entry.context?.workspace_path?.includes(criteria.workspace_path)
+      ) {
         return false;
       }
 
@@ -894,30 +1026,30 @@ export class AuditLogger extends EventEmitter {
     });
 
     // Apply sorting
-    const sortBy = criteria.sort_by || 'timestamp';
-    const sortOrder = criteria.sort_order || 'desc';
+    const sortBy = criteria.sort_by || "timestamp";
+    const sortOrder = criteria.sort_order || "desc";
 
     filtered.sort((a, b) => {
       let aValue: number;
       let bValue: number;
 
       switch (sortBy) {
-        case 'risk_score':
+        case "risk_score":
           aValue = a.metadata?.risk_score || 0;
           bValue = b.metadata?.risk_score || 0;
           break;
-        case 'duration_ms':
+        case "duration_ms":
           aValue = a.metadata?.duration_ms || 0;
           bValue = b.metadata?.duration_ms || 0;
           break;
-        case 'timestamp':
+        case "timestamp":
         default:
           aValue = a.timestamp.getTime();
           bValue = b.timestamp.getTime();
           break;
       }
 
-      return sortOrder === 'desc' ? bValue - aValue : aValue - bValue;
+      return sortOrder === "desc" ? bValue - aValue : aValue - bValue;
     });
 
     return filtered;
@@ -940,15 +1072,15 @@ export class AuditLogger extends EventEmitter {
 
     try {
       const logFiles = await this.getLogFiles();
-      
+
       for (const logFile of logFiles) {
         const entries = await this.readLogFile(logFile);
         this.indexCache.set(logFile, entries);
       }
 
-      this.emit('indexBuilt', { files: logFiles.length });
+      this.emit("indexBuilt", { files: logFiles.length });
     } catch (error) {
-      console.warn('Error building search index:', (error as Error).message);
+      console.warn("Error building search index:", (error as Error).message);
     }
   }
 

@@ -3,9 +3,9 @@
  * Provides comprehensive resource management for native tools
  */
 
-import { EventEmitter } from 'events';
-import * as os from 'os';
-import * as fs from 'fs/promises';
+import { EventEmitter } from "events";
+import * as os from "os";
+import * as fs from "fs/promises";
 import {
   ResourceLimits,
   ResourceAcquisitionResult,
@@ -16,8 +16,8 @@ import {
   OperationMetrics,
   TelemetryEvent,
   ToolError,
-  ErrorClass
-} from './types.js';
+  ErrorClass,
+} from "./types.js";
 
 interface ResourceSlot {
   id: string;
@@ -55,11 +55,11 @@ export class ResourceManager extends EventEmitter {
 
   // Rate limiting configuration
   private readonly rateLimits = {
-    read: { requests: 100, window: 60000 },    // 100 per minute
-    write: { requests: 50, window: 60000 },    // 50 per minute
-    list: { requests: 200, window: 60000 },    // 200 per minute
-    search: { requests: 30, window: 60000 },   // 30 per minute
-    bash: { requests: 20, window: 60000 }      // 20 per minute
+    read: { requests: 100, window: 60000 }, // 100 per minute
+    write: { requests: 50, window: 60000 }, // 50 per minute
+    list: { requests: 200, window: 60000 }, // 200 per minute
+    search: { requests: 30, window: 60000 }, // 30 per minute
+    bash: { requests: 20, window: 60000 }, // 20 per minute
   };
 
   private cpuBaseline?: NodeJS.CpuUsage;
@@ -67,7 +67,7 @@ export class ResourceManager extends EventEmitter {
 
   constructor(limits: ResourceLimits) {
     super();
-    
+
     this.limits = this.validateAndNormalizeLimits(limits);
     this.initializeCPUBaseline();
     this.startResourceMonitoring();
@@ -112,7 +112,9 @@ export class ResourceManager extends EventEmitter {
   /**
    * Acquire a resource slot with concurrency limiting
    */
-  async acquireResource(operationId: string): Promise<ResourceAcquisitionResult> {
+  async acquireResource(
+    operationId: string,
+  ): Promise<ResourceAcquisitionResult> {
     return new Promise((resolve) => {
       // Check if we're at capacity
       if (this.activeSlots.size >= this.limits.maxConcurrentOperations!) {
@@ -120,7 +122,7 @@ export class ResourceManager extends EventEmitter {
         const queuedRequest: QueuedRequest = {
           id: operationId,
           resolve,
-          queuedAt: Date.now()
+          queuedAt: Date.now(),
         };
 
         // Set timeout for queued request
@@ -129,19 +131,19 @@ export class ResourceManager extends EventEmitter {
             this.removeFromQueue(queuedRequest);
             resolve({
               granted: false,
-              reason: 'Request timeout in queue',
-              queuePosition: -1
+              reason: "Request timeout in queue",
+              queuePosition: -1,
             });
           }, this.limits.operationTimeout);
         }
 
         this.requestQueue.push(queuedRequest);
-        
+
         resolve({
           granted: false,
-          reason: 'concurrency limit reached',
+          reason: "concurrency limit reached",
           queuePosition: this.requestQueue.length,
-          estimatedWaitTime: this.estimateWaitTime()
+          estimatedWaitTime: this.estimateWaitTime(),
         });
         return;
       }
@@ -149,7 +151,7 @@ export class ResourceManager extends EventEmitter {
       // Grant immediate access
       const slot: ResourceSlot = {
         id: operationId,
-        acquiredAt: Date.now()
+        acquiredAt: Date.now(),
       };
 
       // Set timeout for the slot
@@ -162,17 +164,17 @@ export class ResourceManager extends EventEmitter {
       this.activeSlots.set(operationId, slot);
 
       resolve({
-        granted: true
+        granted: true,
       });
 
       // Emit resource allocation telemetry
       this.emitTelemetry({
-        tool: 'resource-acquisition',
+        tool: "resource-acquisition",
         startTime: Date.now(),
         endTime: Date.now(),
         duration: 0,
         success: true,
-        resourcesUsed: { activeSlots: this.activeSlots.size }
+        resourcesUsed: { activeSlots: this.activeSlots.size },
       });
     });
   }
@@ -198,19 +200,22 @@ export class ResourceManager extends EventEmitter {
 
     // Emit resource release telemetry
     this.emitTelemetry({
-      tool: 'resource-release',
+      tool: "resource-release",
       startTime: slot.acquiredAt,
       endTime: Date.now(),
       duration: Date.now() - slot.acquiredAt,
       success: true,
-      resourcesUsed: { activeSlots: this.activeSlots.size }
+      resourcesUsed: { activeSlots: this.activeSlots.size },
     });
   }
 
   /**
    * Check rate limits for a tool and client
    */
-  async checkRateLimit(tool: string, clientId: string): Promise<RateLimitResult> {
+  async checkRateLimit(
+    tool: string,
+    clientId: string,
+  ): Promise<RateLimitResult> {
     const rateLimit = this.rateLimits[tool as keyof typeof this.rateLimits];
     if (!rateLimit) {
       return { allowed: true }; // No rate limit configured
@@ -224,7 +229,7 @@ export class ResourceManager extends EventEmitter {
       state = {
         requests: 0,
         windowStart: now,
-        blocked: false
+        blocked: false,
       };
       this.rateLimitStates.set(key, state);
     }
@@ -243,7 +248,7 @@ export class ResourceManager extends EventEmitter {
         allowed: false,
         retryAfter: state.unblockTime - now,
         requestsRemaining: 0,
-        windowResetTime: state.windowStart + rateLimit.window
+        windowResetTime: state.windowStart + rateLimit.window,
       };
     }
 
@@ -251,22 +256,22 @@ export class ResourceManager extends EventEmitter {
     if (state.requests >= rateLimit.requests) {
       state.blocked = true;
       state.unblockTime = state.windowStart + rateLimit.window;
-      
+
       return {
         allowed: false,
         retryAfter: state.unblockTime - now,
         requestsRemaining: 0,
-        windowResetTime: state.windowStart + rateLimit.window
+        windowResetTime: state.windowStart + rateLimit.window,
       };
     }
 
     // Allow request and increment counter
     state.requests++;
-    
+
     return {
       allowed: true,
       requestsRemaining: rateLimit.requests - state.requests,
-      windowResetTime: state.windowStart + rateLimit.window
+      windowResetTime: state.windowStart + rateLimit.window,
     };
   }
 
@@ -282,7 +287,7 @@ export class ResourceManager extends EventEmitter {
       memoryUsage,
       cpuUsage,
       openFileHandles: fileHandles,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
@@ -297,22 +302,25 @@ export class ResourceManager extends EventEmitter {
         userCPUTime: 0,
         systemCPUTime: 0,
         percentUsage: 0,
-        elapsedTime: 0
+        elapsedTime: 0,
       };
     }
 
     const current = process.cpuUsage(this.cpuBaseline);
     const totalCPUTime = current.user + current.system;
     const elapsedTime = Date.now();
-    
+
     // Calculate percentage (rough estimate)
-    const percentUsage = Math.min(100, (totalCPUTime / 1000) / elapsedTime * 100);
+    const percentUsage = Math.min(
+      100,
+      (totalCPUTime / 1000 / elapsedTime) * 100,
+    );
 
     return {
       userCPUTime: current.user / 1000, // Convert to milliseconds
       systemCPUTime: current.system / 1000,
       percentUsage,
-      elapsedTime
+      elapsedTime,
     };
   }
 
@@ -322,14 +330,14 @@ export class ResourceManager extends EventEmitter {
   async getOpenFileHandles(): Promise<FileHandleData> {
     try {
       // On Unix systems, count files in /proc/self/fd
-      if (process.platform !== 'win32') {
-        const fdDir = '/proc/self/fd';
+      if (process.platform !== "win32") {
+        const fdDir = "/proc/self/fd";
         try {
           const files = await fs.readdir(fdDir);
           return {
             count: files.length,
             types: { fd: files.length },
-            limit: this.limits.maxOpenFiles!
+            limit: this.limits.maxOpenFiles!,
           };
         } catch {
           // Fallback for systems without /proc
@@ -340,13 +348,13 @@ export class ResourceManager extends EventEmitter {
       return {
         count: this.activeSlots.size * 2, // Rough estimate
         types: { estimated: this.activeSlots.size * 2 },
-        limit: this.limits.maxOpenFiles!
+        limit: this.limits.maxOpenFiles!,
       };
     } catch (error) {
       return {
         count: 0,
         types: {},
-        limit: this.limits.maxOpenFiles!
+        limit: this.limits.maxOpenFiles!,
       };
     }
   }
@@ -358,7 +366,7 @@ export class ResourceManager extends EventEmitter {
     const monitoring: OperationMonitoring = {
       startTime: Date.now(),
       startMemory: process.memoryUsage(),
-      startCPU: process.cpuUsage()
+      startCPU: process.cpuUsage(),
     };
 
     this.operationMonitoring.set(operationId, monitoring);
@@ -367,13 +375,15 @@ export class ResourceManager extends EventEmitter {
   /**
    * Stop monitoring and get operation metrics
    */
-  async stopOperationMonitoring(operationId: string): Promise<OperationMetrics> {
+  async stopOperationMonitoring(
+    operationId: string,
+  ): Promise<OperationMetrics> {
     const monitoring = this.operationMonitoring.get(operationId);
     if (!monitoring) {
       throw new ToolError(
         ErrorClass.VALIDATION,
-        'MONITORING_NOT_FOUND',
-        `Operation monitoring not found: ${operationId}`
+        "MONITORING_NOT_FOUND",
+        `Operation monitoring not found: ${operationId}`,
       );
     }
 
@@ -387,23 +397,29 @@ export class ResourceManager extends EventEmitter {
       cpuUsage: {
         userCPUTime: endCPU.user / 1000,
         systemCPUTime: endCPU.system / 1000,
-        percentUsage: Math.min(100, (endCPU.user + endCPU.system) / 1000 / (endTime - monitoring.startTime) * 100),
-        elapsedTime: endTime - monitoring.startTime
+        percentUsage: Math.min(
+          100,
+          ((endCPU.user + endCPU.system) /
+            1000 /
+            (endTime - monitoring.startTime)) *
+            100,
+        ),
+        elapsedTime: endTime - monitoring.startTime,
       },
-      success: true
+      success: true,
     };
 
     this.operationMonitoring.delete(operationId);
 
     // Emit operation metrics telemetry
     this.emitTelemetry({
-      tool: 'operation-monitoring',
+      tool: "operation-monitoring",
       startTime: monitoring.startTime,
       endTime,
       duration: metrics.duration,
       success: true,
       memoryUsage: metrics.memoryDelta,
-      cpuTime: metrics.cpuUsage.userCPUTime + metrics.cpuUsage.systemCPUTime
+      cpuTime: metrics.cpuUsage.userCPUTime + metrics.cpuUsage.systemCPUTime,
     });
 
     return metrics;
@@ -424,26 +440,28 @@ export class ResourceManager extends EventEmitter {
 
     // Check memory usage
     if (this.limits.maxMemoryUsage) {
-      const memoryUsageRatio = usage.memoryUsage.rss / this.limits.maxMemoryUsage;
+      const memoryUsageRatio =
+        usage.memoryUsage.rss / this.limits.maxMemoryUsage;
       if (memoryUsageRatio > this.memoryPressureThreshold) {
-        this.emit('resource-limit-exceeded', {
-          resource: 'memory',
+        this.emit("resource-limit-exceeded", {
+          resource: "memory",
           current: usage.memoryUsage.rss,
           limit: this.limits.maxMemoryUsage,
-          ratio: memoryUsageRatio
+          ratio: memoryUsageRatio,
         });
       }
     }
 
     // Check open files
     if (usage.openFileHandles && this.limits.maxOpenFiles) {
-      const fileHandleRatio = usage.openFileHandles.count / this.limits.maxOpenFiles;
+      const fileHandleRatio =
+        usage.openFileHandles.count / this.limits.maxOpenFiles;
       if (fileHandleRatio > this.memoryPressureThreshold) {
-        this.emit('resource-limit-exceeded', {
-          resource: 'file-handles',
+        this.emit("resource-limit-exceeded", {
+          resource: "file-handles",
           current: usage.openFileHandles.count,
           limit: this.limits.maxOpenFiles,
-          ratio: fileHandleRatio
+          ratio: fileHandleRatio,
         });
       }
     }
@@ -467,9 +485,12 @@ export class ResourceManager extends EventEmitter {
    * Process queued requests
    */
   private async processQueue(): Promise<void> {
-    while (this.requestQueue.length > 0 && this.activeSlots.size < this.limits.maxConcurrentOperations!) {
+    while (
+      this.requestQueue.length > 0 &&
+      this.activeSlots.size < this.limits.maxConcurrentOperations!
+    ) {
       const request = this.requestQueue.shift()!;
-      
+
       // Clear timeout
       if (request.timeoutHandle) {
         clearTimeout(request.timeoutHandle);
@@ -478,7 +499,7 @@ export class ResourceManager extends EventEmitter {
       // Grant the resource
       const slot: ResourceSlot = {
         id: request.id,
-        acquiredAt: Date.now()
+        acquiredAt: Date.now(),
       };
 
       if (this.limits.operationTimeout) {
@@ -491,7 +512,7 @@ export class ResourceManager extends EventEmitter {
 
       // Resolve the request
       request.resolve({
-        granted: true
+        granted: true,
       });
     }
   }
@@ -516,17 +537,25 @@ export class ResourceManager extends EventEmitter {
 
     // Calculate average operation duration
     const now = Date.now();
-    const ages = Array.from(this.activeSlots.values()).map(slot => now - slot.acquiredAt);
+    const ages = Array.from(this.activeSlots.values()).map(
+      (slot) => now - slot.acquiredAt,
+    );
     const averageAge = ages.reduce((sum, age) => sum + age, 0) / ages.length;
 
     // Estimate based on queue position and average operation time
-    return Math.max(1000, averageAge * this.requestQueue.length / this.limits.maxConcurrentOperations!);
+    return Math.max(
+      1000,
+      (averageAge * this.requestQueue.length) /
+        this.limits.maxConcurrentOperations!,
+    );
   }
 
   /**
    * Validate and normalize resource limits
    */
-  private validateAndNormalizeLimits(limits: ResourceLimits): Required<ResourceLimits> {
+  private validateAndNormalizeLimits(
+    limits: ResourceLimits,
+  ): Required<ResourceLimits> {
     const defaults: Required<ResourceLimits> = {
       maxFileSize: 100 * 1024 * 1024,
       maxMemoryUsage: 512 * 1024 * 1024,
@@ -535,7 +564,7 @@ export class ResourceManager extends EventEmitter {
       maxDirectoryDepth: 50,
       maxGlobResults: 10000,
       maxConcurrentOperations: 10,
-      operationTimeout: 30000
+      operationTimeout: 30000,
     };
 
     return { ...defaults, ...limits };
@@ -558,12 +587,12 @@ export class ResourceManager extends EventEmitter {
         await this.checkResourceLimits();
       } catch (error) {
         // Don't let monitoring errors crash the manager
-        this.emit('error', error);
+        this.emit("error", error);
       }
     }, 30000);
 
     // Clean up on process exit
-    process.once('exit', () => {
+    process.once("exit", () => {
       if (this.monitoringInterval) {
         clearInterval(this.monitoringInterval);
       }
@@ -575,14 +604,14 @@ export class ResourceManager extends EventEmitter {
    */
   private emitTelemetry(event: Partial<TelemetryEvent>): void {
     const telemetryEvent: TelemetryEvent = {
-      tool: event.tool || 'resource-manager',
+      tool: event.tool || "resource-manager",
       startTime: event.startTime || Date.now(),
       endTime: event.endTime || Date.now(),
       duration: event.duration || 0,
       success: event.success || false,
-      ...event
+      ...event,
     };
 
-    this.emit('telemetry', telemetryEvent);
+    this.emit("telemetry", telemetryEvent);
   }
 }

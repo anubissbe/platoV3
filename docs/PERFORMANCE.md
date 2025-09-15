@@ -5,6 +5,7 @@ Comprehensive performance metrics, benchmarks, and optimization guidelines for P
 ## 🎯 Performance Targets
 
 ### Primary Metrics
+
 - **Rendering Performance**: 60fps (16.67ms frame budget)
 - **Input Response**: <16ms keystroke to display
 - **Startup Time**: <2 seconds to interactive
@@ -13,6 +14,7 @@ Comprehensive performance metrics, benchmarks, and optimization guidelines for P
 - **File Operations**: <100ms for read/write operations
 
 ### Quality Thresholds
+
 - **Frame Rate**: Maintain 60fps during scrolling and typing
 - **Memory Efficiency**: <5MB growth per 1000 messages
 - **Responsiveness**: UI remains interactive during processing
@@ -21,6 +23,7 @@ Comprehensive performance metrics, benchmarks, and optimization guidelines for P
 ## 📊 Benchmark Results
 
 ### Rendering Performance
+
 ```
 Component Rendering (60fps target):
 ├── Terminal Text Rendering: 8.5ms avg (✅ under 16.67ms)
@@ -37,6 +40,7 @@ Scrolling Performance:
 ```
 
 ### Memory Characteristics
+
 ```
 Memory Usage Patterns:
 ├── Baseline Application: 35MB
@@ -50,6 +54,7 @@ Garbage Collection: Efficient cleanup, <2% memory leaks
 ```
 
 ### Input Responsiveness
+
 ```
 Input Latency (target: <16ms):
 ├── Single Character: 4.2ms avg (✅)
@@ -65,6 +70,7 @@ Processing Delays:
 ```
 
 ### API Performance
+
 ```
 Network Operations (target: <500ms):
 ├── Chat Completion (avg): 342ms (✅)
@@ -80,6 +86,7 @@ Error Recovery:
 ```
 
 ### File Operations
+
 ```
 File System Performance (target: <100ms):
 ├── Read Configuration: 12ms avg (✅)
@@ -100,24 +107,28 @@ Optimization Status:
 ### Implemented Optimizations
 
 #### Virtual Scrolling
+
 - **Purpose**: Handle large conversations without memory bloat
 - **Implementation**: Only render visible messages plus buffer
 - **Benefit**: Constant memory usage regardless of conversation length
 - **Metrics**: 95% memory reduction for conversations >1000 messages
 
 #### Syntax Highlighting Optimization
+
 - **Purpose**: Minimize rendering lag for code blocks
 - **Implementation**: Incremental highlighting with worker threads
 - **Benefit**: 60% faster rendering for large code blocks
 - **Metrics**: 12ms avg vs 30ms for unoptimized highlighting
 
 #### Input Debouncing
+
 - **Purpose**: Prevent excessive re-renders during rapid typing
 - **Implementation**: 16ms debounce with immediate character display
 - **Benefit**: Maintains 60fps during fast typing
 - **Metrics**: Stable 14ms frame times during typing bursts
 
 #### Memory Compaction
+
 - **Purpose**: Prevent memory growth in long-running sessions
 - **Implementation**: Automatic cleanup of old message DOM nodes
 - **Benefit**: Stable memory usage over time
@@ -126,18 +137,20 @@ Optimization Status:
 ### Performance Monitoring
 
 #### Real-time Metrics
+
 ```typescript
 interface PerformanceMetrics {
-  frameRate: number;           // Current FPS
-  memoryUsage: number;         // MB current usage
-  inputLatency: number;        // ms last keystroke
-  renderTime: number;          // ms last frame
-  apiResponseTime: number;     // ms last API call
-  messageCount: number;        // Current conversation length
+  frameRate: number; // Current FPS
+  memoryUsage: number; // MB current usage
+  inputLatency: number; // ms last keystroke
+  renderTime: number; // ms last frame
+  apiResponseTime: number; // ms last API call
+  messageCount: number; // Current conversation length
 }
 ```
 
 #### Performance Alerts
+
 - **Frame Rate Drop**: Alert when FPS < 45 for >3 seconds
 - **Memory Growth**: Alert when growth >10MB/minute
 - **Input Lag**: Alert when keystroke latency >50ms
@@ -146,6 +159,7 @@ interface PerformanceMetrics {
 ## 🔍 Performance Analysis Tools
 
 ### Built-in Profiling
+
 ```bash
 # Run performance benchmark suite
 npm run benchmark
@@ -160,6 +174,7 @@ npm run benchmark -- --report --output perf-report.json
 ```
 
 ### Monitoring Dashboard
+
 ```bash
 # Enable performance monitoring in TUI
 /performance monitor on
@@ -175,6 +190,7 @@ npm run benchmark -- --report --output perf-report.json
 ```
 
 ### Regression Testing
+
 ```bash
 # Run performance regression tests
 npm run test:performance
@@ -189,18 +205,21 @@ npm run benchmark -- --baseline
 ## ⚡ Optimization Recommendations
 
 ### Short-term Improvements
+
 1. **Large Text Paste Optimization**: Batch DOM updates to reduce input latency
 2. **API Response Caching**: Cache similar requests to reduce 95th percentile times
 3. **Lazy Component Loading**: Defer non-critical component initialization
 4. **Background Processing**: Move heavy operations to worker threads
 
 ### Long-term Optimizations
+
 1. **WebAssembly Integration**: Move syntax highlighting to WASM for 2-3x performance
 2. **Native Rendering**: Platform-specific optimizations for critical paths
 3. **Predictive Loading**: Pre-fetch likely next requests based on usage patterns
 4. **Advanced Caching**: Multi-layer caching with intelligent invalidation
 
 ### Configuration Tuning
+
 ```yaml
 # Performance-optimized configuration
 performance:
@@ -209,19 +228,21 @@ performance:
   inputDebounce: 16
   memoryCompaction: "auto"
   apiTimeout: 10000
-  renderBudget: 16.67  # 60fps target
-  maxMemoryUsage: 200  # MB limit
+  renderBudget: 16.67 # 60fps target
+  maxMemoryUsage: 200 # MB limit
 ```
 
 ## 📈 Performance Trends
 
 ### Historical Performance
+
 - **Version 1.0**: 30fps average, 100MB baseline memory
 - **Version 1.1**: 45fps average, 80MB baseline memory (+50% improvement)
 - **Version 1.2**: 58fps average, 50MB baseline memory (+93% improvement)
 - **Current**: 60fps target achieved, 35MB baseline memory
 
 ### Performance Roadmap
+
 - **Q1 2025**: WebAssembly syntax highlighting (+200% rendering speed)
 - **Q2 2025**: Native platform integration (+50% overall performance)
 - **Q3 2025**: ML-powered optimization (+30% predictive performance)
@@ -232,6 +253,7 @@ performance:
 ### Common Performance Problems
 
 #### Slow Rendering
+
 ```bash
 # Symptoms: FPS < 45, laggy scrolling
 # Diagnosis:
@@ -245,6 +267,7 @@ performance:
 ```
 
 #### High Memory Usage
+
 ```bash
 # Symptoms: >200MB usage, system slowdown
 # Diagnosis:
@@ -258,6 +281,7 @@ performance:
 ```
 
 #### Input Lag
+
 ```bash
 # Symptoms: Typing delay >50ms
 # Diagnosis:
@@ -271,6 +295,7 @@ performance:
 ```
 
 ### Performance Debugging
+
 ```bash
 # Enable comprehensive performance logging
 export DEBUG=plato:performance
@@ -285,6 +310,7 @@ npm run dev -- --trace performance-trace.json
 ## 📊 Benchmarking Guide
 
 ### Running Benchmarks
+
 ```bash
 # Full benchmark suite (5-10 minutes)
 scripts/benchmark.ts
@@ -305,11 +331,13 @@ scripts/benchmark.ts --report --format detailed
 ```
 
 ### Interpreting Results
+
 - **Green (✅)**: Performance meets or exceeds targets
 - **Yellow (⚠️)**: Performance acceptable but near limits
 - **Red (❌)**: Performance below acceptable thresholds
 
 ### Performance Baseline
+
 ```json
 {
   "rendering": {
@@ -332,5 +360,5 @@ scripts/benchmark.ts --report --format detailed
 
 ---
 
-*Last updated: 2025-09-11*  
-*Run `scripts/benchmark.ts` to generate current performance metrics*
+_Last updated: 2025-09-11_  
+_Run `scripts/benchmark.ts` to generate current performance metrics_

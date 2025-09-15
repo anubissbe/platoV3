@@ -8,6 +8,7 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 ## Tasks
 
 ### 1. Enhanced Status & Progress System
+
 - [x] 1.1 Write tests for StatusManager component with conversation state tracking
 - [x] 1.2 Implement StatusManager with detailed progress indicators and metrics display
 - [x] 1.3 Create StatusLine component with real-time metrics (tokens, response time, memory usage)
@@ -18,6 +19,7 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 - [x] 1.8 Verify all status system tests pass and metrics display correctly
 
 ### 2. Multi-Panel Layout System
+
 - [x] 2.1 Write tests for LayoutManager component with panel state management
 - [x] 2.2 Implement flexible panel system with main conversation and info panels
 - [x] 2.3 Create Panel component with resize, minimize, and dock capabilities
@@ -28,6 +30,7 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 - [x] 2.8 Verify all layout system tests pass and panels work seamlessly
 
 ### 3. Advanced Input & Keyboard Shortcuts
+
 - [x] 3.1 Write tests for enhanced KeyboardHandler with multi-key sequences
 - [x] 3.2 Implement comprehensive keyboard shortcut system with customizable bindings
 - [x] 3.3 Add input modes: normal, command, search with visual indicators
@@ -38,6 +41,7 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 - [x] 3.8 Verify all input system tests pass and shortcuts work cross-platform
 
 ### 4. Visual Components & Styling
+
 - [x] 4.1 Write tests for enhanced visual components and theme system
 - [x] 4.2 Implement MessageBubble component with role indicators and timestamps
 - [x] 4.3 Create enhanced syntax highlighting for code blocks with language detection
@@ -48,6 +52,7 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 - [x] 4.8 Verify all visual component tests pass and styling renders correctly
 
 ### 5. Accessibility & Performance Optimization
+
 - [x] 5.1 Write tests for accessibility features and performance benchmarks
 - [x] 5.2 Implement screen reader support with proper ARIA labels and announcements
 - [x] 5.3 Add high contrast mode and customizable color schemes

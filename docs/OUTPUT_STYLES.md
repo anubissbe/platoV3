@@ -15,30 +15,30 @@ The central class responsible for managing output styles:
 ```typescript
 class StyleManager {
   // Initialize and load styles from configuration
-  async initialize(): Promise<void>
-  
+  async initialize(): Promise<void>;
+
   // Switch to a different style
-  async setStyle(name: string): Promise<void>
-  
+  async setStyle(name: string): Promise<void>;
+
   // Get current active style
-  getStyle(): OutputStyle
-  
+  getStyle(): OutputStyle;
+
   // List all available styles
-  listStyles(): StyleInfo[]
-  
+  listStyles(): StyleInfo[];
+
   // Create custom style
   async createCustomStyle(
-    name: string, 
-    baseOn: string, 
-    customizations: Partial<OutputStyle>
-  ): Promise<void>
-  
+    name: string,
+    baseOn: string,
+    customizations: Partial<OutputStyle>,
+  ): Promise<void>;
+
   // Delete custom style
-  async deleteCustomStyle(name: string): Promise<void>
-  
+  async deleteCustomStyle(name: string): Promise<void>;
+
   // Format text/components with current style
-  formatText(text: string, type: keyof OutputStyleTheme): string
-  formatComponent(component: string, data: Record<string, any>): string
+  formatText(text: string, type: keyof OutputStyleTheme): string;
+  formatComponent(component: string, data: Record<string, any>): string;
 }
 ```
 
@@ -54,16 +54,16 @@ interface OutputStyle {
 }
 
 interface OutputStyleTheme {
-  primary: string;      // Main text color
-  secondary: string;    // Subdued text
-  success: string;      // Success messages
-  error: string;        // Error messages
-  warning: string;      // Warnings
-  info: string;         // Info messages
-  muted: string;        // Gray/dimmed text
-  border: string;       // Box borders
-  spinner: string;      // Progress spinner
-  selection: string;    // Selected items
+  primary: string; // Main text color
+  secondary: string; // Subdued text
+  success: string; // Success messages
+  error: string; // Error messages
+  warning: string; // Warnings
+  info: string; // Info messages
+  muted: string; // Gray/dimmed text
+  border: string; // Box borders
+  spinner: string; // Progress spinner
+  selection: string; // Selected items
 }
 
 interface OutputStyleFormatting {
@@ -72,7 +72,7 @@ interface OutputStyleFormatting {
   underline: boolean;
   padding: number;
   margin: number;
-  borderStyle: 'single' | 'double' | 'round' | 'none';
+  borderStyle: "single" | "double" | "round" | "none";
   showIcons: boolean;
   showTimestamps: boolean;
   showLineNumbers: boolean;
@@ -113,37 +113,43 @@ React components that apply the current style:
 ### Command Line Interface
 
 #### List Available Styles
+
 ```bash
 /output-style
 ```
 
 Output:
+
 ```
 🎨 Available output styles:
   ✓ default [built-in] - Claude Code classic appearance
     minimal [built-in] - Clean, distraction-free output
     verbose [built-in] - Detailed output with timestamps
-    
+
 Usage: /output-style <name> to switch styles
        /output-style:new to create a custom style
 ```
 
 #### Switch Style
+
 ```bash
 /output-style minimal
 ```
 
 Output:
+
 ```
 ✅ Switched to 'minimal' style
 ```
 
 #### Show Current Style Details
+
 ```bash
 /output-style show
 ```
 
 Output:
+
 ```
 📋 Current style: default
    Description: Claude Code classic appearance
@@ -190,18 +196,18 @@ outputStyle:
         showLineNumbers: false
       components:
         welcome:
-          icon: '🚀'
-          text: 'Welcome to {name}!'
+          icon: "🚀"
+          text: "Welcome to {name}!"
         fileWrite:
-          icon: '📄'
-          format: 'Writing {file}...'
-          success: '✅ Wrote {lines} lines to {file}'
+          icon: "📄"
+          format: "Writing {file}..."
+          success: "✅ Wrote {lines} lines to {file}"
         error:
-          icon: '❌'
-          format: 'Error: {message}'
+          icon: "❌"
+          format: "Error: {message}"
         toolCall:
-          icon: '🔧'
-          format: 'Running tool: {name}'
+          icon: "🔧"
+          format: "Running tool: {name}"
 ```
 
 ## Integration with TUI
@@ -239,6 +245,7 @@ export function App() {
 ### Storage Location
 
 Styles are stored in the global configuration file:
+
 - **Global**: `~/.config/plato/config.yaml`
 - **Project**: `.plato/config.yaml` (project-specific overrides)
 
@@ -246,8 +253,8 @@ Styles are stored in the global configuration file:
 
 ```yaml
 outputStyle:
-  active: string           # Currently active style name
-  custom: OutputStyle[]    # Array of custom style definitions
+  active: string # Currently active style name
+  custom: OutputStyle[] # Array of custom style definitions
 ```
 
 ## API Reference
@@ -255,44 +262,57 @@ outputStyle:
 ### StyleManager Methods
 
 #### `initialize()`
+
 Loads custom styles and sets the active style from configuration.
 
 #### `setStyle(name: string)`
+
 Switches to the specified style. Throws an error if style doesn't exist.
 
 #### `getStyle()`
+
 Returns the current active `OutputStyle` object.
 
 #### `listStyles()`
+
 Returns an array of available styles with metadata:
+
 ```typescript
 {
   name: string;
   description: string;
   active: boolean;
   custom: boolean;
-}[]
+}
+[];
 ```
 
 #### `createCustomStyle(name, baseOn, customizations)`
+
 Creates a new custom style based on an existing style with modifications.
 
 #### `deleteCustomStyle(name)`
+
 Removes a custom style from the configuration.
 
 #### `formatText(text, type)`
+
 Formats text with the specified theme color type.
 
 #### `formatComponent(component, data)`
+
 Formats a component message with placeholder substitution.
 
 #### `getThemeColor(type)`
+
 Returns the color value for a theme property.
 
 #### `getFormatting()`
+
 Returns the current style's formatting options.
 
 #### `getComponentProps(componentType, props)`
+
 Returns properly styled props for Ink components.
 
 ## Testing

@@ -3,7 +3,7 @@
  * Helper functions for testing terminal applications and TUI components
  */
 
-import { jest } from '@jest/globals';
+import { jest } from "@jest/globals";
 
 export interface MockTerminalOptions {
   width?: number;
@@ -24,58 +24,60 @@ export class TerminalTestUtils {
       height = 24,
       colorSupport = true,
       mouseSupport = true,
-      platform = 'linux',
-      terminalApp = 'xterm',
+      platform = "linux",
+      terminalApp = "xterm",
     } = options;
 
     // Mock process.stdout
-    Object.defineProperty(process.stdout, 'columns', {
+    Object.defineProperty(process.stdout, "columns", {
       value: width,
       configurable: true,
     });
-    
-    Object.defineProperty(process.stdout, 'rows', {
+
+    Object.defineProperty(process.stdout, "rows", {
       value: height,
       configurable: true,
     });
 
-    Object.defineProperty(process.stdout, 'isTTY', {
+    Object.defineProperty(process.stdout, "isTTY", {
       value: true,
       configurable: true,
     });
 
     // Mock hasColors function
     if (process.stdout.hasColors) {
-      (process.stdout.hasColors as jest.MockedFunction<any>) = jest.fn().mockReturnValue(colorSupport);
+      (process.stdout.hasColors as jest.MockedFunction<any>) = jest
+        .fn()
+        .mockReturnValue(colorSupport);
     }
 
     // Mock platform
-    Object.defineProperty(process, 'platform', {
+    Object.defineProperty(process, "platform", {
       value: platform,
       configurable: true,
     });
 
     // Set terminal environment variables
     switch (terminalApp) {
-      case 'Windows Terminal':
-        process.env.TERM_PROGRAM = 'Windows Terminal';
-        process.env.TERM = 'xterm-256color';
+      case "Windows Terminal":
+        process.env.TERM_PROGRAM = "Windows Terminal";
+        process.env.TERM = "xterm-256color";
         break;
-      case 'iTerm2':
-        process.env.TERM_PROGRAM = 'iTerm.app';
-        process.env.TERM = 'xterm-256color';
-        process.env.COLORTERM = 'truecolor';
+      case "iTerm2":
+        process.env.TERM_PROGRAM = "iTerm.app";
+        process.env.TERM = "xterm-256color";
+        process.env.COLORTERM = "truecolor";
         break;
-      case 'VS Code':
-        process.env.TERM_PROGRAM = 'vscode';
-        process.env.TERM = 'xterm-256color';
+      case "VS Code":
+        process.env.TERM_PROGRAM = "vscode";
+        process.env.TERM = "xterm-256color";
         break;
       default:
-        process.env.TERM = 'xterm-256color';
+        process.env.TERM = "xterm-256color";
     }
 
     if (colorSupport) {
-      process.env.COLORTERM = 'truecolor';
+      process.env.COLORTERM = "truecolor";
     }
 
     return {
@@ -84,21 +86,26 @@ export class TerminalTestUtils {
         delete process.env.TERM_PROGRAM;
         delete process.env.COLORTERM;
         delete process.env.TERM;
-      }
+      },
     };
   }
 
   /**
    * Create mock terminal sequences for testing
    */
-  static createMouseEvent(type: 'click' | 'scroll', x: number, y: number, direction?: 'up' | 'down'): string {
-    if (type === 'click') {
+  static createMouseEvent(
+    type: "click" | "scroll",
+    x: number,
+    y: number,
+    direction?: "up" | "down",
+  ): string {
+    if (type === "click") {
       return `\x1b[M ${String.fromCharCode(32 + x)}${String.fromCharCode(32 + y)}`;
-    } else if (type === 'scroll') {
-      const button = direction === 'up' ? 64 : 65;
+    } else if (type === "scroll") {
+      const button = direction === "up" ? 64 : 65;
       return `\x1b[M${String.fromCharCode(32 + button)}${String.fromCharCode(32 + x)}${String.fromCharCode(32 + y)}`;
     }
-    return '';
+    return "";
   }
 
   /**
@@ -106,21 +113,21 @@ export class TerminalTestUtils {
    */
   static createKeyboardEvent(key: string): Buffer {
     const sequences: Record<string, string> = {
-      'enter': '\r',
-      'ctrl+c': '\x03',
-      'ctrl+v': '\x16',
-      'ctrl+a': '\x01',
-      'up': '\x1b[A',
-      'down': '\x1b[B',
-      'left': '\x1b[D',
-      'right': '\x1b[C',
-      'home': '\x1b[H',
-      'end': '\x1b[F',
-      'pageup': '\x1b[5~',
-      'pagedown': '\x1b[6~',
-      'tab': '\t',
-      'shift+tab': '\x1b[Z',
-      'escape': '\x1b',
+      enter: "\r",
+      "ctrl+c": "\x03",
+      "ctrl+v": "\x16",
+      "ctrl+a": "\x01",
+      up: "\x1b[A",
+      down: "\x1b[B",
+      left: "\x1b[D",
+      right: "\x1b[C",
+      home: "\x1b[H",
+      end: "\x1b[F",
+      pageup: "\x1b[5~",
+      pagedown: "\x1b[6~",
+      tab: "\t",
+      "shift+tab": "\x1b[Z",
+      escape: "\x1b",
     };
 
     return Buffer.from(sequences[key] || key);
@@ -136,14 +143,14 @@ export class TerminalTestUtils {
     maxWidth: number;
     hasEscapeSequences: boolean;
   } {
-    const lines = output.split('\n');
+    const lines = output.split("\n");
     const hasColors = /\x1b\[[0-9;]*m/.test(output);
     const hasUnicode = /[^\x00-\x7F]/.test(output);
     const hasEscapeSequences = /\x1b\[/.test(output);
-    
-    const maxWidth = Math.max(...lines.map(line => 
-      line.replace(/\x1b\[[0-9;]*m/g, '').length
-    ));
+
+    const maxWidth = Math.max(
+      ...lines.map((line) => line.replace(/\x1b\[[0-9;]*m/g, "").length),
+    );
 
     return {
       hasColors,
@@ -157,21 +164,28 @@ export class TerminalTestUtils {
   /**
    * Compare terminal frames for visual regression testing
    */
-  static compareFrames(frame1: string, frame2: string): {
+  static compareFrames(
+    frame1: string,
+    frame2: string,
+  ): {
     identical: boolean;
     differences: Array<{ line: number; expected: string; actual: string }>;
     summary: string;
   } {
-    const lines1 = frame1.split('\n');
-    const lines2 = frame2.split('\n');
+    const lines1 = frame1.split("\n");
+    const lines2 = frame2.split("\n");
     const maxLines = Math.max(lines1.length, lines2.length);
-    
-    const differences: Array<{ line: number; expected: string; actual: string }> = [];
-    
+
+    const differences: Array<{
+      line: number;
+      expected: string;
+      actual: string;
+    }> = [];
+
     for (let i = 0; i < maxLines; i++) {
-      const line1 = lines1[i] || '';
-      const line2 = lines2[i] || '';
-      
+      const line1 = lines1[i] || "";
+      const line2 = lines2[i] || "";
+
       if (line1 !== line2) {
         differences.push({
           line: i + 1,
@@ -182,8 +196,8 @@ export class TerminalTestUtils {
     }
 
     const identical = differences.length === 0;
-    const summary = identical 
-      ? 'Frames are identical'
+    const summary = identical
+      ? "Frames are identical"
       : `Found ${differences.length} differences across ${maxLines} lines`;
 
     return {
@@ -198,27 +212,27 @@ export class TerminalTestUtils {
    */
   static createTestMessages(count: number = 5) {
     const messages = [];
-    const baseTime = Date.now() - (count * 60000); // Space messages 1 minute apart
+    const baseTime = Date.now() - count * 60000; // Space messages 1 minute apart
 
     for (let i = 0; i < count; i++) {
       if (i % 2 === 0) {
         // User message
         messages.push({
-          role: 'user' as const,
+          role: "user" as const,
           content: `User message ${i + 1}: This is a test message from the user.`,
-          timestamp: baseTime + (i * 60000),
+          timestamp: baseTime + i * 60000,
           metadata: { tokensUsed: 10 + i },
         });
       } else {
         // Assistant message
         messages.push({
-          role: 'assistant' as const,
+          role: "assistant" as const,
           content: `Assistant response ${i + 1}: This is a detailed response that might include code blocks and explanations.\n\n\`\`\`typescript\nconst example = "code example ${i}";\nconsole.log(example);\n\`\`\`\n\nThis demonstrates the formatting capabilities.`,
-          timestamp: baseTime + (i * 60000),
-          metadata: { 
-            tokensUsed: 50 + (i * 10), 
-            model: 'claude-3-5-sonnet-20241022',
-            duration: 1500 + (i * 200)
+          timestamp: baseTime + i * 60000,
+          metadata: {
+            tokensUsed: 50 + i * 10,
+            model: "claude-3-5-sonnet-20241022",
+            duration: 1500 + i * 200,
           },
         });
       }
@@ -259,14 +273,14 @@ export class TerminalTestUtils {
   static async waitFor(
     condition: () => boolean,
     timeout: number = 5000,
-    interval: number = 100
+    interval: number = 100,
   ): Promise<void> {
     const startTime = Date.now();
-    
+
     while (!condition() && Date.now() - startTime < timeout) {
-      await new Promise(resolve => setTimeout(resolve, interval));
+      await new Promise((resolve) => setTimeout(resolve, interval));
     }
-    
+
     if (!condition()) {
       throw new Error(`Condition not met within ${timeout}ms timeout`);
     }
@@ -291,26 +305,36 @@ export class TerminalTestUtils {
       throw new Error(`ENOENT: no such file or directory, stat '${filePath}'`);
     });
 
-    const mockReadFile = jest.fn().mockImplementation(async (filePath: string) => {
-      if (mockFs.files.has(filePath)) {
-        return mockFs.files.get(filePath);
-      }
-      throw new Error(`ENOENT: no such file or directory, open '${filePath}'`);
-    });
+    const mockReadFile = jest
+      .fn()
+      .mockImplementation(async (filePath: string) => {
+        if (mockFs.files.has(filePath)) {
+          return mockFs.files.get(filePath);
+        }
+        throw new Error(
+          `ENOENT: no such file or directory, open '${filePath}'`,
+        );
+      });
 
-    const mockWriteFile = jest.fn().mockImplementation(async (filePath: string, content: string) => {
-      mockFs.files.set(filePath, content);
-    });
+    const mockWriteFile = jest
+      .fn()
+      .mockImplementation(async (filePath: string, content: string) => {
+        mockFs.files.set(filePath, content);
+      });
 
     const mockMkdir = jest.fn().mockImplementation(async (dirPath: string) => {
       mockFs.directories.add(dirPath);
     });
 
-    const mockAccess = jest.fn().mockImplementation(async (filePath: string) => {
-      if (!mockFs.files.has(filePath) && !mockFs.directories.has(filePath)) {
-        throw new Error(`ENOENT: no such file or directory, access '${filePath}'`);
-      }
-    });
+    const mockAccess = jest
+      .fn()
+      .mockImplementation(async (filePath: string) => {
+        if (!mockFs.files.has(filePath) && !mockFs.directories.has(filePath)) {
+          throw new Error(
+            `ENOENT: no such file or directory, access '${filePath}'`,
+          );
+        }
+      });
 
     return {
       mockFs,
@@ -337,7 +361,11 @@ export class TerminalTestUtils {
   /**
    * Generate snapshot data for visual regression testing
    */
-  static generateSnapshot(component: string, variant: string, frame: string): string {
+  static generateSnapshot(
+    component: string,
+    variant: string,
+    frame: string,
+  ): string {
     const metadata = {
       component,
       variant,
@@ -362,7 +390,7 @@ ${frame}
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     return hash.toString(36);
@@ -378,17 +406,17 @@ ${frame}
     issues: string[];
   } {
     const issues: string[] = [];
-    
+
     // Check for screen reader friendly content
     const hasScreenReaderContent = /aria-|role=|alt=/.test(output);
     if (!hasScreenReaderContent) {
-      issues.push('No screen reader accessible content found');
+      issues.push("No screen reader accessible content found");
     }
 
     // Check for keyboard navigation indicators
     const hasKeyboardNavigation = /\[(Tab|Enter|Arrow|Ctrl)\]/.test(output);
     if (!hasKeyboardNavigation) {
-      issues.push('No keyboard navigation hints found');
+      issues.push("No keyboard navigation hints found");
     }
 
     // Basic color contrast check (simplified)

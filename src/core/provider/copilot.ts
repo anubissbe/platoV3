@@ -1,5 +1,9 @@
 import fetch from "cross-fetch";
-import { createParser, ParsedEvent, ReconnectInterval } from "eventsource-parser";
+import {
+  createParser,
+  ParsedEvent,
+  ReconnectInterval,
+} from "eventsource-parser";
 import { ChatChunk, ChatMessage, ChatOptions } from "../types.js";
 
 export interface CopilotProviderOptions {
@@ -36,7 +40,7 @@ export class CopilotProvider {
 
   async chatStream(
     messages: ChatMessage[],
-    opts: ChatOptions & { stream: true }
+    opts: ChatOptions & { stream: true },
   ): Promise<AsyncIterable<ChatChunk>> {
     const { model = "gpt-4o-mini" } = opts;
     const res = await fetch(`${this.cfg.endpoint}/chat/completions`, {
@@ -101,4 +105,3 @@ export class CopilotProvider {
     return stream();
   }
 }
-

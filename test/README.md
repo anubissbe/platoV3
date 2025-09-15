@@ -14,21 +14,25 @@ The testing setup includes:
 ## Quick Start
 
 ### Run All Tests
+
 ```bash
 npm run test:all
 ```
 
 ### Run Component Tests
+
 ```bash
 npm run test:components
 ```
 
 ### Run E2E PTY Tests
+
 ```bash
 npm run test:e2e
 ```
 
 ### Build Docker Test Environment
+
 ```bash
 npm run docker:build
 ```
@@ -60,12 +64,13 @@ These tests launch Plato in a real PTY and interact with it:
 ```javascript
 const tester = new PlatoTUITester();
 await tester.start();
-await tester.sendInput('Hello, Plato!');
-await tester.sendKey('enter');
-await tester.waitForText('assistant');
+await tester.sendInput("Hello, Plato!");
+await tester.sendKey("enter");
+await tester.waitForText("assistant");
 ```
 
 Key features:
+
 - Real terminal emulation
 - Keyboard input simulation
 - Screen capture and verification
@@ -85,16 +90,19 @@ The MCP (Model Context Protocol) server allows Claude Code to interact with Plat
 #### Setup for Claude Code:
 
 1. Build the Docker container:
+
 ```bash
 docker build -f Dockerfile.mcp -t plato-mcp:latest .
 ```
 
 2. Add to Claude Code:
+
 ```bash
 claude mcp add plato-testing -- docker run --rm -v "$PWD:/workspace" plato-mcp:latest
 ```
 
 3. Use in Claude Code:
+
 ```
 /mcp__plato-testing__shell_exec {"command": "npm test"}
 /mcp__plato-testing__run_plato_pty {"input": "Hello!"}
@@ -125,6 +133,7 @@ npm run docker:run
 ## Test Coverage Areas
 
 ### Component Tests Cover:
+
 - Loading animations (spinners, progress bars)
 - Streaming indicators
 - Activity indicators
@@ -132,6 +141,7 @@ npm run docker:run
 - Visual feedback components
 
 ### E2E Tests Cover:
+
 - Application startup
 - Message sending/receiving
 - Navigation (arrow keys, escape)
@@ -152,7 +162,7 @@ describe('YourComponent', () => {
     const { lastFrame } = render(
       <YourComponent prop="value" />
     );
-    
+
     expect(lastFrame()).toContain('expected output');
   });
 });
@@ -167,13 +177,13 @@ const tester = new PlatoTUITester();
 await tester.start();
 
 // Interact with it
-await tester.sendInput('test input');
-await tester.sendKey('enter');
+await tester.sendInput("test input");
+await tester.sendKey("enter");
 
 // Verify output
-await tester.waitForText('expected response');
+await tester.waitForText("expected response");
 const screen = tester.getScreen();
-expect(screen).toContain('expected content');
+expect(screen).toContain("expected content");
 
 // Clean up
 await tester.stop();
@@ -200,7 +210,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
         with:
-          node-version: '20'
+          node-version: "20"
       - run: npm ci
       - run: npm run build
       - run: npm run test:all
@@ -211,6 +221,7 @@ jobs:
 ### Enable Debug Output
 
 For E2E tests:
+
 ```bash
 DEBUG=true npm run test:e2e
 ```
@@ -218,14 +229,16 @@ DEBUG=true npm run test:e2e
 ### Capture Screenshots
 
 The PTY tester can take snapshots:
+
 ```javascript
-const screen = tester.snapshot('Debug Point');
+const screen = tester.snapshot("Debug Point");
 console.log(screen);
 ```
 
 ### Interactive Debugging
 
 Run Plato in the Docker container interactively:
+
 ```bash
 docker run --rm -it -v "$PWD:/workspace" plato-mcp:latest bash
 ```

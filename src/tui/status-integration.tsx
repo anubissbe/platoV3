@@ -3,13 +3,23 @@
  * Connects the status components with the existing TUI keyboard handler and orchestrator
  */
 
-import React, { useContext, createContext, useCallback, useEffect, useState } from 'react';
-import { EventEmitter } from 'events';
-import { StatusManager, ConversationState, StatusMetrics } from './status-manager.js';
-import { StatusLine } from './status-line.js';
-import { ProgressBar } from './progress-bar.js';
-import { Box } from 'ink';
-import { loadStatusConfig, saveStatusConfig } from './status-config.js';
+import React, {
+  useContext,
+  createContext,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
+import { EventEmitter } from "events";
+import {
+  StatusManager,
+  ConversationState,
+  StatusMetrics,
+} from "./status-manager.js";
+import { StatusLine } from "./status-line.js";
+import { ProgressBar } from "./progress-bar.js";
+import { Box } from "ink";
+import { loadStatusConfig, saveStatusConfig } from "./status-config.js";
 
 // Status context for sharing across components
 interface StatusContextValue {
@@ -22,11 +32,11 @@ interface StatusContextValue {
 
 export interface StatusConfig {
   enabled: boolean;
-  position: 'top' | 'bottom';
+  position: "top" | "bottom";
   showStatusLine: boolean;
   showProgressBar: boolean;
   compactMode: boolean;
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
   updateInterval: number;
   visibleMetrics: Array<keyof StatusMetrics>;
   progressBarWidth: number;
@@ -38,18 +48,18 @@ export interface StatusConfig {
 
 const defaultConfig: StatusConfig = {
   enabled: true,
-  position: 'bottom',
+  position: "bottom",
   showStatusLine: true,
   showProgressBar: true,
   compactMode: false,
-  theme: 'dark',
+  theme: "dark",
   updateInterval: 500,
-  visibleMetrics: ['totalTokens', 'responseTime', 'memoryUsageMB'],
+  visibleMetrics: ["totalTokens", "responseTime", "memoryUsageMB"],
   progressBarWidth: 30,
   showStreamingProgress: true,
   showToolCallProgress: true,
   pulseOnUpdate: false,
-  showSpinner: true
+  showSpinner: true,
 };
 
 const StatusContext = createContext<StatusContextValue | null>(null);
@@ -57,7 +67,7 @@ const StatusContext = createContext<StatusContextValue | null>(null);
 export const useStatus = () => {
   const context = useContext(StatusContext);
   if (!context) {
-    throw new Error('useStatus must be used within StatusProvider');
+    throw new Error("useStatus must be used within StatusProvider");
   }
   return context;
 };
@@ -71,23 +81,27 @@ interface StatusProviderProps {
 export const StatusProvider: React.FC<StatusProviderProps> = ({
   children,
   eventEmitter,
-  initialConfig
+  initialConfig,
 }) => {
   const [config, setConfig] = useState<StatusConfig>(defaultConfig);
-  
+
   // Load configuration from file on mount
   useEffect(() => {
-    loadStatusConfig().then(loadedConfig => {
+    loadStatusConfig().then((loadedConfig) => {
       setConfig({
         ...loadedConfig,
-        ...initialConfig // Allow initialConfig to override file config
+        ...initialConfig, // Allow initialConfig to override file config
       });
     });
   }, [initialConfig]);
-  
+
   const [statusManager] = useState(() => new StatusManager(eventEmitter));
-  const [metrics, setMetrics] = useState<StatusMetrics>(statusManager.getMetrics());
-  const [state, setState] = useState<ConversationState>(statusManager.getState());
+  const [metrics, setMetrics] = useState<StatusMetrics>(
+    statusManager.getMetrics(),
+  );
+  const [state, setState] = useState<ConversationState>(
+    statusManager.getState(),
+  );
 
   // Subscribe to status manager events
   useEffect(() => {
@@ -95,26 +109,30 @@ export const StatusProvider: React.FC<StatusProviderProps> = ({
       setMetrics(newMetrics);
     };
 
-    const handleStateChange = ({ newState }: { newState: ConversationState }) => {
+    const handleStateChange = ({
+      newState,
+    }: {
+      newState: ConversationState;
+    }) => {
       setState(newState);
     };
 
-    eventEmitter.on('status:metricsUpdate', handleMetricsUpdate);
-    eventEmitter.on('status:stateChange', handleStateChange);
+    eventEmitter.on("status:metricsUpdate", handleMetricsUpdate);
+    eventEmitter.on("status:stateChange", handleStateChange);
 
     return () => {
-      eventEmitter.off('status:metricsUpdate', handleMetricsUpdate);
-      eventEmitter.off('status:stateChange', handleStateChange);
+      eventEmitter.off("status:metricsUpdate", handleMetricsUpdate);
+      eventEmitter.off("status:stateChange", handleStateChange);
       statusManager.destroy();
     };
   }, [statusManager, eventEmitter]);
 
   const updateConfig = useCallback((updates: Partial<StatusConfig>) => {
-    setConfig(prev => {
+    setConfig((prev) => {
       const newConfig = { ...prev, ...updates };
       // Save to file asynchronously
-      saveStatusConfig(newConfig).catch(err => 
-        console.error('Failed to save status config:', err)
+      saveStatusConfig(newConfig).catch((err) =>
+        console.error("Failed to save status config:", err),
       );
       return newConfig;
     });
@@ -125,18 +143,16 @@ export const StatusProvider: React.FC<StatusProviderProps> = ({
     metrics,
     state,
     config,
-    updateConfig
+    updateConfig,
   };
 
   return (
-    <StatusContext.Provider value={value}>
-      {children}
-    </StatusContext.Provider>
+    <StatusContext.Provider value={value}>{children}</StatusContext.Provider>
   );
 };
 
 interface StatusDisplayProps {
-  position?: 'top' | 'bottom';
+  position?: "top" | "bottom";
 }
 
 export const StatusDisplay: React.FC<StatusDisplayProps> = ({ position }) => {
@@ -151,8 +167,8 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ position }) => {
   return (
     <Box
       flexDirection="column"
-      marginTop={actualPosition === 'top' ? 0 : 1}
-      marginBottom={actualPosition === 'bottom' ? 0 : 1}
+      marginTop={actualPosition === "top" ? 0 : 1}
+      marginBottom={actualPosition === "bottom" ? 0 : 1}
     >
       {config.showStatusLine && (
         <StatusLine
@@ -166,13 +182,17 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ position }) => {
           visibleMetrics={config.visibleMetrics}
         />
       )}
-      
-      {config.showProgressBar && (
-        state === 'streaming' && config.showStreamingProgress ? (
+
+      {config.showProgressBar &&
+        (state === "streaming" && config.showStreamingProgress ? (
           <Box marginTop={1}>
             <ProgressBar
               current={metrics.charactersStreamed}
-              total={metrics.charactersStreamed > 0 ? Math.max(metrics.charactersStreamed * 2, 1000) : 1000}
+              total={
+                metrics.charactersStreamed > 0
+                  ? Math.max(metrics.charactersStreamed * 2, 1000)
+                  : 1000
+              }
               width={config.progressBarWidth}
               showPercentage={true}
               streaming={true}
@@ -180,7 +200,9 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ position }) => {
               colorByProgress={true}
             />
           </Box>
-        ) : state === 'processing' && config.showToolCallProgress && metrics.activeToolCall ? (
+        ) : state === "processing" &&
+          config.showToolCallProgress &&
+          metrics.activeToolCall ? (
           <Box marginTop={1}>
             <ProgressBar
               indeterminate={true}
@@ -188,8 +210,7 @@ export const StatusDisplay: React.FC<StatusDisplayProps> = ({ position }) => {
               width={config.progressBarWidth}
             />
           </Box>
-        ) : null
-      )}
+        ) : null)}
     </Box>
   );
 };
@@ -200,37 +221,61 @@ export const useOrchestratorIntegration = (statusManager: StatusManager) => {
     statusManager.startStreaming();
   }, [statusManager]);
 
-  const handleResponseChunk = useCallback((chunk: string) => {
-    const currentChars = statusManager.getMetrics().charactersStreamed;
-    // Estimate total based on typical response size
-    const estimatedTotal = Math.max(currentChars * 2, 1000);
-    statusManager.updateStreamProgress(currentChars + chunk.length, estimatedTotal);
-  }, [statusManager]);
+  const handleResponseChunk = useCallback(
+    (chunk: string) => {
+      const currentChars = statusManager.getMetrics().charactersStreamed;
+      // Estimate total based on typical response size
+      const estimatedTotal = Math.max(currentChars * 2, 1000);
+      statusManager.updateStreamProgress(
+        currentChars + chunk.length,
+        estimatedTotal,
+      );
+    },
+    [statusManager],
+  );
 
-  const handleResponseEnd = useCallback((input: number, output: number) => {
-    statusManager.updateTokens(input, output);
-    statusManager.complete();
-  }, [statusManager]);
+  const handleResponseEnd = useCallback(
+    (input: number, output: number) => {
+      statusManager.updateTokens(input, output);
+      statusManager.complete();
+    },
+    [statusManager],
+  );
 
-  const handleToolCallStart = useCallback((tool: string, params: any) => {
-    statusManager.startToolCall(tool, params);
-  }, [statusManager]);
+  const handleToolCallStart = useCallback(
+    (tool: string, params: any) => {
+      statusManager.startToolCall(tool, params);
+    },
+    [statusManager],
+  );
 
-  const handleToolCallEnd = useCallback((tool: string, success: boolean, error?: string) => {
-    statusManager.endToolCall(tool, { success, error });
-  }, [statusManager]);
+  const handleToolCallEnd = useCallback(
+    (tool: string, success: boolean, error?: string) => {
+      statusManager.endToolCall(tool, { success, error });
+    },
+    [statusManager],
+  );
 
-  const handleError = useCallback((error: string) => {
-    statusManager.setError(error);
-  }, [statusManager]);
+  const handleError = useCallback(
+    (error: string) => {
+      statusManager.setError(error);
+    },
+    [statusManager],
+  );
 
-  const handleTurnStart = useCallback((message: string) => {
-    statusManager.startTurn('user', message);
-  }, [statusManager]);
+  const handleTurnStart = useCallback(
+    (message: string) => {
+      statusManager.startTurn("user", message);
+    },
+    [statusManager],
+  );
 
-  const handleTurnEnd = useCallback((response: string) => {
-    statusManager.endTurn('assistant', response);
-  }, [statusManager]);
+  const handleTurnEnd = useCallback(
+    (response: string) => {
+      statusManager.endTurn("assistant", response);
+    },
+    [statusManager],
+  );
 
   return {
     handleResponseStart,
@@ -240,28 +285,40 @@ export const useOrchestratorIntegration = (statusManager: StatusManager) => {
     handleToolCallEnd,
     handleError,
     handleTurnStart,
-    handleTurnEnd
+    handleTurnEnd,
   };
 };
 
 // Keyboard handler integration
 export const StatusKeyboardHandlers = {
-  'ctrl+s': (statusManager: StatusManager, updateConfig: (config: Partial<StatusConfig>) => void, currentConfig: StatusConfig) => {
+  "ctrl+s": (
+    statusManager: StatusManager,
+    updateConfig: (config: Partial<StatusConfig>) => void,
+    currentConfig: StatusConfig,
+  ) => {
     // Toggle status display
     updateConfig({ enabled: !currentConfig.enabled });
   },
-  'ctrl+shift+s': (statusManager: StatusManager, updateConfig: (config: Partial<StatusConfig>) => void, currentConfig: StatusConfig) => {
+  "ctrl+shift+s": (
+    statusManager: StatusManager,
+    updateConfig: (config: Partial<StatusConfig>) => void,
+    currentConfig: StatusConfig,
+  ) => {
     // Toggle compact mode
     updateConfig({ compactMode: !currentConfig.compactMode });
   },
-  'ctrl+shift+p': (statusManager: StatusManager, updateConfig: (config: Partial<StatusConfig>) => void, currentConfig: StatusConfig) => {
+  "ctrl+shift+p": (
+    statusManager: StatusManager,
+    updateConfig: (config: Partial<StatusConfig>) => void,
+    currentConfig: StatusConfig,
+  ) => {
     // Toggle progress bar
     updateConfig({ showProgressBar: !currentConfig.showProgressBar });
   },
-  'ctrl+shift+m': (statusManager: StatusManager) => {
+  "ctrl+shift+m": (statusManager: StatusManager) => {
     // Clear metrics
     statusManager.clearHistory();
-  }
+  },
 };
 
 // Configuration helpers are imported from status-config.ts
@@ -270,20 +327,20 @@ export const StatusKeyboardHandlers = {
 export const useTerminalSize = () => {
   const [size, setSize] = useState({
     columns: process.stdout.columns || 80,
-    rows: process.stdout.rows || 24
+    rows: process.stdout.rows || 24,
   });
 
   useEffect(() => {
     const handleResize = () => {
       setSize({
         columns: process.stdout.columns || 80,
-        rows: process.stdout.rows || 24
+        rows: process.stdout.rows || 24,
       });
     };
 
-    process.stdout.on('resize', handleResize);
+    process.stdout.on("resize", handleResize);
     return () => {
-      process.stdout.off('resize', handleResize);
+      process.stdout.off("resize", handleResize);
     };
   }, []);
 

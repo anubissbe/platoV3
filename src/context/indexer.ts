@@ -1,25 +1,29 @@
 /**
  * Enhanced indexer with semantic analysis capabilities
  */
-import fg from 'fast-glob';
-import path from 'path';
-import fs from 'fs/promises';
-import ignore from 'ignore';
-import { FileAnalyzer, SemanticIndex } from './semantic-index';
-import { IndexingOptions, FileIndex } from './types.js';
+import fg from "fast-glob";
+import path from "path";
+import fs from "fs/promises";
+import ignore from "ignore";
+import { FileAnalyzer, SemanticIndex } from "./semantic-index";
+import { IndexingOptions, FileIndex } from "./types.js";
 
 // Keep the original buildIndex function for compatibility
 export async function buildIndex(opts: { roots: string[] }) {
   const entries: { path: string; size: number }[] = [];
   for (const root of opts.roots) {
     const ig = ignore();
-    for (const file of ['.gitignore', '.platoignore']) {
+    for (const file of [".gitignore", ".platoignore"]) {
       try {
-        const txt = await fs.readFile(path.join(root, file), 'utf8');
+        const txt = await fs.readFile(path.join(root, file), "utf8");
         ig.add(txt);
       } catch {}
     }
-    const files = await fg(['**/*'], { cwd: root, dot: false, followSymbolicLinks: false });
+    const files = await fg(["**/*"], {
+      cwd: root,
+      dot: false,
+      followSymbolicLinks: false,
+    });
     for (const rel of files) {
       const abs = path.join(root, rel);
       if (ig.ignores(rel)) continue;
@@ -47,7 +51,7 @@ export class SemanticIndexer {
     this.analyzer = new FileAnalyzer();
     this.index = new SemanticIndex();
     this.options = this.normalizeOptions(options);
-    this.indexPath = path.join('.plato', 'semantic-index.json');
+    this.indexPath = path.join(".plato", "semantic-index.json");
     this.ig = ignore();
   }
 
@@ -78,14 +82,14 @@ export class SemanticIndexer {
       ignore: this.options.excludePatterns,
       followSymbolicLinks: false,
       deep: this.options.maxDepth - depth,
-      dot: false
+      dot: false,
     });
 
     // Process files in batches
     const batchSize = 10;
     for (let i = 0; i < files.length; i += batchSize) {
       const batch = files.slice(i, i + batchSize);
-      await Promise.all(batch.map(file => this.indexFile(file)));
+      await Promise.all(batch.map((file) => this.indexFile(file)));
     }
   }
 
@@ -108,16 +112,16 @@ export class SemanticIndexer {
       // Check if file needs re-indexing
       const existingIndex = this.index.getFile(filePath);
       if (existingIndex) {
-        const content = await fs.readFile(filePath, 'utf-8');
+        const content = await fs.readFile(filePath, "utf-8");
         const fileIndex = await this.analyzer.analyzeFile(filePath, content);
-        
+
         if (existingIndex.hash === fileIndex.hash) {
           return; // File hasn't changed
         }
       }
 
       // Analyze and index file
-      const content = await fs.readFile(filePath, 'utf-8');
+      const content = await fs.readFile(filePath, "utf-8");
       const fileIndex = await this.analyzer.analyzeFile(filePath, content);
       await this.index.addFile(fileIndex);
     } catch (error) {
@@ -130,7 +134,7 @@ export class SemanticIndexer {
    */
   async loadIndex(): Promise<boolean> {
     try {
-      const data = await fs.readFile(this.indexPath, 'utf-8');
+      const data = await fs.readFile(this.indexPath, "utf-8");
       this.index = SemanticIndex.deserialize(data);
       return true;
     } catch {
@@ -145,7 +149,7 @@ export class SemanticIndexer {
     const dir = path.dirname(this.indexPath);
     await fs.mkdir(dir, { recursive: true });
     const data = this.index.serialize();
-    await fs.writeFile(this.indexPath, data, 'utf-8');
+    await fs.writeFile(this.indexPath, data, "utf-8");
   }
 
   /**
@@ -174,7 +178,7 @@ export class SemanticIndexer {
     let totalSymbols = 0;
     let indexSize = 0;
 
-    files.forEach(file => {
+    files.forEach((file) => {
       totalSymbols += file.symbols.length;
       indexSize += file.size;
     });
@@ -182,14 +186,14 @@ export class SemanticIndexer {
     return {
       totalFiles: files.length,
       totalSymbols,
-      indexSize
+      indexSize,
     };
   }
 
   private async loadIgnorePatterns(dirPath: string): Promise<void> {
-    for (const file of ['.gitignore', '.platoignore']) {
+    for (const file of [".gitignore", ".platoignore"]) {
       try {
-        const content = await fs.readFile(path.join(dirPath, file), 'utf-8');
+        const content = await fs.readFile(path.join(dirPath, file), "utf-8");
         this.ig.add(content);
       } catch {
         // Ignore file doesn't exist
@@ -197,33 +201,43 @@ export class SemanticIndexer {
     }
   }
 
-  private normalizeOptions(options?: IndexingOptions): Required<IndexingOptions> {
+  private normalizeOptions(
+    options?: IndexingOptions,
+  ): Required<IndexingOptions> {
     return {
       maxDepth: options?.maxDepth ?? 10,
       includeTests: options?.includeTests ?? false,
       includeNodeModules: options?.includeNodeModules ?? false,
       fileExtensions: options?.fileExtensions ?? [
-        '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
-        '.py', '.go', '.rs', '.java'
+        ".ts",
+        ".tsx",
+        ".js",
+        ".jsx",
+        ".mjs",
+        ".cjs",
+        ".py",
+        ".go",
+        ".rs",
+        ".java",
       ],
       excludePatterns: options?.excludePatterns ?? [
-        '**/node_modules/**',
-        '**/dist/**',
-        '**/build/**',
-        '**/.git/**',
-        '**/coverage/**'
+        "**/node_modules/**",
+        "**/dist/**",
+        "**/build/**",
+        "**/.git/**",
+        "**/coverage/**",
       ],
-      maxFileSize: options?.maxFileSize ?? 1024 * 1024 // 1MB
+      maxFileSize: options?.maxFileSize ?? 1024 * 1024, // 1MB
     };
   }
 
   private buildGlobPatterns(): string[] {
-    return this.options.fileExtensions.map(ext => `**/*${ext}`);
+    return this.options.fileExtensions.map((ext) => `**/*${ext}`);
   }
 
   private shouldIndexFile(filePath: string): boolean {
     const ext = path.extname(filePath).toLowerCase();
-    
+
     // Check extension
     if (!this.options.fileExtensions.includes(ext)) {
       return false;
@@ -238,7 +252,7 @@ export class SemanticIndexer {
     // Check test files
     if (!this.options.includeTests) {
       const basename = path.basename(filePath);
-      if (basename.includes('.test.') || basename.includes('.spec.')) {
+      if (basename.includes(".test.") || basename.includes(".spec.")) {
         return false;
       }
     }
@@ -246,4 +260,3 @@ export class SemanticIndexer {
     return true;
   }
 }
-

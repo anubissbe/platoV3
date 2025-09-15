@@ -5,12 +5,12 @@
  * Measures and tracks test execution performance
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-const BASELINE_FILE = path.join(__dirname, '..', 'performance-baseline.json');
-const RESULTS_DIR = path.join(__dirname, '..', '.performance');
+const BASELINE_FILE = path.join(__dirname, "..", "performance-baseline.json");
+const RESULTS_DIR = path.join(__dirname, "..", ".performance");
 
 // Performance targets and thresholds
 const PERFORMANCE_TARGETS = {
@@ -22,9 +22,9 @@ const PERFORMANCE_TARGETS = {
   },
   reliable: {
     target: 30000, // 30 seconds target
-    warning: 45000, // 45 seconds warning  
+    warning: 45000, // 45 seconds warning
     critical: 60000, // 60 seconds critical
-  }
+  },
 };
 
 class PerformanceMonitor {
@@ -42,10 +42,10 @@ class PerformanceMonitor {
   loadBaseline() {
     try {
       if (fs.existsSync(BASELINE_FILE)) {
-        return JSON.parse(fs.readFileSync(BASELINE_FILE, 'utf8'));
+        return JSON.parse(fs.readFileSync(BASELINE_FILE, "utf8"));
       }
     } catch (error) {
-      console.warn('Could not load performance baseline:', error.message);
+      console.warn("Could not load performance baseline:", error.message);
     }
     return {};
   }
@@ -54,53 +54,52 @@ class PerformanceMonitor {
     const baseline = {
       ...this.baseline,
       lastUpdated: new Date().toISOString(),
-      results
+      results,
     };
-    
+
     fs.writeFileSync(BASELINE_FILE, JSON.stringify(baseline, null, 2));
-    console.log('✅ Performance baseline updated');
+    console.log("✅ Performance baseline updated");
   }
 
   measureTestExecution(configName, command) {
     console.log(`📊 Measuring ${configName} performance...`);
     const startTime = Date.now();
-    
+
     try {
-      const output = execSync(command, { 
-        encoding: 'utf8',
-        stdio: ['inherit', 'pipe', 'pipe'],
-        timeout: 120000 // 2 minute timeout
+      const output = execSync(command, {
+        encoding: "utf8",
+        stdio: ["inherit", "pipe", "pipe"],
+        timeout: 120000, // 2 minute timeout
       });
-      
+
       const endTime = Date.now();
       const executionTime = endTime - startTime;
-      
+
       // Extract test stats from output
       const stats = this.parseTestOutput(output);
-      
+
       const result = {
         configName,
         executionTime,
         timestamp: new Date().toISOString(),
         stats,
-        status: 'success'
+        status: "success",
       };
-      
+
       this.analyzePerformance(result);
       return result;
-      
     } catch (error) {
       const endTime = Date.now();
       const executionTime = endTime - startTime;
-      
+
       const result = {
         configName,
         executionTime,
         timestamp: new Date().toISOString(),
         error: error.message,
-        status: 'failed'
+        status: "failed",
       };
-      
+
       console.error(`❌ ${configName} failed in ${executionTime}ms`);
       return result;
     }
@@ -109,18 +108,22 @@ class PerformanceMonitor {
   parseTestOutput(output) {
     const stats = {
       testSuites: { passed: 0, failed: 0, total: 0 },
-      tests: { passed: 0, failed: 0, skipped: 0, total: 0 }
+      tests: { passed: 0, failed: 0, skipped: 0, total: 0 },
     };
 
     // Parse Jest output
-    const suiteMatch = output.match(/Test Suites:\s+(\d+)\s+failed,\s+\d+\s+skipped,\s+(\d+)\s+passed,\s+(\d+)\s+of\s+\d+\s+total/);
+    const suiteMatch = output.match(
+      /Test Suites:\s+(\d+)\s+failed,\s+\d+\s+skipped,\s+(\d+)\s+passed,\s+(\d+)\s+of\s+\d+\s+total/,
+    );
     if (suiteMatch) {
       stats.testSuites.failed = parseInt(suiteMatch[1]);
       stats.testSuites.passed = parseInt(suiteMatch[2]);
       stats.testSuites.total = parseInt(suiteMatch[3]);
     }
 
-    const testMatch = output.match(/Tests:\s+(\d+)\s+failed,\s+(\d+)\s+skipped,\s+(\d+)\s+passed,\s+(\d+)\s+total/);
+    const testMatch = output.match(
+      /Tests:\s+(\d+)\s+failed,\s+(\d+)\s+skipped,\s+(\d+)\s+passed,\s+(\d+)\s+total/,
+    );
     if (testMatch) {
       stats.tests.failed = parseInt(testMatch[1]);
       stats.tests.skipped = parseInt(testMatch[2]);
@@ -134,19 +137,20 @@ class PerformanceMonitor {
   analyzePerformance(result) {
     const { configName, executionTime } = result;
     const target = PERFORMANCE_TARGETS[configName];
-    
+
     if (!target) {
       console.log(`⚠️  No performance target defined for ${configName}`);
       return;
     }
 
-    const improvement = target.baseline ? 
-      ((target.baseline - executionTime) / target.baseline * 100).toFixed(1) : 0;
+    const improvement = target.baseline
+      ? (((target.baseline - executionTime) / target.baseline) * 100).toFixed(1)
+      : 0;
 
     console.log(`\n📈 Performance Analysis for ${configName}:`);
     console.log(`   Execution Time: ${executionTime}ms`);
     console.log(`   Target: ${target.target}ms`);
-    
+
     if (target.baseline) {
       console.log(`   Baseline: ${target.baseline}ms`);
       console.log(`   Improvement: ${improvement}% faster`);
@@ -164,29 +168,32 @@ class PerformanceMonitor {
     }
 
     // Developer velocity impact
-    if (configName === 'fast') {
-      const velocityMultiplier = Math.round(target.baseline / executionTime * 100) / 100;
-      console.log(`   Developer Velocity: ${velocityMultiplier}x faster development`);
+    if (configName === "fast") {
+      const velocityMultiplier =
+        Math.round((target.baseline / executionTime) * 100) / 100;
+      console.log(
+        `   Developer Velocity: ${velocityMultiplier}x faster development`,
+      );
     }
   }
 
   generateReport() {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const reportFile = path.join(RESULTS_DIR, `performance-report-${timestamp}.json`);
-    
-    console.log('\n🎯 Running Performance Benchmarks...\n');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const reportFile = path.join(
+      RESULTS_DIR,
+      `performance-report-${timestamp}.json`,
+    );
+
+    console.log("\n🎯 Running Performance Benchmarks...\n");
 
     const results = [];
 
     // Measure fast test execution
     try {
-      const fastResult = this.measureTestExecution(
-        'fast',
-        'npm run test:fast'
-      );
+      const fastResult = this.measureTestExecution("fast", "npm run test:fast");
       results.push(fastResult);
     } catch (error) {
-      console.error('Failed to measure fast tests:', error.message);
+      console.error("Failed to measure fast tests:", error.message);
     }
 
     // Save detailed report
@@ -194,17 +201,17 @@ class PerformanceMonitor {
       timestamp: new Date().toISOString(),
       targets: PERFORMANCE_TARGETS,
       results,
-      summary: this.generateSummary(results)
+      summary: this.generateSummary(results),
     };
 
     fs.writeFileSync(reportFile, JSON.stringify(report, null, 2));
-    
+
     console.log(`\n📋 Performance report saved: ${reportFile}`);
-    console.log('\n📊 Performance Summary:');
+    console.log("\n📊 Performance Summary:");
     console.log(JSON.stringify(report.summary, null, 2));
 
     // Update baseline if this is a successful run
-    const successfulResults = results.filter(r => r.status === 'success');
+    const successfulResults = results.filter((r) => r.status === "success");
     if (successfulResults.length > 0) {
       this.saveBaseline(successfulResults);
     }
@@ -215,31 +222,34 @@ class PerformanceMonitor {
   generateSummary(results) {
     const summary = {
       totalTests: results.length,
-      successful: results.filter(r => r.status === 'success').length,
-      failed: results.filter(r => r.status === 'failed').length,
+      successful: results.filter((r) => r.status === "success").length,
+      failed: results.filter((r) => r.status === "failed").length,
       averageExecutionTime: 0,
-      performanceGrade: 'A+'
+      performanceGrade: "A+",
     };
 
-    const successfulResults = results.filter(r => r.status === 'success');
+    const successfulResults = results.filter((r) => r.status === "success");
     if (successfulResults.length > 0) {
       summary.averageExecutionTime = Math.round(
-        successfulResults.reduce((sum, r) => sum + r.executionTime, 0) / successfulResults.length
+        successfulResults.reduce((sum, r) => sum + r.executionTime, 0) /
+          successfulResults.length,
       );
     }
 
     // Calculate performance grade
-    const fastResult = results.find(r => r.configName === 'fast' && r.status === 'success');
+    const fastResult = results.find(
+      (r) => r.configName === "fast" && r.status === "success",
+    );
     if (fastResult) {
       const target = PERFORMANCE_TARGETS.fast;
       if (fastResult.executionTime <= target.target) {
-        summary.performanceGrade = 'A+';
+        summary.performanceGrade = "A+";
       } else if (fastResult.executionTime <= target.warning) {
-        summary.performanceGrade = 'A';
+        summary.performanceGrade = "A";
       } else if (fastResult.executionTime <= target.critical) {
-        summary.performanceGrade = 'B';
+        summary.performanceGrade = "B";
       } else {
-        summary.performanceGrade = 'F';
+        summary.performanceGrade = "F";
       }
     }
 
@@ -249,20 +259,20 @@ class PerformanceMonitor {
   // Command line interface
   run() {
     const command = process.argv[2];
-    
+
     switch (command) {
-      case 'benchmark':
+      case "benchmark":
         return this.generateReport();
-      case 'fast':
-        return this.measureTestExecution('fast', 'npm run test:fast');
-      case 'baseline':
-        console.log('Current performance baseline:');
+      case "fast":
+        return this.measureTestExecution("fast", "npm run test:fast");
+      case "baseline":
+        console.log("Current performance baseline:");
         console.log(JSON.stringify(this.baseline, null, 2));
         break;
-      case 'clean':
+      case "clean":
         if (fs.existsSync(RESULTS_DIR)) {
           fs.rmSync(RESULTS_DIR, { recursive: true, force: true });
-          console.log('✅ Performance results cleaned');
+          console.log("✅ Performance results cleaned");
         }
         break;
       default:

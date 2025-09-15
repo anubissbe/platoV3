@@ -1,13 +1,16 @@
 # Statusline
 
 ## Segments
+
 - `mode` (chat/vim), `model`, `tokens`, `cost`, `branch`, `cwd`, `latency`, `provider`.
 
 ## Format
+
 - Template string with placeholders and ANSI-safe width control.
 - Example: `"{mode} | {model} | {tokens} | {cost} | {branch}"`.
 
 ## Config
+
 ```yaml
 statusline:
   format: "{mode} | {model} | {tokens} | {cost} | {branch}"
@@ -17,4 +20,5 @@ statusline:
 ```
 
 ## Commands
+
 - `/statusline`: interactive editor; preview updates live.

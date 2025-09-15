@@ -3,8 +3,8 @@
  * Provides standardized cleanup patterns to prevent memory leaks and global state pollution
  */
 
-import { EventEmitter } from 'events';
-import { resetPersistenceManager } from '../../context/session-persistence.js';
+import { EventEmitter } from "events";
+import { resetPersistenceManager } from "../../context/session-persistence.js";
 
 /**
  * Global state cleanup registry
@@ -12,7 +12,10 @@ import { resetPersistenceManager } from '../../context/session-persistence.js';
 class TestCleanupRegistry {
   private timers = new Set<any>();
   private intervals = new Set<any>();
-  private listeners = new Map<EventEmitter, Array<{ event: string; listener: any }>>();
+  private listeners = new Map<
+    EventEmitter,
+    Array<{ event: string; listener: any }>
+  >();
   private cleanupFunctions = new Set<() => void | Promise<void>>();
 
   addTimer(timer: any): any {
@@ -39,11 +42,11 @@ class TestCleanupRegistry {
 
   async cleanup(): Promise<void> {
     // Clear all timers
-    this.timers.forEach(timer => clearTimeout(timer));
+    this.timers.forEach((timer) => clearTimeout(timer));
     this.timers.clear();
 
     // Clear all intervals
-    this.intervals.forEach(interval => clearInterval(interval));
+    this.intervals.forEach((interval) => clearInterval(interval));
     this.intervals.clear();
 
     // Remove all event listeners
@@ -59,13 +62,15 @@ class TestCleanupRegistry {
     this.listeners.clear();
 
     // Run all cleanup functions
-    const cleanupPromises = Array.from(this.cleanupFunctions).map(async fn => {
-      try {
-        await fn();
-      } catch (e) {
-        // Ignore cleanup errors
-      }
-    });
+    const cleanupPromises = Array.from(this.cleanupFunctions).map(
+      async (fn) => {
+        try {
+          await fn();
+        } catch (e) {
+          // Ignore cleanup errors
+        }
+      },
+    );
     await Promise.all(cleanupPromises);
     this.cleanupFunctions.clear();
 
@@ -94,7 +99,11 @@ export const testCleanup = {
     return globalRegistry.addInterval(setInterval(fn, delay));
   },
 
-  addEventListener: (emitter: EventEmitter, event: string, listener: any): void => {
+  addEventListener: (
+    emitter: EventEmitter,
+    event: string,
+    listener: any,
+  ): void => {
     globalRegistry.addListener(emitter, event, listener);
   },
 
@@ -127,7 +136,8 @@ export const testCleanup = {
   // Create isolated environment for tests
   createIsolatedEnv: async (): Promise<string> => {
     const globalTestUtils = (global as any).testUtils;
-    const tmpDir = await (globalTestUtils?.createTempDir?.() || Promise.resolve('/tmp/test'));
+    const tmpDir = await (globalTestUtils?.createTempDir?.() ||
+      Promise.resolve("/tmp/test"));
     globalRegistry.addCleanupFunction(() => {
       // Cleanup will be handled by global testUtils
     });
@@ -140,11 +150,11 @@ export const testCleanup = {
     console.log = jest.fn();
     console.info = jest.fn();
     console.warn = jest.fn();
-    
+
     const restore = () => {
       Object.assign(console, originalConsole);
     };
-    
+
     globalRegistry.addCleanupFunction(restore);
     return { restore };
   },
@@ -154,11 +164,11 @@ export const testCleanup = {
     const emitter = new EventEmitter();
     // Set a reasonable limit to prevent memory leak warnings
     emitter.setMaxListeners(20);
-    
+
     globalRegistry.addCleanupFunction(() => {
       emitter.removeAllListeners();
     });
-    
+
     return emitter;
   },
 
@@ -167,7 +177,7 @@ export const testCleanup = {
     jest.clearAllMocks();
     jest.clearAllTimers();
     jest.restoreAllMocks();
-  }
+  },
 };
 
 /**
@@ -190,17 +200,19 @@ export function setupTestCleanup(): void {
 /**
  * Enhanced test environment setup
  */
-export function setupTestEnvironment(options: {
-  disableConsole?: boolean;
-  maxEventListeners?: number;
-  tempDirPrefix?: string;
-} = {}): void {
+export function setupTestEnvironment(
+  options: {
+    disableConsole?: boolean;
+    maxEventListeners?: number;
+    tempDirPrefix?: string;
+  } = {},
+): void {
   setupTestCleanup();
 
   beforeAll(() => {
     // Set environment variables
-    process.env.NODE_ENV = 'test';
-    process.env.PLATO_TEST_MODE = 'true';
+    process.env.NODE_ENV = "test";
+    process.env.PLATO_TEST_MODE = "true";
 
     // Set EventEmitter limits to prevent warnings
     if (options.maxEventListeners) {
@@ -216,7 +228,7 @@ export function setupTestEnvironment(options: {
   beforeEach(() => {
     // Clear Jest timers
     jest.clearAllTimers();
-    jest.useFakeTimers({ doNotFake: ['nextTick', 'setImmediate'] });
+    jest.useFakeTimers({ doNotFake: ["nextTick", "setImmediate"] });
   });
 
   afterEach(() => {
@@ -228,10 +240,13 @@ export function setupTestEnvironment(options: {
 /**
  * Create isolated test with cleanup
  */
-export function isolatedTest(name: string, testFn: () => void | Promise<void>): void {
+export function isolatedTest(
+  name: string,
+  testFn: () => void | Promise<void>,
+): void {
   test(name, async () => {
     const cleanup = new TestCleanupRegistry();
-    
+
     try {
       // Replace global testUtils temporarily
       const originalTestUtils = (global as any).testUtils;
@@ -255,17 +270,20 @@ export function isolatedTest(name: string, testFn: () => void | Promise<void>): 
  */
 export function withMemoryLeakDetection<T>(fn: () => Promise<T>): Promise<T> {
   return new Promise(async (resolve, reject) => {
-    const initialListeners = process.listenerCount('exit');
-    
+    const initialListeners = process.listenerCount("exit");
+
     try {
       const result = await fn();
-      
+
       // Check for listener leaks
-      const finalListeners = process.listenerCount('exit');
-      if (finalListeners > initialListeners + 2) { // Allow some tolerance
-        console.warn(`Potential listener leak detected: ${finalListeners - initialListeners} new listeners`);
+      const finalListeners = process.listenerCount("exit");
+      if (finalListeners > initialListeners + 2) {
+        // Allow some tolerance
+        console.warn(
+          `Potential listener leak detected: ${finalListeners - initialListeners} new listeners`,
+        );
       }
-      
+
       resolve(result);
     } catch (error) {
       reject(error);

@@ -1,9 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import { StyledBox, StyledText } from '../../styles/components.js';
-import { getStyleManager } from '../../styles/manager.js';
-import { ConversationHistory, ConversationEntry, useConversationHistory } from './ConversationHistory.js';
-import { SessionIndicator, SessionData, useSessionManagement } from './SessionIndicator.js';
+import React, { useState, useEffect } from "react";
+import { Box, Text } from "ink";
+import { StyledBox, StyledText } from "../../styles/components.js";
+import { getStyleManager } from "../../styles/manager.js";
+import {
+  ConversationHistory,
+  ConversationEntry,
+  useConversationHistory,
+} from "./ConversationHistory.js";
+import {
+  SessionIndicator,
+  SessionData,
+  useSessionManagement,
+} from "./SessionIndicator.js";
 
 export interface SessionNavigationProps {
   isVisible?: boolean;
@@ -28,11 +36,13 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
   onConversationSelect,
   onClose,
   initialSessionData,
-  conversations = []
+  conversations = [],
 }) => {
-  const [activeTab, setActiveTab] = useState<'sessions' | 'history' | 'export'>('sessions');
+  const [activeTab, setActiveTab] = useState<"sessions" | "history" | "export">(
+    "sessions",
+  );
   const [searchMode, setSearchMode] = useState(false);
-  const [exportData, setExportData] = useState<string>('');
+  const [exportData, setExportData] = useState<string>("");
 
   const manager = getStyleManager();
   const style = manager.getStyle();
@@ -45,7 +55,7 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
     updateSession,
     saveSession,
     exportSession,
-    importSession
+    importSession,
   } = useSessionManagement(initialSessionData);
 
   // Conversation history management
@@ -63,13 +73,13 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
     updateConversation,
     toggleBookmark,
     updateTags,
-    createBranch
+    createBranch,
   } = useConversationHistory();
 
   // Initialize with provided conversations
   useEffect(() => {
     if (conversations.length > 0 && historyConversations.length === 0) {
-      conversations.forEach(conv => {
+      conversations.forEach((conv) => {
         addConversation({
           timestamp: conv.timestamp,
           title: conv.title,
@@ -78,7 +88,7 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
           tags: conv.tags,
           bookmarked: conv.bookmarked,
           preview: conv.preview,
-          branch: conv.branch
+          branch: conv.branch,
         });
       });
     }
@@ -93,7 +103,7 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
     const data = await exportSession();
     if (data) {
       setExportData(data);
-      setActiveTab('export');
+      setActiveTab("export");
     }
   };
 
@@ -129,17 +139,17 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
   // Render tab navigation
   const renderTabNavigation = () => {
     const tabs = [
-      { id: 'sessions', label: 'Sessions', icon: '💾' },
-      { id: 'history', label: 'History', icon: '📋' },
-      { id: 'export', label: 'Export/Import', icon: '📤' }
+      { id: "sessions", label: "Sessions", icon: "💾" },
+      { id: "history", label: "History", icon: "📋" },
+      { id: "export", label: "Export/Import", icon: "📤" },
     ] as const;
 
     return (
       <Box flexDirection="row" marginBottom={1}>
-        {tabs.map(tab => (
+        {tabs.map((tab) => (
           <Box key={tab.id} marginRight={2}>
             <StyledText
-              type={activeTab === tab.id ? 'primary' : 'secondary'}
+              type={activeTab === tab.id ? "primary" : "secondary"}
               bold={activeTab === tab.id}
             >
               {tab.icon} {tab.label}
@@ -157,7 +167,7 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
         <StyledText type="primary" bold>
           Current Session
         </StyledText>
-        
+
         {session ? (
           <Box flexDirection="column">
             <SessionIndicator
@@ -171,16 +181,12 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
                 return true;
               }}
             />
-            
+
             <Box marginTop={2} flexDirection="column">
-              <StyledText type="secondary">
-                Session Details:
-              </StyledText>
-              
+              <StyledText type="secondary">Session Details:</StyledText>
+
               <Box flexDirection="column" marginLeft={2}>
-                <StyledText type="info">
-                  ID: {session.id}
-                </StyledText>
+                <StyledText type="info">ID: {session.id}</StyledText>
                 <StyledText type="info">
                   Messages: {session.messageCount}
                 </StyledText>
@@ -194,21 +200,18 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
                 )}
               </Box>
             </Box>
-            
+
             <Box marginTop={2} flexDirection="row">
               <StyledText type="secondary">
-                Actions: Space (save) • E (export) • I (import) • N (new session)
+                Actions: Space (save) • E (export) • I (import) • N (new
+                session)
               </StyledText>
             </Box>
           </Box>
         ) : (
           <Box flexDirection="column" alignItems="center" marginTop={4}>
-            <StyledText type="secondary">
-              No active session
-            </StyledText>
-            <StyledText type="info">
-              Press N to create a new session
-            </StyledText>
+            <StyledText type="secondary">No active session</StyledText>
+            <StyledText type="info">Press N to create a new session</StyledText>
           </Box>
         )}
       </Box>
@@ -242,37 +245,30 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
         <StyledText type="primary" bold>
           Export/Import Data
         </StyledText>
-        
+
         <Box flexDirection="column" marginBottom={2}>
-          <StyledText type="secondary">
-            Export Format:
-          </StyledText>
-          
+          <StyledText type="secondary">Export Format:</StyledText>
+
           <Box borderStyle="single" padding={1} backgroundColor="gray">
             <Text wrap="wrap">
-              {exportData || 'No export data available. Click "Export Session" to generate.'}
+              {exportData ||
+                'No export data available. Click "Export Session" to generate.'}
             </Text>
           </Box>
         </Box>
-        
+
         <Box flexDirection="column">
-          <StyledText type="secondary">
-            Available Actions:
-          </StyledText>
-          
+          <StyledText type="secondary">Available Actions:</StyledText>
+
           <Box flexDirection="column" marginLeft={2}>
-            <StyledText type="info">
-              • E: Export current session
-            </StyledText>
+            <StyledText type="info">• E: Export current session</StyledText>
             <StyledText type="info">
               • I: Import session from clipboard
             </StyledText>
             <StyledText type="info">
               • C: Copy export data to clipboard
             </StyledText>
-            <StyledText type="info">
-              • R: Reset export data
-            </StyledText>
+            <StyledText type="info">• R: Reset export data</StyledText>
           </Box>
         </Box>
       </Box>
@@ -294,13 +290,15 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
         padding={1}
       >
         {/* Header */}
-        <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
+        <Box
+          flexDirection="row"
+          justifyContent="space-between"
+          marginBottom={1}
+        >
           <StyledText type="primary" bold>
             Session Management
           </StyledText>
-          <StyledText type="secondary">
-            Esc: close
-          </StyledText>
+          <StyledText type="secondary">Esc: close</StyledText>
         </Box>
 
         {/* Tab navigation */}
@@ -308,9 +306,9 @@ export const SessionNavigationInterface: React.FC<SessionNavigationProps> = ({
 
         {/* Tab content */}
         <Box flexGrow={1}>
-          {activeTab === 'sessions' && renderSessionTab()}
-          {activeTab === 'history' && renderHistoryTab()}
-          {activeTab === 'export' && renderExportTab()}
+          {activeTab === "sessions" && renderSessionTab()}
+          {activeTab === "history" && renderHistoryTab()}
+          {activeTab === "export" && renderExportTab()}
         </Box>
 
         {/* Footer */}
@@ -339,7 +337,7 @@ export const useSessionNavigationInterface = () => {
   const hideInterface = () => setIsVisible(false);
 
   // Toggle interface visibility
-  const toggleInterface = () => setIsVisible(prev => !prev);
+  const toggleInterface = () => setIsVisible((prev) => !prev);
 
   // Update session data
   const updateSessionData = (sessionData: SessionData) => {
@@ -347,13 +345,15 @@ export const useSessionNavigationInterface = () => {
   };
 
   // Add conversation to history
-  const addConversationToHistory = (conversation: Omit<ConversationEntry, 'id'>) => {
+  const addConversationToHistory = (
+    conversation: Omit<ConversationEntry, "id">,
+  ) => {
     const newConversation: ConversationEntry = {
       ...conversation,
-      id: `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      id: `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     };
-    
-    setConversations(prev => [newConversation, ...prev]);
+
+    setConversations((prev) => [newConversation, ...prev]);
     return newConversation.id;
   };
 
@@ -365,7 +365,7 @@ export const useSessionNavigationInterface = () => {
     hideInterface,
     toggleInterface,
     updateSessionData,
-    addConversationToHistory
+    addConversationToHistory,
   };
 };
 

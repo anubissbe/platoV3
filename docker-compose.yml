@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   plato:
@@ -18,15 +18,15 @@ services:
       - ./dist:/app/dist
       - ./scripts:/app/scripts:ro
       - ./docs:/app/docs:ro
-      
+
       # Persistent data
       - plato_data:/app/.plato
-      
+
       # Mount config from host (optional)
       # - ~/.config/plato:/app/.config/plato
     ports:
-      - "3000:3000"  # HTTP proxy port
-      - "11434:11434"  # OpenAI-compatible proxy
+      - "3000:3000" # HTTP proxy port
+      - "11434:11434" # OpenAI-compatible proxy
     networks:
       - plato_network
     restart: unless-stopped

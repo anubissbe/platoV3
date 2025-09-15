@@ -3,19 +3,19 @@
  * Tests for character-level precision text selection with copy functionality
  */
 
-describe('Text Selection System', () => {
+describe("Text Selection System", () => {
   /**
    * Mock terminal content for testing
    */
   const mockTerminalContent = [
-    'Welcome to Plato Terminal Interface',
+    "Welcome to Plato Terminal Interface",
     '>>> const greeting = "Hello World";',
-    'console.log(greeting);',
-    '',
-    'Available commands:',
-    '  /help - Show available commands',
-    '  /quit - Exit application',
-    'Type your message below:'
+    "console.log(greeting);",
+    "",
+    "Available commands:",
+    "  /help - Show available commands",
+    "  /quit - Exit application",
+    "Type your message below:",
   ];
 
   /**
@@ -24,7 +24,7 @@ describe('Text Selection System', () => {
   const mockTerminal = {
     width: 80,
     height: 24,
-    content: mockTerminalContent
+    content: mockTerminalContent,
   };
 
   /**
@@ -76,7 +76,7 @@ describe('Text Selection System', () => {
       this.isActive = false;
       return {
         start: this.startPos,
-        end: this.endPos
+        end: this.endPos,
       };
     }
 
@@ -93,7 +93,7 @@ describe('Text Selection System', () => {
 
       return {
         start: this.startPos,
-        end: this.endPos
+        end: this.endPos,
       };
     }
 
@@ -103,7 +103,7 @@ describe('Text Selection System', () => {
 
     getSelectedText(): string {
       const range = this.getSelection();
-      if (!range) return '';
+      if (!range) return "";
 
       return this.extractTextFromRange(range);
     }
@@ -116,7 +116,7 @@ describe('Text Selection System', () => {
         if (lineNum >= this.content.length) break;
 
         const line = this.content[lineNum];
-        let lineText = '';
+        let lineText = "";
 
         if (start.line === end.line) {
           // Single line selection
@@ -135,14 +135,17 @@ describe('Text Selection System', () => {
         lines.push(lineText);
       }
 
-      return lines.join('\n');
+      return lines.join("\n");
     }
 
     private normalizeRange(range: TextRange): TextRange {
       const { start, end } = range;
 
       // Ensure start comes before end
-      if (start.line > end.line || (start.line === end.line && start.column > end.column)) {
+      if (
+        start.line > end.line ||
+        (start.line === end.line && start.column > end.column)
+      ) {
         return { start: end, end: start };
       }
 
@@ -158,14 +161,14 @@ describe('Text Selection System', () => {
       height: number;
     } {
       const normalized = this.normalizeRange(range);
-      
+
       return {
         startX: normalized.start.column,
         startY: normalized.start.line,
         endX: normalized.end.column,
         endY: normalized.end.line,
         width: normalized.end.column - normalized.start.column,
-        height: normalized.end.line - normalized.start.line + 1
+        height: normalized.end.line - normalized.start.line + 1,
       };
     }
 
@@ -175,132 +178,135 @@ describe('Text Selection System', () => {
       wordCount: number;
     } {
       const text = this.getSelectedText();
-      
+
       return {
         characterCount: text.length,
-        lineCount: text.split('\n').length,
-        wordCount: text.trim() ? text.trim().split(/\s+/).length : 0
+        lineCount: text.split("\n").length,
+        wordCount: text.trim() ? text.trim().split(/\s+/).length : 0,
       };
     }
   }
 
-  describe('TextSelection Class', () => {
+  describe("TextSelection Class", () => {
     let selection: MockTextSelection;
 
     beforeEach(() => {
       selection = new MockTextSelection(mockTerminalContent);
     });
 
-    describe('Selection State Management', () => {
-      test('starts with no active selection', () => {
+    describe("Selection State Management", () => {
+      test("starts with no active selection", () => {
         expect(selection.isSelectionActive()).toBe(false);
         expect(selection.getSelection()).toBeNull();
-        expect(selection.getSelectedText()).toBe('');
+        expect(selection.getSelectedText()).toBe("");
       });
 
-      test('activates selection when starting', () => {
+      test("activates selection when starting", () => {
         selection.startSelection({ line: 0, column: 5 });
-        
+
         expect(selection.isSelectionActive()).toBe(true);
         expect(selection.getSelection()).toEqual({
           start: { line: 0, column: 5 },
-          end: { line: 0, column: 5 }
+          end: { line: 0, column: 5 },
         });
       });
 
-      test('updates selection position during drag', () => {
+      test("updates selection position during drag", () => {
         selection.startSelection({ line: 0, column: 5 });
         selection.updateSelection({ line: 0, column: 15 });
-        
+
         expect(selection.getSelection()).toEqual({
           start: { line: 0, column: 5 },
-          end: { line: 0, column: 15 }
+          end: { line: 0, column: 15 },
         });
       });
 
-      test('ends selection and returns final range', () => {
+      test("ends selection and returns final range", () => {
         selection.startSelection({ line: 0, column: 5 });
         selection.updateSelection({ line: 0, column: 15 });
         const result = selection.endSelection();
-        
+
         expect(result).toEqual({
           start: { line: 0, column: 5 },
-          end: { line: 0, column: 15 }
+          end: { line: 0, column: 15 },
         });
         expect(selection.isSelectionActive()).toBe(false);
       });
 
-      test('clears selection state', () => {
+      test("clears selection state", () => {
         selection.startSelection({ line: 0, column: 5 });
         selection.updateSelection({ line: 0, column: 15 });
         selection.clearSelection();
-        
+
         expect(selection.isSelectionActive()).toBe(false);
         expect(selection.getSelection()).toBeNull();
-        expect(selection.getSelectedText()).toBe('');
+        expect(selection.getSelectedText()).toBe("");
       });
     });
 
-    describe('Text Extraction', () => {
-      test('extracts single-line selection correctly', () => {
+    describe("Text Extraction", () => {
+      test("extracts single-line selection correctly", () => {
         selection.startSelection({ line: 0, column: 8 });
         selection.updateSelection({ line: 0, column: 13 });
-        
+
         const selectedText = selection.getSelectedText();
-        expect(selectedText).toBe('to Pl');
+        expect(selectedText).toBe("to Pl");
       });
 
-      test('extracts multi-line selection correctly', () => {
+      test("extracts multi-line selection correctly", () => {
         selection.startSelection({ line: 1, column: 4 });
         selection.updateSelection({ line: 2, column: 12 });
-        
+
         const selectedText = selection.getSelectedText();
         const expected = 'const greeting = "Hello World";\nconsole.log(';
         expect(selectedText).toBe(expected);
       });
 
-      test('extracts entire line when selecting from start to end', () => {
+      test("extracts entire line when selecting from start to end", () => {
         selection.startSelection({ line: 1, column: 0 });
-        selection.updateSelection({ line: 1, column: mockTerminalContent[1].length });
-        
+        selection.updateSelection({
+          line: 1,
+          column: mockTerminalContent[1].length,
+        });
+
         const selectedText = selection.getSelectedText();
         expect(selectedText).toBe('>>> const greeting = "Hello World";');
       });
 
-      test('handles empty lines in multi-line selection', () => {
+      test("handles empty lines in multi-line selection", () => {
         selection.startSelection({ line: 2, column: 5 });
         selection.updateSelection({ line: 4, column: 9 });
-        
+
         const selectedText = selection.getSelectedText();
-        const expected = 'ole.log(greeting);\n\nAvailable';
+        const expected = "ole.log(greeting);\n\nAvailable";
         expect(selectedText).toBe(expected);
       });
 
-      test('handles backward selection (end before start)', () => {
+      test("handles backward selection (end before start)", () => {
         selection.startSelection({ line: 0, column: 15 });
         selection.updateSelection({ line: 0, column: 8 });
-        
+
         const selectedText = selection.getSelectedText();
-        expect(selectedText).toBe('to Plato');
+        expect(selectedText).toBe("to Plato");
       });
 
-      test('handles multi-line backward selection', () => {
+      test("handles multi-line backward selection", () => {
         selection.startSelection({ line: 2, column: 10 });
         selection.updateSelection({ line: 1, column: 8 });
-        
+
         const selectedText = selection.getSelectedText();
         const expected = 'greeting = "Hello World";\nconsole.lo';
         expect(selectedText).toBe(expected);
       });
     });
 
-    describe('Position and Range Calculations', () => {
-      test('calculates selection bounds for single-line selection', () => {
+    describe("Position and Range Calculations", () => {
+      test("calculates selection bounds for single-line selection", () => {
         const range = {
           start: { line: 0, column: 8 },
-          end: { line: 0, column: 15 }
+          end: { line: 0, column: 15 },
         };
-        
+
         const bounds = selection.calculateSelectionBounds(range);
         expect(bounds).toEqual({
           startX: 8,
@@ -308,16 +314,16 @@ describe('Text Selection System', () => {
           endX: 15,
           endY: 0,
           width: 7,
-          height: 1
+          height: 1,
         });
       });
 
-      test('calculates selection bounds for multi-line selection', () => {
+      test("calculates selection bounds for multi-line selection", () => {
         const range = {
           start: { line: 1, column: 4 },
-          end: { line: 3, column: 0 }
+          end: { line: 3, column: 0 },
         };
-        
+
         const bounds = selection.calculateSelectionBounds(range);
         expect(bounds).toEqual({
           startX: 4,
@@ -325,56 +331,56 @@ describe('Text Selection System', () => {
           endX: 0,
           endY: 3,
           width: -4, // Negative width for multi-line
-          height: 3
+          height: 3,
         });
       });
 
-      test('normalizes backward ranges', () => {
+      test("normalizes backward ranges", () => {
         const range = {
           start: { line: 2, column: 10 },
-          end: { line: 1, column: 5 }
+          end: { line: 1, column: 5 },
         };
-        
+
         const bounds = selection.calculateSelectionBounds(range);
         expect(bounds.startY).toBe(1); // Should be normalized
         expect(bounds.endY).toBe(2);
       });
     });
 
-    describe('Selection Metrics', () => {
-      test('calculates correct character count', () => {
+    describe("Selection Metrics", () => {
+      test("calculates correct character count", () => {
         selection.startSelection({ line: 0, column: 0 });
         selection.updateSelection({ line: 0, column: 7 });
-        
+
         const metrics = selection.getSelectionMetrics();
         expect(metrics.characterCount).toBe(7);
       });
 
-      test('calculates correct line count for single line', () => {
+      test("calculates correct line count for single line", () => {
         selection.startSelection({ line: 0, column: 0 });
         selection.updateSelection({ line: 0, column: 10 });
-        
+
         const metrics = selection.getSelectionMetrics();
         expect(metrics.lineCount).toBe(1);
       });
 
-      test('calculates correct line count for multi-line', () => {
+      test("calculates correct line count for multi-line", () => {
         selection.startSelection({ line: 1, column: 0 });
         selection.updateSelection({ line: 3, column: 0 });
-        
+
         const metrics = selection.getSelectionMetrics();
         expect(metrics.lineCount).toBe(3);
       });
 
-      test('calculates correct word count', () => {
+      test("calculates correct word count", () => {
         selection.startSelection({ line: 0, column: 0 });
         selection.updateSelection({ line: 0, column: 35 }); // "Welcome to Plato Terminal Interface"
-        
+
         const metrics = selection.getSelectionMetrics();
         expect(metrics.wordCount).toBe(5);
       });
 
-      test('handles empty selection metrics', () => {
+      test("handles empty selection metrics", () => {
         const metrics = selection.getSelectionMetrics();
         expect(metrics.characterCount).toBe(0);
         expect(metrics.lineCount).toBe(1); // Empty string still has one line
@@ -382,143 +388,184 @@ describe('Text Selection System', () => {
       });
     });
 
-    describe('Edge Cases and Boundary Conditions', () => {
-      test('handles selection at line boundaries', () => {
-        selection.startSelection({ line: 0, column: mockTerminalContent[0].length });
+    describe("Edge Cases and Boundary Conditions", () => {
+      test("handles selection at line boundaries", () => {
+        selection.startSelection({
+          line: 0,
+          column: mockTerminalContent[0].length,
+        });
         selection.updateSelection({ line: 1, column: 0 });
-        
+
         const selectedText = selection.getSelectedText();
-        expect(selectedText).toBe('\n>>>'); // Should capture newline
+        expect(selectedText).toBe("\n>>>"); // Should capture newline
       });
 
-      test('handles selection beyond content bounds', () => {
+      test("handles selection beyond content bounds", () => {
         selection.startSelection({ line: 0, column: 0 });
         selection.updateSelection({ line: 100, column: 100 }); // Beyond content
-        
+
         expect(() => selection.getSelectedText()).not.toThrow();
       });
 
-      test('handles zero-length selection', () => {
+      test("handles zero-length selection", () => {
         selection.startSelection({ line: 0, column: 5 });
         selection.updateSelection({ line: 0, column: 5 });
-        
+
         const selectedText = selection.getSelectedText();
-        expect(selectedText).toBe('');
+        expect(selectedText).toBe("");
       });
 
-      test('handles selection on empty lines', () => {
+      test("handles selection on empty lines", () => {
         selection.startSelection({ line: 3, column: 0 }); // Empty line
         selection.updateSelection({ line: 3, column: 0 });
-        
+
         const selectedText = selection.getSelectedText();
-        expect(selectedText).toBe('');
+        expect(selectedText).toBe("");
       });
 
-      test('handles cross-boundary multi-line selection', () => {
+      test("handles cross-boundary multi-line selection", () => {
         selection.startSelection({ line: 2, column: 15 });
         selection.updateSelection({ line: 4, column: 5 });
-        
+
         const selectedText = selection.getSelectedText();
-        const expected = 'ting);\n\nAvail';
+        const expected = "ting);\n\nAvail";
         expect(selectedText).toBe(expected);
       });
     });
   });
 
-  describe('Selection Range Validation', () => {
+  describe("Selection Range Validation", () => {
     /**
      * Range validation utility for testing
      */
     class RangeValidator {
-      static isValidPosition(position: TextPosition, content: string[]): boolean {
+      static isValidPosition(
+        position: TextPosition,
+        content: string[],
+      ): boolean {
         if (position.line < 0 || position.line >= content.length) {
           return false;
         }
-        
-        if (position.column < 0 || position.column > content[position.line].length) {
+
+        if (
+          position.column < 0 ||
+          position.column > content[position.line].length
+        ) {
           return false;
         }
-        
+
         return true;
       }
 
       static isValidRange(range: TextRange, content: string[]): boolean {
-        return this.isValidPosition(range.start, content) && 
-               this.isValidPosition(range.end, content);
+        return (
+          this.isValidPosition(range.start, content) &&
+          this.isValidPosition(range.end, content)
+        );
       }
 
-      static clampPosition(position: TextPosition, content: string[]): TextPosition {
-        const clampedLine = Math.max(0, Math.min(position.line, content.length - 1));
-        const clampedColumn = Math.max(0, Math.min(position.column, content[clampedLine].length));
-        
+      static clampPosition(
+        position: TextPosition,
+        content: string[],
+      ): TextPosition {
+        const clampedLine = Math.max(
+          0,
+          Math.min(position.line, content.length - 1),
+        );
+        const clampedColumn = Math.max(
+          0,
+          Math.min(position.column, content[clampedLine].length),
+        );
+
         return {
           line: clampedLine,
-          column: clampedColumn
+          column: clampedColumn,
         };
       }
 
       static normalizeRange(range: TextRange): TextRange {
         const { start, end } = range;
-        
-        if (start.line > end.line || (start.line === end.line && start.column > end.column)) {
+
+        if (
+          start.line > end.line ||
+          (start.line === end.line && start.column > end.column)
+        ) {
           return { start: end, end: start };
         }
-        
+
         return range;
       }
     }
 
-    test('validates position within content bounds', () => {
+    test("validates position within content bounds", () => {
       const validPos = { line: 1, column: 5 };
       const invalidLinePos = { line: 100, column: 5 };
       const invalidColumnPos = { line: 1, column: 1000 };
-      
-      expect(RangeValidator.isValidPosition(validPos, mockTerminalContent)).toBe(true);
-      expect(RangeValidator.isValidPosition(invalidLinePos, mockTerminalContent)).toBe(false);
-      expect(RangeValidator.isValidPosition(invalidColumnPos, mockTerminalContent)).toBe(false);
+
+      expect(
+        RangeValidator.isValidPosition(validPos, mockTerminalContent),
+      ).toBe(true);
+      expect(
+        RangeValidator.isValidPosition(invalidLinePos, mockTerminalContent),
+      ).toBe(false);
+      expect(
+        RangeValidator.isValidPosition(invalidColumnPos, mockTerminalContent),
+      ).toBe(false);
     });
 
-    test('validates range within content bounds', () => {
+    test("validates range within content bounds", () => {
       const validRange = {
         start: { line: 0, column: 0 },
-        end: { line: 1, column: 10 }
+        end: { line: 1, column: 10 },
       };
-      
+
       const invalidRange = {
         start: { line: 0, column: 0 },
-        end: { line: 100, column: 10 }
+        end: { line: 100, column: 10 },
       };
-      
-      expect(RangeValidator.isValidRange(validRange, mockTerminalContent)).toBe(true);
-      expect(RangeValidator.isValidRange(invalidRange, mockTerminalContent)).toBe(false);
+
+      expect(RangeValidator.isValidRange(validRange, mockTerminalContent)).toBe(
+        true,
+      );
+      expect(
+        RangeValidator.isValidRange(invalidRange, mockTerminalContent),
+      ).toBe(false);
     });
 
-    test('clamps position to valid bounds', () => {
+    test("clamps position to valid bounds", () => {
       const outOfBoundsPos = { line: 100, column: 1000 };
-      const clampedPos = RangeValidator.clampPosition(outOfBoundsPos, mockTerminalContent);
-      
+      const clampedPos = RangeValidator.clampPosition(
+        outOfBoundsPos,
+        mockTerminalContent,
+      );
+
       expect(clampedPos.line).toBe(mockTerminalContent.length - 1);
-      expect(clampedPos.column).toBe(mockTerminalContent[mockTerminalContent.length - 1].length);
+      expect(clampedPos.column).toBe(
+        mockTerminalContent[mockTerminalContent.length - 1].length,
+      );
     });
 
-    test('normalizes backward ranges', () => {
+    test("normalizes backward ranges", () => {
       const backwardRange = {
         start: { line: 2, column: 10 },
-        end: { line: 1, column: 5 }
+        end: { line: 1, column: 5 },
       };
-      
+
       const normalized = RangeValidator.normalizeRange(backwardRange);
       expect(normalized.start).toEqual({ line: 1, column: 5 });
       expect(normalized.end).toEqual({ line: 2, column: 10 });
     });
   });
 
-  describe('Selection Algorithms', () => {
+  describe("Selection Algorithms", () => {
     /**
      * Selection algorithm utilities
      */
     class SelectionAlgorithms {
-      static expandToWord(position: TextPosition, content: string[]): TextRange {
+      static expandToWord(
+        position: TextPosition,
+        content: string[],
+      ): TextRange {
         if (!RangeValidator.isValidPosition(position, content)) {
           return { start: position, end: position };
         }
@@ -547,22 +594,28 @@ describe('Text Selection System', () => {
 
         return {
           start: { line: position.line, column: start },
-          end: { line: position.line, column: end }
+          end: { line: position.line, column: end },
         };
       }
 
-      static expandToLine(position: TextPosition, content: string[]): TextRange {
+      static expandToLine(
+        position: TextPosition,
+        content: string[],
+      ): TextRange {
         if (!RangeValidator.isValidPosition(position, content)) {
           return { start: position, end: position };
         }
 
         return {
           start: { line: position.line, column: 0 },
-          end: { line: position.line, column: content[position.line].length }
+          end: { line: position.line, column: content[position.line].length },
         };
       }
 
-      static findNextWord(position: TextPosition, content: string[]): TextPosition {
+      static findNextWord(
+        position: TextPosition,
+        content: string[],
+      ): TextPosition {
         if (!RangeValidator.isValidPosition(position, content)) {
           return position;
         }
@@ -570,13 +623,20 @@ describe('Text Selection System', () => {
         let { line, column } = position;
 
         // Skip current word
-        while (line < content.length && column < content[line].length && /\w/.test(content[line][column])) {
+        while (
+          line < content.length &&
+          column < content[line].length &&
+          /\w/.test(content[line][column])
+        ) {
           column++;
         }
 
         // Skip whitespace
         while (line < content.length) {
-          while (column < content[line].length && /\s/.test(content[line][column])) {
+          while (
+            column < content[line].length &&
+            /\s/.test(content[line][column])
+          ) {
             column++;
           }
 
@@ -592,7 +652,10 @@ describe('Text Selection System', () => {
         return RangeValidator.clampPosition({ line, column }, content);
       }
 
-      static findPreviousWord(position: TextPosition, content: string[]): TextPosition {
+      static findPreviousWord(
+        position: TextPosition,
+        content: string[],
+      ): TextPosition {
         if (!RangeValidator.isValidPosition(position, content)) {
           return position;
         }
@@ -639,86 +702,119 @@ describe('Text Selection System', () => {
       }
     }
 
-    test('expands selection to word boundaries', () => {
+    test("expands selection to word boundaries", () => {
       const position = { line: 0, column: 10 }; // Middle of "Plato"
-      const wordRange = SelectionAlgorithms.expandToWord(position, mockTerminalContent);
-      
+      const wordRange = SelectionAlgorithms.expandToWord(
+        position,
+        mockTerminalContent,
+      );
+
       expect(wordRange.start).toEqual({ line: 0, column: 8 });
       expect(wordRange.end).toEqual({ line: 0, column: 13 });
     });
 
-    test('expands selection to full line', () => {
+    test("expands selection to full line", () => {
       const position = { line: 1, column: 15 };
-      const lineRange = SelectionAlgorithms.expandToLine(position, mockTerminalContent);
-      
+      const lineRange = SelectionAlgorithms.expandToLine(
+        position,
+        mockTerminalContent,
+      );
+
       expect(lineRange.start).toEqual({ line: 1, column: 0 });
-      expect(lineRange.end).toEqual({ line: 1, column: mockTerminalContent[1].length });
+      expect(lineRange.end).toEqual({
+        line: 1,
+        column: mockTerminalContent[1].length,
+      });
     });
 
-    test('finds next word position', () => {
+    test("finds next word position", () => {
       const position = { line: 0, column: 8 }; // Start of "Plato"
-      const nextWord = SelectionAlgorithms.findNextWord(position, mockTerminalContent);
-      
+      const nextWord = SelectionAlgorithms.findNextWord(
+        position,
+        mockTerminalContent,
+      );
+
       expect(nextWord.line).toBe(0);
       expect(nextWord.column).toBe(14); // Start of "Terminal"
     });
 
-    test('finds previous word position', () => {
+    test("finds previous word position", () => {
       const position = { line: 0, column: 14 }; // Start of "Terminal"
-      const prevWord = SelectionAlgorithms.findPreviousWord(position, mockTerminalContent);
-      
+      const prevWord = SelectionAlgorithms.findPreviousWord(
+        position,
+        mockTerminalContent,
+      );
+
       expect(prevWord.line).toBe(0);
       expect(prevWord.column).toBe(8); // Start of "Plato"
     });
 
-    test('handles word expansion on non-word characters', () => {
+    test("handles word expansion on non-word characters", () => {
       const position = { line: 1, column: 0 }; // On ">" character
-      const wordRange = SelectionAlgorithms.expandToWord(position, mockTerminalContent);
-      
+      const wordRange = SelectionAlgorithms.expandToWord(
+        position,
+        mockTerminalContent,
+      );
+
       expect(wordRange.start).toEqual(position);
       expect(wordRange.end).toEqual(position);
     });
 
-    test('handles next word at end of content', () => {
+    test("handles next word at end of content", () => {
       const lastLine = mockTerminalContent.length - 1;
-      const position = { line: lastLine, column: mockTerminalContent[lastLine].length - 1 };
-      const nextWord = SelectionAlgorithms.findNextWord(position, mockTerminalContent);
-      
+      const position = {
+        line: lastLine,
+        column: mockTerminalContent[lastLine].length - 1,
+      };
+      const nextWord = SelectionAlgorithms.findNextWord(
+        position,
+        mockTerminalContent,
+      );
+
       expect(nextWord).toEqual(position); // Should stay at end
     });
 
-    test('handles previous word at start of content', () => {
+    test("handles previous word at start of content", () => {
       const position = { line: 0, column: 0 };
-      const prevWord = SelectionAlgorithms.findPreviousWord(position, mockTerminalContent);
-      
+      const prevWord = SelectionAlgorithms.findPreviousWord(
+        position,
+        mockTerminalContent,
+      );
+
       expect(prevWord).toEqual(position); // Should stay at start
     });
   });
 
-  describe('Performance and Memory', () => {
-    test('handles large text selection efficiently', () => {
+  describe("Performance and Memory", () => {
+    test("handles large text selection efficiently", () => {
       // Create large content
-      const largeContent = Array(1000).fill(0).map((_, i) => 
-        `Line ${i}: Lorem ipsum dolor sit amet, consectetur adipiscing elit.`
-      );
+      const largeContent = Array(1000)
+        .fill(0)
+        .map(
+          (_, i) =>
+            `Line ${i}: Lorem ipsum dolor sit amet, consectetur adipiscing elit.`,
+        );
 
       const selection = new MockTextSelection(largeContent);
-      
+
       const startTime = performance.now();
-      
+
       selection.startSelection({ line: 0, column: 0 });
-      selection.updateSelection({ line: 999, column: largeContent[999].length });
+      selection.updateSelection({
+        line: 999,
+        column: largeContent[999].length,
+      });
       const selectedText = selection.getSelectedText();
-      
+
       const endTime = performance.now();
-      
+
       expect(selectedText.length).toBeGreaterThan(0);
       expect(endTime - startTime).toBeLessThan(100); // Should complete in <100ms
     });
 
-    test('memory usage remains stable with repeated selections', () => {
+    test("memory usage remains stable with repeated selections", () => {
       const selection = new MockTextSelection(mockTerminalContent);
-      
+
       // Perform many selection operations
       for (let i = 0; i < 1000; i++) {
         selection.startSelection({ line: 0, column: 0 });
@@ -726,7 +822,7 @@ describe('Text Selection System', () => {
         selection.getSelectedText();
         selection.clearSelection();
       }
-      
+
       // Should not throw memory errors
       expect(selection.isSelectionActive()).toBe(false);
     });

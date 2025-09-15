@@ -5,6 +5,7 @@
 ### Phase 1: Critical Infrastructure Fixes (Priority: URGENT)
 
 #### Task 1: Fix TUI Compilation Errors
+
 - [x] **Task 1.1**: Resolve TypeScript compilation errors in keyboard-handler.tsx
   - [x] Remove duplicate function declarations (handleStatuslineCommand, handlePermissionsCommand, etc.)
   - [x] Fix import/export type mismatches
@@ -32,6 +33,7 @@
 ### Phase 2: Core Visual Parity (Priority: HIGH)
 
 #### Task 2: Implement Claude Code Header Bar
+
 - [x] **Task 2.1**: Create rich header component
   - [x] Design header layout matching Claude Code style
   - [x] Add model information display (current model, provider status)
@@ -45,6 +47,7 @@
   - [x] Implement dynamic status updates
 
 #### Task 3: Design Professional Conversation Area ✅ COMPLETED
+
 - [x] **Task 3.1**: Implement message layout system ✅ COMPLETED
   - [x] Create user/assistant message distinction with proper styling
   - [x] Add timestamp display for messages
@@ -64,6 +67,7 @@
   - [x] Ensure proper text wrapping and formatting
 
 #### Task 4: Enhanced Input System ✅ COMPLETED
+
 - [x] **Task 4.1**: Create multi-line input area ✅ COMPLETED
   - [x] Design input area matching Claude Code style
   - [x] Add visual guides for multi-line input
@@ -79,6 +83,7 @@
 ### Phase 3: Interactive Experience (Priority: MEDIUM)
 
 #### Task 5: Real-time Streaming Implementation ✅ COMPLETED
+
 - [x] **Task 5.1**: Implement typewriter effects for AI responses ✅ COMPLETED
   - [x] Create smooth character-by-character rendering
   - [x] Add proper timing and pacing for natural reading (25ms intervals)
@@ -92,6 +97,7 @@
   - [x] Test mouse interactions across different terminal environments
 
 #### Task 6: Session Management and Persistence ✅ COMPLETED
+
 - [x] **Task 6.1**: Visual session indicators ✅ COMPLETED
   - [x] Add session persistence status to header
   - [x] Implement visual feedback for session save/load
@@ -107,6 +113,7 @@
 ### Phase 4: Advanced Features (Priority: LOW)
 
 #### Task 7: Command Palette Implementation
+
 - [x] **Task 7.1**: Create Ctrl+P command palette
   - [x] Design palette interface matching modern IDEs
   - [x] Implement command search and filtering
@@ -114,6 +121,7 @@
   - [x] Include all available slash commands and shortcuts
 
 #### Task 8: Advanced Layout and Responsiveness
+
 - [x] **Task 8.1**: Responsive design implementation
   - [x] Handle terminal resizing gracefully
   - [x] Adapt layout for different terminal sizes
@@ -121,6 +129,7 @@
   - [x] Add mobile terminal support considerations
 
 #### Task 9: Performance Optimization
+
 - [x] **Task 9.1**: Optimize rendering performance
   - [x] Implement virtual scrolling for large conversations
   - [x] Add component memoization and performance monitoring
@@ -130,6 +139,7 @@
 ### Phase 5: Quality & Testing (Priority: MEDIUM)
 
 #### Task 10: Comprehensive Testing Suite ✅ COMPLETED
+
 - [x] **Task 10.1**: Visual regression testing ✅ COMPLETED
   - [x] Create screenshot-based UI tests
   - [x] Test across different terminal environments
@@ -143,6 +153,7 @@
   - [x] Ensure consistent behavior across terminal applications
 
 #### Task 11: Documentation and User Experience ✅ COMPLETED
+
 - [x] **Task 11.1**: Complete setup documentation ✅ COMPLETED
   - [x] Write installation and configuration guides
   - [x] Create keyboard shortcuts reference
@@ -158,24 +169,28 @@
 ## Validation Criteria
 
 ### Phase 1 Success Criteria:
+
 - [ ] `./bin/plato` launches TUI without TypeScript compilation errors
 - [ ] Basic interface renders properly in terminal
 - [ ] Mouse wheel scrolling functions in working TUI
 - [ ] Environment compatibility validated across platforms
 
 ### Phase 2 Success Criteria:
+
 - [ ] Header bar displays model and status information
 - [ ] Conversation area shows properly formatted messages
 - [ ] Input system accepts multi-line input with visual guides
 - [ ] Overall appearance closely resembles Claude Code interface
 
 ### Phase 3 Success Criteria:
+
 - [ ] AI responses stream in real-time with typewriter effects
 - [ ] Mouse interactions (scrolling, selection, copy/paste) work properly
 - [ ] Session persistence and management functions correctly
 - [ ] Keyboard shortcuts match Claude Code behavior
 
 ### Final Acceptance Criteria:
+
 - [ ] New users familiar with Claude Code immediately recognize interface
 - [ ] All existing functionality works within new UI
 - [ ] Performance remains responsive under heavy usage

@@ -4,11 +4,11 @@ This document describes the high-performance test configuration that achieves **
 
 ## Performance Results
 
-| Configuration | Execution Time | Improvement | Use Case |
-|---------------|----------------|-------------|----------|
-| Original      | 47.7 seconds  | Baseline    | Full test suite |
-| Performance   | ~7.3 seconds  | 84% faster  | Development workflow |
-| Improvement   | 6x faster     | 84% reduction | Developer velocity |
+| Configuration | Execution Time | Improvement   | Use Case             |
+| ------------- | -------------- | ------------- | -------------------- |
+| Original      | 47.7 seconds   | Baseline      | Full test suite      |
+| Performance   | ~7.3 seconds   | 84% faster    | Development workflow |
+| Improvement   | 6x faster      | 84% reduction | Developer velocity   |
 
 ## Quick Start
 
@@ -46,6 +46,7 @@ npm run perf:clean
 ### Jest Performance Configuration (`jest.config.performance.cjs`)
 
 **Key Optimizations:**
+
 - **Excluded slow tests**: Removes bash-tool, tool-executor, CLI tests (46.67s → 0s impact)
 - **Optimized parallelization**: Uses 75% of CPU cores for optimal performance
 - **Minimal setup**: Ultra-fast mocks and reduced I/O operations
@@ -53,6 +54,7 @@ npm run perf:clean
 - **Caching enabled**: Persistent Jest cache for faster subsequent runs
 
 **Test Exclusions:**
+
 - `bash-tool.test.ts` (46.67s) - Integration test with real shell execution
 - `tool-executor.test.ts` (14.28s) - Complex executor integration tests
 - `cli.test.ts` (12.12s) - Full CLI interface tests
@@ -61,6 +63,7 @@ npm run perf:clean
 ### Performance Setup (`jest.setup.performance.ts`)
 
 **Ultra-Fast Mocking:**
+
 - **Instant file operations**: In-memory file system with zero I/O
 - **Mock process execution**: No real command execution for unit tests
 - **Minimal Ink mocking**: Lightweight React component mocks
@@ -70,12 +73,12 @@ npm run perf:clean
 
 ### Developer Velocity Improvements
 
-| Metric | Before | After | Improvement |
-|--------|---------|-------|-------------|
-| Test execution | 47.7s | 7.3s | **6x faster** |
-| Feedback loop | ~1 minute | ~10 seconds | **84% faster** |
-| Daily test runs | 20+ runs | Same capacity | **6x more tests** |
-| Developer productivity | Baseline | 6x faster | **175% ROI** |
+| Metric                 | Before    | After         | Improvement       |
+| ---------------------- | --------- | ------------- | ----------------- |
+| Test execution         | 47.7s     | 7.3s          | **6x faster**     |
+| Feedback loop          | ~1 minute | ~10 seconds   | **84% faster**    |
+| Daily test runs        | 20+ runs  | Same capacity | **6x more tests** |
+| Developer productivity | Baseline  | 6x faster     | **175% ROI**      |
 
 ### Real-World Benefits
 
@@ -87,10 +90,12 @@ npm run perf:clean
 ## Configuration Files
 
 ### Primary Configuration
+
 - `jest.config.performance.cjs` - High-performance test configuration
 - `jest.setup.performance.ts` - Optimized mock system and utilities
 
 ### Supporting Scripts
+
 - `scripts/performance-baseline.cjs` - Performance monitoring and regression detection
 - Performance results stored in `.performance/` directory
 - Baseline tracking in `performance-baseline.json`
@@ -100,6 +105,7 @@ npm run perf:clean
 ### When to Use Performance Configuration
 
 ✅ **Recommended for:**
+
 - Active development workflow
 - Unit and integration tests
 - Pre-commit hooks
@@ -107,6 +113,7 @@ npm run perf:clean
 - TDD workflows
 
 ❌ **Not recommended for:**
+
 - Full CI validation
 - Release testing
 - Platform-specific testing
@@ -121,7 +128,7 @@ npm run test:fast          # 7-8 seconds
 # Pre-commit validation
 npm run test:performance   # Fast + integration tests
 
-# CI/Release validation  
+# CI/Release validation
 npm run test:comprehensive # Full test suite
 ```
 
@@ -138,10 +145,10 @@ The performance configuration includes built-in monitoring:
 
 ### Performance Targets
 
-| Test Suite | Target | Warning | Critical | Status |
-|------------|---------|---------|----------|--------|
-| Fast Tests | <8s | <10s | <15s | ✅ **7.3s** |
-| Integration | <30s | <45s | <60s | Monitored |
+| Test Suite  | Target | Warning | Critical | Status      |
+| ----------- | ------ | ------- | -------- | ----------- |
+| Fast Tests  | <8s    | <10s    | <15s     | ✅ **7.3s** |
+| Integration | <30s   | <45s    | <60s     | Monitored   |
 
 ## Troubleshooting
 

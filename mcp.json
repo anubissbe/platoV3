@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "plato-tui": {
+      "command": "./bin/plato",
+      "args": [],
+      "cwd": "/opt/projects/platoV3",
+      "env": {
+        "PLATO_FORCE_TUI": "true"
+      }
+    }
+  }
+}

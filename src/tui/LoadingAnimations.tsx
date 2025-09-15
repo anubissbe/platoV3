@@ -1,27 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import { LoadingAnimations as LoadingAnimationManager, Animation } from './VisualIndicators.js';
+import React, { useState, useEffect } from "react";
+import { Box, Text } from "ink";
+import {
+  LoadingAnimations as LoadingAnimationManager,
+  Animation,
+} from "./VisualIndicators.js";
 
 export interface LoadingSpinnerProps {
   text?: string;
   color?: string;
-  type?: 'spinner' | 'dots' | 'pulse';
+  type?: "spinner" | "dots" | "pulse";
 }
 
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  text = 'Loading',
-  color = 'cyan',
-  type = 'spinner',
+  text = "Loading",
+  color = "cyan",
+  type = "spinner",
 }) => {
   const [frame, setFrame] = useState(0);
   const animationManager = new LoadingAnimationManager();
-  
+
   let animation: Animation;
   switch (type) {
-    case 'dots':
+    case "dots":
       animation = animationManager.getDots();
       break;
-    case 'pulse':
+    case "pulse":
       animation = animationManager.getPulse();
       break;
     default:
@@ -30,7 +33,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setFrame(prev => (prev + 1) % animation.frames.length);
+      setFrame((prev) => (prev + 1) % animation.frames.length);
     }, animation.interval);
 
     return () => clearInterval(timer);
@@ -59,8 +62,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   total,
   width = 20,
   showPercentage = true,
-  color = 'green',
-  bgColor = 'gray',
+  color = "green",
+  bgColor = "gray",
 }) => {
   const percentage = Math.min(100, Math.max(0, (current / total) * 100));
   const filled = Math.floor((percentage / 100) * width);
@@ -68,11 +71,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 
   return (
     <Box>
-      <Text color={color}>{'█'.repeat(filled)}</Text>
-      <Text color={bgColor}>{'░'.repeat(empty)}</Text>
-      {showPercentage && (
-        <Text> {Math.floor(percentage)}%</Text>
-      )}
+      <Text color={color}>{"█".repeat(filled)}</Text>
+      <Text color={bgColor}>{"░".repeat(empty)}</Text>
+      {showPercentage && <Text> {Math.floor(percentage)}%</Text>}
     </Box>
   );
 };
@@ -84,26 +85,28 @@ export interface StreamingIndicatorProps {
 
 export const StreamingIndicator: React.FC<StreamingIndicatorProps> = ({
   isStreaming,
-  text = 'Streaming',
+  text = "Streaming",
 }) => {
+  const quiet = process.env.PLATO_QUIET_TUI === "1";
   const [dots, setDots] = useState(0);
 
   useEffect(() => {
-    if (!isStreaming) return;
+    if (!isStreaming || quiet) return;
 
     const timer = setInterval(() => {
-      setDots(prev => (prev + 1) % 4);
-    }, 300);
+      setDots((prev) => (prev + 1) % 4);
+    }, 500);
 
     return () => clearInterval(timer);
-  }, [isStreaming]);
+  }, [isStreaming, quiet]);
 
   if (!isStreaming) return null;
 
   return (
     <Box>
       <Text color="yellow">
-        ⚡ {text}{'.'.repeat(dots)}
+        ⚡ {text}
+        {quiet ? "…" : ".".repeat(dots)}
       </Text>
     </Box>
   );
@@ -130,7 +133,7 @@ export const PulseAnimation: React.FC<PulseAnimationProps> = ({
     }
 
     const timer = setInterval(() => {
-      setOpacity(prev => {
+      setOpacity((prev) => {
         if (prev <= 0.3) {
           setIncreasing(true);
           return 0.3;
@@ -148,9 +151,7 @@ export const PulseAnimation: React.FC<PulseAnimationProps> = ({
 
   return (
     <Box>
-      <Text dimColor={opacity < 0.7}>
-        {children}
-      </Text>
+      <Text dimColor={opacity < 0.7}>{children}</Text>
     </Box>
   );
 };
@@ -166,7 +167,15 @@ export const TypewriterEffect: React.FC<TypewriterEffectProps> = ({
   speed = 50,
   onComplete,
 }) => {
-  const [displayedText, setDisplayedText] = useState('');
+  const quiet = process.env.PLATO_QUIET_TUI === "1";
+  if (quiet) {
+    // Render instantly without per-char updates in quiet mode
+    useEffect(() => {
+      onComplete?.();
+    }, [onComplete]);
+    return <Text>{text}</Text>;
+  }
+  const [displayedText, setDisplayedText] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
 
   useEffect(() => {
@@ -176,8 +185,8 @@ export const TypewriterEffect: React.FC<TypewriterEffectProps> = ({
     }
 
     const timer = setTimeout(() => {
-      setDisplayedText(prev => prev + text[currentIndex]);
-      setCurrentIndex(prev => prev + 1);
+      setDisplayedText((prev) => prev + text[currentIndex]);
+      setCurrentIndex((prev) => prev + 1);
     }, speed);
 
     return () => clearTimeout(timer);
@@ -196,13 +205,13 @@ export const ActivityIndicator: React.FC<ActivityIndicatorProps> = ({
   compact = false,
 }) => {
   const [animationFrame, setAnimationFrame] = useState(0);
-  const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  const frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
   useEffect(() => {
     if (activities.length === 0) return;
 
     const timer = setInterval(() => {
-      setAnimationFrame(prev => (prev + 1) % frames.length);
+      setAnimationFrame((prev) => (prev + 1) % frames.length);
     }, 80);
 
     return () => clearInterval(timer);
@@ -214,7 +223,8 @@ export const ActivityIndicator: React.FC<ActivityIndicatorProps> = ({
     return (
       <Box>
         <Text color="blue">
-          {frames[animationFrame]} {activities.length} {activities.length === 1 ? 'activity' : 'activities'}
+          {frames[animationFrame]} {activities.length}{" "}
+          {activities.length === 1 ? "activity" : "activities"}
         </Text>
       </Box>
     );
@@ -222,7 +232,7 @@ export const ActivityIndicator: React.FC<ActivityIndicatorProps> = ({
 
   return (
     <Box flexDirection="column">
-      {activities.map(activity => (
+      {activities.map((activity) => (
         <Box key={activity.id}>
           <Text color="blue">{frames[animationFrame]} </Text>
           <Text>{activity.label}</Text>
@@ -235,13 +245,13 @@ export const ActivityIndicator: React.FC<ActivityIndicatorProps> = ({
 export interface CountdownTimerProps {
   seconds: number;
   onComplete?: () => void;
-  format?: 'seconds' | 'mm:ss';
+  format?: "seconds" | "mm:ss";
 }
 
 export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   seconds: initialSeconds,
   onComplete,
-  format = 'seconds',
+  format = "seconds",
 }) => {
   const [seconds, setSeconds] = useState(initialSeconds);
 
@@ -252,23 +262,23 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     }
 
     const timer = setTimeout(() => {
-      setSeconds(prev => prev - 1);
+      setSeconds((prev) => prev - 1);
     }, 1000);
 
     return () => clearTimeout(timer);
   }, [seconds, onComplete]);
 
   const formatTime = (sec: number): string => {
-    if (format === 'mm:ss') {
+    if (format === "mm:ss") {
       const minutes = Math.floor(sec / 60);
       const remainingSeconds = sec % 60;
-      return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+      return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
     }
     return `${sec}s`;
   };
 
   return (
-    <Text color={seconds <= 10 ? 'red' : seconds <= 30 ? 'yellow' : 'green'}>
+    <Text color={seconds <= 10 ? "red" : seconds <= 30 ? "yellow" : "green"}>
       ⏱️ {formatTime(seconds)}
     </Text>
   );
@@ -281,7 +291,7 @@ export interface LoadingDotsProps {
 }
 
 export const LoadingDots: React.FC<LoadingDotsProps> = ({
-  text = 'Loading',
+  text = "Loading",
   maxDots = 3,
   interval = 500,
 }) => {
@@ -289,7 +299,7 @@ export const LoadingDots: React.FC<LoadingDotsProps> = ({
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setDots(prev => (prev + 1) % (maxDots + 1));
+      setDots((prev) => (prev + 1) % (maxDots + 1));
     }, interval);
 
     return () => clearInterval(timer);
@@ -297,7 +307,9 @@ export const LoadingDots: React.FC<LoadingDotsProps> = ({
 
   return (
     <Text>
-      {text}{'.'.repeat(dots)}{' '.repeat(maxDots - dots)}
+      {text}
+      {".".repeat(dots)}
+      {" ".repeat(maxDots - dots)}
     </Text>
   );
 };
@@ -308,15 +320,15 @@ export interface AnimatedEllipsisProps {
 }
 
 export const AnimatedEllipsis: React.FC<AnimatedEllipsisProps> = ({
-  prefix = '',
-  suffix = '',
+  prefix = "",
+  suffix = "",
 }) => {
   const [frame, setFrame] = useState(0);
-  const frames = ['.', '..', '...', '..'];
+  const frames = [".", "..", "...", ".."];
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setFrame(prev => (prev + 1) % frames.length);
+      setFrame((prev) => (prev + 1) % frames.length);
     }, 400);
 
     return () => clearInterval(timer);
@@ -324,7 +336,9 @@ export const AnimatedEllipsis: React.FC<AnimatedEllipsisProps> = ({
 
   return (
     <Text>
-      {prefix}{frames[frame]}{suffix}
+      {prefix}
+      {frames[frame]}
+      {suffix}
     </Text>
   );
 };

@@ -1,13 +1,13 @@
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 
 // Base permission types (extend existing)
-export type PermissionAction = 'allow' | 'deny' | 'confirm';
+export type PermissionAction = "allow" | "deny" | "confirm";
 
 export interface Rule {
   id?: string; // Optional ID for tracking temporary rules
-  match: { 
-    tool?: string; 
-    path?: string; 
+  match: {
+    tool?: string;
+    path?: string;
     command?: string;
     operation?: string;
   };
@@ -19,7 +19,7 @@ export interface Rule {
 }
 
 export interface RuleCondition {
-  type: 'time' | 'environment' | 'file_size' | 'user_confirmation';
+  type: "time" | "environment" | "file_size" | "user_confirmation";
   value: any;
 }
 
@@ -59,7 +59,7 @@ export interface AdvancedPermissionsConfig {
   audit?: {
     enabled: boolean;
     retention_days: number;
-    log_level: 'debug' | 'info' | 'warn' | 'error';
+    log_level: "debug" | "info" | "warn" | "error";
   };
   rate_limits?: Record<string, string>; // e.g., "fs_write": "10/minute"
 }
@@ -80,7 +80,7 @@ export interface PermissionContext {
 export interface ProfileChangeEvent {
   previous: Profile | null;
   current: Profile | null;
-  reason: 'manual' | 'automatic' | 'forced';
+  reason: "manual" | "automatic" | "forced";
 }
 
 // Permission query and result types
@@ -114,7 +114,7 @@ export interface AuditEntry {
   result: PermissionResult;
   profile?: string;
   session_id?: string;
-  user_decision?: 'approved' | 'denied' | 'skipped';
+  user_decision?: "approved" | "denied" | "skipped";
   context: AuditContext;
   metadata: AuditMetadata;
 }
@@ -123,7 +123,7 @@ export interface AuditContext {
   user_agent?: string;
   request_id?: string;
   correlation_id?: string;
-  source: 'cli' | 'api' | 'ui' | 'system';
+  source: "cli" | "api" | "ui" | "system";
   ip_address?: string;
   workspace_path: string;
   git_context?: {
@@ -146,8 +146,8 @@ export interface AuditContext {
 
 export interface AuditMetadata {
   version: string; // Schema version for backward compatibility
-  level: 'debug' | 'info' | 'warn' | 'error';
-  category: 'permission' | 'security' | 'compliance' | 'performance';
+  level: "debug" | "info" | "warn" | "error";
+  category: "permission" | "security" | "compliance" | "performance";
   tags: string[]; // For filtering and categorization
   duration_ms?: number; // Time taken to process the permission check
   retry_count?: number; // If the operation was retried
@@ -168,7 +168,7 @@ export interface LogFormatter {
 }
 
 export interface LogFormatOptions {
-  format: 'json' | 'structured' | 'csv' | 'human-readable';
+  format: "json" | "structured" | "csv" | "human-readable";
   include_context?: boolean;
   include_metadata?: boolean;
   include_stack_trace?: boolean;
@@ -224,8 +224,12 @@ export interface AuditReportSummary {
 
 export interface AuditAnomaly {
   id: string;
-  type: 'unusual_pattern' | 'high_risk' | 'policy_violation' | 'performance_degradation';
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  type:
+    | "unusual_pattern"
+    | "high_risk"
+    | "policy_violation"
+    | "performance_degradation";
+  severity: "low" | "medium" | "high" | "critical";
   description: string;
   detected_at: Date;
   affected_entries: string[]; // Entry IDs
@@ -243,18 +247,18 @@ export interface AuditSearchCriteria {
   limit?: number;
   offset?: number;
   // Enhanced filtering options
-  level?: 'debug' | 'info' | 'warn' | 'error';
-  category?: 'permission' | 'security' | 'compliance' | 'performance';
+  level?: "debug" | "info" | "warn" | "error";
+  category?: "permission" | "security" | "compliance" | "performance";
   tags?: string[];
-  source?: 'cli' | 'api' | 'ui' | 'system';
+  source?: "cli" | "api" | "ui" | "system";
   risk_score_min?: number;
   risk_score_max?: number;
   has_user_decision?: boolean;
   cache_hit?: boolean;
   git_branch?: string;
   workspace_path?: string;
-  sort_by?: 'timestamp' | 'risk_score' | 'duration_ms';
-  sort_order?: 'asc' | 'desc';
+  sort_by?: "timestamp" | "risk_score" | "duration_ms";
+  sort_order?: "asc" | "desc";
 }
 
 // UI component types
@@ -262,7 +266,7 @@ export interface PermissionPromptProps {
   query: PermissionQuery;
   suggestedAction: PermissionAction;
   rule?: Rule;
-  onDecision: (decision: 'allow' | 'deny' | 'skip', remember?: boolean) => void;
+  onDecision: (decision: "allow" | "deny" | "skip", remember?: boolean) => void;
   onElevate?: () => void;
 }
 
@@ -278,10 +282,14 @@ export interface ProfileManagerEvents {
   profileLoaded: [Profile[]];
   activationFailed: [Error];
   contextChanged: [PermissionContext];
-  rulesChanged: [{ type: string; rule?: Rule; ruleId?: string; count?: number }];
+  rulesChanged: [
+    { type: string; rule?: Rule; ruleId?: string; count?: number },
+  ];
   hotReloadEnabled: [];
   hotReloadDisabled: [];
-  configReloaded: [{ filePath: string; profileCount: number; currentProfile?: string }];
+  configReloaded: [
+    { filePath: string; profileCount: number; currentProfile?: string },
+  ];
   reloadError: [{ filePath: string; error: Error }];
 }
 
@@ -302,7 +310,11 @@ export interface IAuditLogger {
   log(entry: AuditEntry): Promise<void>;
   search(criteria: Partial<AuditEntry>): Promise<AuditEntry[]>;
   cleanup(): Promise<void>;
-  getStats(): Promise<{ totalEntries: number; oldestEntry: Date; retention: number }>;
+  getStats(): Promise<{
+    totalEntries: number;
+    oldestEntry: Date;
+    retention: number;
+  }>;
 }
 
 export interface IPermissionCache {
@@ -319,29 +331,29 @@ export class PermissionError extends Error {
     message: string,
     public code: string,
     public query?: PermissionQuery,
-    public rule?: Rule
+    public rule?: Rule,
   ) {
     super(message);
-    this.name = 'PermissionError';
+    this.name = "PermissionError";
   }
 }
 
 export class ProfileError extends Error {
   constructor(
     message: string,
-    public profileName?: string
+    public profileName?: string,
   ) {
     super(message);
-    this.name = 'ProfileError';
+    this.name = "ProfileError";
   }
 }
 
 // Risk assessment types for permission prompts
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type RiskLevel = "low" | "medium" | "high" | "critical";
 
 // Permission decision with extended metadata
 export interface PermissionDecision {
-  action: 'allow' | 'deny';
+  action: "allow" | "deny";
   permanent: boolean;
   timestamp: number;
   reason?: string;

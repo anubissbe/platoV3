@@ -22,6 +22,7 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 ## ✨ Key Features
 
 ### Core Capabilities
+
 - **🖥️ Terminal UI**: Identical to Claude Code's React/Ink interface
 - **🤖 AI Backend**: GitHub Copilot integration via device flow auth
 - **📝 Immediate Writes**: Direct file editing with auto-apply mode
@@ -33,6 +34,7 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 - **🎮 Keyboard Shortcuts**: Full Claude Code keyboard compatibility
 
 ### Advanced Features
+
 - **Headless Mode**: Automation via `-p` flag
 - **Git Integration**: Patch engine with apply/revert
 - **Security Review**: Code scanning for dangerous patterns
@@ -45,12 +47,14 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 ## 👥 Target Users
 
 ### Primary Users
+
 - **Claude Code Users**: Wanting to use GitHub Copilot backend
 - **GitHub Copilot Subscribers**: Seeking Claude Code experience
 - **Terminal Power Users**: Preferring CLI-based development tools
 - **Enterprise Teams**: Standardized on GitHub infrastructure
 
 ### User Personas
+
 1. **The Switcher**: Currently using Claude Code but wants Copilot
 2. **The Power Developer**: Needs customizable terminal AI assistant
 3. **The Automator**: Requires headless mode for CI/CD integration
@@ -59,6 +63,7 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 ## 🏗️ Technical Architecture
 
 ### Core Stack
+
 - **Language**: TypeScript (100%)
 - **Runtime**: Node.js with tsx
 - **UI Layer**: React + Ink (terminal rendering)
@@ -67,6 +72,7 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 - **Storage**: Local filesystem (.plato/ directory)
 
 ### Key Components
+
 - **Orchestrator**: Central runtime coordination
 - **Keyboard Handler**: Advanced input processing
 - **Memory Manager**: Persistent state management
@@ -77,6 +83,7 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 ## 📈 Success Metrics
 
 ### Achieved Milestones
+
 - ✅ 100% Claude Code command parity (41 commands)
 - ✅ Full keyboard shortcut compatibility
 - ✅ Complete memory persistence system
@@ -84,6 +91,7 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 - ✅ Headless automation mode
 
 ### Current Gaps
+
 - ⚠️ Test coverage (0 tests vs 94 claimed)
 - ⚠️ Documentation incomplete (README understates features)
 - ⚠️ Version inconsistency (0.1.0 vs 1.0.0)
@@ -92,18 +100,21 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 ## 🗺️ Product Roadmap
 
 ### Phase 1: Claude Code Parity ✅ (Complete)
+
 - All core features implemented
 - Full command compatibility
 - Memory and session persistence
 - Custom command system
 
 ### Phase 2: Polish & Performance (Current)
+
 - Add comprehensive test suite
 - Update documentation
 - Performance optimization (<200ms responses)
 - Enhanced error handling
 
 ### Phase 3: Advanced Features (Planned)
+
 - Plugin ecosystem
 - Multi-model support
 - Advanced Git workflows
@@ -137,6 +148,7 @@ Plato is a **fully Claude Code-compatible terminal AI coding assistant** powered
 ## 📊 Market Position
 
 Plato occupies a unique niche as the **only** Claude Code-compatible assistant that uses GitHub Copilot. This positions it perfectly for:
+
 - Organizations standardized on GitHub
 - Developers with Copilot subscriptions
 - Teams wanting Claude Code UX without Anthropic dependency
@@ -145,12 +157,14 @@ Plato occupies a unique niche as the **only** Claude Code-compatible assistant t
 ## 🎯 Success Criteria
 
 ### Short Term (Phase 2)
+
 - [ ] 100% test coverage for core features
 - [ ] Complete documentation update
 - [ ] Sub-200ms response times
 - [ ] 1000+ GitHub stars
 
 ### Long Term (Phase 3+)
+
 - [ ] 10,000+ active users
 - [ ] Plugin ecosystem with 50+ plugins
 - [ ] Enterprise adoption by 10+ companies

@@ -3,8 +3,13 @@
  * Handles keyboard navigation, focus states, and accessibility for interactive components
  */
 
-import { ClickableComponent, ComponentState, VisualFeedback, VisualFeedbackUtils } from './interactive-components.js';
-import { ComponentRegistry } from './component-registry.js';
+import {
+  ClickableComponent,
+  ComponentState,
+  VisualFeedback,
+  VisualFeedbackUtils,
+} from "./interactive-components.js";
+import { ComponentRegistry } from "./component-registry.js";
 
 /**
  * Keyboard event information
@@ -28,7 +33,15 @@ export interface KeyboardEvent {
 /**
  * Focus navigation direction
  */
-export type FocusDirection = 'forward' | 'backward' | 'up' | 'down' | 'left' | 'right' | 'first' | 'last';
+export type FocusDirection =
+  | "forward"
+  | "backward"
+  | "up"
+  | "down"
+  | "left"
+  | "right"
+  | "first"
+  | "last";
 
 /**
  * Focus change event information
@@ -59,9 +72,9 @@ export interface FocusConfig {
   /** Whether to wrap focus at boundaries */
   wrapFocus: boolean;
   /** Tab key navigation mode */
-  tabNavigation: 'sequential' | 'spatial' | 'custom';
+  tabNavigation: "sequential" | "spatial" | "custom";
   /** Arrow key navigation mode */
-  arrowNavigation: 'spatial' | 'sequential' | 'disabled';
+  arrowNavigation: "spatial" | "sequential" | "disabled";
   /** Whether to announce focus changes for screen readers */
   announcements: boolean;
   /** Focus trap behavior */
@@ -91,7 +104,7 @@ export interface FocusGroup {
   /** Focus wrap behavior for this group */
   wrap: boolean;
   /** Group-specific navigation mode */
-  navigationMode: 'sequential' | 'spatial' | 'custom';
+  navigationMode: "sequential" | "spatial" | "custom";
 }
 
 /**
@@ -102,21 +115,26 @@ const DEFAULT_FOCUS_CONFIG: FocusConfig = {
   visualIndicators: true,
   keyboardNavigation: true,
   wrapFocus: true,
-  tabNavigation: 'sequential',
-  arrowNavigation: 'spatial',
+  tabNavigation: "sequential",
+  arrowNavigation: "spatial",
   announcements: false,
   trapFocus: false,
   skipDisabled: true,
   skipInvisible: true,
   restoreFocus: true,
-  debug: false
+  debug: false,
 };
 
 /**
  * Focus event handler types
  */
-export type FocusEventHandler = (event: FocusChangeEvent) => void | Promise<void>;
-export type KeyboardEventHandler = (event: KeyboardEvent, component: ClickableComponent) => boolean | Promise<boolean>;
+export type FocusEventHandler = (
+  event: FocusChangeEvent,
+) => void | Promise<void>;
+export type KeyboardEventHandler = (
+  event: KeyboardEvent,
+  component: ClickableComponent,
+) => boolean | Promise<boolean>;
 
 export interface FocusEventHandlers {
   onFocusChange?: FocusEventHandler;
@@ -143,7 +161,10 @@ export class FocusManager {
   private navigationHistory: ClickableComponent[] = [];
   private focusRestoreStack: ClickableComponent[] = [];
 
-  constructor(componentRegistry: ComponentRegistry, config: Partial<FocusConfig> = {}) {
+  constructor(
+    componentRegistry: ComponentRegistry,
+    config: Partial<FocusConfig> = {},
+  ) {
     this.componentRegistry = componentRegistry;
     this.config = { ...DEFAULT_FOCUS_CONFIG, ...config };
     this.setupComponentRegistryListener();
@@ -155,12 +176,19 @@ export class FocusManager {
   private setupComponentRegistryListener(): void {
     // Listen for component changes to update tab order cache
     this.componentRegistry.addChangeListener((changeEvent) => {
-      if (changeEvent.type === 'added' || changeEvent.type === 'removed' || changeEvent.type === 'updated') {
+      if (
+        changeEvent.type === "added" ||
+        changeEvent.type === "removed" ||
+        changeEvent.type === "updated"
+      ) {
         this.invalidateTabOrderCache();
-        
+
         // If currently focused component was removed, move focus
-        if (changeEvent.type === 'removed' && this.currentFocus?.id === changeEvent.componentId) {
-          this.moveFocus('forward');
+        if (
+          changeEvent.type === "removed" &&
+          this.currentFocus?.id === changeEvent.componentId
+        ) {
+          this.moveFocus("forward");
         }
       }
     });
@@ -176,8 +204,10 @@ export class FocusManager {
 
     // Call component-specific keyboard handler first
     if (this.currentFocus) {
-      const componentState = this.getOrCreateComponentState(this.currentFocus.id);
-      
+      const componentState = this.getOrCreateComponentState(
+        this.currentFocus.id,
+      );
+
       // Call component's keyboard handler
       if (this.currentFocus.handlers.onKeyboardActivate) {
         await this.currentFocus.handlers.onKeyboardActivate(event.key);
@@ -185,7 +215,10 @@ export class FocusManager {
 
       // Call global keyboard handler
       if (this.eventHandlers.onKeyboardEvent) {
-        const handled = await this.eventHandlers.onKeyboardEvent(event, this.currentFocus);
+        const handled = await this.eventHandlers.onKeyboardEvent(
+          event,
+          this.currentFocus,
+        );
         if (handled) {
           return true;
         }
@@ -203,59 +236,63 @@ export class FocusManager {
     const { key, modifiers } = event;
 
     // Tab navigation
-    if (key === 'Tab') {
-      const direction = modifiers.shift ? 'backward' : 'forward';
+    if (key === "Tab") {
+      const direction = modifiers.shift ? "backward" : "forward";
       await this.moveFocus(direction);
       return true;
     }
 
     // Arrow navigation (if enabled)
-    if (this.config.arrowNavigation !== 'disabled') {
+    if (this.config.arrowNavigation !== "disabled") {
       switch (key) {
-        case 'ArrowUp':
-          await this.moveFocus('up');
+        case "ArrowUp":
+          await this.moveFocus("up");
           return true;
-        case 'ArrowDown':
-          await this.moveFocus('down');
+        case "ArrowDown":
+          await this.moveFocus("down");
           return true;
-        case 'ArrowLeft':
-          await this.moveFocus('left');
+        case "ArrowLeft":
+          await this.moveFocus("left");
           return true;
-        case 'ArrowRight':
-          await this.moveFocus('right');
+        case "ArrowRight":
+          await this.moveFocus("right");
           return true;
       }
     }
 
     // Home/End navigation
-    if (key === 'Home') {
-      await this.moveFocus('first');
+    if (key === "Home") {
+      await this.moveFocus("first");
       return true;
     }
-    if (key === 'End') {
-      await this.moveFocus('last');
+    if (key === "End") {
+      await this.moveFocus("last");
       return true;
     }
 
     // Escape - clear focus
-    if (key === 'Escape') {
+    if (key === "Escape") {
       await this.clearFocus();
       return true;
     }
 
     // Enter/Space - activate component
-    if ((key === 'Enter' || key === ' ') && this.currentFocus) {
+    if ((key === "Enter" || key === " ") && this.currentFocus) {
       if (this.currentFocus.accessibility.keyboardActivatable) {
         // Create synthetic mouse event for activation
         const syntheticEvent = {
-          type: 'click' as const,
+          type: "click" as const,
           coordinates: {
-            x: this.currentFocus.bounds.x + Math.floor(this.currentFocus.bounds.width / 2),
-            y: this.currentFocus.bounds.y + Math.floor(this.currentFocus.bounds.height / 2)
+            x:
+              this.currentFocus.bounds.x +
+              Math.floor(this.currentFocus.bounds.width / 2),
+            y:
+              this.currentFocus.bounds.y +
+              Math.floor(this.currentFocus.bounds.height / 2),
           },
-          button: 'left' as const,
+          button: "left" as const,
           modifiers: { shift: false, ctrl: false, alt: false, meta: false },
-          timestamp: event.timestamp
+          timestamp: event.timestamp,
         };
 
         if (this.currentFocus.handlers.onClick) {
@@ -273,7 +310,7 @@ export class FocusManager {
    */
   async moveFocus(direction: FocusDirection): Promise<boolean> {
     const focusableComponents = this.getFocusableComponents();
-    
+
     if (focusableComponents.length === 0) {
       return false;
     }
@@ -281,21 +318,24 @@ export class FocusManager {
     let nextComponent: ClickableComponent | null = null;
 
     switch (direction) {
-      case 'first':
+      case "first":
         nextComponent = focusableComponents[0];
         break;
-      case 'last':
+      case "last":
         nextComponent = focusableComponents[focusableComponents.length - 1];
         break;
-      case 'forward':
-      case 'backward':
+      case "forward":
+      case "backward":
         nextComponent = this.getNextInTabOrder(direction, focusableComponents);
         break;
-      case 'up':
-      case 'down':
-      case 'left':
-      case 'right':
-        nextComponent = this.getNextInSpatialOrder(direction, focusableComponents);
+      case "up":
+      case "down":
+      case "left":
+      case "right":
+        nextComponent = this.getNextInSpatialOrder(
+          direction,
+          focusableComponents,
+        );
         break;
     }
 
@@ -315,22 +355,31 @@ export class FocusManager {
   /**
    * Get next component in tab order
    */
-  private getNextInTabOrder(direction: 'forward' | 'backward', components: ClickableComponent[]): ClickableComponent | null {
+  private getNextInTabOrder(
+    direction: "forward" | "backward",
+    components: ClickableComponent[],
+  ): ClickableComponent | null {
     if (components.length === 0) return null;
-    
+
     const orderedComponents = this.getTabOrderedComponents(components);
-    
+
     if (!this.currentFocus) {
-      return direction === 'forward' ? orderedComponents[0] : orderedComponents[orderedComponents.length - 1];
+      return direction === "forward"
+        ? orderedComponents[0]
+        : orderedComponents[orderedComponents.length - 1];
     }
 
-    const currentIndex = orderedComponents.findIndex(c => c.id === this.currentFocus!.id);
+    const currentIndex = orderedComponents.findIndex(
+      (c) => c.id === this.currentFocus!.id,
+    );
     if (currentIndex === -1) {
-      return direction === 'forward' ? orderedComponents[0] : orderedComponents[orderedComponents.length - 1];
+      return direction === "forward"
+        ? orderedComponents[0]
+        : orderedComponents[orderedComponents.length - 1];
     }
 
     let nextIndex: number;
-    if (direction === 'forward') {
+    if (direction === "forward") {
       nextIndex = currentIndex + 1;
       if (nextIndex >= orderedComponents.length) {
         nextIndex = this.config.wrapFocus ? 0 : currentIndex;
@@ -338,7 +387,9 @@ export class FocusManager {
     } else {
       nextIndex = currentIndex - 1;
       if (nextIndex < 0) {
-        nextIndex = this.config.wrapFocus ? orderedComponents.length - 1 : currentIndex;
+        nextIndex = this.config.wrapFocus
+          ? orderedComponents.length - 1
+          : currentIndex;
       }
     }
 
@@ -348,13 +399,16 @@ export class FocusManager {
   /**
    * Get next component in spatial order
    */
-  private getNextInSpatialOrder(direction: 'up' | 'down' | 'left' | 'right', components: ClickableComponent[]): ClickableComponent | null {
+  private getNextInSpatialOrder(
+    direction: "up" | "down" | "left" | "right",
+    components: ClickableComponent[],
+  ): ClickableComponent | null {
     if (!this.currentFocus || components.length === 0) return null;
 
     const currentBounds = this.currentFocus.bounds;
     const currentCenter = {
       x: currentBounds.x + currentBounds.width / 2,
-      y: currentBounds.y + currentBounds.height / 2
+      y: currentBounds.y + currentBounds.height / 2,
     };
 
     let bestComponent: ClickableComponent | null = null;
@@ -366,22 +420,22 @@ export class FocusManager {
       const bounds = component.bounds;
       const center = {
         x: bounds.x + bounds.width / 2,
-        y: bounds.y + bounds.height / 2
+        y: bounds.y + bounds.height / 2,
       };
 
       // Check if component is in the right direction
       let inDirection = false;
       switch (direction) {
-        case 'up':
+        case "up":
           inDirection = center.y < currentCenter.y;
           break;
-        case 'down':
+        case "down":
           inDirection = center.y > currentCenter.y;
           break;
-        case 'left':
+        case "left":
           inDirection = center.x < currentCenter.x;
           break;
-        case 'right':
+        case "right":
           inDirection = center.x > currentCenter.x;
           break;
       }
@@ -395,12 +449,12 @@ export class FocusManager {
 
       // Add penalty for off-axis movement
       switch (direction) {
-        case 'up':
-        case 'down':
+        case "up":
+        case "down":
           distance += Math.abs(dx) * 0.5; // Prefer vertical alignment
           break;
-        case 'left':
-        case 'right':
+        case "left":
+        case "right":
           distance += Math.abs(dy) * 0.5; // Prefer horizontal alignment
           break;
       }
@@ -417,13 +471,17 @@ export class FocusManager {
   /**
    * Set focus to a component
    */
-  async setFocus(component: ClickableComponent | null, direction: FocusDirection = 'forward', viaKeyboard = false): Promise<void> {
+  async setFocus(
+    component: ClickableComponent | null,
+    direction: FocusDirection = "forward",
+    viaKeyboard = false,
+  ): Promise<void> {
     if (component === this.currentFocus) {
       return;
     }
 
     const previousFocus = this.currentFocus;
-    
+
     // Remove focus from previous component
     if (previousFocus) {
       await this.removeFocusFromComponent(previousFocus);
@@ -444,7 +502,7 @@ export class FocusManager {
       current: component,
       direction,
       timestamp: Date.now(),
-      viaKeyboard
+      viaKeyboard,
     };
 
     // Call event handlers
@@ -461,14 +519,18 @@ export class FocusManager {
     }
 
     if (this.config.debug) {
-      console.debug(`[FocusManager] Focus changed: ${previousFocus?.id || 'none'} → ${component?.id || 'none'}`);
+      console.debug(
+        `[FocusManager] Focus changed: ${previousFocus?.id || "none"} → ${component?.id || "none"}`,
+      );
     }
   }
 
   /**
    * Apply focus to component
    */
-  private async applyFocusToComponent(component: ClickableComponent): Promise<void> {
+  private async applyFocusToComponent(
+    component: ClickableComponent,
+  ): Promise<void> {
     const componentState = this.getOrCreateComponentState(component.id);
     componentState.isFocused = true;
     componentState.lastInteraction = Date.now();
@@ -487,7 +549,7 @@ export class FocusManager {
     // Add to focus stack for restoration
     if (this.config.restoreFocus) {
       this.focusRestoreStack.push(component);
-      
+
       // Limit stack size
       if (this.focusRestoreStack.length > 50) {
         this.focusRestoreStack.shift();
@@ -498,7 +560,9 @@ export class FocusManager {
   /**
    * Remove focus from component
    */
-  private async removeFocusFromComponent(component: ClickableComponent): Promise<void> {
+  private async removeFocusFromComponent(
+    component: ClickableComponent,
+  ): Promise<void> {
     const componentState = this.getOrCreateComponentState(component.id);
     componentState.isFocused = false;
     componentState.visualFeedback = null;
@@ -534,8 +598,8 @@ export class FocusManager {
    */
   private getFocusableComponents(): ClickableComponent[] {
     const allComponents = this.componentRegistry.getAllComponents();
-    
-    return allComponents.filter(component => {
+
+    return allComponents.filter((component) => {
       // Skip disabled components if configured
       if (this.config.skipDisabled && !component.isEnabled) {
         return false;
@@ -558,9 +622,14 @@ export class FocusManager {
   /**
    * Get components ordered by tab index
    */
-  private getTabOrderedComponents(components: ClickableComponent[]): ClickableComponent[] {
-    const cacheKey = components.map(c => c.id).sort().join('|');
-    
+  private getTabOrderedComponents(
+    components: ClickableComponent[],
+  ): ClickableComponent[] {
+    const cacheKey = components
+      .map((c) => c.id)
+      .sort()
+      .join("|");
+
     if (this.tabOrderCache.has(cacheKey)) {
       return this.tabOrderCache.get(cacheKey)!;
     }
@@ -596,7 +665,7 @@ export class FocusManager {
    */
   private addToNavigationHistory(component: ClickableComponent): void {
     this.navigationHistory.push(component);
-    
+
     // Limit history size
     if (this.navigationHistory.length > 100) {
       this.navigationHistory.shift();
@@ -609,15 +678,15 @@ export class FocusManager {
   createFocusGroup(
     id: string,
     components: ClickableComponent[],
-    options: Partial<Omit<FocusGroup, 'id' | 'components'>> = {}
+    options: Partial<Omit<FocusGroup, "id" | "components">> = {},
   ): void {
     const focusGroup: FocusGroup = {
       id,
       components,
       active: true,
       wrap: true,
-      navigationMode: 'sequential',
-      ...options
+      navigationMode: "sequential",
+      ...options,
     };
 
     this.focusGroups.set(id, focusGroup);
@@ -642,7 +711,7 @@ export class FocusManager {
         isFocused: false,
         isActive: false,
         visualFeedback: null,
-        lastInteraction: Date.now()
+        lastInteraction: Date.now(),
       });
     }
     return this.componentStates.get(componentId)!;
@@ -709,10 +778,15 @@ export class FocusManager {
     // Find the most recent valid component in the stack
     while (this.focusRestoreStack.length > 0) {
       const component = this.focusRestoreStack.pop()!;
-      
+
       // Check if component still exists and is focusable
       const current = this.componentRegistry.get(component.id);
-      if (current && current.isEnabled && current.isVisible && current.accessibility.tabIndex >= 0) {
+      if (
+        current &&
+        current.isEnabled &&
+        current.isVisible &&
+        current.accessibility.tabIndex >= 0
+      ) {
         await this.setFocus(current);
         return true;
       }
@@ -747,7 +821,7 @@ export class FocusManager {
       focusGroupsCount: this.focusGroups.size,
       navigationHistoryCount: this.navigationHistory.length,
       focusRestoreStackCount: this.focusRestoreStack.length,
-      tabOrderCacheSize: this.tabOrderCache.size
+      tabOrderCacheSize: this.tabOrderCache.size,
     };
   }
 

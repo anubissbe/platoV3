@@ -15,7 +15,7 @@ As a **developer**, I want to **run automated tests before committing changes**,
 
 When developing new features or fixing bugs, I need confidence that my changes don't introduce regressions. I should be able to run a simple command like `npm test` and see clear pass/fail results for all components. The test suite should run quickly (under 60 seconds) and provide detailed failure information when something breaks.
 
-### CI/CD Pipeline Story  
+### CI/CD Pipeline Story
 
 As a **DevOps engineer**, I want to **integrate automated testing into the CI pipeline**, so that **pull requests are automatically validated before merging**.
 

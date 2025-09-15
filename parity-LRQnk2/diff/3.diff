@@ -1,0 +1,46 @@
+--- parity-LRQnk2/claude/3.txt	2025-09-15 12:43:54.982032775 +0200
++++ parity-LRQnk2/plato/3.txt	2025-09-15 12:43:54.978078674 +0200
+@@ -1,25 +1,26 @@
++ plato | copilot ○ unknown                         0 msgs | 1s | ○ disconnected
++ Tokens:--
++────────────────────────────────────────────────────────────────────────────────
+ 
+-/apply-mode
+-╭──────────────────────────────────────────────────────────────────────────────╮
+-│                                                                              │
+-│ Do you trust the files in this folder?                                       │
+-│                                                                              │
+-│ /opt/projects/platoV3/parity-LRQnk2/work                                     │
+-│                                                                              │
+-│ Claude Code may read, write, or execute files contained in this directory.   │
+-│ This can pose security risks, so only use files from trusted sources.        │
+-│                                                                              │
+-│ Learn more ( https://docs.anthropic.com/s/claude-code-security )             │
+-│                                                                              │
+-│ ❯ 1. Yes, proceed                                                            │
+-│   2. No, exit                                                                │
+-│                                                                              │
+-╰──────────────────────────────────────────────────────────────────────────────╯
+-   Enter to confirm · Esc to exit
+ 
+ 
+ 
+ 
+ 
++            Welcome to Plato! Start a conversation by typing below.
++
++
++                        Type /help for available commands
++
++
++
++
++
++
++🖱️  MOUSE | comprehensive-testing | new
++
++ /apply-mode
++
++
+ 
+ 

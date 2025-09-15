@@ -1,8 +1,8 @@
-declare module 'ink' {
-  import React from 'react';
+declare module "ink" {
+  import React from "react";
 
   export interface BoxProps {
-    flexDirection?: 'row' | 'column';
+    flexDirection?: "row" | "column";
     height?: number;
     width?: number;
     padding?: number;
@@ -18,11 +18,16 @@ declare module 'ink' {
     flexGrow?: number;
     flexShrink?: number;
     flexBasis?: number;
-    alignItems?: 'flex-start' | 'center' | 'flex-end' | 'stretch';
-    justifyContent?: 'flex-start' | 'center' | 'flex-end' | 'space-between' | 'space-around';
-    overflow?: 'visible' | 'hidden';
-    position?: 'relative' | 'absolute';
-    borderStyle?: 'single' | 'double' | 'round' | 'bold' | 'classic';
+    alignItems?: "flex-start" | "center" | "flex-end" | "stretch";
+    justifyContent?:
+      | "flex-start"
+      | "center"
+      | "flex-end"
+      | "space-between"
+      | "space-around";
+    overflow?: "visible" | "hidden";
+    position?: "relative" | "absolute";
+    borderStyle?: "single" | "double" | "round" | "bold" | "classic";
     borderColor?: string;
     children?: React.ReactNode;
   }

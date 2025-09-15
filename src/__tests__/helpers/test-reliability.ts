@@ -19,7 +19,7 @@ export interface TimeoutOptions {
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  options: RetryOptions = { maxRetries: 3, delayMs: 100 }
+  options: RetryOptions = { maxRetries: 3, delayMs: 100 },
 ): Promise<T> {
   let lastError: Error;
   let delay = options.delayMs;
@@ -29,21 +29,21 @@ export async function withRetry<T>(
       return await operation();
     } catch (error) {
       lastError = error as Error;
-      
+
       if (attempt === options.maxRetries) {
         throw lastError;
       }
-      
+
       // Add jitter to prevent thundering herd
       const jitter = Math.random() * 0.1 * delay;
       await sleep(delay + jitter);
-      
+
       if (options.backoffMultiplier) {
         delay *= options.backoffMultiplier;
       }
     }
   }
-  
+
   throw lastError!;
 }
 
@@ -52,19 +52,19 @@ export async function withRetry<T>(
  */
 export async function waitForCondition(
   condition: () => boolean | Promise<boolean>,
-  options: TimeoutOptions = { timeoutMs: 5000, intervalMs: 100 }
+  options: TimeoutOptions = { timeoutMs: 5000, intervalMs: 100 },
 ): Promise<void> {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < options.timeoutMs) {
     const result = await condition();
     if (result) {
       return;
     }
-    
+
     await sleep(options.intervalMs || 100);
   }
-  
+
   throw new Error(`Condition not met within ${options.timeoutMs}ms`);
 }
 
@@ -72,7 +72,7 @@ export async function waitForCondition(
  * Deterministic sleep function for tests
  */
 export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -157,12 +157,12 @@ export class ResourceTracker {
       try {
         await cleanup();
       } catch (error) {
-        console.warn('Resource cleanup failed:', error);
+        console.warn("Resource cleanup failed:", error);
       }
     });
 
     await Promise.allSettled(cleanupPromises);
-    
+
     // Clear collections
     this.resources.clear();
     this.timers.clear();
@@ -176,16 +176,16 @@ export class ResourceTracker {
 export async function withTimeout<T>(
   operation: Promise<T>,
   timeoutMs: number,
-  errorMessage = `Operation timed out after ${timeoutMs}ms`
+  errorMessage = `Operation timed out after ${timeoutMs}ms`,
 ): Promise<T> {
   let timeoutHandle: NodeJS.Timeout;
-  
+
   const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutHandle = setTimeout(() => {
       reject(new Error(errorMessage));
     }, timeoutMs);
   });
-  
+
   try {
     const result = await Promise.race([operation, timeoutPromise]);
     clearTimeout(timeoutHandle!);
@@ -203,7 +203,7 @@ export class TestIdGenerator {
   private counter = 0;
   private prefix: string;
 
-  constructor(prefix = 'test') {
+  constructor(prefix = "test") {
     this.prefix = prefix;
   }
 

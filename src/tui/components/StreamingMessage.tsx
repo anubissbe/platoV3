@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Text } from 'ink';
-import { TypewriterEffect, StreamingIndicator } from '../LoadingAnimations.js';
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Text } from "ink";
+import { TypewriterEffect, StreamingIndicator } from "../LoadingAnimations.js";
 
 export interface StreamingMessageProps {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   isStreaming: boolean;
   isComplete: boolean;
@@ -31,7 +31,8 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
   width = process.stdout.columns || 80,
   speed = 25, // 25ms per character as per technical spec
 }) => {
-  const [streamingContent, setStreamingContent] = useState('');
+  const [streamingContent, setStreamingContent] = useState("");
+  const quiet = process.env.PLATO_QUIET_TUI === "1";
   const [showCursor, setShowCursor] = useState(false);
   const streamingRef = useRef(false);
   const interruptedRef = useRef(false);
@@ -41,7 +42,7 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
     if (isStreaming && !streamingRef.current) {
       streamingRef.current = true;
       setShowCursor(true);
-      setStreamingContent('');
+      setStreamingContent("");
     } else if (!isStreaming && streamingRef.current) {
       streamingRef.current = false;
       setShowCursor(false);
@@ -75,10 +76,10 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
 
   // Cursor blink effect during streaming
   useEffect(() => {
-    if (!showCursor) return;
+    if (!showCursor || quiet) return;
 
     const interval = setInterval(() => {
-      setShowCursor(prev => !prev);
+      setShowCursor((prev) => !prev);
     }, 530); // Standard cursor blink rate
 
     return () => clearInterval(interval);
@@ -86,51 +87,51 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
 
   // Format timestamp
   const formatTimestamp = (timestamp?: number) => {
-    if (!timestamp) return '';
+    if (!timestamp) return "";
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
     });
   };
 
   // Role-based styling
   const getRoleConfig = () => {
     switch (role) {
-      case 'user':
+      case "user":
         return {
-          prefix: '> ',
-          color: 'cyan',
+          prefix: "> ",
+          color: "cyan",
           bgColor: undefined,
-          icon: '👤'
+          icon: "👤",
         };
-      case 'assistant':
+      case "assistant":
         return {
-          prefix: '',
-          color: 'white',
+          prefix: "",
+          color: "white",
           bgColor: undefined,
-          icon: '🤖'
+          icon: "🤖",
         };
-      case 'system':
+      case "system":
         return {
-          prefix: '* ',
-          color: 'yellow',
+          prefix: "* ",
+          color: "yellow",
           bgColor: undefined,
-          icon: 'ℹ️'
+          icon: "ℹ️",
         };
       default:
         return {
-          prefix: '',
-          color: 'white',
+          prefix: "",
+          color: "white",
           bgColor: undefined,
-          icon: ''
+          icon: "",
         };
     }
   };
 
   const roleConfig = getRoleConfig();
-  const cursor = showCursor ? '▋' : '';
+  const cursor = showCursor ? "▋" : "";
 
   return (
     <Box flexDirection="column" width={width} marginBottom={1}>
@@ -152,19 +153,16 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
 
       {/* Message content with streaming or static display */}
       <Box flexDirection="column" paddingLeft={1}>
-        {isStreaming && !isComplete ? (
+        {isStreaming && !isComplete && !quiet ? (
           // Currently streaming - show typewriter effect
           <Box flexDirection="column">
-            <StreamingIndicator 
-              isStreaming={true} 
-              text="Assistant is typing" 
-            />
+            <StreamingIndicator isStreaming={true} text="Assistant is typing" />
             <Box marginTop={1}>
               <Text color={roleConfig.color}>
                 {roleConfig.prefix}
                 <TypewriterEffect
                   text={content}
-                  speed={speed}
+                  speed={quiet ? 9999 : speed}
                   onComplete={handleTypewriterComplete}
                 />
                 {cursor}
@@ -174,7 +172,8 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
         ) : (
           // Static content - show complete message
           <Text color={roleConfig.color}>
-            {roleConfig.prefix}{content}
+            {roleConfig.prefix}
+            {content}
           </Text>
         )}
 
@@ -189,10 +188,11 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
       </Box>
 
       {/* Streaming progress indicator */}
-      {isStreaming && (
+      {isStreaming && !quiet && (
         <Box marginTop={1} paddingLeft={1}>
           <Text dimColor>
-            {streamingContent.length}/{content.length} characters • Press Escape to stop
+            {streamingContent.length}/{content.length} characters • Press Escape
+            to stop
           </Text>
         </Box>
       )}
@@ -203,9 +203,12 @@ export const StreamingMessage: React.FC<StreamingMessageProps> = ({
 /**
  * Compact version for limited space
  */
-export const CompactStreamingMessage: React.FC<StreamingMessageProps> = (props) => {
+export const CompactStreamingMessage: React.FC<StreamingMessageProps> = (
+  props,
+) => {
   const { role, content, isStreaming, speed = 25 } = props;
-  const rolePrefix = role === 'user' ? '> ' : role === 'assistant' ? '🤖 ' : '* ';
+  const rolePrefix =
+    role === "user" ? "> " : role === "assistant" ? "🤖 " : "* ";
 
   if (isStreaming) {
     return (
@@ -221,7 +224,10 @@ export const CompactStreamingMessage: React.FC<StreamingMessageProps> = (props) 
 
   return (
     <Box>
-      <Text>{rolePrefix}{content}</Text>
+      <Text>
+        {rolePrefix}
+        {content}
+      </Text>
     </Box>
   );
 };
@@ -230,7 +236,7 @@ export const CompactStreamingMessage: React.FC<StreamingMessageProps> = (props) 
  * Enhanced message interface for streaming support
  */
 export interface StreamingConversationMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   timestamp: number;
   metadata?: {
@@ -254,13 +260,17 @@ export interface StreamingConversationMessage {
  */
 export class StreamingMessageManager {
   private streamingMessage: StreamingConversationMessage | null = null;
-  private onUpdate: ((message: StreamingConversationMessage | null) => void) | null = null;
+  private onUpdate:
+    | ((message: StreamingConversationMessage | null) => void)
+    | null = null;
 
-  setUpdateCallback(callback: (message: StreamingConversationMessage | null) => void) {
+  setUpdateCallback(
+    callback: (message: StreamingConversationMessage | null) => void,
+  ) {
     this.onUpdate = callback;
   }
 
-  startStreaming(role: 'assistant' | 'system', initialContent = '') {
+  startStreaming(role: "assistant" | "system", initialContent = "") {
     this.streamingMessage = {
       role,
       content: initialContent,
@@ -269,8 +279,8 @@ export class StreamingMessageManager {
       isComplete: false,
       streamProgress: {
         charactersReceived: 0,
-        streamStartTime: Date.now()
-      }
+        streamStartTime: Date.now(),
+      },
     };
     this.onUpdate?.(this.streamingMessage);
   }
@@ -280,7 +290,8 @@ export class StreamingMessageManager {
 
     this.streamingMessage.content = newContent;
     if (this.streamingMessage.streamProgress) {
-      this.streamingMessage.streamProgress.charactersReceived = newContent.length;
+      this.streamingMessage.streamProgress.charactersReceived =
+        newContent.length;
     }
     this.onUpdate?.(this.streamingMessage);
   }
@@ -293,12 +304,13 @@ export class StreamingMessageManager {
     }
     this.streamingMessage.isStreaming = false;
     this.streamingMessage.isComplete = true;
-    
+
     if (this.streamingMessage.streamProgress) {
-      const duration = Date.now() - this.streamingMessage.streamProgress.streamStartTime;
+      const duration =
+        Date.now() - this.streamingMessage.streamProgress.streamStartTime;
       this.streamingMessage.metadata = {
         ...this.streamingMessage.metadata,
-        duration
+        duration,
       };
     }
 
@@ -312,7 +324,7 @@ export class StreamingMessageManager {
 
     this.streamingMessage.isStreaming = false;
     this.streamingMessage.isComplete = false;
-    
+
     const interruptedMessage = { ...this.streamingMessage };
     this.streamingMessage = null;
     this.onUpdate?.(interruptedMessage);

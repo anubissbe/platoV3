@@ -1,0 +1,42 @@
+--- parity-UTxGm9/claude/30.txt	2025-09-15 13:27:45.415005994 +0200
++++ parity-UTxGm9/plato/30.txt	2025-09-15 13:27:45.411064501 +0200
+@@ -1,21 +1,22 @@
+-1
+ 
+-╭──────────────────────────────────────────────────────────────────────────────╮
+-│                                                                              │
+-│ Do you trust the files in this folder?                                       │
+-│                                                                              │
+-│ /opt/projects/platoV3/parity-UTxGm9/work                                     │
+-│                                                                              │
+-│ Claude Code may read, write, or execute files contained in this directory.   │
+-│ This can pose security risks, so only use files from trusted sources.        │
+-│                                                                              │
+-│ Learn more ( https://docs.anthropic.com/s/claude-code-security )             │
+-│                                                                              │
+-│ ❯ 1. Yes, proceed                                                            │
+-│   2. No, exit                                                                │
+-│                                                                              │
+-╰──────────────────────────────────────────────────────────────────────────────╯
+-   Enter to confirm · Esc to exit
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++
++ /resume
++
+ 
+ 
+ 

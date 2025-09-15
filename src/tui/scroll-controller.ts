@@ -3,8 +3,12 @@
  * Provides smooth scrolling, momentum, and performance optimization
  */
 
-import { EventEmitter } from 'events';
-import { MouseEvent, MouseEventType, MouseButton } from './mouse-event-handler.js';
+import { EventEmitter } from "events";
+import {
+  MouseEvent,
+  MouseEventType,
+  MouseButton,
+} from "./mouse-event-handler.js";
 
 // Scroll configuration interface
 export interface ScrollConfig {
@@ -19,7 +23,7 @@ export interface ScrollConfig {
 
 // Scroll event interface
 export interface ScrollEvent {
-  direction: 'up' | 'down';
+  direction: "up" | "down";
   lines: number;
   smooth: boolean;
   momentum: boolean;
@@ -31,11 +35,21 @@ export interface ConversationRenderer {
   getViewportHeight(): number;
   getTotalHeight(): number;
   getCurrentScrollPosition(): number;
-  setScrollPosition(options: { position?: number; direction?: string; amount?: number; smooth?: boolean }): void;
+  setScrollPosition(options: {
+    position?: number;
+    direction?: string;
+    amount?: number;
+    smooth?: boolean;
+  }): void;
   getConversationCount(): number;
   getMessageAt(index: number): { role: string; content: string } | null;
   getHorizontalScrollPosition(): number;
-  setHorizontalScrollPosition(options: { position?: number; direction?: string; amount?: number; smooth?: boolean }): void;
+  setHorizontalScrollPosition(options: {
+    position?: number;
+    direction?: string;
+    amount?: number;
+    smooth?: boolean;
+  }): void;
 }
 
 // Scroll controller class
@@ -48,10 +62,10 @@ export class ScrollController extends EventEmitter {
   private scrollAnimation?: NodeJS.Timeout;
   private persistedScrollPosition: number = 0;
   private eventListeners: Map<string, Set<Function>> = new Map();
-  
+
   constructor(config: Partial<ScrollConfig> = {}) {
     super();
-    
+
     this.config = {
       scrollSensitivity: 3,
       smoothScrolling: true,
@@ -80,10 +94,11 @@ export class ScrollController extends EventEmitter {
     }
 
     // Check if horizontal scroll (shift+scroll or horizontal wheel events)
-    const isHorizontalScroll = event.modifiers.shift || 
-                              event.button === MouseButton.WHEEL_LEFT || 
-                              event.button === MouseButton.WHEEL_RIGHT;
-    
+    const isHorizontalScroll =
+      event.modifiers.shift ||
+      event.button === MouseButton.WHEEL_LEFT ||
+      event.button === MouseButton.WHEEL_RIGHT;
+
     if (isHorizontalScroll) {
       this.handleHorizontalScroll(event);
       return;
@@ -104,44 +119,44 @@ export class ScrollController extends EventEmitter {
     this.processScrollEvent(event);
     this.lastScrollTime = now;
   }
-  
+
   /**
    * Handle horizontal scroll events
    */
   private handleHorizontalScroll(event: MouseEvent): void {
     if (!this.renderer) return;
-    
+
     let direction: string;
     let button = event.button;
-    
+
     // Convert vertical scroll to horizontal when shift is pressed
     if (event.modifiers.shift) {
       if (button === MouseButton.WHEEL_UP) {
-        direction = 'left';
+        direction = "left";
       } else if (button === MouseButton.WHEEL_DOWN) {
-        direction = 'right';
+        direction = "right";
       } else {
         return;
       }
     } else if (button === MouseButton.WHEEL_LEFT) {
-      direction = 'left';
+      direction = "left";
     } else if (button === MouseButton.WHEEL_RIGHT) {
-      direction = 'right';
+      direction = "right";
     } else {
       return;
     }
-    
+
     const scrollAmount = this.config.scrollSensitivity * 3; // Horizontal scrolls more per event
-    
+
     // Execute horizontal scroll
     this.renderer.setHorizontalScrollPosition({
       direction,
       amount: scrollAmount,
       smooth: this.config.smoothScrolling,
     });
-    
+
     // Emit horizontal scroll event
-    this.emit('horizontalScroll', {
+    this.emit("horizontalScroll", {
       direction,
       amount: scrollAmount,
       timestamp: event.timestamp,
@@ -154,7 +169,7 @@ export class ScrollController extends EventEmitter {
   private processScrollEvent(event: MouseEvent): void {
     if (!this.renderer) return;
 
-    const direction = event.button === MouseButton.WHEEL_UP ? 'up' : 'down';
+    const direction = event.button === MouseButton.WHEEL_UP ? "up" : "down";
     let scrollAmount = this.config.scrollSensitivity;
 
     // Apply modifier key effects
@@ -169,14 +184,14 @@ export class ScrollController extends EventEmitter {
     const currentPos = this.renderer.getCurrentScrollPosition();
     const maxScroll = this.getMaxScrollPosition();
 
-    if (direction === 'up' && currentPos <= 0) {
-      this.handleBoundary('top');
+    if (direction === "up" && currentPos <= 0) {
+      this.handleBoundary("top");
       // Still execute scroll for consistent behavior in tests
     }
 
-    if (direction === 'down' && currentPos >= maxScroll) {
-      this.handleBoundary('bottom');
-      // Still execute scroll for consistent behavior in tests  
+    if (direction === "down" && currentPos >= maxScroll) {
+      this.handleBoundary("bottom");
+      // Still execute scroll for consistent behavior in tests
     }
 
     // Execute scroll
@@ -188,14 +203,14 @@ export class ScrollController extends EventEmitter {
 
     // Emit scroll event
     const scrollEvent: ScrollEvent = {
-      direction: direction as 'up' | 'down',
+      direction: direction as "up" | "down",
       lines: scrollAmount,
       smooth: this.config.smoothScrolling,
       momentum: this.config.enableMomentum,
       timestamp: event.timestamp,
     };
 
-    this.emit('scroll', scrollEvent);
+    this.emit("scroll", scrollEvent);
   }
 
   /**
@@ -214,7 +229,11 @@ export class ScrollController extends EventEmitter {
   /**
    * Execute scroll operation
    */
-  private executeScroll(options: { direction: string; amount: number; smooth: boolean }): void {
+  private executeScroll(options: {
+    direction: string;
+    amount: number;
+    smooth: boolean;
+  }): void {
     if (!this.renderer) return;
 
     this.renderer.setScrollPosition({
@@ -268,21 +287,24 @@ export class ScrollController extends EventEmitter {
   private getMaxScrollPosition(): number {
     if (!this.renderer) return 0;
 
-    return Math.max(0, this.renderer.getTotalHeight() - this.renderer.getViewportHeight());
+    return Math.max(
+      0,
+      this.renderer.getTotalHeight() - this.renderer.getViewportHeight(),
+    );
   }
 
   /**
    * Handle scroll boundary with visual feedback
    */
-  private handleBoundary(boundary: 'top' | 'bottom'): void {
+  private handleBoundary(boundary: "top" | "bottom"): void {
     if (!this.config.boundaryFeedback) return;
 
     // Emit boundary event for visual feedback
-    this.emit('boundary', { 
-      boundary, 
+    this.emit("boundary", {
+      boundary,
       timestamp: Date.now(),
       feedback: true,
-      bounceEnabled: this.config.bounceEffect 
+      bounceEnabled: this.config.bounceEffect,
     });
 
     // Implement bounce effect if enabled
@@ -299,16 +321,16 @@ export class ScrollController extends EventEmitter {
   /**
    * Perform a subtle bounce effect at boundaries
    */
-  private performBounceEffect(boundary: 'top' | 'bottom'): void {
+  private performBounceEffect(boundary: "top" | "bottom"): void {
     if (!this.renderer) return;
 
     const currentPos = this.renderer.getCurrentScrollPosition();
     const bounceDistance = 2; // Subtle 2-line bounce
     const bounceDuration = 150; // Quick bounce animation
-    
+
     // Calculate bounce positions
     let bouncePos: number;
-    if (boundary === 'top') {
+    if (boundary === "top") {
       bouncePos = Math.max(0, currentPos - bounceDistance);
     } else {
       const maxScroll = this.getMaxScrollPosition();
@@ -320,23 +342,24 @@ export class ScrollController extends EventEmitter {
       // Quick bounce out
       this.renderer.setScrollPosition({
         position: bouncePos,
-        smooth: true
+        smooth: true,
       });
 
       // Return to boundary after brief delay
       setTimeout(() => {
         if (this.renderer) {
-          const boundaryPos = boundary === 'top' ? 0 : this.getMaxScrollPosition();
+          const boundaryPos =
+            boundary === "top" ? 0 : this.getMaxScrollPosition();
           this.renderer.setScrollPosition({
             position: boundaryPos,
-            smooth: true
+            smooth: true,
           });
         }
       }, bounceDuration);
 
       // Emit bounce completion event
       setTimeout(() => {
-        this.emit('bounceComplete', { boundary, timestamp: Date.now() });
+        this.emit("bounceComplete", { boundary, timestamp: Date.now() });
       }, bounceDuration * 2);
     }
   }
@@ -344,7 +367,7 @@ export class ScrollController extends EventEmitter {
   /**
    * Get boundary type (handles empty conversations)
    */
-  getBoundaryType(): 'top' | 'bottom' | null {
+  getBoundaryType(): "top" | "bottom" | null {
     if (!this.renderer) return null;
 
     const totalHeight = this.renderer.getTotalHeight();
@@ -359,8 +382,8 @@ export class ScrollController extends EventEmitter {
     const currentPos = this.renderer.getCurrentScrollPosition();
     const maxScroll = this.getMaxScrollPosition();
 
-    if (currentPos <= 0) return 'top';
-    if (currentPos >= maxScroll) return 'bottom';
+    if (currentPos <= 0) return "top";
+    if (currentPos >= maxScroll) return "bottom";
     return null;
   }
 
@@ -391,7 +414,7 @@ export class ScrollController extends EventEmitter {
   onConversationChange(): void {
     // Reset scroll position when conversation changes
     this.persistedScrollPosition = 0;
-    
+
     if (this.renderer) {
       this.renderer.setScrollPosition({
         position: 0,
@@ -427,7 +450,7 @@ export class ScrollController extends EventEmitter {
    */
   getEventListenerCount(): number {
     let total = 0;
-    this.eventListeners.forEach(listeners => {
+    this.eventListeners.forEach((listeners) => {
       total += listeners.size;
     });
     return total;

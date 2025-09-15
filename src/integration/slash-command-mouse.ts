@@ -3,11 +3,15 @@
  * Integrates mouse events with slash command system for enhanced interaction
  */
 
-import type { MouseEvent, MouseCoordinates, MouseEventType } from '../tui/mouse-types.js';
-import type { SlashCommand } from '../slash/commands.js';
-import { SLASH_COMMANDS } from '../slash/commands.js';
-import { executeMouseCommand } from '../commands/mouse-command.js';
-import { getMouseSettings, isMouseEnabled } from '../config/mouse-settings.js';
+import type {
+  MouseEvent,
+  MouseCoordinates,
+  MouseEventType,
+} from "../tui/mouse-types.js";
+import type { SlashCommand } from "../slash/commands.js";
+import { SLASH_COMMANDS } from "../slash/commands.js";
+import { executeMouseCommand } from "../commands/mouse-command.js";
+import { getMouseSettings, isMouseEnabled } from "../config/mouse-settings.js";
 
 /**
  * Mouse interaction context for slash commands
@@ -30,7 +34,11 @@ export interface SlashMouseContext {
  */
 export interface MouseGesture {
   /** Gesture type */
-  type: 'right_click_menu' | 'double_click_command' | 'drag_to_select_command' | 'hover_preview';
+  type:
+    | "right_click_menu"
+    | "double_click_command"
+    | "drag_to_select_command"
+    | "hover_preview";
   /** Mouse event that triggered the gesture */
   triggerEvent: MouseEvent;
   /** Associated slash command */
@@ -104,11 +112,11 @@ export class SlashCommandMouseIntegration {
       position: { x: 0, y: 0 },
       availableCommands: SLASH_COMMANDS,
       isCommandPaletteOpen: false,
-      currentInput: '',
+      currentInput: "",
     };
     this.gestureHandlers = new Map();
     this.commandSuggestions = [];
-    
+
     this.initializeGestureHandlers();
   }
 
@@ -137,15 +145,18 @@ export class SlashCommandMouseIntegration {
   /**
    * Update slash command suggestions based on current context
    */
-  updateSuggestions(inputText: string, position: MouseCoordinates): SlashCommandSuggestion[] {
+  updateSuggestions(
+    inputText: string,
+    position: MouseCoordinates,
+  ): SlashCommandSuggestion[] {
     this.context.currentInput = inputText;
     this.context.position = position;
 
     // Generate suggestions based on input and context
     this.commandSuggestions = this.generateSuggestions(inputText);
-    
+
     return this.commandSuggestions
-      .filter(s => s.relevance >= this.config.suggestionThreshold)
+      .filter((s) => s.relevance >= this.config.suggestionThreshold)
       .sort((a, b) => b.relevance - a.relevance)
       .slice(0, this.config.maxSuggestions);
   }
@@ -156,8 +167,8 @@ export class SlashCommandMouseIntegration {
   getContextMenu(position: MouseCoordinates): SlashCommandSuggestion[] {
     const targetElement = this.getElementAtPosition(position);
     const contextCommands = this.getContextualCommands(targetElement);
-    
-    return contextCommands.map(cmd => ({
+
+    return contextCommands.map((cmd) => ({
       command: cmd.name,
       displayText: cmd.name,
       description: cmd.summary,
@@ -172,16 +183,16 @@ export class SlashCommandMouseIntegration {
   async executeCommand(command: string, args: string[] = []): Promise<boolean> {
     try {
       // Handle built-in mouse command
-      if (command === '/mouse') {
+      if (command === "/mouse") {
         const result = await executeMouseCommand(args);
         return result.success;
       }
 
       // Handle other slash commands (would integrate with actual command system)
-      console.log(`Executing command via mouse: ${command} ${args.join(' ')}`);
+      console.log(`Executing command via mouse: ${command} ${args.join(" ")}`);
       return true;
     } catch (error) {
-      console.error('Failed to execute command via mouse:', error);
+      console.error("Failed to execute command via mouse:", error);
       return false;
     }
   }
@@ -189,7 +200,10 @@ export class SlashCommandMouseIntegration {
   /**
    * Register custom gesture handler
    */
-  registerGestureHandler(gestureType: string, handler: (gesture: MouseGesture) => void): void {
+  registerGestureHandler(
+    gestureType: string,
+    handler: (gesture: MouseGesture) => void,
+  ): void {
     this.gestureHandlers.set(gestureType, handler);
   }
 
@@ -223,34 +237,34 @@ export class SlashCommandMouseIntegration {
    */
   private initializeGestureHandlers(): void {
     // Right-click menu
-    this.gestureHandlers.set('right_click_menu', (gesture) => {
+    this.gestureHandlers.set("right_click_menu", (gesture) => {
       if (this.config.rightClickMenu) {
         const menu = this.getContextMenu(gesture.triggerEvent.coordinates);
         // Would integrate with actual menu system
-        console.log('Show context menu:', menu);
+        console.log("Show context menu:", menu);
       }
     });
 
     // Double-click command execution
-    this.gestureHandlers.set('double_click_command', (gesture) => {
+    this.gestureHandlers.set("double_click_command", (gesture) => {
       if (this.config.doubleClickCommands && gesture.command) {
         this.executeCommand(gesture.command);
       }
     });
 
     // Hover preview
-    this.gestureHandlers.set('hover_preview', (gesture) => {
+    this.gestureHandlers.set("hover_preview", (gesture) => {
       if (this.config.hoverPreviews && gesture.command) {
         // Would show command preview tooltip
-        console.log('Show command preview:', gesture.command);
+        console.log("Show command preview:", gesture.command);
       }
     });
 
     // Drag to select command
-    this.gestureHandlers.set('drag_to_select_command', (gesture) => {
+    this.gestureHandlers.set("drag_to_select_command", (gesture) => {
       if (this.config.dragToSelectCommands && gesture.data?.selectedText) {
         const suggestions = this.findCommandsForText(gesture.data.selectedText);
-        console.log('Commands for selected text:', suggestions);
+        console.log("Commands for selected text:", suggestions);
       }
     });
   }
@@ -261,9 +275,11 @@ export class SlashCommandMouseIntegration {
   private updateContext(event: MouseEvent): void {
     this.context.position = event.coordinates;
     this.context.targetElement = this.getElementAtPosition(event.coordinates);
-    
+
     // Update available commands based on context
-    this.context.availableCommands = this.getContextualCommands(this.context.targetElement);
+    this.context.availableCommands = this.getContextualCommands(
+      this.context.targetElement,
+    );
   }
 
   /**
@@ -275,74 +291,80 @@ export class SlashCommandMouseIntegration {
     const position = event.coordinates;
 
     switch (event.type) {
-      case 'click':
-        if (event.button === 'right' && settings.rightClickMenu) {
+      case "click":
+        if (event.button === "right" && settings.rightClickMenu) {
           return {
-            type: 'right_click_menu',
+            type: "right_click_menu",
             triggerEvent: event,
           };
         }
-        
+
         // Detect double-click
-        if (event.button === 'left') {
+        if (event.button === "left") {
           const timeSinceLastClick = now - this.lastClickTime;
-          const distance = this.calculateDistance(position, this.lastClickPosition);
-          
-          if (timeSinceLastClick < settings.doubleClickSpeed && distance < settings.dragThreshold) {
+          const distance = this.calculateDistance(
+            position,
+            this.lastClickPosition,
+          );
+
+          if (
+            timeSinceLastClick < settings.doubleClickSpeed &&
+            distance < settings.dragThreshold
+          ) {
             const commandAtPosition = this.getCommandAtPosition(position);
             if (commandAtPosition) {
               return {
-                type: 'double_click_command',
+                type: "double_click_command",
                 triggerEvent: event,
                 command: commandAtPosition,
               };
             }
           }
-          
+
           this.lastClickTime = now;
           this.lastClickPosition = position;
         }
         break;
 
-      case 'drag_start':
+      case "drag_start":
         if (settings.dragToSelect) {
           this.dragStartPosition = position;
         }
         break;
 
-      case 'drag_end':
+      case "drag_end":
         if (this.dragStartPosition && settings.dragToSelect) {
           const selectedText = this.getSelectedTextInRange(
             this.dragStartPosition,
-            position
+            position,
           );
-          
+
           if (selectedText && this.looksLikeCommand(selectedText)) {
             return {
-              type: 'drag_to_select_command',
+              type: "drag_to_select_command",
               triggerEvent: event,
               command: selectedText,
               data: { selectedText },
             };
           }
-          
+
           this.dragStartPosition = null;
         }
         break;
 
-      case 'hover':
+      case "hover":
         if (settings.hoverDelay > 0 && this.config.hoverPreviews) {
           // Clear existing hover timeout
           if (this.hoverTimeout) {
             clearTimeout(this.hoverTimeout);
           }
-          
+
           // Set new hover timeout
           this.hoverTimeout = setTimeout(() => {
             const commandAtPosition = this.getCommandAtPosition(position);
             if (commandAtPosition) {
               const gesture: MouseGesture = {
-                type: 'hover_preview',
+                type: "hover_preview",
                 triggerEvent: event,
                 command: commandAtPosition,
               };
@@ -352,7 +374,7 @@ export class SlashCommandMouseIntegration {
         }
         break;
 
-      case 'leave':
+      case "leave":
         // Clear hover timeout when mouse leaves
         if (this.hoverTimeout) {
           clearTimeout(this.hoverTimeout);
@@ -382,7 +404,7 @@ export class SlashCommandMouseIntegration {
    * Generate command suggestions based on input
    */
   private generateSuggestions(inputText: string): SlashCommandSuggestion[] {
-    if (!inputText.startsWith('/')) {
+    if (!inputText.startsWith("/")) {
       return [];
     }
 
@@ -429,17 +451,17 @@ export class SlashCommandMouseIntegration {
    */
   private getContextualCommands(elementType?: string): SlashCommand[] {
     const contextMap: Record<string, string[]> = {
-      'chat-input': ['/help', '/paste', '/context', '/memory'],
-      'chat-output': ['/export', '/compact', '/output-style'],
-      'status-bar': ['/status', '/doctor', '/cost'],
-      'menu': ['/help', '/settings', '/logout'],
+      "chat-input": ["/help", "/paste", "/context", "/memory"],
+      "chat-output": ["/export", "/compact", "/output-style"],
+      "status-bar": ["/status", "/doctor", "/cost"],
+      menu: ["/help", "/settings", "/logout"],
     };
 
-    const relevantCommands = contextMap[elementType || ''] || [];
-    
-    return SLASH_COMMANDS.filter(cmd => 
-      relevantCommands.includes(cmd.name) || 
-      relevantCommands.length === 0
+    const relevantCommands = contextMap[elementType || ""] || [];
+
+    return SLASH_COMMANDS.filter(
+      (cmd) =>
+        relevantCommands.includes(cmd.name) || relevantCommands.length === 0,
     );
   }
 
@@ -448,9 +470,9 @@ export class SlashCommandMouseIntegration {
    */
   private getElementAtPosition(position: MouseCoordinates): string {
     // This would integrate with actual UI layout detection
-    if (position.y < 3) return 'status-bar';
-    if (position.y > 20) return 'chat-input';
-    return 'chat-output';
+    if (position.y < 3) return "status-bar";
+    if (position.y > 20) return "chat-input";
+    return "chat-output";
   }
 
   /**
@@ -467,7 +489,7 @@ export class SlashCommandMouseIntegration {
    */
   private getSelectedTextInRange(
     start: MouseCoordinates,
-    end: MouseCoordinates
+    end: MouseCoordinates,
   ): string | null {
     // This would integrate with actual text selection system
     // For now, return null as this requires text buffer access
@@ -478,7 +500,7 @@ export class SlashCommandMouseIntegration {
    * Check if text looks like a command
    */
   private looksLikeCommand(text: string): boolean {
-    return text.trim().startsWith('/') && text.trim().length > 1;
+    return text.trim().startsWith("/") && text.trim().length > 1;
   }
 
   /**
@@ -490,11 +512,11 @@ export class SlashCommandMouseIntegration {
 
     // Look for commands that might be relevant to the selected text
     const relevanceMap: Record<string, string[]> = {
-      '/export': ['export', 'save', 'download', 'copy'],
-      '/memory': ['remember', 'memory', 'context', 'history'],
-      '/compact': ['compact', 'summarize', 'compress'],
-      '/help': ['help', 'documentation', '?'],
-      '/mouse': ['mouse', 'click', 'drag', 'hover'],
+      "/export": ["export", "save", "download", "copy"],
+      "/memory": ["remember", "memory", "context", "history"],
+      "/compact": ["compact", "summarize", "compress"],
+      "/help": ["help", "documentation", "?"],
+      "/mouse": ["mouse", "click", "drag", "hover"],
     };
 
     for (const [command, keywords] of Object.entries(relevanceMap)) {
@@ -506,7 +528,7 @@ export class SlashCommandMouseIntegration {
       }, 0);
 
       if (relevance > 0) {
-        const cmd = SLASH_COMMANDS.find(c => c.name === command);
+        const cmd = SLASH_COMMANDS.find((c) => c.name === command);
         if (cmd) {
           suggestions.push({
             command: cmd.name,
@@ -533,7 +555,10 @@ export class SlashCommandMouseIntegration {
   /**
    * Calculate distance between two points
    */
-  private calculateDistance(p1: MouseCoordinates, p2: MouseCoordinates): number {
+  private calculateDistance(
+    p1: MouseCoordinates,
+    p2: MouseCoordinates,
+  ): number {
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
     return Math.sqrt(dx * dx + dy * dy);
@@ -544,7 +569,7 @@ export class SlashCommandMouseIntegration {
  * Create mouse-slash integration instance
  */
 export function createSlashMouseIntegration(
-  config?: Partial<MouseSlashConfig>
+  config?: Partial<MouseSlashConfig>,
 ): SlashCommandMouseIntegration {
   return new SlashCommandMouseIntegration(config);
 }

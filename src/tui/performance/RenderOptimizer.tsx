@@ -3,14 +3,14 @@
  * Implements throttling, debouncing, and selective updates
  */
 
-import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 
 /**
  * Hook for throttling updates to achieve target FPS
  */
 export function useThrottledUpdate<T>(
   value: T,
-  delay: number = 16 // ~60fps
+  delay: number = 16, // ~60fps
 ): T {
   const [throttledValue, setThrottledValue] = useState(value);
   const lastUpdate = useRef(Date.now());
@@ -27,7 +27,7 @@ export function useThrottledUpdate<T>(
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      
+
       timeoutRef.current = setTimeout(() => {
         setThrottledValue(value);
         lastUpdate.current = Date.now();
@@ -47,10 +47,7 @@ export function useThrottledUpdate<T>(
 /**
  * Hook for debouncing updates to prevent rapid re-renders
  */
-export function useDebouncedUpdate<T>(
-  value: T,
-  delay: number = 100
-): T {
+export function useDebouncedUpdate<T>(value: T, delay: number = 100): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -77,7 +74,7 @@ export function useDebouncedUpdate<T>(
  * Hook for batching multiple updates into a single render
  */
 export function useBatchedUpdates<T extends Record<string, any>>(
-  initialState: T
+  initialState: T,
 ): [T, (updates: Partial<T>) => void] {
   const [state, setState] = useState(initialState);
   const pendingUpdates = useRef<Partial<T>>({});
@@ -92,9 +89,9 @@ export function useBatchedUpdates<T extends Record<string, any>>(
 
     // Use requestAnimationFrame timing for smooth updates
     updateTimer.current = setTimeout(() => {
-      setState(prevState => ({
+      setState((prevState) => ({
         ...prevState,
-        ...pendingUpdates.current
+        ...pendingUpdates.current,
       }));
       pendingUpdates.current = {};
     }, 0);
@@ -116,7 +113,7 @@ export function useBatchedUpdates<T extends Record<string, any>>(
  */
 export function useSelectiveUpdate<T>(
   value: T,
-  shouldUpdate: (prev: T, next: T) => boolean
+  shouldUpdate: (prev: T, next: T) => boolean,
 ): T {
   const [currentValue, setCurrentValue] = useState(value);
   const prevValue = useRef(value);
@@ -136,7 +133,7 @@ export function useSelectiveUpdate<T>(
  */
 export function useFrameUpdate(
   callback: (deltaTime: number) => void,
-  deps: React.DependencyList = []
+  deps: React.DependencyList = [],
 ) {
   const frameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
@@ -144,13 +141,13 @@ export function useFrameUpdate(
   useEffect(() => {
     const animate = (currentTime: number) => {
       const deltaTime = currentTime - lastTimeRef.current;
-      
+
       // Limit to 60fps (16.67ms per frame)
       if (deltaTime >= 16.67) {
         callback(deltaTime);
         lastTimeRef.current = currentTime;
       }
-      
+
       frameRef.current = requestAnimationFrame(animate);
     };
 
@@ -168,32 +165,35 @@ export function useFrameUpdate(
  * Hook for lazy loading components based on viewport visibility
  */
 export function useLazyLoad(
-  threshold: number = 100
+  threshold: number = 100,
 ): [boolean, (element: HTMLElement | null) => void] {
   const [isVisible, setIsVisible] = useState(false);
   const elementRef = useRef<HTMLElement | null>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  const setRef = useCallback((element: HTMLElement | null) => {
-    if (observerRef.current) {
-      observerRef.current.disconnect();
-    }
+  const setRef = useCallback(
+    (element: HTMLElement | null) => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
 
-    if (element) {
-      elementRef.current = element;
-      
-      observerRef.current = new IntersectionObserver(
-        ([entry]) => {
-          setIsVisible(entry.isIntersecting);
-        },
-        {
-          rootMargin: `${threshold}px`
-        }
-      );
-      
-      observerRef.current.observe(element);
-    }
-  }, [threshold]);
+      if (element) {
+        elementRef.current = element;
+
+        observerRef.current = new IntersectionObserver(
+          ([entry]) => {
+            setIsVisible(entry.isIntersecting);
+          },
+          {
+            rootMargin: `${threshold}px`,
+          },
+        );
+
+        observerRef.current.observe(element);
+      }
+    },
+    [threshold],
+  );
 
   useEffect(() => {
     return () => {
@@ -226,37 +226,40 @@ export const defaultOptimizationConfig: OptimizationConfig = {
   enableBatching: true,
   enableLazyLoading: true,
   throttleDelay: 16, // ~60fps
-  debounceDelay: 100
+  debounceDelay: 100,
 };
 
 /**
  * Hook for optimized scroll handling
  */
 export function useOptimizedScroll(
-  onScroll: (position: number, direction: 'up' | 'down') => void,
-  threshold: number = 5
+  onScroll: (position: number, direction: "up" | "down") => void,
+  threshold: number = 5,
 ) {
   const lastPosition = useRef(0);
   const ticking = useRef(false);
 
-  const handleScroll = useCallback((position: number) => {
-    if (!ticking.current) {
-      requestAnimationFrame(() => {
-        const direction = position > lastPosition.current ? 'down' : 'up';
-        const delta = Math.abs(position - lastPosition.current);
-        
-        // Only trigger if scroll delta exceeds threshold
-        if (delta >= threshold) {
-          onScroll(position, direction);
-          lastPosition.current = position;
-        }
-        
-        ticking.current = false;
-      });
-      
-      ticking.current = true;
-    }
-  }, [onScroll, threshold]);
+  const handleScroll = useCallback(
+    (position: number) => {
+      if (!ticking.current) {
+        requestAnimationFrame(() => {
+          const direction = position > lastPosition.current ? "down" : "up";
+          const delta = Math.abs(position - lastPosition.current);
+
+          // Only trigger if scroll delta exceeds threshold
+          if (delta >= threshold) {
+            onScroll(position, direction);
+            lastPosition.current = position;
+          }
+
+          ticking.current = false;
+        });
+
+        ticking.current = true;
+      }
+    },
+    [onScroll, threshold],
+  );
 
   return handleScroll;
 }
@@ -266,26 +269,32 @@ export function useOptimizedScroll(
  */
 export function useOptimizedResize(
   onResize: (width: number, height: number) => void,
-  debounceDelay: number = 100
+  debounceDelay: number = 100,
 ) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastSize = useRef({ width: 0, height: 0 });
 
-  const handleResize = useCallback((width: number, height: number) => {
-    // Quick check to avoid unnecessary updates
-    if (width === lastSize.current.width && height === lastSize.current.height) {
-      return;
-    }
+  const handleResize = useCallback(
+    (width: number, height: number) => {
+      // Quick check to avoid unnecessary updates
+      if (
+        width === lastSize.current.width &&
+        height === lastSize.current.height
+      ) {
+        return;
+      }
 
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
 
-    timeoutRef.current = setTimeout(() => {
-      onResize(width, height);
-      lastSize.current = { width, height };
-    }, debounceDelay);
-  }, [onResize, debounceDelay]);
+      timeoutRef.current = setTimeout(() => {
+        onResize(width, height);
+        lastSize.current = { width, height };
+      }, debounceDelay);
+    },
+    [onResize, debounceDelay],
+  );
 
   useEffect(() => {
     return () => {
@@ -305,7 +314,10 @@ export const PerformanceUtils = {
   /**
    * Check if we should skip render based on FPS target
    */
-  shouldSkipRender: (lastRenderTime: number, targetFPS: number = 60): boolean => {
+  shouldSkipRender: (
+    lastRenderTime: number,
+    targetFPS: number = 60,
+  ): boolean => {
     const minFrameTime = 1000 / targetFPS;
     const timeSinceLastRender = Date.now() - lastRenderTime;
     return timeSinceLastRender < minFrameTime;
@@ -323,17 +335,17 @@ export const PerformanceUtils = {
   /**
    * Measure function execution time
    */
-  measurePerformance: function<T>(fn: () => T, label?: string): T {
+  measurePerformance: function <T>(fn: () => T, label?: string): T {
     const start = performance.now();
     const result = fn();
     const duration = performance.now() - start;
-    
+
     if (label && duration > 16.67) {
       console.warn(`[Performance] ${label} took ${duration.toFixed(2)}ms`);
     }
-    
+
     return result;
-  }
+  },
 };
 
 export default {
@@ -345,5 +357,5 @@ export default {
   useLazyLoad,
   useOptimizedScroll,
   useOptimizedResize,
-  PerformanceUtils
+  PerformanceUtils,
 };

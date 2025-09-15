@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Text } from 'ink';
+import React, { useEffect, useState } from "react";
+import { Box, Text } from "ink";
 
 export interface PermissionFeedbackProps {
   decision?: {
-    action: 'allow' | 'deny' | 'prompt';
+    action: "allow" | "deny" | "prompt";
     tool: string;
     path?: string;
     timestamp: Date;
@@ -50,35 +50,39 @@ export const PermissionFeedback: React.FC<PermissionFeedbackProps> = ({
 
   const getIcon = () => {
     switch (decision.action) {
-      case 'allow':
-        return '✅';
-      case 'deny':
-        return '❌';
-      case 'prompt':
-        return '❓';
+      case "allow":
+        return "✅";
+      case "deny":
+        return "❌";
+      case "prompt":
+        return "❓";
       default:
-        return '•';
+        return "•";
     }
   };
 
   const getColor = () => {
     switch (decision.action) {
-      case 'allow':
-        return 'green';
-      case 'deny':
-        return 'red';
-      case 'prompt':
-        return 'yellow';
+      case "allow":
+        return "green";
+      case "deny":
+        return "red";
+      case "prompt":
+        return "yellow";
       default:
-        return 'gray';
+        return "gray";
     }
   };
 
   const getMessage = () => {
-    const action = decision.action === 'allow' ? 'Allowed' : 
-                  decision.action === 'deny' ? 'Denied' : 'Prompting';
+    const action =
+      decision.action === "allow"
+        ? "Allowed"
+        : decision.action === "deny"
+          ? "Denied"
+          : "Prompting";
     const tool = decision.tool;
-    const path = decision.path ? ` for ${decision.path}` : '';
+    const path = decision.path ? ` for ${decision.path}` : "";
     return `${action} ${tool}${path}`;
   };
 
@@ -93,9 +97,7 @@ export const PermissionFeedback: React.FC<PermissionFeedbackProps> = ({
         {getIcon()}
       </Text>
       <Box marginLeft={1}>
-        <Text color={getColor()}>
-          {getMessage()}
-        </Text>
+        <Text color={getColor()}>{getMessage()}</Text>
       </Box>
     </Box>
   );
@@ -105,19 +107,25 @@ export const PermissionFeedback: React.FC<PermissionFeedbackProps> = ({
  * Permission feedback manager for queuing multiple notifications
  */
 export class PermissionFeedbackManager {
-  private queue: PermissionFeedbackProps['decision'][] = [];
-  private current: PermissionFeedbackProps['decision'] | null = null;
-  private onUpdate: (decision: PermissionFeedbackProps['decision'] | undefined) => void;
+  private queue: PermissionFeedbackProps["decision"][] = [];
+  private current: PermissionFeedbackProps["decision"] | null = null;
+  private onUpdate: (
+    decision: PermissionFeedbackProps["decision"] | undefined,
+  ) => void;
   private processing = false;
 
-  constructor(onUpdate: (decision: PermissionFeedbackProps['decision'] | undefined) => void) {
+  constructor(
+    onUpdate: (
+      decision: PermissionFeedbackProps["decision"] | undefined,
+    ) => void,
+  ) {
     this.onUpdate = onUpdate;
   }
 
   /**
    * Add a decision to the feedback queue
    */
-  public add(decision: PermissionFeedbackProps['decision']) {
+  public add(decision: PermissionFeedbackProps["decision"]) {
     this.queue.push(decision);
     this.processQueue();
   }
@@ -131,15 +139,15 @@ export class PermissionFeedbackManager {
     }
 
     this.processing = true;
-    
+
     while (this.queue.length > 0) {
       const decision = this.queue.shift();
       if (decision) {
         this.current = decision;
         this.onUpdate(decision);
-        
+
         // Wait for feedback to complete
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        await new Promise((resolve) => setTimeout(resolve, 3000));
       }
     }
 

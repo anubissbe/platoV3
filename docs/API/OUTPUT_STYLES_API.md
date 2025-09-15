@@ -6,25 +6,34 @@
 
 ```typescript
 // Main exports
-export { StyleManager, getStyleManager, initializeStyleManager } from './manager';
-export { defaultStyle, minimalStyle, verboseStyle, BUILTIN_STYLES } from './builtin';
-export { 
-  StyledText, 
-  StyledBox, 
+export {
+  StyleManager,
+  getStyleManager,
+  initializeStyleManager,
+} from "./manager";
+export {
+  defaultStyle,
+  minimalStyle,
+  verboseStyle,
+  BUILTIN_STYLES,
+} from "./builtin";
+export {
+  StyledText,
+  StyledBox,
   StyledSpinner,
   FileWriteMessage,
   ErrorMessage,
   ToolCallMessage,
   WelcomeMessage,
-  StatusLine 
-} from './components';
-export type { 
+  StatusLine,
+} from "./components";
+export type {
   OutputStyle,
   OutputStyleTheme,
   OutputStyleFormatting,
   OutputStyleComponents,
-  StyleType 
-} from './types';
+  StyleType,
+} from "./types";
 ```
 
 ## Class: StyleManager
@@ -38,6 +47,7 @@ constructor(configPath?: string)
 Creates a new StyleManager instance.
 
 **Parameters:**
+
 - `configPath` (optional): Path to config file. Defaults to `.plato/config.json`
 
 ### Methods
@@ -47,6 +57,7 @@ Creates a new StyleManager instance.
 Initializes the style manager by loading custom styles and setting the active style from configuration.
 
 **Example:**
+
 ```typescript
 const manager = new StyleManager();
 await manager.initialize();
@@ -57,14 +68,17 @@ await manager.initialize();
 Switches to the specified style by name.
 
 **Parameters:**
+
 - `name`: Name of the style to activate
 
 **Throws:**
+
 - Error if style name doesn't exist
 
 **Example:**
+
 ```typescript
-await manager.setStyle('minimal');
+await manager.setStyle("minimal");
 ```
 
 #### `getStyle(): OutputStyle`
@@ -74,6 +88,7 @@ Returns the currently active style object.
 **Returns:** Complete OutputStyle object with theme, formatting, and components
 
 **Example:**
+
 ```typescript
 const currentStyle = manager.getStyle();
 console.log(currentStyle.name); // "default"
@@ -90,6 +105,7 @@ Returns the name of the currently active style.
 Lists all available styles including built-in and custom.
 
 **Returns:** Array of style information objects:
+
 ```typescript
 interface StyleInfo {
   name: string;
@@ -100,6 +116,7 @@ interface StyleInfo {
 ```
 
 **Example:**
+
 ```typescript
 const styles = manager.listStyles();
 // [
@@ -113,17 +130,19 @@ const styles = manager.listStyles();
 Creates a new custom style based on an existing style.
 
 **Parameters:**
+
 - `name`: Name for the new custom style
 - `baseOn`: Name of existing style to use as base
 - `customizations`: Partial style object with custom properties
 
 **Example:**
+
 ```typescript
-await manager.createCustomStyle('my-style', 'default', {
-  description: 'My custom style',
+await manager.createCustomStyle("my-style", "default", {
+  description: "My custom style",
   theme: {
-    primary: 'cyan'
-  }
+    primary: "cyan",
+  },
 });
 ```
 
@@ -132,9 +151,11 @@ await manager.createCustomStyle('my-style', 'default', {
 Deletes a custom style.
 
 **Parameters:**
+
 - `name`: Name of custom style to delete
 
 **Throws:**
+
 - Error if style doesn't exist or is not custom
 
 #### `formatText(text: string, type: keyof OutputStyleTheme): string`
@@ -142,6 +163,7 @@ Deletes a custom style.
 Formats text with the specified theme color type.
 
 **Parameters:**
+
 - `text`: Text to format
 - `type`: Theme color type ('primary', 'error', 'success', etc.)
 
@@ -152,16 +174,18 @@ Formats text with the specified theme color type.
 Formats a component message with placeholder substitution.
 
 **Parameters:**
+
 - `component`: Component name ('fileWrite', 'error', 'toolCall', etc.)
 - `data`: Data object for placeholder substitution
 
 **Returns:** Formatted component message
 
 **Example:**
+
 ```typescript
-const message = manager.formatComponent('fileWrite', {
-  file: 'app.js',
-  lines: 100
+const message = manager.formatComponent("fileWrite", {
+  file: "app.js",
+  lines: 100,
 });
 // "📝 Writing app.js..."
 ```
@@ -171,6 +195,7 @@ const message = manager.formatComponent('fileWrite', {
 Gets the color value for a theme property.
 
 **Parameters:**
+
 - `type`: Theme color type
 
 **Returns:** Color value as string
@@ -186,6 +211,7 @@ Returns the current style's formatting options.
 Returns properly styled props for Ink components.
 
 **Parameters:**
+
 - `componentType`: Type of Ink component
 - `props`: Additional props to merge
 
@@ -198,9 +224,10 @@ Returns properly styled props for Ink components.
 Styled text component with theme support.
 
 **Props:**
+
 ```typescript
 interface StyledTextProps {
-  type?: keyof OutputStyleTheme;  // Color type
+  type?: keyof OutputStyleTheme; // Color type
   children?: React.ReactNode;
   bold?: boolean;
   italic?: boolean;
@@ -209,6 +236,7 @@ interface StyledTextProps {
 ```
 
 **Example:**
+
 ```tsx
 <StyledText type="error">Error occurred!</StyledText>
 <StyledText type="success" bold>Success!</StyledText>
@@ -219,11 +247,12 @@ interface StyledTextProps {
 Styled box container with border support.
 
 **Props:**
+
 ```typescript
 interface StyledBoxProps {
   noBorder?: boolean;
   children?: React.ReactNode;
-  flexDirection?: 'row' | 'column';
+  flexDirection?: "row" | "column";
   height?: number | string;
   width?: number | string;
   padding?: number;
@@ -232,6 +261,7 @@ interface StyledBoxProps {
 ```
 
 **Example:**
+
 ```tsx
 <StyledBox flexDirection="column" height={10}>
   <StyledText>Content</StyledText>
@@ -243,13 +273,15 @@ interface StyledBoxProps {
 Animated spinner with styled colors.
 
 **Props:**
+
 ```typescript
 interface StyledSpinnerProps {
-  text?: string;  // Optional text to display next to spinner
+  text?: string; // Optional text to display next to spinner
 }
 ```
 
 **Example:**
+
 ```tsx
 <StyledSpinner text="Loading..." />
 ```
@@ -259,6 +291,7 @@ interface StyledSpinnerProps {
 Pre-formatted file write message component.
 
 **Props:**
+
 ```typescript
 interface FileWriteMessageProps {
   file: string;
@@ -268,6 +301,7 @@ interface FileWriteMessageProps {
 ```
 
 **Example:**
+
 ```tsx
 <FileWriteMessage file="app.js" lines={100} success={true} />
 // Renders: "✓ Wrote 100 lines to app.js"
@@ -278,6 +312,7 @@ interface FileWriteMessageProps {
 Pre-formatted error message component.
 
 **Props:**
+
 ```typescript
 interface ErrorMessageProps {
   message: string;
@@ -285,6 +320,7 @@ interface ErrorMessageProps {
 ```
 
 **Example:**
+
 ```tsx
 <ErrorMessage message="Failed to connect" />
 // Renders: "❌ Error: Failed to connect"
@@ -295,6 +331,7 @@ interface ErrorMessageProps {
 Pre-formatted tool call message component.
 
 **Props:**
+
 ```typescript
 interface ToolCallMessageProps {
   name: string;
@@ -303,6 +340,7 @@ interface ToolCallMessageProps {
 ```
 
 **Example:**
+
 ```tsx
 <ToolCallMessage name="compiler" args="--optimize" />
 // Renders: "🔧 Running tool: compiler"
@@ -313,13 +351,15 @@ interface ToolCallMessageProps {
 Pre-formatted welcome message component.
 
 **Props:**
+
 ```typescript
 interface WelcomeMessageProps {
-  name?: string;  // Defaults to 'Plato'
+  name?: string; // Defaults to 'Plato'
 }
 ```
 
 **Example:**
+
 ```tsx
 <WelcomeMessage name="MyApp" />
 // Renders: "✻ Welcome to MyApp!"
@@ -330,6 +370,7 @@ interface WelcomeMessageProps {
 Pre-formatted status line component.
 
 **Props:**
+
 ```typescript
 interface StatusLineProps {
   mode?: string;
@@ -340,13 +381,9 @@ interface StatusLineProps {
 ```
 
 **Example:**
+
 ```tsx
-<StatusLine 
-  mode="ready" 
-  context="main" 
-  session="active"
-  tokens={1500}
-/>
+<StatusLine mode="ready" context="main" session="active" tokens={1500} />
 // Renders formatted status based on current style
 ```
 
@@ -359,6 +396,7 @@ Returns the singleton StyleManager instance.
 **Returns:** Global StyleManager instance
 
 **Example:**
+
 ```typescript
 const manager = getStyleManager();
 ```
@@ -370,6 +408,7 @@ Initializes and returns the global StyleManager instance.
 **Returns:** Initialized StyleManager
 
 **Example:**
+
 ```typescript
 const manager = await initializeStyleManager();
 ```
@@ -422,7 +461,7 @@ interface OutputStyleFormatting {
   underline: boolean;
   padding: number;
   margin: number;
-  borderStyle: 'single' | 'double' | 'round' | 'none';
+  borderStyle: "single" | "double" | "round" | "none";
   showIcons: boolean;
   showTimestamps: boolean;
   showLineNumbers: boolean;
@@ -464,5 +503,5 @@ interface OutputStyleComponents {
 Valid style type names.
 
 ```typescript
-type StyleType = 'default' | 'minimal' | 'verbose' | string;
+type StyleType = "default" | "minimal" | "verbose" | string;
 ```

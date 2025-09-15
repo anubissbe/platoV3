@@ -1,11 +1,13 @@
 # Hooks API
 
 ## Events
+
 - `pre-prompt`: before model call (mutate prompt, inject tools).
 - `post-response`: after model response (summarize, annotate).
 - `on-apply`: before/after patch apply (lint, format, tests).
 
 ## Config
+
 ```yaml
 hooks:
   pre-prompt:
@@ -19,5 +21,6 @@ hooks:
 ```
 
 ## Execution
+
 - Runs in project shell, inherits env, read-only by default.
 - Timeouts surface non-blocking warnings unless `required: true`.

@@ -9,6 +9,7 @@
 **Overall Infrastructure Health**: 2.3/10
 
 ### Critical Findings
+
 - **57% Test Failure Rate**: 61 failed suites out of 107 total
 - **Memory Leak Crisis**: EventEmitter memory leaks and heap issues
 - **Mock System Complexity**: Over-engineered mocking causing brittleness
@@ -22,11 +23,13 @@
 ### Jest Configuration Quality: ⚠️ 5/10
 
 **Strengths:**
+
 - Comprehensive coverage thresholds (80% across all metrics)
 - Proper TypeScript integration with ts-jest
 - Good module mapping for React/Ink components
 
 **Critical Issues:**
+
 ```javascript
 // Problematic configuration patterns identified:
 - ESM/CommonJS hybrid causing module resolution issues
@@ -36,6 +39,7 @@
 ```
 
 **Specific Problems:**
+
 - **Transform Conflicts**: ESM extensions + CommonJS transforms creating module boundary issues
 - **Mock Resolution**: Complex moduleNameMapper causing import resolution failures
 - **Resource Management**: No automatic cleanup configuration
@@ -50,6 +54,7 @@
    - Complex path normalization causing race conditions
 
 2. **Global State Pollution**:
+
    ```typescript
    // Problematic global modifications
    const mockFiles = new Map<string, Buffer>();
@@ -68,6 +73,7 @@
 ### Code Organization: ⚠️ 4/10
 
 **Test Distribution:**
+
 - 75 test files use mocking (69% of total)
 - 273 setup/teardown occurrences across 99 files
 - Heavy reliance on complex mocks vs. integration testing
@@ -75,6 +81,7 @@
 **Structural Issues:**
 
 1. **Mock Boundary Complexity**:
+
    ```typescript
    // Example of problematic mock logic from jest.setup.ts
    // For temp directories, use real fs
@@ -91,6 +98,7 @@
 ### Test Utility Functions: ⚠️ 6/10
 
 **Positive Aspects:**
+
 ```typescript
 global.testUtils = {
   waitFor: (condition: () => boolean, timeout = 5000) => {...},
@@ -99,6 +107,7 @@ global.testUtils = {
 ```
 
 **Missing Infrastructure:**
+
 - No test data builders/factories
 - Limited assertion helpers
 - No shared test environment setup utilities
@@ -117,6 +126,7 @@ global.testUtils = {
    - High cognitive overhead for test writers
 
 2. **State Management Failures**:
+
    ```typescript
    // Problematic shared state pattern
    const mockFiles = new Map<string, Buffer>();
@@ -132,16 +142,19 @@ global.testUtils = {
 ### Reliability Issues: 🔴 2/10
 
 **Mock-Related Failures:**
+
 - Permissions system tests failing due to YAML mock issues
 - File system operation tests failing due to mock/real boundary confusion
 - Process execution tests failing due to oversimplified command mocking
 
 **Example Failure Pattern:**
+
 ```typescript
 // From permissions.test.ts - mock setup failure
 (fs.readFile as jest.Mock).mockImplementation((filePath) => {
   // Complex conditional logic causing test failures
-  if (filePath === globalConfigPath) return Promise.resolve(YAML.stringify(globalConfig));
+  if (filePath === globalConfigPath)
+    return Promise.resolve(YAML.stringify(globalConfig));
   // Missing edge cases cause undefined returns
 });
 ```
@@ -153,18 +166,21 @@ global.testUtils = {
 ### Flaky Test Identification: 🔴 CRITICAL
 
 **Memory Leak Crisis:**
+
 ```
-MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 
+MaxListenersExceededWarning: Possible EventEmitter memory leak detected.
 11 exit listeners added to [process]. MaxListeners is 10.
 Your test suite is leaking memory. Please ensure all references are cleaned.
 ```
 
 **Race Condition Patterns:**
+
 - 26 files contain timing-related test logic (`setTimeout`, `setInterval`)
 - Async operation handling inconsistent across test files
 - Mock cleanup timing issues
 
 **Resource Cleanup Failures:**
+
 - Temporary directory cleanup using deprecated `fs.rmdir`
 - EventListener cleanup missing in TUI component tests
 - Process cleanup missing in bash tool tests
@@ -172,16 +188,18 @@ Your test suite is leaking memory. Please ensure all references are cleaned.
 ### Timing-Dependent Failures: ⚠️ 4/10
 
 **Identified Patterns:**
+
 - Bash tool tests expecting exact timing behavior
 - TUI component tests with animation/rendering timing
 - Context/memory tests with background processing timing
 
 **Problematic Test Pattern:**
+
 ```typescript
 // From bash-tool.test.ts - brittle timing expectation
-it('should recover from process crashes gracefully', async () => {
+it("should recover from process crashes gracefully", async () => {
   const result = await bashTool.execute({
-    command: 'bash -c "exit 127"'
+    command: 'bash -c "exit 127"',
   });
   expect(result.success).toBe(true); // Fails due to mock oversimplification
   expect(result.exitCode).toBe(127);
@@ -195,6 +213,7 @@ it('should recover from process crashes gracefully', async () => {
 ### Execution Performance: 🔴 2/10
 
 **Critical Metrics:**
+
 - **Execution Time**: 48.04 seconds for full suite (unacceptable)
 - **Memory Usage**: Multiple memory leak warnings
 - **Resource Utilization**: High CPU usage during mock operations
@@ -219,6 +238,7 @@ it('should recover from process crashes gracefully', async () => {
 ### Parallel Execution Issues: 🔴 3/10
 
 **Problems Identified:**
+
 - Global mock state preventing true test parallelism
 - Shared filesystem mock causing race conditions
 - Process-level state modifications causing interference
@@ -230,11 +250,13 @@ it('should recover from process crashes gracefully', async () => {
 ### Test Maintainability: 🔴 3/10
 
 **Development Experience Issues:**
+
 - High complexity barrier for writing new tests
 - Debugging failures requires understanding complex mock system
 - Inconsistent patterns across test files
 
 **Technical Debt Indicators:**
+
 - Complex mock setup (228 lines in jest.setup.ts)
 - 75% of tests require mock system knowledge
 - No clear testing guidelines or patterns
@@ -244,6 +266,7 @@ it('should recover from process crashes gracefully', async () => {
 **Coverage Metrics:** 80% threshold across branches, functions, lines, statements
 
 **Quality Concerns:**
+
 - High coverage may be misleading due to mock complexity
 - Tests may pass without testing real system behavior
 - Mock boundaries create false confidence in coverage
@@ -251,6 +274,7 @@ it('should recover from process crashes gracefully', async () => {
 ### CI/CD Integration: 🔴 2/10
 
 **Critical Issues:**
+
 - 57% test failure rate makes CI/CD unreliable
 - Memory leaks cause CI environment instability
 - 48+ second execution time impacts development workflow
@@ -262,12 +286,14 @@ it('should recover from process crashes gracefully', async () => {
 ### Accumulated Debt Level: 🔴 HIGH
 
 **Infrastructure Debt:**
+
 1. **Mock System Over-Engineering**: 228 lines of complex fs mocking
 2. **Global State Management**: Shared mutable state across tests
 3. **Resource Cleanup Debt**: Systematic cleanup failures
 4. **Configuration Complexity**: ESM/CommonJS hybrid issues
 
 **Maintenance Burden:**
+
 - Every new filesystem-related test requires understanding complex mock system
 - Debugging test failures requires deep mock system knowledge
 - Adding new mock scenarios requires modifying central setup file
@@ -275,6 +301,7 @@ it('should recover from process crashes gracefully', async () => {
 ### Code Duplication: ⚠️ MODERATE
 
 **Patterns:**
+
 - Similar beforeEach/afterEach patterns across 99 files
 - Repeated mock setup patterns
 - Duplicated cleanup logic
@@ -286,6 +313,7 @@ it('should recover from process crashes gracefully', async () => {
 ### Phase 1: CRITICAL (Immediate - 1-2 weeks)
 
 #### 1.1 Memory Leak Resolution
+
 ```typescript
 // Implement systematic cleanup
 afterEach(() => {
@@ -298,6 +326,7 @@ afterEach(() => {
 ```
 
 #### 1.2 Mock System Simplification
+
 - **Remove complex dual filesystem**: Use either mocks OR real fs per test
 - **Eliminate global state**: Move mock state to test-specific scope
 - **Simplify mock boundaries**: Clear separation between mock and integration tests
@@ -305,7 +334,9 @@ afterEach(() => {
 ### Phase 2: MAJOR RESTRUCTURE (2-4 weeks)
 
 #### 2.1 Test Architecture Overhaul
+
 1. **Separate Mock and Integration Tests**:
+
    ```
    src/__tests__/
    ├── unit/          # Pure unit tests with mocks
@@ -326,6 +357,7 @@ afterEach(() => {
    ```
 
 #### 2.2 Performance Optimization
+
 1. **Parallel Test Execution**: Remove global state dependencies
 2. **Resource Management**: Implement proper cleanup lifecycle
 3. **Mock Optimization**: Replace complex mocks with simple stubs
@@ -333,11 +365,13 @@ afterEach(() => {
 ### Phase 3: RELIABILITY (4-6 weeks)
 
 #### 3.1 Test Stability
+
 1. **Eliminate Timing Dependencies**: Use deterministic async patterns
 2. **Resource Cleanup**: Implement systematic cleanup infrastructure
 3. **Error Boundaries**: Better error isolation between tests
 
 #### 3.2 Developer Experience
+
 1. **Testing Guidelines**: Create comprehensive testing documentation
 2. **Test Utilities**: Build reusable test helper library
 3. **Debugging Tools**: Improve test failure diagnostics
@@ -349,11 +383,13 @@ afterEach(() => {
 ### Current Risks: 🔴 HIGH
 
 **Immediate Risks:**
+
 - **Development Velocity**: 57% test failure rate blocks development
 - **CI/CD Pipeline**: Unreliable tests make deployment risky
 - **Technical Debt**: Complex mock system inhibits refactoring
 
 **Long-term Risks:**
+
 - **Maintenance Burden**: Complex test infrastructure becomes unmaintainable
 - **Quality Confidence**: Poor test reliability reduces confidence in releases
 - **Developer Experience**: High complexity barrier reduces team productivity
@@ -370,21 +406,25 @@ afterEach(() => {
 ## 10. Recommendations Summary
 
 ### Immediate Actions (This Week)
+
 1. **Disable failing tests**: Add `.skip` to failing tests to stabilize CI
 2. **Fix memory leaks**: Add proper cleanup in afterEach hooks
 3. **Emergency mock fixes**: Simplify critical mock boundary logic
 
 ### Short-term Strategy (1 Month)
+
 1. **Mock system rewrite**: Replace complex dual-mode system with simple approach
 2. **Test categorization**: Separate unit, integration, and e2e tests
 3. **Resource management**: Implement systematic cleanup
 
 ### Long-term Vision (3 Months)
+
 1. **Comprehensive test infrastructure**: Reliable, maintainable, fast
 2. **Developer experience**: Easy test writing with clear patterns
 3. **CI/CD integration**: Sub-30-second execution, 95%+ reliability
 
 ### Success Metrics
+
 - **Reliability**: <5% test failure rate
 - **Performance**: <30 second full suite execution
 - **Maintainability**: New tests can be written without mock system expertise

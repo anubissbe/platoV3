@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import { StyledBox, StyledText } from '../../styles/components.js';
-import { getStyleManager } from '../../styles/manager.js';
+import React, { useState, useEffect } from "react";
+import { Box, Text } from "ink";
+import { StyledBox, StyledText } from "../../styles/components.js";
+import { getStyleManager } from "../../styles/manager.js";
 
 export interface SessionData {
   id: string;
   timestamp: number;
   messageCount: number;
   lastSaved?: number;
-  status: 'active' | 'saving' | 'saved' | 'error';
+  status: "active" | "saving" | "saved" | "error";
   exportable?: boolean;
 }
 
@@ -33,7 +33,7 @@ export const SessionIndicator: React.FC<SessionIndicatorProps> = ({
   autoSaveInterval = 30000, // 30 seconds
   onSave,
   onExport,
-  onImport
+  onImport,
 }) => {
   const [saveAnimation, setSaveAnimation] = useState(false);
   const [timeSinceLastSave, setTimeSinceLastSave] = useState<number>(0);
@@ -52,7 +52,7 @@ export const SessionIndicator: React.FC<SessionIndicatorProps> = ({
       setTimeSinceLastSave(timeSince);
 
       // Trigger save animation when auto-save occurs
-      if (session.status === 'saving' && !saveAnimation) {
+      if (session.status === "saving" && !saveAnimation) {
         setSaveAnimation(true);
         setTimeout(() => setSaveAnimation(false), 1000);
       }
@@ -63,19 +63,19 @@ export const SessionIndicator: React.FC<SessionIndicatorProps> = ({
 
   // Format session status display
   const formatSessionStatus = () => {
-    if (!session) return 'No Session';
+    if (!session) return "No Session";
 
     const sessionAge = formatDuration(Date.now() - session.timestamp);
     const shortId = session.id.slice(0, 8);
 
     switch (session.status) {
-      case 'active':
+      case "active":
         return `${shortId} (${sessionAge})`;
-      case 'saving':
+      case "saving":
         return `${shortId} (saving...)`;
-      case 'saved':
+      case "saved":
         return `${shortId} (saved)`;
-      case 'error':
+      case "error":
         return `${shortId} (error)`;
       default:
         return shortId;
@@ -84,74 +84,74 @@ export const SessionIndicator: React.FC<SessionIndicatorProps> = ({
 
   // Format save status indicator
   const formatSaveStatus = () => {
-    if (!session || !showSaveStatus) return '';
+    if (!session || !showSaveStatus) return "";
 
     const nextSave = autoSaveInterval - (timeSinceLastSave % autoSaveInterval);
     const nextSaveSeconds = Math.ceil(nextSave / 1000);
 
-    if (session.status === 'saving') {
-      return saveAnimation ? '💾 ●' : '💾 ○';
+    if (session.status === "saving") {
+      return saveAnimation ? "💾 ●" : "💾 ○";
     }
 
-    if (session.status === 'error') {
-      return '⚠️ Error';
+    if (session.status === "error") {
+      return "⚠️ Error";
     }
 
     if (nextSaveSeconds <= 5) {
       return `💾 ${nextSaveSeconds}s`;
     }
 
-    return '💾 ✓';
+    return "💾 ✓";
   };
 
   // Get status color
-  const getStatusColor = (): keyof import('../../styles/types.js').OutputStyleTheme => {
-    if (!session) return 'secondary';
-    
-    switch (session.status) {
-      case 'active': return 'primary';
-      case 'saving': return 'warning';
-      case 'saved': return 'success';
-      case 'error': return 'error';
-      default: return 'secondary';
-    }
-  };
+  const getStatusColor =
+    (): keyof import("../../styles/types.js").OutputStyleTheme => {
+      if (!session) return "secondary";
+
+      switch (session.status) {
+        case "active":
+          return "primary";
+        case "saving":
+          return "warning";
+        case "saved":
+          return "success";
+        case "error":
+          return "error";
+        default:
+          return "secondary";
+      }
+    };
 
   // Format export/import indicators
   const formatDataActions = () => {
-    if (!showExportOption || !session) return '';
-    
+    if (!showExportOption || !session) return "";
+
     const actions = [];
     if (session.exportable && onExport) {
-      actions.push('📤 Export');
+      actions.push("📤 Export");
     }
     if (onImport) {
-      actions.push('📥 Import');
+      actions.push("📥 Import");
     }
-    
-    return actions.length > 0 ? ` | ${actions.join(' ')}` : '';
+
+    return actions.length > 0 ? ` | ${actions.join(" ")}` : "";
   };
 
   if (!session) {
-    return (
-      <StyledText type="secondary">
-        No active session
-      </StyledText>
-    );
+    return <StyledText type="secondary">No active session</StyledText>;
   }
 
   return (
     <Box flexDirection="row" alignItems="center">
       {/* Session ID and age */}
-      <StyledText type={getStatusColor()}>
-        {formatSessionStatus()}
-      </StyledText>
+      <StyledText type={getStatusColor()}>{formatSessionStatus()}</StyledText>
 
       {/* Save status indicator */}
       {showSaveStatus && (
         <>
           <StyledText type="secondary"> | </StyledText>
-          <StyledText type={session.status === 'error' ? 'error' : 'info'}>
+          <StyledText type={session.status === "error" ? "error" : "info"}>
             {formatSaveStatus()}
           </StyledText>
         </>
@@ -159,9 +159,7 @@ export const SessionIndicator: React.FC<SessionIndicatorProps> = ({
 
       {/* Export/Import actions */}
       {showExportOption && (
-        <StyledText type="secondary">
-          {formatDataActions()}
-        </StyledText>
+        <StyledText type="secondary">{formatDataActions()}</StyledText>
       )}
     </Box>
   );
@@ -171,8 +169,12 @@ export const SessionIndicator: React.FC<SessionIndicatorProps> = ({
  * Hook for managing session state with persistence
  */
 export const useSessionManagement = (initialSession?: SessionData) => {
-  const [session, setSession] = useState<SessionData | undefined>(initialSession);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [session, setSession] = useState<SessionData | undefined>(
+    initialSession,
+  );
+  const [saveStatus, setSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
 
   // Create new session
   const createSession = () => {
@@ -180,8 +182,8 @@ export const useSessionManagement = (initialSession?: SessionData) => {
       id: generateSessionId(),
       timestamp: Date.now(),
       messageCount: 0,
-      status: 'active',
-      exportable: true
+      status: "active",
+      exportable: true,
     };
     setSession(newSession);
     return newSession;
@@ -190,38 +192,38 @@ export const useSessionManagement = (initialSession?: SessionData) => {
   // Update session data
   const updateSession = (updates: Partial<SessionData>) => {
     if (!session) return;
-    
-    setSession(prev => prev ? { ...prev, ...updates } : undefined);
+
+    setSession((prev) => (prev ? { ...prev, ...updates } : undefined));
   };
 
   // Save session to persistence
   const saveSession = async () => {
     if (!session) return;
 
-    setSaveStatus('saving');
-    updateSession({ status: 'saving' });
+    setSaveStatus("saving");
+    updateSession({ status: "saving" });
 
     try {
       // TODO: Integrate with ContextPersistenceManager
-      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate save
-      
+      await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate save
+
       const savedSession = {
         ...session,
         lastSaved: Date.now(),
-        status: 'saved' as const
+        status: "saved" as const,
       };
-      
+
       setSession(savedSession);
-      setSaveStatus('saved');
-      
+      setSaveStatus("saved");
+
       // Reset to active after showing saved status
       setTimeout(() => {
-        updateSession({ status: 'active' });
-        setSaveStatus('idle');
+        updateSession({ status: "active" });
+        setSaveStatus("idle");
       }, 2000);
     } catch (error) {
-      updateSession({ status: 'error' });
-      setSaveStatus('error');
+      updateSession({ status: "error" });
+      setSaveStatus("error");
     }
   };
 
@@ -231,19 +233,19 @@ export const useSessionManagement = (initialSession?: SessionData) => {
 
     try {
       const exportData = {
-        version: '1.0.0',
+        version: "1.0.0",
         exportedAt: new Date().toISOString(),
         session: {
           id: session.id,
           timestamp: session.timestamp,
           messageCount: session.messageCount,
-          duration: Date.now() - session.timestamp
-        }
+          duration: Date.now() - session.timestamp,
+        },
       };
 
       return JSON.stringify(exportData, null, 2);
     } catch (error) {
-      console.error('Failed to export session:', error);
+      console.error("Failed to export session:", error);
       return null;
     }
   };
@@ -252,24 +254,24 @@ export const useSessionManagement = (initialSession?: SessionData) => {
   const importSession = async (data: string): Promise<boolean> => {
     try {
       const parsed = JSON.parse(data);
-      
+
       if (!parsed.session) {
-        throw new Error('Invalid session data format');
+        throw new Error("Invalid session data format");
       }
 
       const importedSession: SessionData = {
         id: parsed.session.id || generateSessionId(),
         timestamp: parsed.session.timestamp || Date.now(),
         messageCount: parsed.session.messageCount || 0,
-        status: 'active',
-        exportable: true
+        status: "active",
+        exportable: true,
       };
 
       setSession(importedSession);
-      setSaveStatus('idle');
+      setSaveStatus("idle");
       return true;
     } catch (error) {
-      console.error('Failed to import session:', error);
+      console.error("Failed to import session:", error);
       return false;
     }
   };
@@ -281,7 +283,7 @@ export const useSessionManagement = (initialSession?: SessionData) => {
     updateSession,
     saveSession,
     exportSession,
-    importSession
+    importSession,
   };
 };
 

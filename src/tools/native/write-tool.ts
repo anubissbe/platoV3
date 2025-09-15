@@ -3,10 +3,10 @@
  * Implements file writing with atomic operations, directory creation, and Claude Code compatibility
  */
 
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as crypto from 'crypto';
-import { EventEmitter } from 'events';
+import * as fs from "fs/promises";
+import * as path from "path";
+import * as crypto from "crypto";
+import { EventEmitter } from "events";
 import {
   NativeTool,
   WriteToolArgs,
@@ -14,9 +14,9 @@ import {
   WriteToolMetrics,
   ToolError,
   ErrorClass,
-  ToolEvent
-} from './types.js';
-import { ErrorClassifier } from './error-classifier.js';
+  ToolEvent,
+} from "./types.js";
+import { ErrorClassifier } from "./error-classifier.js";
 
 export class WriteTool extends EventEmitter implements NativeTool {
   private readonly maxFileSize: number = 50 * 1024 * 1024; // 50MB
@@ -34,20 +34,20 @@ export class WriteTool extends EventEmitter implements NativeTool {
     try {
       // Validate inputs
       this.validateArgs(args);
-      
+
       // Validate and normalize path
       const normalizedPath = await this.validatePath(args.path);
-      
+
       // Determine content encoding and convert to buffer
-      const encoding = args.encoding || 'utf8';
+      const encoding = args.encoding || "utf8";
       let contentBuffer: Buffer;
       let isBinary = false;
 
-      if (encoding === 'base64') {
-        contentBuffer = Buffer.from(args.content, 'base64');
+      if (encoding === "base64") {
+        contentBuffer = Buffer.from(args.content, "base64");
         isBinary = true;
-      } else if (encoding === 'binary') {
-        contentBuffer = Buffer.from(args.content, 'binary');
+      } else if (encoding === "binary") {
+        contentBuffer = Buffer.from(args.content, "binary");
         isBinary = true;
       } else {
         contentBuffer = Buffer.from(args.content, encoding as BufferEncoding);
@@ -57,9 +57,9 @@ export class WriteTool extends EventEmitter implements NativeTool {
       if (contentBuffer.length > this.maxFileSize) {
         throw new ToolError(
           ErrorClass.VALIDATION,
-          'FILE_TOO_LARGE',
+          "FILE_TOO_LARGE",
           `Content size (${contentBuffer.length} bytes) exceeds maximum (${this.maxFileSize} bytes)`,
-          { size: contentBuffer.length, maxSize: this.maxFileSize }
+          { size: contentBuffer.length, maxSize: this.maxFileSize },
         );
       }
 
@@ -73,11 +73,11 @@ export class WriteTool extends EventEmitter implements NativeTool {
         try {
           await fs.access(parentDir);
         } catch (error) {
-          throw ErrorClassifier.createToolError(error as Error, { 
-            tool: 'write',
-            operation: 'createParentDirectories',
-            path: args.path, 
-            parentDir 
+          throw ErrorClassifier.createToolError(error as Error, {
+            tool: "write",
+            operation: "createParentDirectories",
+            path: args.path,
+            parentDir,
           });
         }
       }
@@ -89,7 +89,7 @@ export class WriteTool extends EventEmitter implements NativeTool {
         originalStats = await fs.stat(normalizedPath);
         fileExists = true;
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
           throw error;
         }
       }
@@ -128,26 +128,25 @@ export class WriteTool extends EventEmitter implements NativeTool {
         dirsCreated,
         tempPath,
         isBinary,
-        metrics: this.createMetrics(startTime, bytesWritten, encoding)
+        metrics: this.createMetrics(startTime, bytesWritten, encoding),
       };
 
       // Emit telemetry
       this.emitTelemetry(true, Date.now() - startTime, bytesWritten);
 
       return response;
-
     } catch (error) {
       // Emit telemetry for errors
       this.emitTelemetry(false, Date.now() - startTime, bytesWritten, error);
-      
+
       if (error instanceof ToolError) {
         throw error;
       }
 
       // Use ErrorClassifier to create standardized tool error
-      throw ErrorClassifier.createToolError(error as Error, { 
-        tool: 'write',
-        path: args.path 
+      throw ErrorClassifier.createToolError(error as Error, {
+        tool: "write",
+        path: args.path,
       });
     }
   }
@@ -158,27 +157,31 @@ export class WriteTool extends EventEmitter implements NativeTool {
 
     try {
       yield {
-        type: 'metadata',
-        data: { executionId, tool: 'write', path: args.path },
+        type: "metadata",
+        data: { executionId, tool: "write", path: args.path },
         timestamp: Date.now(),
-        sequence: sequence++
+        sequence: sequence++,
       };
 
       // For large writes, we can stream the writing process
       const normalizedPath = await this.validatePath(args.path);
-      const encoding = args.encoding || 'utf8';
-      
+      const encoding = args.encoding || "utf8";
+
       let contentBuffer: Buffer;
-      if (encoding === 'base64') {
-        contentBuffer = Buffer.from(args.content, 'base64');
-      } else if (encoding === 'binary') {
-        contentBuffer = Buffer.from(args.content, 'binary');
+      if (encoding === "base64") {
+        contentBuffer = Buffer.from(args.content, "base64");
+      } else if (encoding === "binary") {
+        contentBuffer = Buffer.from(args.content, "binary");
       } else {
         contentBuffer = Buffer.from(args.content, encoding as BufferEncoding);
       }
 
       if (contentBuffer.length > this.maxFileSize) {
-        throw new ToolError(ErrorClass.VALIDATION, 'FILE_TOO_LARGE', 'Content too large');
+        throw new ToolError(
+          ErrorClass.VALIDATION,
+          "FILE_TOO_LARGE",
+          "Content too large",
+        );
       }
 
       // Create directories if needed
@@ -186,10 +189,10 @@ export class WriteTool extends EventEmitter implements NativeTool {
         const dirsCreated = await this.createParentDirectories(normalizedPath);
         if (dirsCreated.length > 0) {
           yield {
-            type: 'progress',
-            data: { stage: 'directories_created', paths: dirsCreated },
+            type: "progress",
+            data: { stage: "directories_created", paths: dirsCreated },
             timestamp: Date.now(),
-            sequence: sequence++
+            sequence: sequence++,
           };
         }
       }
@@ -198,30 +201,37 @@ export class WriteTool extends EventEmitter implements NativeTool {
       const chunkSize = 64 * 1024; // 64KB chunks
       if (contentBuffer.length > chunkSize) {
         yield {
-          type: 'progress',
-          data: { stage: 'writing', totalBytes: contentBuffer.length },
+          type: "progress",
+          data: { stage: "writing", totalBytes: contentBuffer.length },
           timestamp: Date.now(),
-          sequence: sequence++
+          sequence: sequence++,
         };
 
-        const fileHandle = await fs.open(normalizedPath, 'w');
+        const fileHandle = await fs.open(normalizedPath, "w");
         try {
           let bytesWritten = 0;
-          for (let offset = 0; offset < contentBuffer.length; offset += chunkSize) {
-            const chunk = contentBuffer.subarray(offset, Math.min(offset + chunkSize, contentBuffer.length));
+          for (
+            let offset = 0;
+            offset < contentBuffer.length;
+            offset += chunkSize
+          ) {
+            const chunk = contentBuffer.subarray(
+              offset,
+              Math.min(offset + chunkSize, contentBuffer.length),
+            );
             await fileHandle.write(chunk);
             bytesWritten += chunk.length;
 
             yield {
-              type: 'progress',
-              data: { 
-                stage: 'writing',
-                bytesWritten, 
-                totalBytes: contentBuffer.length, 
-                progress: bytesWritten / contentBuffer.length 
+              type: "progress",
+              data: {
+                stage: "writing",
+                bytesWritten,
+                totalBytes: contentBuffer.length,
+                progress: bytesWritten / contentBuffer.length,
               },
               timestamp: Date.now(),
-              sequence: sequence++
+              sequence: sequence++,
             };
           }
         } finally {
@@ -233,50 +243,53 @@ export class WriteTool extends EventEmitter implements NativeTool {
       }
 
       yield {
-        type: 'complete',
+        type: "complete",
         data: {
           success: true,
           bytesWritten: contentBuffer.length,
           encoding,
-          path: normalizedPath
+          path: normalizedPath,
         },
         success: true,
         timestamp: Date.now(),
-        sequence: sequence++
+        sequence: sequence++,
       };
-
     } catch (error) {
       yield {
-        type: 'error',
+        type: "error",
         data: { error: (error as Error).message },
         timestamp: Date.now(),
-        sequence: sequence++
+        sequence: sequence++,
       };
     }
   }
 
   private validateArgs(args: WriteToolArgs): void {
-    if (!args.path || typeof args.path !== 'string' || args.path.trim() === '') {
+    if (
+      !args.path ||
+      typeof args.path !== "string" ||
+      args.path.trim() === ""
+    ) {
       throw new ToolError(
         ErrorClass.VALIDATION,
-        'INVALID_PATH',
-        'Path must be a non-empty string'
+        "INVALID_PATH",
+        "Path must be a non-empty string",
       );
     }
 
     if (args.content === undefined || args.content === null) {
       throw new ToolError(
         ErrorClass.VALIDATION,
-        'MISSING_CONTENT',
-        'Content is required'
+        "MISSING_CONTENT",
+        "Content is required",
       );
     }
 
-    if (typeof args.content !== 'string') {
+    if (typeof args.content !== "string") {
       throw new ToolError(
         ErrorClass.VALIDATION,
-        'INVALID_CONTENT',
-        'Content must be a string'
+        "INVALID_CONTENT",
+        "Content must be a string",
       );
     }
   }
@@ -289,14 +302,14 @@ export class WriteTool extends EventEmitter implements NativeTool {
     } else {
       absolutePath = path.resolve(this.workspaceRoot, inputPath);
     }
-    
+
     // Check for path traversal
     if (!absolutePath.startsWith(this.workspaceRoot)) {
       throw new ToolError(
-        ErrorClass.PERMISSION,  // Path traversal is a permission error
-        'PATH_TRAVERSAL',
-        'Path traversal not permitted',
-        { path: inputPath, resolved: absolutePath }
+        ErrorClass.PERMISSION, // Path traversal is a permission error
+        "PATH_TRAVERSAL",
+        "Path traversal not permitted",
+        { path: inputPath, resolved: absolutePath },
       );
     }
 
@@ -315,24 +328,26 @@ export class WriteTool extends EventEmitter implements NativeTool {
       await fs.access(parentDir);
       return dirsCreated; // Directory already exists
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
         throw error;
       }
     }
 
     // Create parent directories recursively
-    const pathParts = path.relative(this.workspaceRoot, parentDir).split(path.sep);
+    const pathParts = path
+      .relative(this.workspaceRoot, parentDir)
+      .split(path.sep);
     let currentPath = this.workspaceRoot;
 
     for (const part of pathParts) {
       if (!part) continue;
-      
+
       currentPath = path.join(currentPath, part);
-      
+
       try {
         await fs.access(currentPath);
       } catch (error) {
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        if ((error as NodeJS.ErrnoException).code === "ENOENT") {
           await fs.mkdir(currentPath);
           // Store absolute path as tests expect absolute paths
           dirsCreated.push(currentPath);
@@ -346,27 +361,30 @@ export class WriteTool extends EventEmitter implements NativeTool {
   }
 
   private async createBackup(filePath: string): Promise<string> {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const backupPath = `${filePath}.backup-${timestamp}`;
-    
+
     await fs.copyFile(filePath, backupPath);
     return backupPath;
   }
 
-  private async performAtomicWrite(filePath: string, content: Buffer): Promise<string> {
+  private async performAtomicWrite(
+    filePath: string,
+    content: Buffer,
+  ): Promise<string> {
     // Create temporary file in the same directory
     const dir = path.dirname(filePath);
     const filename = path.basename(filePath);
-    const tempFilename = `.${filename}.tmp-${crypto.randomBytes(6).toString('hex')}`;
+    const tempFilename = `.${filename}.tmp-${crypto.randomBytes(6).toString("hex")}`;
     const tempPath = path.join(dir, tempFilename);
 
     try {
       // Write to temporary file
       await fs.writeFile(tempPath, content);
-      
+
       // Atomic rename
       await fs.rename(tempPath, filePath);
-      
+
       return tempPath;
     } catch (error) {
       // Clean up temporary file on error
@@ -379,7 +397,11 @@ export class WriteTool extends EventEmitter implements NativeTool {
     }
   }
 
-  private createMetrics(startTime: number, bytesWritten: number, encoding: string): WriteToolMetrics {
+  private createMetrics(
+    startTime: number,
+    bytesWritten: number,
+    encoding: string,
+  ): WriteToolMetrics {
     const endTime = Date.now();
     const duration = endTime - startTime;
     const throughput = duration > 0 ? (bytesWritten / duration) * 1000 : 0; // bytes per second
@@ -391,21 +413,25 @@ export class WriteTool extends EventEmitter implements NativeTool {
       writeTime: duration,
       throughput,
       encoding,
-      bytesWritten
+      bytesWritten,
     };
   }
 
-
-  private emitTelemetry(success: boolean, duration: number, bytesWritten: number = 0, error?: any): void {
-    this.emit('telemetry', {
-      tool: 'write',
+  private emitTelemetry(
+    success: boolean,
+    duration: number,
+    bytesWritten: number = 0,
+    error?: any,
+  ): void {
+    this.emit("telemetry", {
+      tool: "write",
       success,
       duration,
       startTime: Date.now() - duration,
       endTime: Date.now(),
       bytesWritten,
       error: error?.message,
-      cancelled: false
+      cancelled: false,
     });
   }
 }

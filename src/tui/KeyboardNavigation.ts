@@ -34,13 +34,13 @@ export class KeyboardNavigation {
       autoFocus: false,
       skipDisabled: true,
       wrapAround: true,
-      ...options
+      ...options,
     };
 
     this.state = {
       currentIndex: -1,
       elements: [],
-      active: false
+      active: false,
     };
   }
 
@@ -48,10 +48,10 @@ export class KeyboardNavigation {
    * Register navigable elements
    */
   setElements(elements: NavigableElement[]): void {
-    this.state.elements = elements.filter(el => 
-      !this.options.skipDisabled || !el.disabled
+    this.state.elements = elements.filter(
+      (el) => !this.options.skipDisabled || !el.disabled,
     );
-    
+
     if (this.options.autoFocus && this.state.elements.length > 0) {
       this.focusFirst();
     }
@@ -66,28 +66,28 @@ export class KeyboardNavigation {
     }
 
     switch (key) {
-      case 'ArrowDown':
-      case 'Tab':
+      case "ArrowDown":
+      case "Tab":
         this.focusNext();
         return true;
-      
-      case 'ArrowUp':
-      case 'shift+tab':
+
+      case "ArrowUp":
+      case "shift+tab":
         this.focusPrevious();
         return true;
-      
-      case 'Home':
+
+      case "Home":
         this.focusFirst();
         return true;
-      
-      case 'End':
+
+      case "End":
         this.focusLast();
         return true;
-      
-      case 'Escape':
+
+      case "Escape":
         this.deactivate();
         return true;
-      
+
       default:
         return false;
     }
@@ -100,7 +100,7 @@ export class KeyboardNavigation {
     if (this.state.elements.length === 0) return;
 
     let nextIndex = this.state.currentIndex + 1;
-    
+
     if (nextIndex >= this.state.elements.length) {
       nextIndex = this.options.wrapAround ? 0 : this.state.elements.length - 1;
     }
@@ -115,7 +115,7 @@ export class KeyboardNavigation {
     if (this.state.elements.length === 0) return;
 
     let prevIndex = this.state.currentIndex - 1;
-    
+
     if (prevIndex < 0) {
       prevIndex = this.options.wrapAround ? this.state.elements.length - 1 : 0;
     }
@@ -146,12 +146,12 @@ export class KeyboardNavigation {
    */
   focusIndex(index: number): void {
     if (index < 0 || index >= this.state.elements.length) return;
-    
+
     const element = this.state.elements[index];
     if (element.disabled || element.hidden) return;
 
     this.state.currentIndex = index;
-    
+
     if (this.onFocusChange) {
       this.onFocusChange(element, index);
     }
@@ -178,7 +178,9 @@ export class KeyboardNavigation {
   /**
    * Set focus change callback
    */
-  onFocusChangeCallback(callback: (element: NavigableElement, index: number) => void): void {
+  onFocusChangeCallback(
+    callback: (element: NavigableElement, index: number) => void,
+  ): void {
     this.onFocusChange = callback;
   }
 

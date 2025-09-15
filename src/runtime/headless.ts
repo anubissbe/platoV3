@@ -3,11 +3,11 @@
  * Allows batch processing and programmatic access
  */
 
-import orchestrator from './orchestrator.js';
-import { OrchestratorEvent } from './orchestrator.js';
+import orchestrator from "./orchestrator.js";
+import { OrchestratorEvent } from "./orchestrator.js";
 
 export interface HeadlessOptions {
-  outputFormat?: 'json' | 'plain' | 'stream-json';
+  outputFormat?: "json" | "plain" | "stream-json";
   skipPermissions?: boolean;
   sessionId?: string;
   timeout?: number;
@@ -19,20 +19,20 @@ export interface HeadlessOptions {
  */
 export async function headlessExecute(
   question: string,
-  options: HeadlessOptions = {}
+  options: HeadlessOptions = {},
 ): Promise<string> {
   const headlessOptions: Required<HeadlessOptions> = {
-    outputFormat: 'plain',
+    outputFormat: "plain",
     skipPermissions: false,
     sessionId: `headless-${Date.now()}`,
     timeout: 30000,
-    model: 'gpt-4o',
-    ...options
+    model: "gpt-4o",
+    ...options,
   };
 
   // Initialize analytics system
   await orchestrator.initializeAnalyticsSystem(true);
-  
+
   if (headlessOptions.skipPermissions) {
     // Note: setPermissionsEnabled method doesn't exist, removing this call
     // orchestrator.setPermissionsEnabled(false);
@@ -41,23 +41,23 @@ export async function headlessExecute(
   try {
     // Process the question
     const response = await orchestrator.processMessage(question);
-    
-    if (headlessOptions.outputFormat === 'stream-json') {
-      return JSON.stringify({ 
-        status: 'success', 
+
+    if (headlessOptions.outputFormat === "stream-json") {
+      return JSON.stringify({
+        status: "success",
         response,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
     // Response is already a string from our orchestrator implementation
     return response;
   } catch (error) {
-    if (headlessOptions.outputFormat === 'stream-json') {
+    if (headlessOptions.outputFormat === "stream-json") {
       return JSON.stringify({
-        status: 'error',
+        status: "error",
         error: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -69,16 +69,16 @@ export async function headlessExecute(
  * Execute a query with streaming output
  */
 export async function* headlessStream(
-  question: string, 
-  options: HeadlessOptions = {}
+  question: string,
+  options: HeadlessOptions = {},
 ): AsyncGenerator<string> {
   const headlessOptions: Required<HeadlessOptions> = {
-    outputFormat: 'stream-json',
+    outputFormat: "stream-json",
     skipPermissions: false,
     sessionId: `headless-stream-${Date.now()}`,
     timeout: 30000,
-    model: 'gpt-4o',
-    ...options
+    model: "gpt-4o",
+    ...options,
   };
 
   // Initialize analytics system
@@ -87,32 +87,31 @@ export async function* headlessStream(
   try {
     // Stream the response
     const stream = orchestrator.processMessageStream(question);
-    
+
     for await (const chunk of stream) {
-      if (headlessOptions.outputFormat === 'stream-json') {
+      if (headlessOptions.outputFormat === "stream-json") {
         yield JSON.stringify({
-          type: 'chunk',
+          type: "chunk",
           content: chunk,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
       } else {
         yield chunk;
       }
     }
 
-    if (headlessOptions.outputFormat === 'stream-json') {
+    if (headlessOptions.outputFormat === "stream-json") {
       yield JSON.stringify({
-        type: 'end',
-        timestamp: new Date().toISOString()
+        type: "end",
+        timestamp: new Date().toISOString(),
       });
     }
-
   } catch (error) {
-    if (headlessOptions.outputFormat === 'stream-json') {
+    if (headlessOptions.outputFormat === "stream-json") {
       yield JSON.stringify({
-        type: 'error',
+        type: "error",
         error: error instanceof Error ? error.message : String(error),
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     } else {
       throw error;
@@ -125,19 +124,20 @@ export async function* headlessStream(
  */
 export async function headlessBatch(
   questions: string[],
-  options: HeadlessOptions = {}
+  options: HeadlessOptions = {},
 ): Promise<Array<{ question: string; response: string; error?: string }>> {
-  const results: Array<{ question: string; response: string; error?: string }> = [];
-  
+  const results: Array<{ question: string; response: string; error?: string }> =
+    [];
+
   for (const question of questions) {
     try {
       const response = await headlessExecute(question, options);
       results.push({ question, response });
     } catch (error) {
-      results.push({ 
-        question, 
-        response: '', 
-        error: error instanceof Error ? error.message : String(error) 
+      results.push({
+        question,
+        response: "",
+        error: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -153,7 +153,7 @@ export function getSessionStatus() {
   return {
     messages: stats.messages,
     tokens: stats.tokens,
-    uptime: process.uptime()
+    uptime: process.uptime(),
   };
 }
 

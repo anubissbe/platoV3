@@ -22,12 +22,14 @@ This enhancement addresses the need for better navigation in terminal-based AI c
 ## Technical Implementation
 
 ### Core Components
+
 - `ScrollController`: Manages mouse wheel events and scroll state
 - `ConversationRenderer`: Handles virtual rendering and viewport management
 - `MouseEventHandler`: Enhanced with horizontal scroll support
 - Test suites: Comprehensive testing for all scrolling scenarios
 
 ### Key Features
+
 - Smooth scrolling with configurable duration and easing
 - Virtual scrolling for memory efficiency with large conversations
 - Horizontal scrolling for wide content (code blocks, tables)
@@ -37,6 +39,7 @@ This enhancement addresses the need for better navigation in terminal-based AI c
 ## Testing
 
 All 51 tests pass successfully across:
+
 - Mouse wheel scrolling (15 tests)
 - Boundary handling (15 tests)
 - Horizontal scrolling (13 tests)
