@@ -4,6 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import { loadConfig, setConfigValue } from "../config.js";
 import { SLASH_COMMANDS } from "../slash/commands.js";
+import { processSlashCommand } from "../commands/router.js";
 import orchestrator from "../runtime/orchestrator.js";
 import {
   StyledBox,
@@ -746,6 +747,29 @@ export function App() {
 
   // Handle slash commands (existing implementation from app.tsx)
   const handleSlashCommand = async (text: string) => {
+    // First try the new command router
+    // Note: orchestrator doesn't expose session/provider directly, so we pass null for now
+    // The router will handle commands that don't need these
+    const commandResult = await processSlashCommand(text, null as any, null as any);
+
+    if (commandResult.handled) {
+      // Command was processed by router
+      if (commandResult.output) {
+        setConversationMessages((prev) => [
+          ...prev,
+          { role: "system" as const, content: commandResult.output || "Command processed", timestamp: Date.now() },
+        ]);
+      } else if (commandResult.error) {
+        // Show error message
+        setConversationMessages((prev) => [
+          ...prev,
+          { role: "system" as const, content: commandResult.error || "Command error", timestamp: Date.now() },
+        ]);
+      }
+      return;
+    }
+
+    // Fall back to existing implementation for commands not yet migrated
     const parts = text.trim().split(" ");
     const command = parts[0];
     const args = parts.slice(1).join(" ");

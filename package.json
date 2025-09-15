@@ -105,12 +105,14 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
+    "@modelcontextprotocol/server-filesystem": "^2025.8.21",
     "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.19.13",
     "@types/prompts": "^2.4.9",
     "@types/react-test-renderer": "^19.1.0",
     "@types/yargs": "^17.0.32",
+    "@wonderwhy-er/desktop-commander": "^0.2.14",
     "eslint": "^9.9.0",
     "ink-testing-library": "^4.0.0",
     "jest": "^30.1.3",

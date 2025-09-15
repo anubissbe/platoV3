@@ -171,7 +171,7 @@ export class SlashCommandMouseIntegration {
     return contextCommands.map((cmd) => ({
       command: cmd.name,
       displayText: cmd.name,
-      description: cmd.summary,
+      description: cmd.summary || cmd.description || "No description available",
       relevance: 1.0,
       available: true,
     }));
@@ -428,7 +428,7 @@ export class SlashCommandMouseIntegration {
         relevance = 0.6;
       }
       // Fuzzy match in description
-      else if (command.summary.toLowerCase().includes(query)) {
+      else if (command.summary && command.summary.toLowerCase().includes(query)) {
         relevance = 0.4;
       }
 
@@ -436,7 +436,7 @@ export class SlashCommandMouseIntegration {
         suggestions.push({
           command: command.name,
           displayText: command.name,
-          description: command.summary,
+          description: command.summary || command.description || "No description available",
           relevance,
           available: this.isCommandAvailable(command.name),
         });
@@ -533,7 +533,7 @@ export class SlashCommandMouseIntegration {
           suggestions.push({
             command: cmd.name,
             displayText: cmd.name,
-            description: cmd.summary,
+            description: cmd.summary || cmd.description || "No description available",
             relevance,
             available: this.isCommandAvailable(cmd.name),
           });

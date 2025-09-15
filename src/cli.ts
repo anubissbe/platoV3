@@ -7,6 +7,7 @@ import { loadConfig } from "./config/index.js";
 import { Session } from "./core/session.js";
 import { CopilotProvider } from "./core/provider/copilot.js";
 import { runTui } from "./tui/app.js";
+import { processSlashCommand } from "./commands/router.js";
 
 // Enhanced terminal capability detection
 function isTerminalCapable(): boolean {
@@ -160,6 +161,19 @@ async function main() {
   while (true) {
     const input = await askOnce();
     if (!input.trim()) continue;
+
+    // Check if this is a slash command
+    const commandResult = await processSlashCommand(input, session, provider);
+
+    if (commandResult.handled) {
+      // Command was processed, display result
+      if (commandResult.output) {
+        console.log(commandResult.output);
+      }
+      continue; // Skip AI processing
+    }
+
+    // Not a command, send to AI
     session.user(input);
     const spinner = startSpinner("Thinking");
     try {

@@ -51,7 +51,7 @@ jest.mock("simple-git", () => ({
 }));
 
 jest.mock("fs/promises", () => ({
-  mkdtemp: jest.fn().mockResolvedValue("/tmp/test"),
+  mkdtemp: jest.fn().mockResolvedValue("tmp/test"),
   mkdir: jest.fn().mockResolvedValue(undefined),
   readdir: jest.fn().mockResolvedValue([]),
   readFile: jest.fn().mockResolvedValue("{}"),
@@ -79,11 +79,11 @@ describe("Slash Commands - New Commands Tests", () => {
   describe("Command Registry", () => {
     test("should include all new slash commands in registry", () => {
       const expectedCommands = [
-        "/ide",
-        "/install-gitlab-app",
-        "/terminal-setup",
-        "/compact",
-        "/bug",
+        "ide",
+        "install-gitlab-app",
+        "terminal-setup",
+        "compact",
+        "bug",
       ];
 
       expectedCommands.forEach((cmd) => {
@@ -92,54 +92,54 @@ describe("Slash Commands - New Commands Tests", () => {
     });
 
     test("should have proper summaries for new commands", () => {
-      expect(SLASH_MAP.get("/ide")?.summary).toContain("IDE");
-      expect(SLASH_MAP.get("/install-gitlab-app")?.summary).toContain("GitLab");
-      expect(SLASH_MAP.get("/terminal-setup")?.summary).toContain("terminal");
-      expect(SLASH_MAP.get("/compact")?.summary).toContain("Compact");
-      expect(SLASH_MAP.get("/bug")?.summary).toContain("bug");
+      expect(SLASH_MAP.get("ide")?.summary).toContain("IDE");
+      expect(SLASH_MAP.get("install-gitlab-app")?.summary).toContain("GitLab");
+      expect(SLASH_MAP.get("terminal-setup")?.summary).toContain("terminal");
+      expect(SLASH_MAP.get("compact")?.summary).toContain("Compact");
+      expect(SLASH_MAP.get("bug")?.summary).toContain("bug");
     });
   });
 
-  describe("/ide command", () => {
+  describe("ide command", () => {
     test("should handle IDE connection command", async () => {
-      const command = "/ide";
+      const command = "ide";
       expect(SLASH_MAP.has(command)).toBe(true);
     });
 
     test("should support IDE connection with optional editor parameter", async () => {
       // Test basic command
-      const result1 = await simulateSlashCommand("/ide");
+      const result1 = await simulateSlashCommand("ide");
       expect(result1.success).toBe(true);
 
       // Test with specific editor
-      const result2 = await simulateSlashCommand("/ide vscode");
+      const result2 = await simulateSlashCommand("ide vscode");
       expect(result2.success).toBe(true);
     });
 
     test("should handle unsupported IDE gracefully", async () => {
-      const result = await simulateSlashCommand("/ide unsupported-editor");
+      const result = await simulateSlashCommand("ide unsupported-editor");
       expect(result.success).toBe(false);
       expect(result.message).toContain("supported");
     });
   });
 
-  describe("/install-gitlab-app command", () => {
+  describe("install-gitlab-app command", () => {
     test("should handle GitLab app installation", async () => {
-      const result = await simulateSlashCommand("/install-gitlab-app");
+      const result = await simulateSlashCommand("install-gitlab-app");
       expect(result.success).toBe(true);
       expect(mockOpen).toHaveBeenCalledWith(expect.stringContaining("gitlab"));
     });
 
     test("should provide installation instructions", async () => {
-      const result = await simulateSlashCommand("/install-gitlab-app");
+      const result = await simulateSlashCommand("install-gitlab-app");
       expect(result.message).toContain("install");
       expect(result.message).toContain("GitLab");
     });
   });
 
-  describe("/terminal-setup command", () => {
+  describe("terminal-setup command", () => {
     test("should handle terminal configuration", async () => {
-      const result = await simulateSlashCommand("/terminal-setup");
+      const result = await simulateSlashCommand("terminal-setup");
       expect(result.success).toBe(true);
       expect(result.message).toContain("terminal");
     });
@@ -149,32 +149,32 @@ describe("Slash Commands - New Commands Tests", () => {
       const originalEnv = process.env.TERM_PROGRAM;
 
       process.env.TERM_PROGRAM = "vscode";
-      const result1 = await simulateSlashCommand("/terminal-setup");
+      const result1 = await simulateSlashCommand("terminal-setup");
       expect(result1.message).toContain("VS Code");
 
       process.env.TERM_PROGRAM = "iTerm.app";
-      const result2 = await simulateSlashCommand("/terminal-setup");
+      const result2 = await simulateSlashCommand("terminal-setup");
       expect(result2.message).toContain("iTerm");
 
       process.env.TERM_PROGRAM = originalEnv;
     });
 
     test("should provide Shift+Enter fix instructions", async () => {
-      const result = await simulateSlashCommand("/terminal-setup");
+      const result = await simulateSlashCommand("terminal-setup");
       expect(result.message).toContain("Shift+Enter");
     });
   });
 
-  describe("/compact command", () => {
+  describe("compact command", () => {
     test("should handle basic compact command", async () => {
-      const result = await simulateSlashCommand("/compact");
+      const result = await simulateSlashCommand("compact");
       expect(result.success).toBe(true);
       expect(result.message).toContain("Compacting");
     });
 
     test("should handle compact with focus instructions", async () => {
       const result = await simulateSlashCommand(
-        "/compact focus on important parts",
+        "compact focus on important parts",
       );
       expect(result.success).toBe(true);
       expect(result.instructions).toContain("focus on important parts");
@@ -182,15 +182,15 @@ describe("Slash Commands - New Commands Tests", () => {
 
     test("should handle compact with complex instructions", async () => {
       const instructions = "keep only error messages and function signatures";
-      const result = await simulateSlashCommand(`/compact ${instructions}`);
+      const result = await simulateSlashCommand(`compact ${instructions}`);
       expect(result.success).toBe(true);
       expect(result.instructions).toBe(instructions);
     });
   });
 
-  describe("/bug command", () => {
+  describe("bug command", () => {
     test("should redirect to Plato GitLab issues", async () => {
-      const result = await simulateSlashCommand("/bug");
+      const result = await simulateSlashCommand("bug");
       expect(result.success).toBe(true);
       expect(mockOpen).toHaveBeenCalledWith(
         expect.stringContaining("gitlab.com"),
@@ -200,31 +200,31 @@ describe("Slash Commands - New Commands Tests", () => {
 
     test("should handle bug command with description", async () => {
       const result = await simulateSlashCommand(
-        "/bug keyboard shortcuts not working",
+        "bug keyboard shortcuts not working",
       );
       expect(result.success).toBe(true);
       expect(result.description).toContain("keyboard shortcuts not working");
     });
 
     test("should not redirect to Anthropic issues", async () => {
-      const result = await simulateSlashCommand("/bug");
+      const result = await simulateSlashCommand("bug");
       expect(mockOpen).not.toHaveBeenCalledWith(
         expect.stringContaining("anthropic"),
       );
     });
   });
 
-  describe("/help command enhancement", () => {
+  describe("help command enhancement", () => {
     test("should list all commands including new ones", async () => {
-      const result = await simulateSlashCommand("/help");
+      const result = await simulateSlashCommand("help");
       expect(result.success).toBe(true);
 
       const newCommands = [
-        "/ide",
-        "/install-gitlab-app",
-        "/terminal-setup",
-        "/compact",
-        "/bug",
+        "ide",
+        "install-gitlab-app",
+        "terminal-setup",
+        "compact",
+        "bug",
       ];
       newCommands.forEach((cmd) => {
         expect(result.commandList).toContain(cmd);
@@ -232,8 +232,8 @@ describe("Slash Commands - New Commands Tests", () => {
     });
 
     test("should maintain existing command help", async () => {
-      const result = await simulateSlashCommand("/help");
-      const existingCommands = ["/help", "/status", "/login", "/logout"];
+      const result = await simulateSlashCommand("help");
+      const existingCommands = ["help", "status", "login", "logout"];
       existingCommands.forEach((cmd) => {
         expect(result.commandList).toContain(cmd);
       });
@@ -242,13 +242,13 @@ describe("Slash Commands - New Commands Tests", () => {
 
   describe("Error Handling", () => {
     test("should handle invalid commands gracefully", async () => {
-      const result = await simulateSlashCommand("/invalid-command");
+      const result = await simulateSlashCommand("invalid-command");
       expect(result.success).toBe(false);
       expect(result.message).toContain("Unknown");
     });
 
     test("should handle malformed commands gracefully", async () => {
-      const result = await simulateSlashCommand("/");
+      const result = await simulateSlashCommand("");
       expect(result.success).toBe(false);
     });
 
@@ -262,13 +262,13 @@ describe("Slash Commands - New Commands Tests", () => {
     test("should integrate with existing orchestrator methods", async () => {
       // Test that new commands work with existing orchestrator state
       await orchestrator.setTranscriptMode(true);
-      const result = await simulateSlashCommand("/compact");
+      const result = await simulateSlashCommand("compact");
       expect(result.success).toBe(true);
     });
 
     test("should maintain state after command execution", async () => {
       await orchestrator.setBackgroundMode(true);
-      await simulateSlashCommand("/terminal-setup");
+      await simulateSlashCommand("terminal-setup");
       expect(orchestrator.isBackgroundMode()).toBe(true);
     });
   });
@@ -282,17 +282,17 @@ async function simulateSlashCommand(command: string): Promise<any> {
   const args = parts.slice(1).join(" ");
 
   switch (cmd) {
-    case "/ide":
+    case "ide":
       return handleIdeCommand(args);
-    case "/install-gitlab-app":
+    case "install-gitlab-app":
       return handleInstallGitlabAppCommand();
-    case "/terminal-setup":
+    case "terminal-setup":
       return handleTerminalSetupCommand();
-    case "/compact":
+    case "compact":
       return handleCompactCommand(args);
-    case "/bug":
+    case "bug":
       return handleBugCommand(args);
-    case "/help":
+    case "help":
       return handleHelpCommand();
     case "":
       return { success: false, message: "Empty command" };
