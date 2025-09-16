@@ -68,23 +68,23 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 - [x] Create link detection and formatting
 - [x] Implement table rendering for terminal width
 
-### Phase 4: Interactive Features (User Experience)
+### Phase 4: Interactive Features (User Experience) ✅ COMPLETED
 
-#### Task 4.1: Selection and Navigation
-- [ ] Write tests for keyboard navigation between messages
-- [ ] Write tests for message selection highlighting
-- [ ] Implement keyboard navigation (arrow keys, page up/down)
-- [ ] Add message selection with visual feedback
-- [ ] Create focus management for accessibility
-- [ ] Implement jump-to-message functionality
+#### Task 4.1: Selection and Navigation ✅ COMPLETED
+- [x] Write tests for keyboard navigation between messages
+- [x] Write tests for message selection highlighting
+- [x] Implement keyboard navigation (arrow keys, page up/down)
+- [x] Add message selection with visual feedback
+- [x] Create focus management for accessibility
+- [x] Implement jump-to-message functionality
 
-#### Task 4.2: Copy and Export Features
-- [ ] Write tests for message content copying
-- [ ] Write tests for clipboard integration
-- [ ] Implement copy-to-clipboard for selected messages
-- [ ] Add export functionality (plain text, markdown)
-- [ ] Create bulk selection and copy operations
-- [ ] Implement context menu for right-click operations
+#### Task 4.2: Copy and Export Features ✅ COMPLETED
+- [x] Write tests for message content copying
+- [x] Write tests for clipboard integration
+- [x] Implement copy-to-clipboard for selected messages
+- [x] Add export functionality (plain text, markdown)
+- [x] Create bulk selection and copy operations
+- [x] Implement context menu for right-click operations
 
 ### Phase 5: Performance & Optimization (Scale)
 

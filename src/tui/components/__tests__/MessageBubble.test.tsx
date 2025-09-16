@@ -603,3 +603,159 @@ console.log("test");
     });
   });
 });
+
+describe("Phase 4: Interactive Features", () => {
+  describe("Task 4.1: Selection and Navigation", () => {
+    it("should detect when message is focused for navigation", () => {
+      const bubble = new MessageBubble(createMockMessage());
+      expect(bubble.isFocused()).toBe(false);
+
+      bubble.setFocused(true);
+      expect(bubble.isFocused()).toBe(true);
+    });
+
+    it("should handle keyboard navigation between messages", () => {
+      const bubble = new MessageBubble(createMockMessage());
+
+      // Test navigation state tracking
+      expect(bubble.canNavigateUp()).toBe(false); // First message
+      expect(bubble.canNavigateDown()).toBe(true); // Has next messages
+
+      bubble.setMessagePosition(1, 3); // Position 1 of 3 total messages
+      expect(bubble.canNavigateUp()).toBe(true);
+      expect(bubble.canNavigateDown()).toBe(true);
+
+      bubble.setMessagePosition(2, 3); // Last message
+      expect(bubble.canNavigateUp()).toBe(true);
+      expect(bubble.canNavigateDown()).toBe(false);
+    });
+
+    it("should provide visual feedback for focused messages", () => {
+      const bubble = new MessageBubble(createMockMessage());
+      const defaultRender = bubble.render();
+
+      bubble.setFocused(true);
+      const focusedRender = bubble.render();
+
+      expect(focusedRender).not.toBe(defaultRender);
+      expect(focusedRender).toContain("▸"); // Focus indicator
+    });
+
+    it("should handle message selection highlighting", () => {
+      const bubble = new MessageBubble(createMockMessage());
+      expect(bubble.isSelected()).toBe(false);
+
+      bubble.setSelected(true);
+      expect(bubble.isSelected()).toBe(true);
+
+      const selectedRender = bubble.render();
+      expect(selectedRender).toContain("■"); // Selection indicator
+    });
+
+    it("should support page up/down navigation", () => {
+      const bubble = new MessageBubble(createMockMessage());
+
+      expect(bubble.getPageUpTarget(10)).toBe(0); // Jump to top
+      expect(bubble.getPageDownTarget(10)).toBe(9); // Jump near bottom
+
+      bubble.setMessagePosition(5, 20);
+      expect(bubble.getPageUpTarget(10)).toBe(-5); // Move up 10 positions
+      expect(bubble.getPageDownTarget(10)).toBe(15); // Move down 10 positions
+    });
+
+    it("should implement jump-to-message functionality", () => {
+      const bubble = new MessageBubble(createMockMessage());
+
+      expect(bubble.canJumpToMessage(5)).toBe(true);
+      expect(bubble.canJumpToMessage(-1)).toBe(false);
+
+      bubble.setMessageCount(10);
+      expect(bubble.canJumpToMessage(15)).toBe(false); // Beyond range
+      expect(bubble.canJumpToMessage(9)).toBe(true); // Valid range
+    });
+
+    it("should manage focus for accessibility", () => {
+      const bubble = new MessageBubble(createMockMessage());
+
+      // Test focus management
+      expect(bubble.getFocusAriaLabel()).toBe("Message from user, Test message");
+
+      bubble.setFocused(true);
+      expect(bubble.getFocusAriaLabel()).toContain("focused");
+
+      bubble.setSelected(true);
+      expect(bubble.getFocusAriaLabel()).toContain("selected");
+    });
+  });
+
+  describe("Task 4.2: Copy and Export Features", () => {
+    it("should provide message content for clipboard copying", () => {
+      const bubble = new MessageBubble(createMockMessage({
+        content: "Hello world!"
+      }));
+
+      const copyableContent = bubble.getCopyableContent();
+      expect(copyableContent).toContain("Hello world!");
+      expect(copyableContent).toContain("User"); // Include role (capitalized)
+    });
+
+    it("should handle clipboard integration for different content types", () => {
+      const toolCallContent = `Using the search tool:
+{ "tool_call": { "server": "filesystem", "name": "search", "input": { "pattern": "test" } } }`;
+
+      const bubble = new MessageBubble(createMockMessage({
+        content: toolCallContent
+      }));
+
+      const copyableContent = bubble.getCopyableContent();
+      expect(copyableContent).toContain("search tool");
+      expect(copyableContent).toContain("filesystem");
+    });
+
+    it("should export message content in plain text format", () => {
+      const bubble = new MessageBubble(createMockMessage({
+        content: "This is a **bold** message with *italic* text."
+      }));
+
+      const plainText = bubble.exportAsPlainText();
+      expect(plainText).toContain("This is a bold message with italic text.");
+      expect(plainText).not.toContain("**");
+      expect(plainText).not.toContain("*");
+    });
+
+    it("should export message content in markdown format", () => {
+      const bubble = new MessageBubble(createMockMessage({
+        content: "This is a **bold** message with *italic* text."
+      }));
+
+      const markdown = bubble.exportAsMarkdown();
+      expect(markdown).toContain("**bold**");
+      expect(markdown).toContain("*italic*");
+      expect(markdown).toContain("# User Message");
+    });
+
+    it("should support bulk operations for multiple messages", () => {
+      const bubble = new MessageBubble(createMockMessage());
+
+      expect(bubble.isBulkSelected()).toBe(false);
+
+      bubble.setBulkSelected(true);
+      expect(bubble.isBulkSelected()).toBe(true);
+
+      const bulkData = bubble.getBulkExportData();
+      expect(bulkData).toHaveProperty("content");
+      expect(bulkData).toHaveProperty("role");
+      expect(bulkData).toHaveProperty("timestamp");
+    });
+
+    it("should implement context menu operations", () => {
+      const bubble = new MessageBubble(createMockMessage());
+
+      const contextMenuItems = bubble.getContextMenuItems();
+      expect(contextMenuItems).toContain("Copy");
+      expect(contextMenuItems).toContain("Export as Plain Text");
+      expect(contextMenuItems).toContain("Export as Markdown");
+      expect(contextMenuItems).toContain("Select for Bulk Operation");
+    });
+  });
+});
