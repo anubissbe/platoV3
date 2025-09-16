@@ -45,20 +45,20 @@ describe("Authentication Commands", () => {
 
   describe("Command Registry", () => {
     test("should have /login command registered", () => {
-      expect(SLASH_MAP.has("/login")).toBe(true);
-      const command = SLASH_MAP.get("/login");
+      expect(SLASH_MAP.has("login")).toBe(true);
+      const command = SLASH_MAP.get("login");
       expect(command?.summary).toContain("provider");
     });
 
     test("should have /logout command registered", () => {
-      expect(SLASH_MAP.has("/logout")).toBe(true);
-      const command = SLASH_MAP.get("/logout");
+      expect(SLASH_MAP.has("logout")).toBe(true);
+      const command = SLASH_MAP.get("logout");
       expect(command?.summary).toContain("credentials");
     });
 
     test("should have /status command registered", () => {
-      expect(SLASH_MAP.has("/status")).toBe(true);
-      const command = SLASH_MAP.get("/status");
+      expect(SLASH_MAP.has("status")).toBe(true);
+      const command = SLASH_MAP.get("status");
       expect(command?.summary).toContain("status");
     });
   });

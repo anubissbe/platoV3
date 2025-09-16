@@ -1,500 +1,675 @@
 # Troubleshooting Guide
 
-Comprehensive solutions for common issues encountered while using Plato.
+Comprehensive troubleshooting guide for Plato TUI issues, errors, and common problems.
 
-## 🔧 Quick Diagnostics
+## 🚨 Quick Diagnostics
 
-### Health Check
+### First Steps
 
-Run the built-in diagnostics first:
+When experiencing issues, always start with these diagnostic commands:
 
 ```bash
-npm run dev
-# Then in Plato:
+# Check system health
 /doctor
+
+# Verify current status
+/status
+
+# Check debug logs
+/debug logs
+
+# Test basic functionality
+/help
 ```
 
-The `/doctor` command checks:
+## 🔧 Common Issues
 
-- ✅ Node.js version compatibility
-- ✅ Dependencies installation
-- ✅ Terminal capabilities
-- ✅ Authentication status
-- ✅ Performance metrics
-- ✅ File permissions
+### Authentication Problems
 
-## 🚨 Common Issues
+#### Issue: Cannot Login / Authentication Fails
 
-### 1. Application Won't Start
+**Symptoms:**
+- `/login` command fails
+- "Authentication failed" errors
+- "Invalid credentials" messages
 
-#### Symptoms
+**Solutions:**
 
-- `npm run dev` fails with errors
-- Terminal shows compilation errors
-- Application exits immediately
+1. **Clear existing credentials:**
+   ```bash
+   /logout
+   rm -rf ~/.config/plato/credentials.json
+   /login
+   ```
 
-#### Solutions
+2. **Check network connectivity:**
+   ```bash
+   curl -f https://api.github.com
+   curl -f https://gitlab.com/api/v4/user
+   ```
 
-**Check Node.js Version**:
+3. **Verify system time:**
+   ```bash
+   # Ensure system time is synchronized
+   sudo timedatectl set-ntp true
+   ```
 
-```bash
-node --version  # Should be 18.0 or higher
-npm --version   # Should be 8.0 or higher
-```
+4. **Debug authentication flow:**
+   ```bash
+   DEBUG=plato:auth npm run dev
+   ```
 
-**Clean Installation**:
+#### Issue: Token Expired / Invalid
 
-```bash
-rm -rf node_modules package-lock.json
-npm ci
-npm run build
-npm run dev
-```
+**Symptoms:**
+- "Token expired" errors
+- Intermittent authentication failures
+- API calls return 401 errors
 
-**Permission Issues**:
+**Solutions:**
 
-```bash
-# Linux/macOS
-chmod +x ./bin/plato
-sudo chown -R $USER:$USER .
+1. **Refresh credentials:**
+   ```bash
+   /logout
+   /login
+   ```
 
-# Windows (PowerShell as Administrator)
-icacls . /reset /t
-```
+2. **Check token validity:**
+   ```bash
+   # For Copilot tokens
+   curl -H "Authorization: Bearer YOUR_TOKEN" \
+        https://api.githubcopilot.com/user
 
-**TypeScript Compilation Errors**:
+   # For GitLab tokens
+   curl -H "Authorization: Bearer YOUR_TOKEN" \
+        https://gitlab.com/api/v4/user
+   ```
 
-```bash
-npm run typecheck  # Check for type errors
-npm run lint       # Check for linting issues
-npm run fmt        # Auto-fix formatting
-```
+### Command Issues
 
-### 2. Authentication Problems
+#### Issue: Commands Not Recognized
 
-#### Symptoms
+**Symptoms:**
+- Commands are sent to AI instead of being executed
+- "Command not found" errors
+- Slash commands don't work
 
-- Cannot login to Copilot
-- "Authentication failed" messages
-- Expired token errors
+**Solutions:**
 
-#### Solutions
+1. **Verify command router:**
+   ```bash
+   # Check if router is working
+   /help
 
-**Copilot Authentication**:
+   # If help doesn't work, router may be broken
+   npm run build
+   npm run dev
+   ```
 
-```bash
-# In Plato TUI:
-/logout
-/login
-# Follow device flow instructions
-```
+2. **Check command registration:**
+   ```bash
+   # Verify command exists
+   grep -n "name.*your-command" src/slash/commands.ts
+   ```
 
-**Clear Cached Credentials**:
+3. **Debug command parsing:**
+   ```bash
+   DEBUG=plato:commands npm run dev
+   ```
 
-```bash
-# Remove stored credentials
-rm -rf ~/.config/plato/credentials.json
-rm -rf .plato/session.json
+#### Issue: Command Execution Fails
 
-# Or use the command:
-/logout --clear-cache
-```
+**Symptoms:**
+- Commands are recognized but fail to execute
+- "Command failed" errors
+- Partial execution or hanging
 
-**Check Network Connectivity**:
+**Solutions:**
 
-```bash
-# Test GitHub API access
-curl -I https://api.github.com
-# Test Copilot endpoint
-curl -I https://copilot-proxy.githubusercontent.com
-```
+1. **Check command implementation:**
+   ```bash
+   # Look for execute handler
+   grep -A 10 "name.*your-command" src/slash/commands.ts
+   ```
 
-**Firewall/Proxy Issues**:
+2. **Check permissions:**
+   ```bash
+   /permissions
+   /permissions review
+   ```
 
-```bash
-# Set proxy if needed
-export HTTPS_PROXY=http://proxy.company.com:8080
-export HTTP_PROXY=http://proxy.company.com:8080
+3. **Run with debug logging:**
+   ```bash
+   DEBUG=plato:* npm run dev
+   ```
 
-# Or in Plato config:
-/config set proxy.https "http://proxy.company.com:8080"
-```
+### File Operation Issues
 
-### 3. Terminal Display Issues
+#### Issue: Cannot Edit Files
 
-#### Symptoms
+**Symptoms:**
+- `/edit` commands fail
+- "Permission denied" errors
+- Files not being modified
 
-- Broken characters or formatting
-- Colors not displaying correctly
-- Layout appears corrupted
+**Solutions:**
 
-#### Solutions
+1. **Check file permissions:**
+   ```bash
+   ls -la target-file.js
+   chmod 644 target-file.js  # If needed
+   ```
 
-**Terminal Compatibility**:
+2. **Verify Git repository:**
+   ```bash
+   git status
+   # If not in git repo:
+   git init
+   ```
 
-```bash
-echo $TERM          # Check terminal type
-echo $COLORTERM     # Check color support
+3. **Test with simple file:**
+   ```bash
+   touch test.txt
+   /edit test.txt
+   ```
 
-# Recommended terminal settings:
-export TERM=xterm-256color
-export COLORTERM=truecolor
-```
+#### Issue: Search Not Working
 
-**Font Issues**:
+**Symptoms:**
+- `/search` returns no results
+- Search hangs or times out
+- Pattern matching fails
 
-- Ensure terminal uses a monospace font
-- Install a modern terminal font (JetBrains Mono, Fira Code, etc.)
-- Set font size between 12-16pt for optimal display
+**Solutions:**
 
-**Terminal Size**:
+1. **Test basic search:**
+   ```bash
+   /search console.log
+   ```
 
-```bash
-# Minimum recommended: 80x24
-tput cols  # Should be >= 80
-tput lines # Should be >= 24
+2. **Check file patterns:**
+   ```bash
+   # Don't use quotes in patterns
+   /search import        # ✅ Correct
+   /search "import"      # ❌ May not work
+   ```
 
-# Resize if needed
-resize
-```
+3. **Verify file access:**
+   ```bash
+   /browse
+   ls -la
+   ```
 
-**Windows Terminal Specific**:
+### Memory and Performance Issues
 
-```json
-// In Windows Terminal settings.json
-{
-  "profiles": {
-    "defaults": {
-      "fontFace": "Cascadia Code",
-      "fontSize": 12,
-      "colorScheme": "Campbell"
-    }
-  }
-}
-```
+#### Issue: High Memory Usage
 
-### 4. Performance Issues
-
-#### Symptoms
-
+**Symptoms:**
 - Slow response times
+- System becoming unresponsive
+- Out of memory errors
+
+**Solutions:**
+
+1. **Check memory usage:**
+   ```bash
+   /context
+   top -p $(pgrep node)
+   ```
+
+2. **Compact conversation history:**
+   ```bash
+   /compact
+   /memory clear
+   ```
+
+3. **Restart with memory limits:**
+   ```bash
+   NODE_OPTIONS="--max-old-space-size=2048" npm run dev
+   ```
+
+#### Issue: Slow Performance
+
+**Symptoms:**
+- Commands take long to execute
+- TUI updates are laggy
 - High CPU usage
-- Memory consumption warnings
-- Laggy scrolling
 
-#### Solutions
+**Solutions:**
 
-**Memory Optimization**:
+1. **Check performance metrics:**
+   ```bash
+   /debug performance
+   npm run perf:benchmark
+   ```
 
+2. **Disable unnecessary features:**
+   ```bash
+   /mouse off
+   /debug off
+   ```
+
+3. **Clear caches:**
+   ```bash
+   rm -rf .plato/cache
+   rm -rf node_modules/.cache
+   ```
+
+### MCP Integration Issues
+
+#### Issue: MCP Server Connection Fails
+
+**Symptoms:**
+- Cannot connect to MCP servers
+- "Server unreachable" errors
+- Tool calls timeout
+
+**Solutions:**
+
+1. **Test server connectivity:**
+   ```bash
+   curl -f http://localhost:8719/health
+   ```
+
+2. **Check server status:**
+   ```bash
+   /mcp list
+   /mcp test server-name
+   ```
+
+3. **Debug MCP bridge:**
+   ```bash
+   DEBUG=plato:mcp npm run dev
+   ```
+
+4. **Restart MCP server:**
+   ```bash
+   # Start mock server for testing
+   npx tsx scripts/mock-mcp.ts
+   ```
+
+#### Issue: Tools Not Working
+
+**Symptoms:**
+- Tool calls fail or timeout
+- "Tool not found" errors
+- Permission denied for tools
+
+**Solutions:**
+
+1. **List available tools:**
+   ```bash
+   /mcp tools
+   ```
+
+2. **Check tool permissions:**
+   ```bash
+   /permissions
+   /permissions default tool_name allow
+   ```
+
+3. **Test individual tools:**
+   ```bash
+   # In AI conversation, test with simple tool call:
+   { "tool_call": { "server": "test", "name": "echo", "input": {"message": "hello"} } }
+   ```
+
+### TUI Display Issues
+
+#### Issue: Display Corruption
+
+**Symptoms:**
+- Text appears garbled
+- Layout is broken
+- Colors are wrong
+
+**Solutions:**
+
+1. **Reset terminal:**
+   ```bash
+   reset
+   clear
+   npm run dev
+   ```
+
+2. **Check terminal capabilities:**
+   ```bash
+   /terminal-setup
+   echo $TERM
+   ```
+
+3. **Force compatible mode:**
+   ```bash
+   PLATO_STATIC_TUI=1 npm run dev
+   ```
+
+#### Issue: Mouse Support Problems
+
+**Symptoms:**
+- Mouse clicks don't work
+- Copy/paste issues
+- Selection problems
+
+**Solutions:**
+
+1. **Toggle mouse mode:**
+   ```bash
+   /mouse toggle
+   /mouse off
+   /mouse on
+   ```
+
+2. **Use paste mode:**
+   ```bash
+   /paste 10  # Disable input for 10 seconds
+   ```
+
+3. **Check terminal mouse support:**
+   ```bash
+   # Test if terminal supports mouse
+   printf '\033[?1000h'  # Enable mouse
+   printf '\033[?1000l'  # Disable mouse
+   ```
+
+### Configuration Issues
+
+#### Issue: Settings Not Persisted
+
+**Symptoms:**
+- Configuration resets on restart
+- Settings changes don't take effect
+- "Cannot save config" errors
+
+**Solutions:**
+
+1. **Check config directory permissions:**
+   ```bash
+   ls -la ~/.config/plato/
+   mkdir -p ~/.config/plato/
+   chmod 755 ~/.config/plato/
+   ```
+
+2. **Verify config file:**
+   ```bash
+   cat ~/.config/plato/config.json
+   ```
+
+3. **Reset configuration:**
+   ```bash
+   rm -rf ~/.config/plato/
+   rm -rf .plato/
+   npm run dev
+   ```
+
+## 🐛 Error Messages
+
+### Common Error Codes
+
+#### `ENOENT: no such file or directory`
+
+**Cause:** File or directory doesn't exist
+
+**Solution:**
 ```bash
-# In Plato:
-/compact         # Compress conversation history
-/memory clear    # Clear old memory data
-/config set memory.maxSize 100  # Limit memory size (MB)
+# Check if file exists
+ls -la path/to/file
+# Create directory if needed
+mkdir -p path/to/directory
 ```
 
-**Performance Monitoring**:
+#### `EACCES: permission denied`
 
+**Cause:** Insufficient file permissions
+
+**Solution:**
 ```bash
-# Check system resources
-htop  # Linux/macOS
-tasklist  # Windows
-
-# In Plato:
-/status          # Show current performance
-/benchmark       # Run performance tests
+# Fix file permissions
+chmod 644 filename
+# Fix directory permissions
+chmod 755 dirname
 ```
 
-**Node.js Optimization**:
+#### `EADDRINUSE: address already in use`
 
+**Cause:** Port is already occupied
+
+**Solution:**
 ```bash
-# Increase Node.js memory limit
-export NODE_OPTIONS="--max-old-space-size=4096"
-
-# Enable V8 optimizations
-export NODE_OPTIONS="--optimize-for-size"
+# Find process using port
+lsof -i :3000
+# Kill process if needed
+kill -9 PID
 ```
 
-**Large Conversation Handling**:
+#### `MODULE_NOT_FOUND`
 
+**Cause:** Missing dependencies
+
+**Solution:**
 ```bash
-# In Plato:
-/memory save conversation-backup  # Backup before cleanup
-/compact --aggressive            # Aggressive compression
-/session new                     # Start fresh session
+# Reinstall dependencies
+rm -rf node_modules package-lock.json
+npm install
 ```
 
-### 5. Mouse and Scrolling Issues
+### TypeScript Errors
 
-#### Symptoms
+#### `Cannot find module` errors
 
-- Mouse wheel doesn't work
-- Cannot select text
-- Scrolling is choppy
-
-#### Solutions
-
-**Enable Mouse Support**:
-
+**Solution:**
 ```bash
-# In Plato:
-/mouse on
-/config set mouse.enabled true
+# Clean build and reinstall
+npm run clean
+npm install
+npm run build
 ```
 
-**Terminal Mouse Support**:
+#### `Type errors` in development
 
+**Solution:**
 ```bash
-# Check if terminal supports mouse
-echo -e "\e[?1000h"  # Enable mouse reporting
-# Move mouse and see if it generates output
-echo -e "\e[?1000l"  # Disable mouse reporting
+# Check types
+npm run typecheck
+# Fix imports
+npm run lint --fix
 ```
 
-**WSL Mouse Issues**:
+## 🔍 Debugging Tools
+
+### Debug Modes
+
+Enable different debug levels:
 
 ```bash
-# In WSL, ensure Windows Terminal is updated
-# Enable mouse in WSL terminal:
-echo 'set mouse=a' >> ~/.vimrc  # For vim users
-```
-
-**Smooth Scrolling**:
-
-```bash
-# In Plato:
-/config set scroll.smooth true
-/config set scroll.sensitivity 3
-```
-
-### 6. MCP Tool Integration Issues
-
-#### Symptoms
-
-- Tools not responding
-- "Server unavailable" errors
-- Tool commands timing out
-
-#### Solutions
-
-**Check MCP Server Status**:
-
-```bash
-# In Plato:
-/mcp status
-/mcp list
-```
-
-**Restart MCP Servers**:
-
-```bash
-# In Plato:
-/mcp detach <server-name>
-/mcp attach <server-name> <url>
-```
-
-**Network Connectivity**:
-
-```bash
-# Test MCP server connectivity
-curl -f http://localhost:8080/health  # Replace with your MCP server URL
-telnet localhost 8080  # Test port connectivity
-```
-
-**Tool Permissions**:
-
-```bash
-# In Plato:
-/permissions list
-/permissions default fs_patch allow
-/permissions default exec allow
-```
-
-### 7. Session and Memory Issues
-
-#### Symptoms
-
-- Sessions won't save/load
-- Memory data corrupted
-- "Cannot restore session" errors
-
-#### Solutions
-
-**Session Recovery**:
-
-```bash
-# Check session files
-ls -la .plato/
-cat .plato/session.json  # Verify session format
-
-# Manual session cleanup
-rm .plato/session.json
-/session new
-```
-
-**Memory Directory Issues**:
-
-```bash
-# Fix memory directory permissions
-chmod -R 755 .plato/memory/
-chown -R $USER:$USER .plato/
-
-# Rebuild memory index
-/memory rebuild
-```
-
-**Corrupted Memory Data**:
-
-```bash
-# Backup and reset memory
-mv .plato/memory .plato/memory.backup
-mkdir .plato/memory
-/memory init
-```
-
-## 🔍 Advanced Diagnostics
-
-### Debug Mode
-
-```bash
-# Enable debug logging
+# All debug information
 DEBUG=plato:* npm run dev
 
-# Or within Plato:
-/config set debug.enabled true
-/config set debug.level verbose
-```
-
-### Log Analysis
-
-```bash
-# Check log files
-tail -f .plato/logs/plato.log
-grep -E "(ERROR|WARN)" .plato/logs/plato.log
-
-# System logs (Linux)
-journalctl -u plato --follow
-```
-
-### Network Debugging
-
-```bash
-# Monitor network traffic
-netstat -an | grep :8080  # Check MCP server ports
-lsof -i :8080             # Check port usage
-
-# DNS resolution
-nslookup api.github.com
-dig copilot-proxy.githubusercontent.com
+# Specific categories
+DEBUG=plato:commands npm run dev      # Command execution
+DEBUG=plato:auth npm run dev          # Authentication
+DEBUG=plato:mcp npm run dev           # MCP integration
+DEBUG=plato:memory npm run dev        # Memory management
+DEBUG=plato:tui npm run dev           # TUI rendering
 ```
 
 ### Performance Profiling
 
 ```bash
-# Node.js profiling
-node --prof npm run dev
-node --prof-process isolate-*.log > profile.txt
+# CPU profiling
+npx clinic doctor -- node dist/cli.js
 
-# Memory usage
-node --inspect npm run dev
-# Open chrome://inspect in Chrome
+# Memory profiling
+npx clinic heapprofiler -- node dist/cli.js
+
+# Flame graph
+npx clinic flame -- node dist/cli.js
 ```
 
-## 🏥 Emergency Recovery
-
-### Complete Reset
+### Log Analysis
 
 ```bash
-# Backup important data
-cp -r .plato .plato.backup
+# View application logs
+tail -f ~/.plato/logs/application.log
 
-# Reset everything
-rm -rf .plato/
-rm -rf node_modules/
-npm ci
-npm run build
-npm run dev
+# Filter for errors
+grep ERROR ~/.plato/logs/application.log
+
+# Filter for specific component
+grep "MCP" ~/.plato/logs/application.log
 ```
 
-### Factory Defaults
+## 🧪 Testing and Validation
+
+### Test Your Fix
+
+After implementing a solution:
 
 ```bash
-# In Plato:
-/reset --factory
-# Confirm: yes
+# Run comprehensive tests
+npm run test:comprehensive
 
-# Or manually:
-rm -rf ~/.config/plato/
-rm -rf .plato/
+# Specific test categories
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+
+# Performance validation
+npm run perf:benchmark
+
+# Security check
+npm audit
 ```
 
-### Data Recovery
+### Smoke Tests
+
+Quick validation tests:
 
 ```bash
-# Restore from backup
-cp -r .plato.backup/* .plato/
+# Basic functionality
+npx tsx scripts/smoke.ts
 
-# Partial recovery
-cp .plato.backup/memory/* .plato/memory/
-cp .plato.backup/session.json .plato/
+# MCP integration
+npx tsx scripts/test-bridge.ts
+
+# Self-check diagnostics
+npx tsx scripts/self-check.ts
 ```
 
-## 📱 Platform-Specific Issues
+## 📊 System Information
 
-### Windows Issues
+### Gather Diagnostic Information
 
-- **Antivirus blocking**: Add Plato directory to exclusions
-- **PowerShell execution policy**: `Set-ExecutionPolicy RemoteSigned`
-- **Path issues**: Use full paths, avoid spaces in directory names
+When reporting issues, include this information:
 
-### macOS Issues
+```bash
+# System info
+node --version
+npm --version
+git --version
+echo $TERM
+uname -a
 
-- **Gatekeeper warnings**: `xattr -d com.apple.quarantine plato`
-- **Terminal permissions**: Grant terminal full disk access in Security & Privacy
-- **Homebrew conflicts**: Use `npx` instead of global npm install
+# Plato status
+/status
+/doctor
 
-### Linux Issues
+# Configuration
+cat ~/.config/plato/config.json
 
-- **Package manager conflicts**: Use Node Version Manager (nvm)
-- **Permission denied**: Check file ownership and execute permissions
-- **Display issues**: Ensure X11 forwarding for SSH sessions
+# Recent logs
+tail -50 ~/.plato/logs/application.log
+```
 
-### WSL Issues
+### Environment Check
 
-- **Slow file I/O**: Store project in WSL filesystem, not Windows mount
-- **Network access**: Configure WSL networking for MCP servers
-- **Terminal compatibility**: Use Windows Terminal or WSL2
+```bash
+# Check environment variables
+env | grep PLATO
+
+# Check file permissions
+ls -la ~/.config/plato/
+ls -la .plato/
+
+# Check network connectivity
+curl -f https://api.github.com/user
+ping -c 3 github.com
+```
 
 ## 🆘 Getting Help
 
 ### Self-Help Resources
 
-1. **Built-in Help**: `/help <topic>`
-2. **Documentation**: Check `docs/` directory
-3. **Configuration**: `/config list` to see all settings
+1. **Built-in diagnostics:**
+   ```bash
+   /doctor          # System health check
+   /debug status    # Debug information
+   /help            # Command reference
+   ```
 
-### Reporting Issues
+2. **Documentation:**
+   - [User Guide](./USER_GUIDE.md)
+   - [Developer Documentation](./DEVELOPER.md)
+   - [API Reference](./API_REFERENCE.md)
 
-When reporting bugs, include:
+3. **Testing tools:**
+   ```bash
+   npm run test:watch    # Interactive testing
+   npx tsx scripts/      # Diagnostic scripts
+   ```
+
+### Bug Reporting
+
+Use the built-in bug reporting:
 
 ```bash
-# System information
-/doctor > system-info.txt
-
-# Configuration
-/config export > config.txt
-
-# Recent logs
-tail -n 100 .plato/logs/plato.log > recent-logs.txt
+/bug report "Describe your issue here"
 ```
 
-### Community Support
+Or create a detailed issue with:
 
-- **Issue Tracker**: Report bugs and feature requests
-- **Wiki**: Community-maintained documentation
-- **Discussions**: Ask questions and share tips
+1. **Problem description**
+2. **Steps to reproduce**
+3. **Expected vs actual behavior**
+4. **System information** (see above)
+5. **Diagnostic logs**
+6. **Configuration files**
+
+### Emergency Recovery
+
+If Plato is completely broken:
+
+```bash
+# Nuclear option - complete reset
+rm -rf ~/.config/plato/
+rm -rf .plato/
+rm -rf node_modules/
+npm install
+npm run build
+npm run dev
+```
+
+## 📋 FAQ
+
+### Q: Why is my command going to AI instead of executing?
+
+**A:** The command router isn't intercepting it. Check if the command starts with `/` and is registered in `src/slash/commands.ts`.
+
+### Q: Why can't I edit files?
+
+**A:** Check file permissions and ensure you're in a Git repository. Run `git init` if needed.
+
+### Q: Why is performance so slow?
+
+**A:** Try `/compact` to reduce memory usage, disable debug mode with `/debug off`, and check CPU usage.
+
+### Q: Why won't MCP servers connect?
+
+**A:** Verify the server is running, check the URL, and test connectivity with `curl`.
+
+### Q: Why do I get authentication errors?
+
+**A:** Clear credentials with `/logout` and re-authenticate with `/login`.
 
 ---
 
-_Last updated: 2025-09-11_  
-_For immediate help, run `/doctor` or `/help troubleshooting`_
+**Remember:** When in doubt, try `/doctor` first - it catches many common issues automatically!

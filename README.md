@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 [![Last Commit](https://git.euraika.net/Bert/plato/badges/main/last_commit.svg)](https://git.euraika.net/Bert/plato/-/commits/main)
 
-Status: v1.0.0 - Production Ready with Enhanced TUI Experience
+Status: v1.0.0-beta - 51% Feature Complete (21/41 commands implemented)
 
 ## 🚀 Overview
 
@@ -58,14 +58,24 @@ npm run dev
 3. **Verify Setup**: Run `/doctor` to check system status
 4. **Start Chatting**: Simply type your message and press Enter
 
-### Essential Commands
+### Essential Commands (Current Implementation Status)
 
-- `/help` - Show available commands
-- `/status` - Display authentication and system status
-- `/model` - Switch between AI models
-- `/memory save` - Save current conversation
-- `/compact` - Optimize long conversations
-- `/resume` - Restore previous session
+#### ✅ Working Commands
+- `/help` - Show available commands and categories
+- `/edit <file>` - Edit files directly
+- `/search <pattern>` - Search codebase
+- `/run <command>` - Execute shell commands
+- `/test` - Run test suites
+- `/git <command>` - Git operations
+- `/browse [path]` - Navigate file system
+- `/output-style [style]` - Change output formatting
+
+#### ⚠️ Coming Soon
+- `/status` - Authentication and system status (placeholder)
+- `/model` - Switch between AI models (placeholder)
+- `/memory` - Conversation memory management (placeholder)
+- `/compact` - History optimization (placeholder)
+- `/resume` - Session restoration (placeholder)
 
 ## 🛠️ Advanced Features
 

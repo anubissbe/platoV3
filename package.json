@@ -83,6 +83,10 @@
     "perf:regression:baseline": "node scripts/performance-regression-detector.cjs save-baseline",
     "perf:regression:cleanup": "node scripts/performance-regression-detector.cjs cleanup",
     "perf:monitor": "npm run perf:benchmark && npm run perf:regression:analyze",
+    "perf:commands": "npx tsx scripts/benchmark-commands.ts",
+    "perf:commands:quick": "npx tsx scripts/benchmark-commands.ts --iterations=25 --warmup=3",
+    "perf:commands:detailed": "npx tsx scripts/benchmark-commands.ts --iterations=100 --warmup=10",
+    "perf:analysis": "npm run perf:commands && npm run perf:monitor",
     "perf:ci": "npm run perf:fast"
   },
   "dependencies": {
@@ -123,6 +127,7 @@
     "react-test-renderer": "^19.1.1",
     "simple-git": "^3.28.0",
     "ts-jest": "^29.4.1",
+    "ts-node": "^10.9.2",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4"
   }

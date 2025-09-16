@@ -76,10 +76,12 @@ describe("Output Styles System", () => {
       await styleManager.initialize();
       const styles = styleManager.listStyles();
 
-      expect(styles).toHaveLength(3);
+      expect(styles).toHaveLength(5);
       expect(styles.map((s) => s.name)).toContain("default");
       expect(styles.map((s) => s.name)).toContain("minimal");
       expect(styles.map((s) => s.name)).toContain("verbose");
+      expect(styles.map((s) => s.name)).toContain("emoji");
+      expect(styles.map((s) => s.name)).toContain("technical");
     });
 
     test("should identify active style correctly", async () => {
@@ -204,11 +206,31 @@ describe("Output Styles System", () => {
       expect(verboseStyle.components.welcome.icon).toBe("🚀");
     });
 
+    test("emoji style should have correct properties", () => {
+      const { emojiStyle } = require("../styles/builtin.js");
+      expect(emojiStyle.name).toBe("emoji");
+      expect(emojiStyle.formatting.showIcons).toBe(true);
+      expect(emojiStyle.formatting.borderStyle).toBe("round");
+      expect(emojiStyle.components.welcome.icon).toBe("🎉");
+      expect(emojiStyle.components.fileWrite.icon).toBe("✍️");
+    });
+
+    test("technical style should have correct properties", () => {
+      const { technicalStyle } = require("../styles/builtin.js");
+      expect(technicalStyle.name).toBe("technical");
+      expect(technicalStyle.formatting.showIcons).toBe(false);
+      expect(technicalStyle.formatting.showTimestamps).toBe(true);
+      expect(technicalStyle.formatting.borderStyle).toBe("single");
+      expect(technicalStyle.components.welcome.text).toBe("PLATO_INIT: {name}");
+    });
+
     test("all built-in styles should be in BUILTIN_STYLES", () => {
       expect(BUILTIN_STYLES).toHaveProperty("default");
       expect(BUILTIN_STYLES).toHaveProperty("minimal");
       expect(BUILTIN_STYLES).toHaveProperty("verbose");
-      expect(Object.keys(BUILTIN_STYLES)).toHaveLength(3);
+      expect(BUILTIN_STYLES).toHaveProperty("emoji");
+      expect(BUILTIN_STYLES).toHaveProperty("technical");
+      expect(Object.keys(BUILTIN_STYLES)).toHaveLength(5);
     });
   });
 

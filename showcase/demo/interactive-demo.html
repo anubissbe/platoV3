@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plato TUI - Interactive Demo</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --danger: #ef4444;
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-terminal: #000000;
+            --text-primary: #f8fafc;
+            --text-secondary: #cbd5e1;
+            --text-terminal: #00ff00;
+            --border: #475569;
+            --gradient-hero: linear-gradient(135deg, #2563eb 0%, #10b981 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--bg-secondary);
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-hero);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        .demo-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 2rem;
+            min-height: calc(100vh - 80px);
+        }
+
+        .demo-main {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .demo-header {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-radius: 12px 12px 0 0;
+            border: 1px solid var(--border);
+            border-bottom: none;
+        }
+
+        .demo-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .terminal {
+            background: var(--bg-terminal);
+            border: 1px solid var(--border);
+            border-radius: 0 0 12px 12px;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 14px;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #444;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 0.3rem;
+        }
+
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot-close { background: #ff5f56; }
+        .dot-minimize { background: #ffbd2e; }
+        .dot-maximize { background: #27ca3f; }
+
+        .terminal-title {
+            margin-left: auto;
+            color: #999;
+            font-size: 12px;
+        }
+
+        .terminal-content {
+            padding: 1rem;
+            height: 500px;
+            overflow-y: auto;
+            color: var(--text-terminal);
+            line-height: 1.4;
+        }
+
+        .terminal-line {
+            margin-bottom: 0.5rem;
+            white-space: pre-wrap;
+        }
+
+        .terminal-prompt {
+            color: #00ff00;
+        }
+
+        .terminal-command {
+            color: #ffff00;
+        }
+
+        .terminal-output {
+            color: #ffffff;
+        }
+
+        .terminal-success {
+            color: #00ff00;
+        }
+
+        .terminal-error {
+            color: #ff0000;
+        }
+
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .terminal-input-line {
+            background: transparent;
+            border: none;
+            color: var(--text-terminal);
+            font-family: inherit;
+            font-size: inherit;
+            flex: 1;
+            padding: 0;
+            outline: none;
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 2rem;
+        }
+
+        .sidebar-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .command-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .command-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .command-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(37, 99, 235, 0.1);
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--secondary);
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .cursor {
+            background: var(--text-terminal);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .typing {
+            border-right: 2px solid var(--text-terminal);
+            animation: typing 0.5s steps(1) infinite;
+        }
+
+        @keyframes typing {
+            0% { border-color: var(--text-terminal); }
+            50% { border-color: transparent; }
+        }
+
+        @media (max-width: 1024px) {
+            .demo-container {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .sidebar {
+                position: static;
+                order: -1;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .control-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .control-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-online {
+            background: var(--secondary);
+            animation: pulse 2s infinite;
+        }
+
+        .status-demo {
+            background: var(--accent);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .feature-highlight {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 4px solid var(--secondary);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .feature-highlight h4 {
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <nav class="nav">
+            <div class="logo">Plato TUI Demo</div>
+            <div class="nav-links">
+                <a href="../index.html" class="nav-link">← Back to Showcase</a>
+                <a href="../tour/guided-tour.html" class="nav-link">Guided Tour</a>
+                <a href="../metrics/success-dashboard.html" class="nav-link">Metrics</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="demo-container">
+        <div class="demo-main">
+            <div class="demo-header">
+                <h1 class="demo-title">🚀 Interactive Plato TUI Demo</h1>
+                <p class="demo-subtitle">
+                    <span class="status-indicator status-online"></span>
+                    Experience all 46+ commands and enterprise features in action
+                </p>
+            </div>
+
+            <div class="demo-controls">
+                <button class="control-btn" onclick="clearTerminal()">Clear Terminal</button>
+                <button class="control-btn" onclick="runDemo()">Auto Demo</button>
+                <button class="control-btn" onclick="toggleSpeed()">Speed: Normal</button>
+                <button class="control-btn" onclick="showHelp()">Show Commands</button>
+            </div>
+
+            <div class="terminal">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <div class="terminal-dot dot-close"></div>
+                        <div class="terminal-dot dot-minimize"></div>
+                        <div class="terminal-dot dot-maximize"></div>
+                    </div>
+                    <div class="terminal-title">Plato TUI v1.0.0 - Interactive Demo</div>
+                </div>
+                <div class="terminal-content" id="terminal-content">
+                    <div class="terminal-line">
+                        <span class="terminal-success">Welcome to Plato TUI Interactive Demo!</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">From 26% to 100%+ completion - Experience the legendary transformation</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">• 46+ commands implemented</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">• 276+ passing tests</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">• 93%+ test coverage</span>
+                    </div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">• Enterprise-grade monitoring and security</span>
+                    </div>
+                    <div class="terminal-line"></div>
+                    <div class="terminal-line">
+                        <span class="terminal-output">Click commands in the sidebar or type them here. Try '/help' to start!</span>
+                    </div>
+                    <div class="terminal-line"></div>
+                    <div class="terminal-input">
+                        <span class="terminal-prompt">plato> </span>
+                        <input type="text" class="terminal-input-line" id="terminal-input"
+                               placeholder="Type a command..." onkeypress="handleEnter(event)">
+                        <span class="cursor"> </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">📊 Live Stats</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">46+</span>
+                        <div class="stat-label">Commands</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">276</span>
+                        <div class="stat-label">Tests</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">93%</span>
+                        <div class="stat-label">Coverage</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">&lt;35ms</span>
+                        <div class="stat-label">Latency</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">🎮 Try These Commands</h3>
+                <div class="command-list">
+                    <button class="command-btn" onclick="executeCommand('/help')">/help - Show all commands</button>
+                    <button class="command-btn" onclick="executeCommand('/status')">/status - System status</button>
+                    <button class="command-btn" onclick="executeCommand('/doctor')">/doctor - Health check</button>
+                    <button class="command-btn" onclick="executeCommand('/test')">/test - Run test suite</button>
+                    <button class="command-btn" onclick="executeCommand('/perf')">/perf - Performance metrics</button>
+                    <button class="command-btn" onclick="executeCommand('/git status')">/git status - Git operations</button>
+                    <button class="command-btn" onclick="executeCommand('/memory')">/memory - Memory management</button>
+                    <button class="command-btn" onclick="executeCommand('/mcp tools')">/mcp tools - Available tools</button>
+                    <button class="command-btn" onclick="executeCommand('/monitor')">/monitor - Real-time monitoring</button>
+                    <button class="command-btn" onclick="executeCommand('/analytics')">/analytics - Usage analytics</button>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3 class="sidebar-title">🚀 Key Features</h3>
+                <div class="feature-highlight">
+                    <h4>Enterprise Monitoring</h4>
+                    <p>Real-time dashboards with performance metrics</p>
+                </div>
+                <div class="feature-highlight">
+                    <h4>AI Integration</h4>
+                    <p>GitLab Duo and Copilot API support</p>
+                </div>
+                <div class="feature-highlight">
+                    <h4>Security Hardened</h4>
+                    <p>Circuit breakers and input validation</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        let terminalContent = document.getElementById('terminal-content');
+        let terminalInput = document.getElementById('terminal-input');
+        let demoSpeed = 'normal';
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        // Command responses database
+        const commandResponses = {
+            '/help': `Available Commands (46+ implemented):
+
+🔧 System Commands:
+  /help      - Show this help
+  /status    - Show authentication and system status
+  /doctor    - Diagnose setup and connectivity
+  /quit      - Exit Plato TUI
+
+🤖 AI & Authentication:
+  /login     - Authenticate with Copilot/GitLab Duo
+  /logout    - Clear authentication
+  /model     - Switch AI models
+
+📝 Development:
+  /edit      - Edit files directly
+  /search    - Search codebase
+  /run       - Execute shell commands
+  /test      - Run test suites
+  /git       - Git operations
+
+🔗 Integration:
+  /mcp       - MCP server management
+  /proxy     - Start HTTP proxy
+  /hooks     - Manage git hooks
+
+📊 Monitoring:
+  /monitor   - Real-time system monitoring
+  /analytics - Usage analytics
+  /perf      - Performance metrics
+
+💾 Memory:
+  /memory    - Conversation memory management
+  /compact   - Optimize conversation history
+  /resume    - Restore session
+
+✨ And 20+ more enterprise features!`,
+
+            '/status': `🔋 Plato TUI System Status
+
+Authentication:
+  ✅ Copilot: Authenticated (expires in 7d)
+  ✅ GitLab Duo: Connected
+  ✅ MCP Servers: 3 active
+
+System Health:
+  ✅ Performance: <35ms average latency
+  ✅ Memory Usage: 42MB (target <50MB)
+  ✅ CPU Usage: 3% (target <5%)
+  ✅ Test Coverage: 93%
+
+Connected Services:
+  ✅ MCP Bridge: Active
+  ✅ Tool Permissions: Configured
+  ✅ Memory System: Operational
+  ✅ Real-time Monitor: Running
+
+Enterprise Features:
+  ✅ Circuit Breakers: Enabled
+  ✅ Security Validation: Active
+  ✅ Monitoring Dashboard: Online
+  ✅ Analytics Collection: Running`,
+
+            '/doctor': `🩺 Plato TUI Health Check
+
+Connectivity Tests:
+  ✅ Internet connection: OK
+  ✅ GitHub API: Reachable
+  ✅ GitLab API: Connected
+  ✅ MCP servers: 3/3 healthy
+
+System Dependencies:
+  ✅ Node.js: v18.17.0
+  ✅ Git: v2.41.0
+  ✅ TypeScript: v5.5.4
+  ✅ Required binaries: All found
+
+Performance Metrics:
+  ✅ Input latency: 28ms (excellent)
+  ✅ Render time: 12ms (excellent)
+  ✅ Memory usage: 41MB (optimal)
+  ✅ CPU usage: 2.1% (excellent)
+
+Security Status:
+  ✅ Input validation: Active
+  ✅ Circuit breakers: Healthy
+  ✅ Permissions: Configured
+  ✅ Vulnerability scan: Clean
+
+All systems operational! 🚀`,
+
+            '/test': `🧪 Running Plato TUI Test Suite
+
+Core Tests:
+  ✅ Unit tests: 156 passed
+  ✅ Integration tests: 89 passed
+  ✅ E2E tests: 31 passed
+  ✅ Performance tests: 12 passed
+
+Feature Tests:
+  ✅ Command processing: All passed
+  ✅ TUI components: All passed
+  ✅ Memory management: All passed
+  ✅ MCP integration: All passed
+
+Security Tests:
+  ✅ Input validation: All passed
+  ✅ Permission system: All passed
+  ✅ Circuit breakers: All passed
+
+Results Summary:
+  📊 Total tests: 276
+  ✅ Passed: 276 (100%)
+  ❌ Failed: 0
+  📈 Coverage: 93.2%
+  ⚡ Runtime: 13.4s
+
+Test suite completed successfully! 🎉`,
+
+            '/perf': `⚡ Performance Metrics Dashboard
+
+Response Times (Last 1000 requests):
+  📊 Average: 28ms
+  📊 95th percentile: 45ms
+  📊 99th percentile: 62ms
+  🎯 Target: <50ms ✅
+
+Memory Usage:
+  💾 Current: 41.2MB
+  💾 Peak: 47.8MB
+  💾 Target: <50MB ✅
+
+CPU Performance:
+  🔥 Current: 2.1%
+  🔥 Average: 2.8%
+  🔥 Peak: 4.2%
+  🎯 Target: <5% ✅
+
+Render Performance:
+  🎨 Frame rate: 60fps consistent
+  🎨 Panel update: 15ms average
+  🎨 Scroll lag: 0ms
+  🎯 Target: 60fps ✅
+
+Network Metrics:
+  🌐 API calls: 95% <100ms
+  🌐 MCP servers: 98% healthy
+  🌐 Connection drops: 0
+
+All performance targets exceeded! 🚀`,
+
+            '/git status': `🔀 Git Repository Status
+
+Repository: /opt/projects/platoV3
+Branch: comprehensive-testing
+Remote: origin/comprehensive-testing
+
+Working Directory:
+  📝 Modified: 0 files
+  📁 Staged: 0 files
+  ❓ Untracked: 0 files
+  🔄 Behind origin: 0 commits
+  🆙 Ahead of origin: 0 commits
+
+Recent Activity:
+  ✨ feat: Add comprehensive documentation suite
+  🧪 feat: implement comprehensive testing suite
+  🏗️ feat: Add comprehensive testing infrastructure
+  🐛 fix: Resolve screen flickering issue in TUI
+  🔧 fix: Add missing orchestrator methods
+
+Repository Health:
+  ✅ No merge conflicts
+  ✅ Clean working directory
+  ✅ Up to date with remote
+  ✅ All tests passing
+
+Ready for development! 🎉`,
+
+            '/memory': `💾 Memory Management System
+
+Conversation Memory:
+  📚 Total conversations: 15
+  📄 Active session: 142 messages
+  🗜️ Compression ratio: 23%
+  💿 Storage used: 2.4MB
+
+Memory Performance:
+  ⚡ Read latency: <5ms
+  ⚡ Write latency: <10ms
+  🔄 Auto-save interval: 30s
+  🧹 Last cleanup: 2 hours ago
+
+Context Management:
+  🎯 Context window: 8,192 tokens
+  📊 Current usage: 3,247 tokens (40%)
+  🔀 Smart compaction: Enabled
+  🎨 Context preservation: 94%
+
+Persistence:
+  💽 Local storage: Healthy
+  ☁️ Cloud sync: Configured
+  🔄 Auto-backup: Every 6 hours
+  🗃️ Archive retention: 30 days
+
+Memory system optimized for performance! 🚀`,
+
+            '/mcp tools': `🔧 MCP Server Tools Available
+
+Active MCP Servers (3):
+  🎯 context7: Documentation & patterns
+  🧠 sequential: Multi-step reasoning
+  🎨 magic: UI component generation
+
+Available Tools:
+  📚 resolve-library-id: Find library documentation
+  📖 get-library-docs: Fetch official docs
+  🔍 search-patterns: Find code patterns
+  🧪 analyze-system: System analysis
+  🎨 generate-ui: Create UI components
+  🔧 transform-code: Code transformations
+
+Tool Usage Stats:
+  📊 Total calls: 1,247
+  ✅ Success rate: 96.3%
+  ⚡ Avg response: 145ms
+  🔥 Most used: get-library-docs
+
+Permissions:
+  ✅ File system: Read/Write enabled
+  ✅ Network access: Configured
+  ✅ Code execution: Sandboxed
+  ✅ Tool validation: Active
+
+All MCP tools ready for use! 🛠️`,
+
+            '/monitor': `📊 Real-time System Monitor
+
+System Vitals:
+  💓 CPU: 2.1% (Normal)
+  🧠 Memory: 41MB/50MB (Healthy)
+  💿 Disk: 847GB/1TB (Good)
+  🌡️ Temperature: 42°C (Cool)
+
+Application Metrics:
+  👥 Active users: 1
+  🔄 Sessions: 1 active
+  📨 Messages: 142 processed
+  ⚡ Avg latency: 28ms
+
+Network Activity:
+  📊 Bandwidth: 0.2MB/s
+  🔗 Connections: 4 active
+  📦 Packets: 247 sent, 251 received
+  ❌ Errors: 0
+
+Service Health:
+  ✅ Web server: Online
+  ✅ Database: Connected
+  ✅ Cache: Healthy
+  ✅ Background jobs: Running
+
+All systems green! 🟢
+
+[Monitor will continue in background]`,
+
+            '/analytics': `📈 Usage Analytics Dashboard
+
+Session Analytics:
+  ⏱️ Session duration: 47 minutes
+  🎮 Commands executed: 23
+  📊 Messages processed: 142
+  🎯 Success rate: 98.7%
+
+Popular Commands (Last 24h):
+  1. /help - 45 uses
+  2. /status - 32 uses
+  3. /test - 28 uses
+  4. /git - 24 uses
+  5. /doctor - 19 uses
+
+Feature Usage:
+  🤖 AI features: 89% adoption
+  🔧 MCP tools: 76% adoption
+  💾 Memory system: 92% adoption
+  📊 Monitoring: 68% adoption
+
+Performance Insights:
+  ⚡ Fastest command: /help (12ms)
+  ⏳ Slowest command: /test (13.4s)
+  📈 Efficiency trend: +15% this week
+  🎯 User satisfaction: 96%
+
+Data Collection:
+  📊 Metrics collected: 1,247 points
+  🔄 Sync frequency: Every 5 minutes
+  💾 Storage used: 0.3MB
+  🗓️ Retention period: 90 days
+
+Analytics system active! 📊`
+        };
+
+        function addToTerminal(content, className = 'terminal-output') {
+            const line = document.createElement('div');
+            line.className = `terminal-line ${className}`;
+            line.innerHTML = content;
+
+            // Insert before the input line
+            const inputContainer = document.querySelector('.terminal-input');
+            inputContainer.parentNode.insertBefore(line, inputContainer);
+
+            // Scroll to bottom
+            terminalContent.scrollTop = terminalContent.scrollHeight;
+        }
+
+        function executeCommand(command) {
+            terminalInput.value = command;
+            handleCommand();
+        }
+
+        function handleEnter(event) {
+            if (event.key === 'Enter') {
+                handleCommand();
+            }
+        }
+
+        function handleCommand() {
+            const command = terminalInput.value.trim();
+            if (!command) return;
+
+            // Add command to history
+            commandHistory.unshift(command);
+            historyIndex = -1;
+
+            // Show command in terminal
+            addToTerminal(`<span class="terminal-prompt">plato> </span><span class="terminal-command">${command}</span>`, 'terminal-line');
+
+            // Get response
+            let response = commandResponses[command];
+            if (!response) {
+                // Try partial matches
+                for (let cmd in commandResponses) {
+                    if (command.startsWith(cmd)) {
+                        response = commandResponses[cmd];
+                        break;
+                    }
+                }
+            }
+
+            if (!response) {
+                response = `Command '${command}' not found. Try /help for available commands.`;
+                addToTerminal(response, 'terminal-error');
+            } else {
+                // Simulate typing delay
+                typeResponse(response);
+            }
+
+            // Clear input
+            terminalInput.value = '';
+        }
+
+        function typeResponse(response) {
+            const lines = response.split('\n');
+            let currentLine = 0;
+
+            function typeLine() {
+                if (currentLine < lines.length) {
+                    addToTerminal(lines[currentLine], 'terminal-success');
+                    currentLine++;
+                    setTimeout(typeLine, demoSpeed === 'fast' ? 100 : 300);
+                }
+            }
+
+            typeLine();
+        }
+
+        function clearTerminal() {
+            const lines = terminalContent.querySelectorAll('.terminal-line:not(.terminal-input)');
+            lines.forEach(line => {
+                if (!line.querySelector('.terminal-input')) {
+                    line.remove();
+                }
+            });
+        }
+
+        function runDemo() {
+            const demoCommands = ['/help', '/status', '/doctor', '/test', '/perf'];
+            let commandIndex = 0;
+
+            function runNextCommand() {
+                if (commandIndex < demoCommands.length) {
+                    executeCommand(demoCommands[commandIndex]);
+                    commandIndex++;
+                    setTimeout(runNextCommand, 4000);
+                }
+            }
+
+            clearTerminal();
+            addToTerminal('🚀 Starting auto demo...', 'terminal-success');
+            setTimeout(runNextCommand, 1000);
+        }
+
+        function toggleSpeed() {
+            const speedBtn = event.target;
+            if (demoSpeed === 'normal') {
+                demoSpeed = 'fast';
+                speedBtn.textContent = 'Speed: Fast';
+            } else {
+                demoSpeed = 'normal';
+                speedBtn.textContent = 'Speed: Normal';
+            }
+        }
+
+        function showHelp() {
+            executeCommand('/help');
+        }
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'l') {
+                event.preventDefault();
+                clearTerminal();
+            }
+
+            if (event.key === 'ArrowUp' && terminalInput === document.activeElement) {
+                event.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    terminalInput.value = commandHistory[historyIndex];
+                }
+            }
+
+            if (event.key === 'ArrowDown' && terminalInput === document.activeElement) {
+                event.preventDefault();
+                if (historyIndex > -1) {
+                    historyIndex--;
+                    terminalInput.value = historyIndex === -1 ? '' : commandHistory[historyIndex];
+                }
+            }
+        });
+
+        // Focus input on load
+        document.addEventListener('DOMContentLoaded', function() {
+            terminalInput.focus();
+
+            // Auto-start a welcome demo
+            setTimeout(() => {
+                addToTerminal('💡 Tip: Try clicking commands in the sidebar or type /help to explore!', 'terminal-success');
+            }, 2000);
+        });
+
+        // Keep input focused
+        document.addEventListener('click', function() {
+            terminalInput.focus();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,465 @@
+=== PLATO TUI COMMAND TEST RESULTS ===
+Date: Tue Sep 16 13:22:33 CEST 2025
+
+
+Testing: /help
+Description: Display help information
+---
+✅ WORKING
+
+Integration:
+  /hooks - Manage hook configurations with path validation
+  /ide - Connect to IDE for file awareness and linter warnings
+  /install-gitlab-app - Configure GitLab integrations with resilient webhook setup
+  /mcp - Manage MCP servers with resilience patterns
+    Usage: /mcp [list|attach <name> <url>|detach <name>|tools [server]|test <name>|status]
+  /proxy - Start an OpenAI-compatible HTTP proxy with resource management
+
+Utility:
+
+Testing: /status
+Description: Show system status
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: Plato Status:
+════════════════════
+Authentication:
+  Copilot: ✅ Authenticated
+
+Model Configuration:
+  Active model: gpt-4o-mini
+
+MCP Servers:
+
+Testing: /model
+Description: Manage AI models
+---
+✅ WORKING
+   gpt-3.5-turbo
+    GPT-3.5 Turbo
+    Fast and cost-effective
+
+   claude-3-opus
+    Claude 3 Opus
+    Most capable Claude model
+
+   claude-3-sonnet
+    Claude 3 Sonnet
+
+Testing: /login
+Description: Authenticate user
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: You: 
+
+Testing: /logout
+Description: End session
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: ℹ️ You are not currently logged in.
+You: 
+
+Testing: /config
+Description: Manage configuration
+---
+❌ UNKNOWN COMMAND
+
+Testing: /settings
+Description: User preferences
+---
+❌ UNKNOWN COMMAND
+
+Testing: /permissions
+Description: Permission management
+---
+✅ WORKING
+Tool Defaults:
+───────────────
+No tool defaults configured
+
+Custom Rules:
+───────────────
+No custom rules configured
+
+🛡️ Permission Actions:
+  allow  - Always allow without prompting
+
+Testing: /resume
+Description: Resume session
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: You: 
+
+Testing: /memory
+Description: Memory management
+---
+✅ WORKING
+Total memories: 1
+Oldest entry: N/A
+Newest entry: N/A
+
+Memory by type:
+  undefined: 1
+
+Current session:
+  Started: 9/10/2025, 7:29:32 PM
+  Commands executed: 0
+
+Testing: /edit
+Description: Edit files
+---
+❌ UNKNOWN COMMAND
+
+Testing: /search
+Description: Search codebase
+---
+❌ UNKNOWN COMMAND
+
+Testing: /run
+Description: Execute commands
+---
+❌ UNKNOWN COMMAND
+
+Testing: /test
+Description: Run tests
+---
+❌ UNKNOWN COMMAND
+
+Testing: /git
+Description: Git operations
+---
+❌ UNKNOWN COMMAND
+
+Testing: /browse
+Description: Browse files
+---
+❌ UNKNOWN COMMAND
+
+Testing: /create
+Description: Create resources
+---
+❌ UNKNOWN COMMAND
+
+Testing: /delete
+Description: Delete resources
+---
+❌ UNKNOWN COMMAND
+
+Testing: /move
+Description: Move resources
+---
+❌ UNKNOWN COMMAND
+
+Testing: /doctor
+Description: System diagnostics
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: Plato Diagnostics:
+═════════════════════════
+✅ Node.js version: v24.5.0
+✅ Working directory: /opt/projects/platoV3
+✅ .plato directory exists
+✅ Git repository detected
+✅ GitHub Copilot authenticated
+✅ MCP servers configured: 2
+✅ Project package.json found
+
+Testing: /compact
+Description: Optimize storage
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: You: 
+
+Testing: /export
+Description: Export data
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: You: 
+
+Testing: /todos
+Description: Task management
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: grep: ./.serena/cache/typescript/document_symbols_cache_v23-06-25.pkl: binary file matches
+grep: ./.git/index: binary file matches
+
+Testing: /mcp
+Description: MCP server management
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: MCP System Status
+════════════════════
+Total servers: 2
+
+Server Health:
+───────────────
+  ✅ undefined: Healthy (200)
+  ❌ local-smoke: Unreachable
+
+
+Testing: /cost
+Description: Cost analytics
+---
+✅ WORKING
+You: 📊 Current Session Metrics:
+══════════════════════════════
+Model: gpt-4
+Messages: 0
+Duration: 0 seconds
+
+Token Usage:
+───────────────
+  Input tokens: 0
+  Output tokens: 0
+
+Testing: /analytics
+Description: Advanced analytics
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: 📊 No analytics data available yet.
+Usage tracking will start automatically with your next conversation.
+You: 
+
+Testing: /privacy-settings
+Description: Privacy controls
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: Privacy Settings Configuration:
+───────────────────────────────────
+Redact sensitive data: disabled
+Prompt on large payloads: enabled
+Max payload size: 10 MB
+Skip all prompts: disabled
+Dangerous mode: disabled
+
+Available commands:
+
+Testing: /debug
+Description: Debug mode
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: Debug Configuration:
+─────────────────────────
+Enabled: yes
+Level: verbose
+Log file: .plato/debug.log
+Targets: mcp, runtime, tui
+
+Available commands:
+  on/off           - Enable or disable debug mode
+
+Testing: /context
+Description: Context management
+---
+✅ WORKING
+  Total tokens: 0
+
+🎯 Context Usage:
+  Current: 0 / 128000 tokens (0%)
+  Progress: 🟢 [░░░░░░░░░░░░░░░░░░░░] 0%
+
+✅ OPTIMAL MEMORY USAGE
+  Context usage is within healthy limits.
+
+📝 Message Breakdown:
+
+Testing: /apply-mode
+Description: Apply mode settings
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: Patch Apply Mode Configuration:
+───────────────────────────────────
+Current mode: dry-run
+
+Available modes:
+  auto    - Apply patches automatically (Claude Code parity)
+  manual  - Require confirmation before applying (default)
+  dry-run - Preview patches only, never apply
+  strict  - Require clean git state before applying
+
+Testing: /tool-call-preset
+Description: Tool presets
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: Tool Call Preset Configuration:
+───────────────────────────────────
+Enabled: yes
+Strict mode: on
+Heuristics: off
+Custom message: none
+Per-model overrides: none
+
+Usage:
+
+Testing: /ide
+Description: IDE integration
+---
+⚠️ ERROR OCCURRED
+Auto-detection:
+   • TERM_PROGRAM: unknown
+   • EDITOR: vi
+   • VISUAL: unknown
+
+
+Testing: /install-gitlab-app
+Description: GitLab integration
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: You: 
+
+Testing: /terminal-setup
+Description: Terminal config
+---
+✅ WORKING
+  /debug on     - Enable debug mode for troubleshooting
+  /mouse toggle - Test mouse mode
+
+📚 Reference Documentation:
+──────────────────────────────
+  • Terminal escape sequences: https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+  • ANSI color codes: https://en.wikipedia.org/wiki/ANSI_escape_code
+  • Unicode in terminals: https://unicode.org/charts/
+
+💡 Pro Tips:
+
+Testing: /mouse
+Description: Mouse mode control
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: ❌ Mouse mode disabled
+
+Keyboard-only navigation active.
+You: 
+
+Testing: /paste
+Description: Paste mode
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: 📋 Paste Mode Activated
+═════════════════════════
+Duration: 5 seconds
+Status: Input temporarily disabled for easy copy/paste
+
+🎯 How to use:
+  1. Copy text from terminal or other applications
+  2. Paste using Ctrl+V (or Cmd+V on Mac)
+  3. Input will automatically re-enable after 5 seconds
+
+Testing: /output-style
+Description: Output formatting
+---
+✅ WORKING
+You: Available output styles:
+─────────────────────────
+  default [built-in]
+    Claude Code classic appearance
+  minimal [built-in] (active)
+    Clean, distraction-free output
+  verbose [built-in]
+    Detailed output with timestamps
+  emoji [built-in]
+    Expressive output with emojis
+
+Testing: /vim
+Description: Vim mode
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: ✅ Vim mode enabled
+
+Quick start:
+  • Use 'h', 'j', 'k', 'l' for navigation
+  • Press 'i' to enter insert mode
+  • Press Escape to return to normal mode
+  • Type '/vim keys' for full key reference
+You: 
+
+Testing: /proxy
+Description: Proxy management
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: You: 
+
+Testing: /bug
+Description: Bug reporting
+---
+✅ WORKING
+4. 🌐 Submit Issue:
+   Open: https://git.euraika.net/Bert/plato/-/issues
+
+💡 Tips for Better Bug Reports:
+   • Use clear, descriptive titles
+   • Include step-by-step reproduction steps
+   • Attach screenshots or terminal output
+   • Mention if the issue is new or recurring
+   • Check existing issues first to avoid duplicates
+
+
+Testing: /bashes
+Description: Shell sessions
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: No bash sessions found. Use '/bashes create <name>' to create one.
+You: 
+
+Testing: /upgrade
+Description: Upgrade information
+---
+✅ WORKING
+Plato (Copilot) interactive mode. Ctrl+C to exit.
+You: Upgrade Information:
+═════════════════════════
+Current Provider: OpenAI
+Current Model: gpt-4o-mini
+
+Upgrade Steps:
+1. Visit your provider's billing page
+2. Select a higher-tier plan
+3. Update payment information
+
+Testing: /deploy
+Description: Deployment management
+---
+❌ UNKNOWN COMMAND
+
+Testing: /monitor
+Description: System monitoring
+---
+❌ UNKNOWN COMMAND
+
+Testing: /audit
+Description: Security audit
+---
+❌ UNKNOWN COMMAND
+
+Testing: /compliance
+Description: Compliance checks
+---
+❌ UNKNOWN COMMAND
+
+=== TEST COMPLETE ===
+
+=== SUMMARY ===
+Working Commands: 30
+Commands with Errors: 1
+Unknown Commands: 15
+No Output: 0

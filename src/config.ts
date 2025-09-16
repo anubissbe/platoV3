@@ -17,6 +17,7 @@ export type Config = {
   model?: { active?: string };
   statusline?: { format?: string; enabled?: boolean };
   editing?: { autoApply?: "on" | "off" };
+  applyMode?: "auto" | "manual" | "dry-run" | "strict" | "off";
   privacy?: {
     redact?: boolean;
     prompt_on_large_payloads?: boolean;
@@ -80,6 +81,13 @@ export type Config = {
       retentionDays?: number;
     };
   };
+  debug?: {
+    enabled?: boolean;
+    level?: "minimal" | "verbose" | "full";
+    targets?: string[];
+    logFile?: string;
+  };
+  vimMode?: boolean;
 };
 
 const HOME = os.homedir();
@@ -113,6 +121,19 @@ export async function loadConfig(): Promise<Config> {
     cached.context = { roots: [process.cwd()], selected: [] };
   if (!cached.toolCallPreset)
     cached.toolCallPreset = { enabled: true, strictOnly: true };
+  if (!cached.outputStyle)
+    cached.outputStyle = { active: "default", custom: [] };
+  if (!cached.applyMode) cached.applyMode = "manual";
+
+  // Initialize debug system defaults
+  if (!cached.debug) {
+    cached.debug = {
+      enabled: false,
+      level: "minimal",
+      targets: [],
+      logFile: ".plato/debug.log",
+    };
+  }
 
   // Initialize permission system defaults
   if (!cached.permissions) {
@@ -163,6 +184,7 @@ export async function setConfigValue(
       "permissions.emergencyStop",
       "permissions.autoSwitchProfiles",
       "permissions.interactivePrompts",
+      "debug.enabled",
     ].includes(key)
   ) {
     parsedValue = value === "true" || value === "on";
@@ -192,8 +214,26 @@ export async function setConfigValue(
     }
     parsedValue = value;
   }
+  // Apply mode validation
+  else if (["applyMode"].includes(key)) {
+    if (!["auto", "manual", "dry-run", "strict", "off"].includes(value)) {
+      throw new Error(
+        `Invalid value for ${key}: expected 'auto', 'manual', 'dry-run', 'strict', or 'off'`,
+      );
+    }
+    parsedValue = value;
+  }
+  // Debug level validation
+  else if (["debug.level"].includes(key)) {
+    if (!["minimal", "verbose", "full"].includes(value)) {
+      throw new Error(
+        `Invalid value for ${key}: expected 'minimal', 'verbose', or 'full'`,
+      );
+    }
+    parsedValue = value;
+  }
   // JSON fields
-  else if (["toolCallPreset", "statusline", "editing"].includes(key)) {
+  else if (["toolCallPreset", "statusline", "editing", "debug"].includes(key)) {
     try {
       parsedValue = JSON.parse(value);
     } catch {
@@ -247,6 +287,7 @@ function mergeConfig(a: Config, b: Config): Config {
     statusline: { ...(a.statusline || {}), ...(b.statusline || {}) },
     privacy: { ...(a.privacy || {}), ...(b.privacy || {}) },
     status: { ...(a.status || {}), ...(b.status || {}) },
+    debug: { ...(a.debug || {}), ...(b.debug || {}) },
   };
 }
 

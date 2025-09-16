@@ -1,0 +1,315 @@
+# Enterprise GitLab CI/CD Pipeline for Plato TUI
+# Complete DevSecOps pipeline with security, testing, and monitoring
+
+stages:
+  - validate
+  - test
+  - security
+  - build
+  - deploy-staging
+  - deploy-production
+  - monitor
+
+variables:
+  NODE_VERSION: "20"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  REGISTRY: $CI_REGISTRY
+  IMAGE_NAME: $CI_PROJECT_PATH
+  KUBECONFIG: "/tmp/kubeconfig"
+
+# Global before script
+before_script:
+  - apk add --no-cache curl git
+  - node --version
+  - npm --version
+
+# Cache configuration
+cache:
+  paths:
+    - node_modules/
+    - .npm/
+  key:
+    files:
+      - package-lock.json
+
+# Stage 1: Code Validation
+lint:
+  stage: validate
+  image: node:${NODE_VERSION}-alpine
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run lint
+    - npm run fmt -- --check
+    - npm run typecheck
+  artifacts:
+    reports:
+      junit: lint-results.xml
+    expire_in: 1 day
+
+# Stage 2: Comprehensive Testing
+.test_template: &test_template
+  stage: test
+  image: node:${NODE_VERSION}-alpine
+  before_script:
+    - apk add --no-cache git
+    - npm ci --cache .npm --prefer-offline
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      junit: junit.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage/cobertura-coverage.xml
+    paths:
+      - coverage/
+    expire_in: 7 days
+
+test:unit:
+  <<: *test_template
+  script:
+    - npm run test:unit -- --coverage --ci --reporters=default --reporters=jest-junit
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+
+test:integration:
+  <<: *test_template
+  script:
+    - npm run test:integration -- --coverage --ci --reporters=default --reporters=jest-junit
+
+test:e2e:
+  <<: *test_template
+  services:
+    - docker:20.10.16-dind
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: "/certs"
+  script:
+    - apk add --no-cache docker-compose
+    - docker-compose -f docker-compose.test.yml up -d
+    - npm run test:e2e -- --ci
+    - docker-compose -f docker-compose.test.yml down
+  after_script:
+    - docker-compose -f docker-compose.test.yml logs
+
+test:performance:
+  <<: *test_template
+  script:
+    - npm run test:performance -- --ci
+    - npm run perf:benchmark
+  artifacts:
+    reports:
+      performance: performance-results.json
+
+# Stage 3: Security Scanning
+security:sast:
+  stage: security
+  image: node:${NODE_VERSION}-alpine
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm audit --audit-level=high
+    - npm run security:scan
+  artifacts:
+    reports:
+      sast: security-results.json
+  allow_failure: false
+
+security:dependency:
+  stage: security
+  image: owasp/dependency-check:latest
+  script:
+    - /usr/share/dependency-check/bin/dependency-check.sh
+      --project "Plato TUI"
+      --scan .
+      --format JSON
+      --out dependency-check-results.json
+  artifacts:
+    reports:
+      dependency_scanning: dependency-check-results.json
+  allow_failure: false
+
+security:secrets:
+  stage: security
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache git
+  script:
+    - |
+      git log --all --pretty=format: --name-only | sort -u | while read file; do
+        if [ -f "$file" ]; then
+          if grep -qE "(password|secret|key|token)" "$file"; then
+            echo "Potential secret found in $file"
+            exit 1
+          fi
+        fi
+      done
+  allow_failure: false
+
+# Stage 4: Build and Package
+build:docker:
+  stage: build
+  image: docker:20.10.16
+  services:
+    - docker:20.10.16-dind
+  variables:
+    DOCKER_BUILDKIT: 1
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - |
+      docker build \
+        --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+        --build-arg VCS_REF=$CI_COMMIT_SHA \
+        --build-arg VERSION=$CI_COMMIT_REF_NAME \
+        --cache-from $CI_REGISTRY_IMAGE:latest \
+        --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA \
+        --tag $CI_REGISTRY_IMAGE:latest \
+        --file Dockerfile.enterprise \
+        .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE:latest
+  only:
+    - main
+    - develop
+    - tags
+
+build:helm:
+  stage: build
+  image: alpine/helm:latest
+  script:
+    - helm package k8s/helm/plato --version $CI_COMMIT_REF_NAME
+    - helm push plato-$CI_COMMIT_REF_NAME.tgz oci://$CI_REGISTRY/$CI_PROJECT_PATH/helm
+  artifacts:
+    paths:
+      - "*.tgz"
+  only:
+    - tags
+
+# Stage 5: Staging Deployment
+deploy:staging:
+  stage: deploy-staging
+  image: bitnami/kubectl:latest
+  environment:
+    name: staging
+    url: https://plato-staging.k8s.local
+  before_script:
+    - echo "$KUBECONFIG_STAGING" | base64 -d > $KUBECONFIG
+    - kubectl version --client
+  script:
+    - |
+      helm upgrade --install plato-staging k8s/helm/plato \
+        --namespace plato-staging \
+        --create-namespace \
+        --set image.tag=$CI_COMMIT_SHA \
+        --set environment=staging \
+        --set ingress.host=plato-staging.k8s.local \
+        --wait --timeout=600s
+    - kubectl rollout status deployment/plato-staging -n plato-staging
+    - |
+      # Smoke tests
+      kubectl run smoke-test --image=curlimages/curl:latest --rm -i --restart=Never \
+        -- curl -f http://plato-staging.k8s.local/health || exit 1
+  only:
+    - develop
+  when: manual
+
+# Stage 6: Production Deployment
+deploy:production:
+  stage: deploy-production
+  image: bitnami/kubectl:latest
+  environment:
+    name: production
+    url: https://plato.k8s.local
+  before_script:
+    - echo "$KUBECONFIG_PROD" | base64 -d > $KUBECONFIG
+    - kubectl version --client
+  script:
+    - |
+      # Blue-Green Deployment Strategy
+      CURRENT_COLOR=$(kubectl get service plato-service -n plato-production -o jsonpath='{.spec.selector.color}' || echo "blue")
+      NEW_COLOR="green"
+      if [ "$CURRENT_COLOR" = "green" ]; then
+        NEW_COLOR="blue"
+      fi
+
+      echo "Deploying to $NEW_COLOR environment"
+
+      helm upgrade --install plato-$NEW_COLOR k8s/helm/plato \
+        --namespace plato-production \
+        --create-namespace \
+        --set image.tag=$CI_COMMIT_SHA \
+        --set environment=production \
+        --set service.selector.color=$NEW_COLOR \
+        --set ingress.host=plato.k8s.local \
+        --wait --timeout=600s
+
+      kubectl rollout status deployment/plato-$NEW_COLOR -n plato-production
+
+      # Health check on new deployment
+      kubectl run health-check --image=curlimages/curl:latest --rm -i --restart=Never \
+        -- curl -f http://plato-$NEW_COLOR.plato-production.svc.cluster.local:3000/health
+
+      # Switch traffic to new color
+      kubectl patch service plato-service -n plato-production \
+        -p '{"spec":{"selector":{"color":"'$NEW_COLOR'"}}}'
+
+      echo "Traffic switched to $NEW_COLOR environment"
+
+      # Final verification
+      sleep 30
+      kubectl run final-check --image=curlimages/curl:latest --rm -i --restart=Never \
+        -- curl -f http://plato.k8s.local/health
+  only:
+    - tags
+  when: manual
+
+# Stage 7: Monitoring Setup
+setup:monitoring:
+  stage: monitor
+  image: bitnami/kubectl:latest
+  script:
+    - echo "$KUBECONFIG_PROD" | base64 -d > $KUBECONFIG
+    - kubectl apply -f monitoring/prometheus-rules.yml -n plato-production
+    - kubectl apply -f monitoring/service-monitor.yml -n plato-production
+    - |
+      # Configure Grafana dashboard
+      curl -X POST "$GRAFANA_URL/api/dashboards/db" \
+        -H "Authorization: Bearer $GRAFANA_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d @monitoring/grafana/plato-dashboard.json
+  only:
+    - tags
+  when: manual
+
+# Container scanning with Trivy
+container:scan:
+  stage: security
+  image: aquasec/trivy:latest
+  script:
+    - trivy image --exit-code 0 --no-progress --format template --template "@contrib/sarif.tpl" -o trivy-results.sarif $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - trivy image --exit-code 1 --severity CRITICAL --no-progress $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+  artifacts:
+    reports:
+      container_scanning: trivy-results.sarif
+  dependencies:
+    - build:docker
+  only:
+    - main
+    - develop
+    - tags
+
+# Notification on failure
+notify:failure:
+  stage: .post
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - |
+      curl -X POST -H 'Content-type: application/json' \
+        --data '{"text":"Plato TUI Pipeline Failed - Job: '$CI_JOB_NAME' - Branch: '$CI_COMMIT_REF_NAME'"}' \
+        $SLACK_WEBHOOK_URL
+  when: on_failure
+  only:
+    - main
+    - develop
+    - tags
