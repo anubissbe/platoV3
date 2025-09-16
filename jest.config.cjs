@@ -7,12 +7,16 @@ module.exports = {
   moduleNameMapper: {
     "^(\\.{1,2}/.*)\\.js$": "$1",
     "^ink$": "<rootDir>/src/__tests__/__mocks__/ink.ts",
+    "^ink-testing-library$": "<rootDir>/src/__tests__/__mocks__/ink-testing-library.ts",
+    "^boxen$": "<rootDir>/src/__tests__/__mocks__/boxen.ts",
+    "^strip-ansi$": "<rootDir>/src/__tests__/__mocks__/strip-ansi.ts",
+    "^chalk$": "<rootDir>/src/__tests__/__mocks__/chalk.ts",
     "^react$": "<rootDir>/node_modules/react/index.js",
     "^react-dom$": "<rootDir>/node_modules/react-dom/index.js",
   },
 
   transformIgnorePatterns: [
-    "node_modules/(?!(ink|ink-testing-library|@ink-ui|react|react-dom)/)",
+    "node_modules/(?!(ink|ink-testing-library|@ink-ui|react|react-dom|boxen|strip-ansi|chalk)/)",
   ],
 
   transform: {

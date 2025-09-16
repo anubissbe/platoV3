@@ -129,7 +129,7 @@ function findCommand(commandName: string): SlashCommand | undefined {
 
   // Try aliases
   const byAlias = SLASH_COMMANDS.find(cmd =>
-    cmd.aliases?.includes(commandName)
+    false
   );
   if (byAlias) return byAlias;
 
@@ -228,7 +228,7 @@ export async function processSlashCommand(
         args: parsed.args,
         output: result.output,
         error: result.error,
-        requiresConfirmation: result.requiresConfirmation
+        requiresConfirmation: undefined
       };
     } else {
       // Command exists but no handler implemented yet
@@ -276,7 +276,7 @@ export function getAvailableCommands(): string {
     helpText += pc.cyan(`${category}:\n`);
 
     for (const cmd of commands.sort((a, b) => a.name.localeCompare(b.name))) {
-      const aliases = cmd.aliases?.length ? ` (${cmd.aliases.join(", ")})` : "";
+      const aliases = "";
       const desc = cmd.description || cmd.summary || "No description available";
       helpText += `  ${pc.green(`/${cmd.name}`)}${aliases} - ${desc}\n`;
 

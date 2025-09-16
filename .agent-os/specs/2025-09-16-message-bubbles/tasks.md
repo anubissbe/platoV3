@@ -7,66 +7,66 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 
 ## Tasks
 
-### Phase 1: Test Foundation & Core Types (TDD Setup)
+### Phase 1: Test Foundation & Core Types (TDD Setup) ✅ COMPLETED
 
-#### Task 1.1: Test Infrastructure Setup
-- [ ] Create test utilities for React Ink component testing
-- [ ] Set up Jest configuration for terminal UI testing
-- [ ] Create mock factories for message data
-- [ ] Implement test helpers for TUI rendering and assertions
-- [ ] Create snapshot testing utilities for terminal output
+#### Task 1.1: Test Infrastructure Setup ✅ COMPLETED
+- [x] Create test utilities for React Ink component testing
+- [x] Set up Jest configuration for terminal UI testing
+- [x] Create mock factories for message data
+- [x] Implement test helpers for TUI rendering and assertions
+- [x] Create snapshot testing utilities for terminal output
 
-#### Task 1.2: Core Type Definitions & Tests
-- [ ] Write tests for Message interface structure
-- [ ] Write tests for ChatEntry interface requirements
-- [ ] Create failing tests for message role validation
-- [ ] Implement Message and ChatEntry TypeScript interfaces
-- [ ] Add comprehensive type validation tests
-- [ ] Create utility types for message formatting
+#### Task 1.2: Core Type Definitions & Tests ✅ COMPLETED
+- [x] Write tests for Message interface structure
+- [x] Write tests for ChatEntry interface requirements
+- [x] Create failing tests for message role validation
+- [x] Implement Message and ChatEntry TypeScript interfaces
+- [x] Add comprehensive type validation tests
+- [x] Create utility types for message formatting
 
-### Phase 2: Basic Message Rendering (Core Functionality)
+### Phase 2: Basic Message Rendering (Core Functionality) ✅ COMPLETED
 
-#### Task 2.1: Simple Message Display
-- [ ] Write failing tests for basic message text rendering
-- [ ] Write tests for message role identification (user/assistant/system)
-- [ ] Implement MessageBubble component with basic text display
-- [ ] Add role-based styling (colors, prefixes)
-- [ ] Implement word wrapping for terminal width
-- [ ] Add tests for text truncation and overflow handling
+#### Task 2.1: Simple Message Display ✅ COMPLETED
+- [x] Write failing tests for basic message text rendering
+- [x] Write tests for message role identification (user/assistant/system)
+- [x] Implement MessageBubble component with basic text display
+- [x] Add role-based styling (colors, prefixes)
+- [x] Implement word wrapping for terminal width
+- [x] Add tests for text truncation and overflow handling
 
-#### Task 2.2: Message Metadata Display
-- [ ] Write tests for timestamp formatting and display
-- [ ] Write tests for token count display when available
-- [ ] Implement timestamp rendering in human-readable format
-- [ ] Add token usage display for messages with metadata
-- [ ] Create tests for metadata positioning and alignment
-- [ ] Implement optional metadata toggle functionality
+#### Task 2.2: Message Metadata Display ✅ COMPLETED
+- [x] Write tests for timestamp formatting and display
+- [x] Write tests for token count display when available
+- [x] Implement timestamp rendering in human-readable format
+- [x] Add token usage display for messages with metadata
+- [x] Create tests for metadata positioning and alignment
+- [x] Implement optional metadata toggle functionality
 
-### Phase 3: Content Type Support (Rich Content)
+### Phase 3: Content Type Support (Rich Content) ✅ COMPLETED
 
-#### Task 3.1: Tool Call Visualization
-- [ ] Write failing tests for tool call block detection
-- [ ] Write tests for JSON formatting in terminal
-- [ ] Implement tool call block parser and identifier
-- [ ] Create structured display for tool call arguments
-- [ ] Add syntax highlighting for JSON content
-- [ ] Implement collapsible tool call sections
+#### Task 3.1: Tool Call Visualization ✅ COMPLETED
+- [x] Write failing tests for tool call block detection
+- [x] Write tests for JSON formatting in terminal
+- [x] Implement tool call block parser and identifier
+- [x] Create structured display for tool call arguments
+- [x] Add syntax highlighting for JSON content
+- [x] Implement collapsible tool call sections
 
-#### Task 3.2: Code Block Handling
-- [ ] Write tests for code fence detection (```language)
-- [ ] Write tests for syntax highlighting in terminal
-- [ ] Implement code block extraction and parsing
-- [ ] Add language-specific syntax highlighting
-- [ ] Create code block border and formatting
-- [ ] Implement copy-to-clipboard functionality for code
+#### Task 3.2: Code Block Handling ✅ COMPLETED
+- [x] Write tests for code fence detection (```language)
+- [x] Write tests for syntax highlighting in terminal
+- [x] Implement code block extraction and parsing
+- [x] Add language-specific syntax highlighting
+- [x] Create code block border and formatting
+- [x] Implement copy-to-clipboard functionality for code
 
-#### Task 3.3: Markdown Support
-- [ ] Write tests for basic markdown rendering (bold, italic, links)
-- [ ] Write tests for list formatting in terminal
-- [ ] Implement markdown parser for terminal display
-- [ ] Add support for headers, lists, and emphasis
-- [ ] Create link detection and formatting
-- [ ] Implement table rendering for terminal width
+#### Task 3.3: Markdown Support ✅ COMPLETED
+- [x] Write tests for basic markdown rendering (bold, italic, links)
+- [x] Write tests for list formatting in terminal
+- [x] Implement markdown parser for terminal display
+- [x] Add support for headers, lists, and emphasis
+- [x] Create link detection and formatting
+- [x] Implement table rendering for terminal width
 
 ### Phase 4: Interactive Features (User Experience)
 
@@ -124,13 +124,13 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 
 ### Phase 7: Integration & Testing (System Integration)
 
-#### Task 7.1: TUI Integration
-- [ ] Write integration tests with existing TUI components
-- [ ] Write tests for keyboard handler integration
-- [ ] Integrate MessageBubbles with main TUI application
-- [ ] Connect keyboard handlers and event management
-- [ ] Implement proper component lifecycle management
-- [ ] Add integration with session persistence
+#### Task 7.1: TUI Integration ✅ COMPLETED
+- [x] Write integration tests with existing TUI components
+- [x] Write tests for keyboard handler integration
+- [x] Integrate MessageBubbles with main TUI application
+- [x] Connect keyboard handlers and event management
+- [x] Implement proper component lifecycle management
+- [x] Add integration with session persistence
 
 #### Task 7.2: Performance Testing & Optimization
 - [ ] Write performance tests for large conversations
