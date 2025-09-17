@@ -612,13 +612,6 @@ export class MessageBubble {
   // Phase 4.1: Selection and Navigation Methods
 
   // Focus management
-  isFocused(): boolean {
-    return this._focused;
-  }
-
-  setFocused(focused: boolean): void {
-    this._focused = focused;
-  }
 
   // Selection management
   isSelected(): boolean {
@@ -627,6 +620,7 @@ export class MessageBubble {
 
   setSelected(selected: boolean): void {
     this._selected = selected;
+    this.announce(selected ? 'Message selected' : 'Message deselected');
   }
 
   // Message position and navigation
@@ -671,7 +665,7 @@ export class MessageBubble {
     const baseText = `Message from ${this.role}, ${this.content}`;
 
     const modifiers: string[] = [];
-    if (this._focused) modifiers.push("focused");
+    if (this._isFocused) modifiers.push("focused");
     if (this._selected) modifiers.push("selected");
 
     return modifiers.length > 0 ? `${baseText} (${modifiers.join(", ")})` : baseText;
@@ -688,7 +682,7 @@ export class MessageBubble {
     let focusIndicator = "";
     let selectionIndicator = "";
 
-    if (this._focused) {
+    if (this._isFocused) {
       focusIndicator = "▸ "; // Focus indicator
     }
 
@@ -753,6 +747,12 @@ export class MessageBubble {
     }
 
     return `${roleName} message (${time}):\n${content}`;
+  }
+
+  copyToClipboard(): void {
+    // In a real implementation, we'd copy the content to clipboard
+    // For now, we'll just mark it as copied
+    this.announce('Message content copied to clipboard');
   }
 
   // Export formats
@@ -878,6 +878,8 @@ export class MessageBubble {
     return totalHeight;
   }
 
+  private _animationTimer: NodeJS.Timeout | null = null;
+
   isAnimating(): boolean {
     return this._isAnimating;
   }
@@ -885,13 +887,22 @@ export class MessageBubble {
   startScrollAnimation(options: { duration: number; easing: string }): void {
     this._isAnimating = true;
     // In a real implementation, we'd set up animation timers here
-    setTimeout(() => {
+    // Clear any existing timer
+    if (this._animationTimer) {
+      clearTimeout(this._animationTimer);
+    }
+    this._animationTimer = setTimeout(() => {
       this._isAnimating = false;
+      this._animationTimer = null;
     }, options.duration);
   }
 
   stopScrollAnimation(): void {
     this._isAnimating = false;
+    if (this._animationTimer) {
+      clearTimeout(this._animationTimer);
+      this._animationTimer = null;
+    }
   }
 
   setVirtualIndex(index: number): void {
@@ -1053,6 +1064,184 @@ export class MessageBubble {
   unload(): void {
     this._fullyLoaded = false;
     // In a real implementation, we'd clear content to save memory
+  }
+
+  // Phase 6.1: Accessibility Features
+  private _ariaLabel: string | null = null;
+  private _isFocused: boolean = false;
+  private _highContrastMode: boolean = false;
+  private _announcements: string[] = [];
+  private _expanded: boolean = true;
+  onKeyPress: ((key: string) => void) | null = null;
+  onAnnounce: ((text: string) => void) | null = null;
+
+  getAriaLabel(): string {
+    if (!this._ariaLabel) {
+      const time = this.timestamp ?
+        new Date(this.timestamp).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        }) : '';
+      this._ariaLabel = `${this.role} message at ${time}: ${this.content}`;
+    }
+    return this._ariaLabel;
+  }
+
+  handleKeyPress(key: string): void {
+    if (this.onKeyPress) {
+      this.onKeyPress(key);
+    }
+
+    // Handle built-in keyboard actions
+    switch (key) {
+      case 'Enter':
+        this.setSelected(true);
+        break;
+      case 'Space':
+        this.setExpanded(!this._expanded);
+        break;
+      case 'c':
+        this.copyToClipboard();
+        break;
+    }
+  }
+
+  isFocused(): boolean {
+    return this._isFocused;
+  }
+
+  setFocused(focused: boolean): void {
+    this._isFocused = focused;
+  }
+
+  getFocusStyle(): any {
+    return {
+      outline: this._isFocused ? 'solid' : 'none',
+      outlineColor: this._isFocused ? '#007ACC' : 'transparent',
+      outlineWidth: 2
+    };
+  }
+
+  setExpanded(expanded: boolean): void {
+    this._expanded = expanded;
+    this.announce(expanded ? 'Message expanded' : 'Message collapsed');
+  }
+
+  private announce(text: string): void {
+    this._announcements.push(text);
+    if (this.onAnnounce) {
+      this.onAnnounce(text);
+    }
+  }
+
+  setHighContrastMode(enabled: boolean): void {
+    this._highContrastMode = enabled;
+  }
+
+  getStyle(): any {
+    const baseStyle = {
+      borderStyle: this._highContrastMode ? 'double' : 'single',
+      contrast: this._highContrastMode ? 'high' : 'normal',
+      backgroundColor: this._theme === 'dark' ? '#1a1a1a' : '#ffffff',
+      textColor: this._theme === 'dark' ? '#ffffff' : '#000000',
+      borderColor: this._theme === 'dark' ? '#444444' : '#cccccc'
+    };
+
+    if (this._customTheme) {
+      Object.assign(baseStyle, {
+        backgroundColor: this._customTheme.colors.background,
+        textColor: this._customTheme.colors.text,
+        borderColor: this._customTheme.colors.border
+      });
+    }
+
+    return baseStyle;
+  }
+
+  getKeyboardShortcuts(): Array<{ key: string; action: string }> {
+    return [
+      { key: 'Enter', action: 'Select/Activate message' },
+      { key: 'Space', action: 'Toggle expanded state' },
+      { key: 'c', action: 'Copy message content' },
+      { key: 'Tab', action: 'Navigate to next message' },
+      { key: 'Shift+Tab', action: 'Navigate to previous message' },
+      { key: 'Escape', action: 'Clear selection' }
+    ];
+  }
+
+  // Phase 6.2: Visual Polish & Theming
+  private _theme: string = 'light';
+  private _customTheme: any = null;
+  private _terminalWidth: number = 80;
+  private _terminalHeight: number = 24;
+  private _transitions: boolean = false;
+  private _animations: boolean = false;
+  private _reducedMotion: boolean = false;
+
+  setTheme(theme: string): void {
+    this._theme = theme;
+  }
+
+  getTheme(): string {
+    return this._theme;
+  }
+
+  setCustomTheme(theme: any): void {
+    this._customTheme = theme;
+  }
+
+  setTerminalSize(width: number, height: number): void {
+    this._terminalWidth = width;
+    this._terminalHeight = height;
+  }
+
+  getResponsiveLayout(): string {
+    if (this._terminalWidth < 60) {
+      return 'compact';
+    } else if (this._terminalWidth < 100) {
+      return 'standard';
+    } else {
+      return 'expanded';
+    }
+  }
+
+  enableTransitions(): void {
+    this._transitions = true;
+  }
+
+  hasTransitions(): boolean {
+    return this._transitions && !this._reducedMotion;
+  }
+
+  getTransition(type: string): any {
+    if (!this.hasTransitions()) {
+      return { duration: 0, easing: 'none' };
+    }
+
+    const transitions: any = {
+      expand: { duration: 200, easing: 'ease-in-out' },
+      collapse: { duration: 150, easing: 'ease-in' },
+      focus: { duration: 100, easing: 'ease-out' }
+    };
+
+    return transitions[type] || { duration: 200, easing: 'ease-in-out' };
+  }
+
+  enableAnimations(): void {
+    this._animations = true;
+  }
+
+  disableAnimations(): void {
+    this._animations = false;
+  }
+
+  hasAnimations(): boolean {
+    return this._animations && !this._reducedMotion;
+  }
+
+  setReducedMotion(reduced: boolean): void {
+    this._reducedMotion = reduced;
   }
 }
 

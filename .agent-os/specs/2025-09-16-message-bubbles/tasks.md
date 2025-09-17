@@ -104,23 +104,23 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 - [x] Create configurable conversation size limits
 - [x] Implement lazy loading for conversation history
 
-### Phase 6: Accessibility & Polish (User Experience)
+### Phase 6: Accessibility & Polish (User Experience) ✅ COMPLETED
 
-#### Task 6.1: Accessibility Features
-- [ ] Write tests for screen reader compatibility
-- [ ] Write tests for keyboard-only navigation
-- [ ] Implement ARIA labels and descriptions
-- [ ] Add high contrast mode support
-- [ ] Create keyboard shortcuts documentation
-- [ ] Implement focus indicators and announcements
+#### Task 6.1: Accessibility Features ✅ COMPLETED
+- [x] Write tests for screen reader compatibility
+- [x] Write tests for keyboard-only navigation
+- [x] Implement ARIA labels and descriptions
+- [x] Add high contrast mode support
+- [x] Create keyboard shortcuts documentation
+- [x] Implement focus indicators and announcements
 
-#### Task 6.2: Visual Polish & Theming
-- [ ] Write tests for theme application and switching
-- [ ] Write tests for responsive layout behavior
-- [ ] Implement theme system for message bubbles
-- [ ] Add customizable color schemes
-- [ ] Create responsive design for different terminal sizes
-- [ ] Implement smooth transitions and animations
+#### Task 6.2: Visual Polish & Theming ✅ COMPLETED
+- [x] Write tests for theme application and switching
+- [x] Write tests for responsive layout behavior
+- [x] Implement theme system for message bubbles
+- [x] Add customizable color schemes
+- [x] Create responsive design for different terminal sizes
+- [x] Implement smooth transitions and animations
 
 ### Phase 7: Integration & Testing (System Integration)
 

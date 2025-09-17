@@ -930,4 +930,165 @@ describe("Phase 4: Interactive Features", () => {
       });
     });
   });
+
+  // Phase 6: Accessibility & Polish
+  describe("Phase 6: Accessibility & Polish", () => {
+    describe("Task 6.1: Accessibility Features", () => {
+      it("should provide ARIA labels for screen readers", () => {
+        const bubble = new MessageBubble(createMockMessage());
+        const ariaLabel = bubble.getAriaLabel();
+        expect(ariaLabel).toContain("user");
+        expect(ariaLabel).toContain("Test message");
+        expect(ariaLabel).toContain("10:30 AM");
+      });
+
+      it("should support keyboard navigation", () => {
+        const bubble = new MessageBubble(createMockMessage());
+        const mockCallback = jest.fn();
+        bubble.onKeyPress = mockCallback;
+
+        bubble.handleKeyPress("Enter");
+        expect(mockCallback).toHaveBeenCalledWith("Enter");
+
+        bubble.handleKeyPress("Space");
+        expect(mockCallback).toHaveBeenCalledWith("Space");
+      });
+
+      it("should provide focus indicators", () => {
+        const bubble = new MessageBubble(createMockMessage());
+        expect(bubble.isFocused()).toBe(false);
+
+        bubble.setFocused(true);
+        expect(bubble.isFocused()).toBe(true);
+        expect(bubble.getFocusStyle()).toBeDefined();
+      });
+
+      it("should announce state changes to screen readers", () => {
+        const bubble = new MessageBubble(createMockMessage());
+        const announcements: string[] = [];
+        bubble.onAnnounce = (text) => announcements.push(text);
+
+        bubble.setSelected(true);
+        expect(announcements).toContain("Message selected");
+
+        bubble.setExpanded(false);
+        expect(announcements).toContain("Message collapsed");
+      });
+
+      it("should support high contrast mode", () => {
+        const bubble = new MessageBubble(createMockMessage());
+        bubble.setHighContrastMode(true);
+
+        const style = bubble.getStyle();
+        expect(style.borderStyle).toBe("double");
+        expect(style.contrast).toBe("high");
+      });
+
+      it("should provide keyboard shortcuts documentation", () => {
+        const bubble = new MessageBubble(createMockMessage());
+        const shortcuts = bubble.getKeyboardShortcuts();
+
+        expect(shortcuts).toContainEqual({
+          key: "Enter",
+          action: "Select/Activate message"
+        });
+        expect(shortcuts).toContainEqual({
+          key: "Space",
+          action: "Toggle expanded state"
+        });
+        expect(shortcuts).toContainEqual({
+          key: "c",
+          action: "Copy message content"
+        });
+      });
+    });
+
+    describe("Task 6.2: Visual Polish & Theming", () => {
+      it("should support theme switching", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        bubble.setTheme("dark");
+        expect(bubble.getTheme()).toBe("dark");
+
+        bubble.setTheme("light");
+        expect(bubble.getTheme()).toBe("light");
+
+        bubble.setTheme("high-contrast");
+        expect(bubble.getTheme()).toBe("high-contrast");
+      });
+
+      it("should apply theme-specific colors", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        bubble.setTheme("dark");
+        const darkStyle = bubble.getStyle();
+        expect(darkStyle.backgroundColor).toBeDefined();
+        expect(darkStyle.textColor).toBeDefined();
+
+        bubble.setTheme("light");
+        const lightStyle = bubble.getStyle();
+        expect(lightStyle.backgroundColor).not.toBe(darkStyle.backgroundColor);
+      });
+
+      it("should support customizable color schemes", () => {
+        const bubble = new MessageBubble(createMockMessage());
+        const customTheme = {
+          name: "custom",
+          colors: {
+            background: "#1a1a1a",
+            text: "#ffffff",
+            border: "#444444"
+          }
+        };
+
+        bubble.setCustomTheme(customTheme);
+        const style = bubble.getStyle();
+        expect(style.backgroundColor).toBe("#1a1a1a");
+        expect(style.textColor).toBe("#ffffff");
+        expect(style.borderColor).toBe("#444444");
+      });
+
+      it("should handle responsive design for different terminal sizes", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Small terminal
+        bubble.setTerminalSize(40, 20);
+        expect(bubble.getResponsiveLayout()).toBe("compact");
+
+        // Medium terminal
+        bubble.setTerminalSize(80, 24);
+        expect(bubble.getResponsiveLayout()).toBe("standard");
+
+        // Large terminal
+        bubble.setTerminalSize(120, 40);
+        expect(bubble.getResponsiveLayout()).toBe("expanded");
+      });
+
+      it("should implement smooth transitions", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        bubble.enableTransitions();
+        expect(bubble.hasTransitions()).toBe(true);
+
+        const transition = bubble.getTransition("expand");
+        expect(transition.duration).toBe(200);
+        expect(transition.easing).toBe("ease-in-out");
+      });
+
+      it("should provide animation controls", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        bubble.enableAnimations();
+        expect(bubble.hasAnimations()).toBe(true);
+
+        // Can disable for performance
+        bubble.disableAnimations();
+        expect(bubble.hasAnimations()).toBe(false);
+
+        // Reduced motion support
+        bubble.setReducedMotion(true);
+        expect(bubble.hasAnimations()).toBe(false);
+      });
+    });
+  });
 });
