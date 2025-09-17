@@ -5,6 +5,7 @@ This document outlines the testing strategy for achieving comprehensive test cov
 ## Test Organization
 
 ### Directory Structure
+
 ```
 src/
 ├── __tests__/
@@ -25,18 +26,21 @@ src/
 ## Priority Testing Areas
 
 ### Phase 1: Critical Path (Week 1)
+
 1. **Authentication Flow** - Login/logout with Copilot
 2. **Core Commands** - /help, /status, /init, /memory
 3. **File Operations** - Write, edit, patch application
 4. **Session Management** - Save/restore functionality
 
 ### Phase 2: Command Coverage (Week 2)
+
 5. **All 41 Commands** - Individual command tests
 6. **Command Parsing** - Argument handling and validation
 7. **Error Handling** - Invalid commands and edge cases
 8. **Permission System** - Allow/deny rules
 
 ### Phase 3: Integration & E2E (Week 3)
+
 9. **MCP Integration** - Tool-call bridge testing
 10. **Custom Commands** - .plato/commands/ loading
 11. **Keyboard Shortcuts** - Escape, Ctrl+R, etc.
@@ -45,6 +49,7 @@ src/
 ## Mock Strategy
 
 ### What to Mock
+
 - **Always Mock**:
   - GitHub Copilot API responses
   - File system operations (using mock-fs)
@@ -53,6 +58,7 @@ src/
   - Process.exit and console methods
 
 ### What Not to Mock
+
 - **Never Mock**:
   - Pure utility functions
   - Data transformations
@@ -62,25 +68,30 @@ src/
 ## Test Data Management
 
 ### Fixtures
+
 Create reusable test fixtures in `__tests__/fixtures/`:
+
 - Sample session files
 - Mock API responses
 - Example command outputs
 - PLATO.md templates
 
 ### Builders
+
 Implement builder pattern for complex objects:
+
 ```typescript
 class SessionBuilder {
-  withMessages(messages: Message[]): this
-  withModel(model: string): this
-  build(): Session
+  withMessages(messages: Message[]): this;
+  withModel(model: string): this;
+  build(): Session;
 }
 ```
 
 ## Coverage Strategy
 
 ### Coverage Targets by Module
+
 - **Core Modules** (90%+): parsers, validators, formatters
 - **Commands** (85%+): All command handlers
 - **Providers** (80%+): API integration layer
@@ -88,7 +99,8 @@ class SessionBuilder {
 - **Tools** (75%+): Tool implementations
 
 ### Excluded from Coverage
-- Type definition files (*.d.ts)
+
+- Type definition files (\*.d.ts)
 - Test files themselves
 - Build configuration
 - Scripts directory
@@ -96,23 +108,26 @@ class SessionBuilder {
 ## Testing Best Practices
 
 ### Test Naming
+
 ```typescript
-describe('CommandParser', () => {
-  describe('parse', () => {
-    it('should parse slash command with arguments', () => {})
-    it('should handle missing command gracefully', () => {})
-    it('should validate command permissions', () => {})
-  })
-})
+describe("CommandParser", () => {
+  describe("parse", () => {
+    it("should parse slash command with arguments", () => {});
+    it("should handle missing command gracefully", () => {});
+    it("should validate command permissions", () => {});
+  });
+});
 ```
 
 ### Assertion Patterns
+
 - Use specific matchers: `toHaveBeenCalledWith` over `toHaveBeenCalled`
 - Test both success and failure paths
 - Validate error messages, not just error throwing
 - Use snapshot testing sparingly (only for stable output)
 
 ### Performance Considerations
+
 - Keep unit tests under 50ms each
 - Use `beforeAll` for expensive setup
 - Parallelize test execution with `--maxWorkers`
@@ -121,6 +136,7 @@ describe('CommandParser', () => {
 ## Continuous Integration
 
 ### PR Validation
+
 ```yaml
 on: [pull_request]
 jobs:
@@ -139,6 +155,7 @@ jobs:
 ```
 
 ### Coverage Reporting
+
 - Generate coverage reports in CI
 - Fail if coverage drops below 80%
 - Comment PR with coverage delta
@@ -147,12 +164,14 @@ jobs:
 ## Migration Plan
 
 ### Incremental Testing
+
 1. Start with new features (test-first)
 2. Add tests when fixing bugs
 3. Backfill critical path tests
 4. Gradually increase coverage
 
 ### Testing Checklist for PRs
+
 - [ ] New code has corresponding tests
 - [ ] All tests pass locally
 - [ ] Coverage hasn't decreased
@@ -162,12 +181,14 @@ jobs:
 ## Success Metrics
 
 ### Quantitative
+
 - 80%+ overall code coverage achieved
 - All 41 commands have tests
 - Test suite runs in < 60 seconds
 - Zero flaky tests
 
-### Qualitative  
+### Qualitative
+
 - Developers confident in making changes
 - Bugs caught before production
 - Easy to add tests for new features

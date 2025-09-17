@@ -1,0 +1,303 @@
+{
+  "summary": {
+    "totalTests": 423,
+    "passed": 322,
+    "failed": 101,
+    "passRate": 76.1,
+    "failedTestSuites": 23,
+    "passedTestSuites": 13,
+    "totalTestSuites": 36,
+    "suitePassRate": 36.1,
+    "generated": "2025-01-15T15:00:00Z",
+    "environment": "PlatoV3 Test Suite Analysis"
+  },
+  "metrics": {
+    "baseline": {
+      "currentPassRate": 76.1,
+      "targetPassRate": 100.0,
+      "testsToFix": 101,
+      "suitesToFix": 23
+    },
+    "priority": {
+      "critical": 45,
+      "high": 32,
+      "medium": 18,
+      "low": 6
+    },
+    "categories": {
+      "typescript": 38,
+      "module": 25,
+      "runtime": 20,
+      "assertion": 12,
+      "timeout": 6
+    },
+    "modules": {
+      "tools": 28,
+      "tui": 22,
+      "context": 18,
+      "commands": 15,
+      "runtime": 12,
+      "integration": 6
+    },
+    "fixCategories": {
+      "import": 35,
+      "typescript": 30,
+      "mock": 18,
+      "async": 12,
+      "cleanup": 6
+    },
+    "estimatedEffort": {
+      "totalMinutes": 2340,
+      "averagePerTest": 23.2,
+      "criticalEffort": 1125,
+      "highEffort": 768,
+      "mediumEffort": 324,
+      "lowEffort": 123
+    }
+  },
+  "failures": [
+    {
+      "testSuite": "src/tools/native/__tests__/security-manager.test.ts",
+      "testName": "Security and Resource Management › Workspace Sandboxing › should enforce workspace root boundary",
+      "errorType": "Runtime",
+      "errorMessage": "TypeError: The \"paths[0]\" argument must be of type string. Received undefined",
+      "priority": "Critical",
+      "moduleArea": "Tools",
+      "fixCategory": "Mock",
+      "estimatedTime": 25,
+      "rootCause": "SecurityManager constructor receives undefined workspaceRoot parameter",
+      "dependencies": ["All security-manager tests"]
+    },
+    {
+      "testSuite": "src/__tests__/slash-commands.test.ts",
+      "testName": "Module Import Failure",
+      "errorType": "Module",
+      "errorMessage": "Module '../runtime/orchestrator' has no exported member 'orchestrator'",
+      "priority": "Critical",
+      "moduleArea": "Runtime",
+      "fixCategory": "Import",
+      "estimatedTime": 15,
+      "rootCause": "Incorrect import statement - should be default import",
+      "dependencies": ["src/__tests__/keyboard.test.ts"]
+    },
+    {
+      "testSuite": "src/__tests__/keyboard.test.ts",
+      "testName": "Module Import Failure",
+      "errorType": "Module",
+      "errorMessage": "Module '../runtime/orchestrator' has no exported member 'orchestrator'",
+      "priority": "Critical",
+      "moduleArea": "Runtime",
+      "fixCategory": "Import",
+      "estimatedTime": 15,
+      "rootCause": "Incorrect import statement - should be default import",
+      "dependencies": ["src/__tests__/slash-commands.test.ts"]
+    },
+    {
+      "testSuite": "src/tui/keyboard-handler.tsx",
+      "testName": "TypeScript Compilation Errors",
+      "errorType": "TypeScript",
+      "errorMessage": "Property 'originalLength' does not exist on type 'Promise<...>'",
+      "priority": "Critical",
+      "moduleArea": "TUI",
+      "fixCategory": "TypeScript",
+      "estimatedTime": 30,
+      "rootCause": "Missing await on Promise return values",
+      "dependencies": ["All TUI tests"]
+    },
+    {
+      "testSuite": "src/context/__tests__/session-persistence.test.ts",
+      "testName": "File System Operations",
+      "errorType": "Runtime",
+      "errorMessage": "ENOSPC: no space left on device",
+      "priority": "High",
+      "moduleArea": "Context",
+      "fixCategory": "Mock",
+      "estimatedTime": 20,
+      "rootCause": "Test creates too many temporary files, exhausting disk space",
+      "dependencies": ["All context persistence tests"]
+    },
+    {
+      "testSuite": "src/commands/__tests__/analytics-command.test.ts",
+      "testName": "Type Incompatibility",
+      "errorType": "TypeScript",
+      "errorMessage": "Object is of type 'unknown' | Type 'Date' is not assignable to type 'number'",
+      "priority": "High",
+      "moduleArea": "Commands",
+      "fixCategory": "TypeScript",
+      "estimatedTime": 35,
+      "rootCause": "Mock type mismatches and incorrect data types in test setup",
+      "dependencies": ["Analytics service tests"]
+    },
+    {
+      "testSuite": "src/tui/__tests__/status-manager.test.ts",
+      "testName": "Timer Cleanup",
+      "errorType": "Timeout",
+      "errorMessage": "Timeout handle keeping Jest from exiting",
+      "priority": "High",
+      "moduleArea": "TUI",
+      "fixCategory": "Cleanup",
+      "estimatedTime": 20,
+      "rootCause": "setInterval not cleared in test teardown",
+      "dependencies": ["All TUI timer-related tests"]
+    },
+    {
+      "testSuite": "src/persistence/mouse-preferences.ts",
+      "testName": "Auto-save Timer Cleanup",
+      "errorType": "Timeout",
+      "errorMessage": "Auto-save interval keeping Jest from exiting",
+      "priority": "High",
+      "moduleArea": "Persistence",
+      "fixCategory": "Cleanup",
+      "estimatedTime": 15,
+      "rootCause": "Auto-save interval not cleared in cleanup",
+      "dependencies": ["Configuration management tests"]
+    }
+  ],
+  "dependencies": {
+    "suiteLevel": [
+      {
+        "suite": "src/tools/native/__tests__/security-manager.test.ts",
+        "blockingTests": 11,
+        "reason": "SecurityManager constructor undefined parameter affects all tests"
+      },
+      {
+        "suite": "src/tui/__tests__/*.test.ts",
+        "blockingTests": 22,
+        "reason": "TypeScript compilation errors in keyboard-handler.tsx affect TUI tests"
+      },
+      {
+        "suite": "src/__tests__/orchestrator-related.test.ts",
+        "blockingTests": 8,
+        "reason": "Import error affects multiple test files importing orchestrator"
+      }
+    ],
+    "crossCutting": [
+      {
+        "category": "TypeScript Compilation",
+        "affectedTests": 38,
+        "reason": "Build failures prevent test execution"
+      },
+      {
+        "category": "Timer Cleanup",
+        "affectedTests": 6,
+        "reason": "Open handles prevent Jest from clean exit"
+      },
+      {
+        "category": "Mock Configuration",
+        "affectedTests": 25,
+        "reason": "Incorrect mock setup affects multiple test suites"
+      }
+    ]
+  },
+  "infrastructure": {
+    "buildFailures": 7,
+    "configurationIssues": 3,
+    "testEnvironmentProblems": 4
+  },
+  "fixSequence": {
+    "phase1": {
+      "description": "Critical Infrastructure Fixes",
+      "tasks": [
+        "Fix TypeScript compilation errors in keyboard-handler.tsx",
+        "Fix orchestrator import statements",
+        "Fix SecurityManager constructor parameter handling"
+      ],
+      "estimatedTime": 70,
+      "testsUnblocked": 57
+    },
+    "phase2": {
+      "description": "Test Environment Cleanup",
+      "tasks": [
+        "Add timer cleanup in beforeEach/afterEach",
+        "Mock file system operations properly",
+        "Fix type mismatches in test mocks"
+      ],
+      "estimatedTime": 90,
+      "testsUnblocked": 31
+    },
+    "phase3": {
+      "description": "Individual Test Fixes",
+      "tasks": [
+        "Fix remaining assertion failures",
+        "Update deprecated API usage",
+        "Add missing test dependencies"
+      ],
+      "estimatedTime": 130,
+      "testsUnblocked": 13
+    }
+  },
+  "detailedFailures": {
+    "top10Critical": [
+      {
+        "rank": 1,
+        "testSuite": "src/tools/native/__tests__/security-manager.test.ts",
+        "impact": 11,
+        "reason": "All SecurityManager tests fail due to undefined constructor parameter",
+        "fix": "Mock workspaceRoot parameter in test setup"
+      },
+      {
+        "rank": 2,
+        "testSuite": "src/tui/keyboard-handler.tsx",
+        "impact": 8,
+        "reason": "TypeScript compilation errors prevent TUI test execution",
+        "fix": "Add await keywords to Promise-returning function calls"
+      },
+      {
+        "rank": 3,
+        "testSuite": "src/__tests__/slash-commands.test.ts",
+        "impact": 6,
+        "reason": "Orchestrator import error affects command processing tests",
+        "fix": "Change to default import: import orchestrator from '../runtime/orchestrator'"
+      },
+      {
+        "rank": 4,
+        "testSuite": "src/__tests__/keyboard.test.ts",
+        "impact": 6,
+        "reason": "Same orchestrator import error affects keyboard tests",
+        "fix": "Change to default import: import orchestrator from '../runtime/orchestrator'"
+      },
+      {
+        "rank": 5,
+        "testSuite": "src/context/__tests__/session-persistence.test.ts",
+        "impact": 5,
+        "reason": "Disk space exhaustion from temporary file creation",
+        "fix": "Mock file system operations instead of creating real files"
+      },
+      {
+        "rank": 6,
+        "testSuite": "src/commands/__tests__/analytics-command.test.ts",
+        "impact": 4,
+        "reason": "Type mismatches in mock setup and test data",
+        "fix": "Update mock types and use correct data types (timestamps as numbers)"
+      },
+      {
+        "rank": 7,
+        "testSuite": "src/tui/__tests__/status-manager.test.ts",
+        "impact": 3,
+        "reason": "Timer handles not cleaned up, preventing Jest exit",
+        "fix": "Clear intervals in afterEach hooks"
+      },
+      {
+        "rank": 8,
+        "testSuite": "src/persistence/mouse-preferences.ts",
+        "impact": 3,
+        "reason": "Auto-save timer not cleaned up in tests",
+        "fix": "Add cleanup method and call in test teardown"
+      },
+      {
+        "rank": 9,
+        "testSuite": "src/tools/native/__tests__/tool-executor.test.ts",
+        "impact": 2,
+        "reason": "Mock configuration issues for tool execution",
+        "fix": "Update mock setup for SecurityManager dependency"
+      },
+      {
+        "rank": 10,
+        "testSuite": "src/runtime/__tests__/orchestrator-analytics.test.ts",
+        "impact": 2,
+        "reason": "Analytics service mock configuration issues",
+        "fix": "Properly configure analytics service mocks"
+      }
+    ]
+  }
+}

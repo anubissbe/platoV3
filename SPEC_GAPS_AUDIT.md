@@ -1,11 +1,13 @@
 # SPEC GAPS AUDIT - Plato Codebase Review
 
 ## Overview
+
 This audit identifies remaining spec gaps after recent modifications to achieve Claude Code parity. The codebase has been partially updated but requires clarification on several implementation details.
 
 ## Current State Assessment
 
 ### ✅ Already Implemented (from recent modifications)
+
 1. **Session Management**: Auto-save with debouncing implemented in `orchestrator.ts`
 2. **Export Functions**: `exportJSON`, `exportMarkdown`, `exportToClipboard` added
 3. **Tool Call Detection**: Strict regex matching Claude Code format
@@ -17,6 +19,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
 ## 🔴 CRITICAL SPEC GAPS REQUIRING CLARIFICATION
 
 ### SG-A001: Bash Sessions Implementation Missing
+
 - **File**: `src/tools/bashes.ts` (DOES NOT EXIST)
 - **Impact**: `/bashes` command references non-existent module
 - **Current Code**: Line 467 in `app.tsx` imports `'../tools/bashes.js'` which doesn't exist
@@ -27,7 +30,8 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   4. Should sessions persist across Plato restarts?
 
 ### SG-A002: Hooks System Incomplete
-- **File**: `src/tools/hooks.ts` 
+
+- **File**: `src/tools/hooks.ts`
 - **Issue**: `manageHooks` function is imported but not implemented
 - **Line**: 507 in `app.tsx`
 - **Questions**:
@@ -37,6 +41,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   4. Default timeout of 5000ms acceptable?
 
 ### SG-A003: Init Operation Missing
+
 - **File**: `src/ops/init.ts` (DOES NOT EXIST)
 - **Issue**: `/init` command calls non-existent `generateProjectDoc`
 - **Line**: 455 in `app.tsx`
@@ -47,6 +52,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   4. Template for PLATO.md structure?
 
 ### SG-A004: Config Type Coercion Incomplete
+
 - **File**: `src/config.ts`
 - **Issue**: `setConfigValue` doesn't implement type coercion as specified
 - **Current**: Simple key-value storage without validation
@@ -56,6 +62,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   3. Should we validate against a schema file?
 
 ### SG-A005: Security Review Function Scope
+
 - **File**: `src/policies/security.ts`
 - **Issue**: `runSecurityReview` function imported but not defined
 - **Line**: 514 in `app.tsx` references undefined function
@@ -66,6 +73,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   4. Blocking vs warning severity levels?
 
 ### SG-A006: Memory System Placeholder
+
 - **File**: `src/runtime/orchestrator.ts`
 - **Issue**: `getMemory()` and `clearMemory()` return empty/no-op
 - **Lines**: 89-90
@@ -76,6 +84,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   4. Should memory include context about file changes?
 
 ### SG-A007: Output Style Not Applied
+
 - **File**: `src/tui/app.tsx`
 - **Issue**: `/output-style` sets config but doesn't affect actual output
 - **Questions**:
@@ -85,6 +94,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   4. Color/emoji usage per style?
 
 ### SG-A008: Vim Mode Non-Functional
+
 - **File**: `src/tui/app.tsx`
 - **Issue**: `/vim` toggles config but doesn't change input behavior
 - **Line**: 527
@@ -95,6 +105,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   4. Fallback if vim mode can't be implemented?
 
 ### SG-A009: Privacy Settings Storage
+
 - **File**: `src/tui/app.tsx`
 - **Issue**: Telemetry setting stored as string 'true'/'false' not boolean
 - **Line**: 542
@@ -105,6 +116,7 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
   4. GDPR compliance requirements?
 
 ### SG-A010: Doctor Command Minimal
+
 - **File**: `src/ops/doctor.ts`
 - **Issue**: Only checks git/rg/copilot, not comprehensive
 - **Questions**:
@@ -116,33 +128,40 @@ This audit identifies remaining spec gaps after recent modifications to achieve 
 ## 🟡 MEDIUM PRIORITY GAPS
 
 ### SG-B001: Clipboard Support
+
 - **Issue**: `exportToClipboard` uses eval hack for dynamic import
 - **Line**: 130 in `orchestrator.ts`
 - **Question**: Should we add clipboardy as a required dependency or keep optional?
 
 ### SG-B002: Error Message Consistency
+
 - **Issue**: Mix of error formats throughout codebase
 - **Question**: Standardize all errors to Claude Code format `❌ Error: message`?
 
 ### SG-B003: Context File Selection
+
 - **Issue**: `/context` command exists but integration with orchestrator unclear
 - **Question**: Should context files be automatically included in prompts?
 
 ### SG-B004: Model Catalog Management
+
 - **Issue**: Model list hardcoded, no dynamic fetching
 - **Question**: Keep static list or implement provider-specific catalog fetching?
 
 ## 🟢 LOW PRIORITY GAPS
 
 ### SG-C001: Keybinding Conflicts
+
 - **Issue**: Some key combinations might conflict with terminal emulators
 - **Question**: Document known conflicts or attempt detection?
 
 ### SG-C002: Color Support Detection
+
 - **Issue**: ANSI colors assumed, no terminal capability checking
 - **Question**: Add color detection or assume modern terminal?
 
 ### SG-C003: Session File Rotation
+
 - **Issue**: 10MB limit mentioned but rotation not implemented
 - **Question**: Implement rotation or just truncate?
 
@@ -177,6 +196,7 @@ Please provide your decisions on the critical gaps (SG-A001 through SG-A010) so 
 ## FILES THAT NEED CREATION
 
 These files are referenced but don't exist:
+
 1. `src/tools/bashes.ts` - Bash session management
 2. `src/ops/init.ts` - Project documentation generator
 3. `.plato/hooks.yaml` - Hook configuration (example)
@@ -185,6 +205,7 @@ These files are referenced but don't exist:
 ## CONFIGURATION SCHEMA NEEDED
 
 Current config has no validation schema. Need to define:
+
 - Required fields vs optional
 - Type constraints per field
 - Default values

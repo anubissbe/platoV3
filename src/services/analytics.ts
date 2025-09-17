@@ -1,32 +1,39 @@
 /**
  * Analytics Service - Main Entry Point
- * 
+ *
  * Combines CostCalculator and AnalyticsManager for comprehensive cost tracking
  * and analytics functionality as specified in the technical requirements
  */
 
-export { CostCalculator } from './cost-calculator.js';
-export { AnalyticsManager } from './analytics-manager.js';
-export { AnalyticsConfigManager, getAnalyticsConfigManager, formatCost } from './analytics-config.js';
-export * from './analytics-types.js';
+export { CostCalculator } from "./cost-calculator.js";
+export { AnalyticsManager } from "./analytics-manager.js";
+export {
+  AnalyticsConfigManager,
+  getAnalyticsConfigManager,
+  formatCost,
+} from "./analytics-config.js";
+export * from "./analytics-types.js";
 
-import { CostCalculator } from './cost-calculator.js';
-import { AnalyticsManager } from './analytics-manager.js';
-import { AnalyticsConfigManager, getAnalyticsConfigManager } from './analytics-config.js';
-import { 
-  CostMetric, 
-  AnalyticsSummary, 
+import { CostCalculator } from "./cost-calculator.js";
+import { AnalyticsManager } from "./analytics-manager.js";
+import {
+  AnalyticsConfigManager,
+  getAnalyticsConfigManager,
+} from "./analytics-config.js";
+import {
+  CostMetric,
+  AnalyticsSummary,
   AnalyticsManagerOptions,
   AnalyticsQueryOptions,
   ExportFormat,
   DateRange,
   ProviderPricing,
-  TokenPricing
-} from './analytics-types.js';
+  TokenPricing,
+} from "./analytics-types.js";
 
 /**
  * Main Analytics Service - Unified interface for cost tracking
- * 
+ *
  * Provides high-level analytics operations by coordinating between
  * CostCalculator and AnalyticsManager components
  */
@@ -37,7 +44,7 @@ export class AnalyticsService {
 
   constructor(
     costCalculatorOptions?: { pricing?: Partial<ProviderPricing> },
-    analyticsManagerOptions?: AnalyticsManagerOptions
+    analyticsManagerOptions?: AnalyticsManagerOptions,
   ) {
     this.costCalculator = new CostCalculator(costCalculatorOptions?.pricing);
     this.analyticsManager = new AnalyticsManager(analyticsManagerOptions);
@@ -55,7 +62,7 @@ export class AnalyticsService {
 
   /**
    * Record a new AI interaction with automatic cost calculation
-   * 
+   *
    * @param interaction - Details of the AI interaction
    * @returns Promise that resolves when the metric is recorded
    */
@@ -64,7 +71,7 @@ export class AnalyticsService {
     model: string;
     inputTokens: number;
     outputTokens: number;
-    provider: 'copilot' | 'openai' | 'claude';
+    provider: "copilot" | "openai" | "claude";
     command?: string;
     duration: number;
   }): Promise<CostMetric> {
@@ -77,7 +84,7 @@ export class AnalyticsService {
       interaction.provider,
       interaction.model,
       interaction.inputTokens,
-      interaction.outputTokens
+      interaction.outputTokens,
     );
 
     // Create cost metric
@@ -91,7 +98,7 @@ export class AnalyticsService {
       cost,
       provider: interaction.provider,
       command: interaction.command,
-      duration: interaction.duration
+      duration: interaction.duration,
     };
 
     // Record the metric
@@ -103,7 +110,11 @@ export class AnalyticsService {
   /**
    * Get cost metrics for a date range
    */
-  async getMetrics(startDate: number, endDate: number, options?: AnalyticsQueryOptions): Promise<CostMetric[]> {
+  async getMetrics(
+    startDate: number,
+    endDate: number,
+    options?: AnalyticsQueryOptions,
+  ): Promise<CostMetric[]> {
     if (!this.initialized) {
       await this.initialize();
     }
@@ -114,7 +125,10 @@ export class AnalyticsService {
   /**
    * Generate analytics summary for a period
    */
-  async getSummary(period: 'day' | 'week' | 'month', date?: Date): Promise<AnalyticsSummary> {
+  async getSummary(
+    period: "day" | "week" | "month",
+    date?: Date,
+  ): Promise<AnalyticsSummary> {
     if (!this.initialized) {
       await this.initialize();
     }
@@ -125,7 +139,10 @@ export class AnalyticsService {
   /**
    * Export analytics data
    */
-  async exportData(format: ExportFormat, dateRange?: DateRange): Promise<string> {
+  async exportData(
+    format: ExportFormat,
+    dateRange?: DateRange,
+  ): Promise<string> {
     if (!this.initialized) {
       await this.initialize();
     }
@@ -136,8 +153,18 @@ export class AnalyticsService {
   /**
    * Get current cost calculation for a hypothetical interaction
    */
-  calculateCost(provider: string, model: string, inputTokens: number, outputTokens: number): number {
-    return this.costCalculator.calculateCost(provider, model, inputTokens, outputTokens);
+  calculateCost(
+    provider: string,
+    model: string,
+    inputTokens: number,
+    outputTokens: number,
+  ): number {
+    return this.costCalculator.calculateCost(
+      provider,
+      model,
+      inputTokens,
+      outputTokens,
+    );
   }
 
   /**
@@ -172,11 +199,15 @@ export class AnalyticsService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const startOfDay = today.getTime();
-    const endOfDay = startOfDay + (24 * 60 * 60 * 1000) - 1;
+    const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
 
-    const sessionMetrics = await this.analyticsManager.getMetrics(startOfDay, endOfDay, {
-      sessionId
-    });
+    const sessionMetrics = await this.analyticsManager.getMetrics(
+      startOfDay,
+      endOfDay,
+      {
+        sessionId,
+      },
+    );
 
     return sessionMetrics.reduce((total, metric) => total + metric.cost, 0);
   }
@@ -189,7 +220,7 @@ export class AnalyticsService {
       await this.initialize();
     }
 
-    const summary = await this.analyticsManager.getSummary('day');
+    const summary = await this.analyticsManager.getSummary("day");
     return summary.totalCost;
   }
 
@@ -201,7 +232,10 @@ export class AnalyticsService {
     totalTokens: number;
     interactions: number;
     avgCostPerInteraction: number;
-    modelBreakdown: Record<string, { cost: number; tokens: number; interactions: number }>;
+    modelBreakdown: Record<
+      string,
+      { cost: number; tokens: number; interactions: number }
+    >;
   }> {
     if (!this.initialized) {
       await this.initialize();
@@ -210,24 +244,35 @@ export class AnalyticsService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const startOfDay = today.getTime();
-    const endOfDay = startOfDay + (24 * 60 * 60 * 1000) - 1;
+    const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
 
-    const sessionMetrics = await this.analyticsManager.getMetrics(startOfDay, endOfDay, {
-      sessionId
-    });
+    const sessionMetrics = await this.analyticsManager.getMetrics(
+      startOfDay,
+      endOfDay,
+      {
+        sessionId,
+      },
+    );
 
     const totalCost = sessionMetrics.reduce((sum, m) => sum + m.cost, 0);
-    const totalTokens = sessionMetrics.reduce((sum, m) => sum + m.inputTokens + m.outputTokens, 0);
+    const totalTokens = sessionMetrics.reduce(
+      (sum, m) => sum + m.inputTokens + m.outputTokens,
+      0,
+    );
     const interactions = sessionMetrics.length;
 
     // Generate model breakdown
-    const modelBreakdown: Record<string, { cost: number; tokens: number; interactions: number }> = {};
+    const modelBreakdown: Record<
+      string,
+      { cost: number; tokens: number; interactions: number }
+    > = {};
     for (const metric of sessionMetrics) {
       if (!modelBreakdown[metric.model]) {
         modelBreakdown[metric.model] = { cost: 0, tokens: 0, interactions: 0 };
       }
       modelBreakdown[metric.model].cost += metric.cost;
-      modelBreakdown[metric.model].tokens += metric.inputTokens + metric.outputTokens;
+      modelBreakdown[metric.model].tokens +=
+        metric.inputTokens + metric.outputTokens;
       modelBreakdown[metric.model].interactions += 1;
     }
 
@@ -235,8 +280,11 @@ export class AnalyticsService {
       totalCost: Math.round(totalCost * 100) / 100,
       totalTokens,
       interactions,
-      avgCostPerInteraction: interactions > 0 ? Math.round((totalCost / interactions) * 10000) / 10000 : 0,
-      modelBreakdown
+      avgCostPerInteraction:
+        interactions > 0
+          ? Math.round((totalCost / interactions) * 10000) / 10000
+          : 0,
+      modelBreakdown,
     };
   }
 
@@ -312,12 +360,12 @@ export async function createDefaultAnalyticsService(options?: {
   autoSave?: boolean;
   retentionMonths?: number;
 }): Promise<AnalyticsService> {
-  const dataDir = options?.dataDir || '.plato/analytics';
-  
+  const dataDir = options?.dataDir || ".plato/analytics";
+
   // Load user configuration
   const configManager = getAnalyticsConfigManager(dataDir);
   const config = await configManager.load();
-  
+
   // Create service with configuration-driven options
   return new AnalyticsService(
     undefined, // Use default pricing
@@ -328,7 +376,7 @@ export async function createDefaultAnalyticsService(options?: {
       enableCache: true,
       batchSize: 100,
       maxBatchWaitTime: 5000,
-      intelligentBatching: true
-    }
+      intelligentBatching: true,
+    },
   );
 }

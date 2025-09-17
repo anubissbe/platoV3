@@ -1,0 +1,66 @@
+# Multi-stage Enterprise Docker Build for Plato TUI
+# Production-ready with optimization, security hardening, and observability
+
+# Stage 1: Base builder with Node.js and dependencies
+FROM node:20-alpine AS base
+LABEL maintainer="Plato TUI Team" \
+      version="1.0.0" \
+      description="Enterprise Plato TUI Terminal Assistant"
+
+# Install system dependencies and security tools
+RUN apk add --no-cache \
+    dumb-init \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S plato && \
+    adduser -S plato -u 1001 -G plato
+
+# Stage 2: Dependencies installer
+FROM base AS deps
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production --omit=dev && \
+    npm cache clean --force
+
+# Stage 3: Development dependencies and build
+FROM base AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+
+# Copy source and build
+COPY . .
+RUN npm run build && \
+    npm run test:ci && \
+    npm prune --production
+
+# Stage 4: Final production image
+FROM base AS runner
+WORKDIR /app
+
+# Copy application files
+COPY --from=deps --chown=plato:plato /app/node_modules ./node_modules
+COPY --from=builder --chown=plato:plato /app/dist ./dist
+COPY --from=builder --chown=plato:plato /app/package.json ./package.json
+
+# Create necessary directories
+RUN mkdir -p /app/.plato /app/logs && \
+    chown -R plato:plato /app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node dist/cli.js --version || exit 1
+
+# Security: Drop root privileges
+USER plato
+
+# Expose ports for monitoring and MCP
+EXPOSE 8719 3000
+
+# Use dumb-init for proper signal handling
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/cli.js"]

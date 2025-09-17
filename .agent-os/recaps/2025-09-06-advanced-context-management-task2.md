@@ -19,9 +19,10 @@ Implement intelligent file selection with relevance scoring and smart content sa
 ## Technical Implementation
 
 ### FileRelevanceScorer
+
 - **Multi-factor scoring algorithm** with weighted factors:
   - Direct references (imports): 85 points
-  - Symbol matching: 65 points  
+  - Symbol matching: 65 points
   - Import chain distance: 40 points
   - Recent access: 30 points
   - User patterns: 35 points
@@ -31,6 +32,7 @@ Implement intelligent file selection with relevance scoring and smart content sa
 - **Batch scoring** for multiple files
 
 ### ContentSampler
+
 - **Multiple sampling strategies**:
   - Function-level extraction
   - Class structure with key methods
@@ -53,6 +55,7 @@ Implement intelligent file selection with relevance scoring and smart content sa
 ## Testing
 
 All 18 tests passing:
+
 - FileRelevanceScorer: 10 tests
 - ContentSampler: 8 tests
 - Coverage includes scoring, sampling, history, and budget management

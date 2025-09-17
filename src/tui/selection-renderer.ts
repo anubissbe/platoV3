@@ -3,8 +3,8 @@
  * Renders text selection with background highlighting using ANSI escape sequences
  */
 
-import { TextRange, TextPosition, SelectionMetrics } from './text-selection.js';
-import { RangeValidator } from './text-selection.js';
+import { TextRange, TextPosition, SelectionMetrics } from "./text-selection.js";
+import { RangeValidator } from "./text-selection.js";
 
 /**
  * Selection visual style configuration
@@ -17,11 +17,11 @@ export interface SelectionStyle {
   /** Whether to invert colors */
   invert: boolean;
   /** Text decoration */
-  textDecoration: 'none' | 'underline' | 'bold' | 'dim';
+  textDecoration: "none" | "underline" | "bold" | "dim";
   /** Selection opacity/intensity */
-  intensity: 'subtle' | 'normal' | 'strong';
+  intensity: "subtle" | "normal" | "strong";
   /** Animation type for active selections */
-  animation: 'none' | 'blink' | 'pulse' | 'fade';
+  animation: "none" | "blink" | "pulse" | "fade";
 }
 
 /**
@@ -98,52 +98,52 @@ export interface RenderedSelection {
  */
 const ANSI_COLORS = {
   // Standard colors
-  black: '\x1b[30m',
-  red: '\x1b[31m',
-  green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  white: '\x1b[37m',
-  
+  black: "\x1b[30m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  magenta: "\x1b[35m",
+  cyan: "\x1b[36m",
+  white: "\x1b[37m",
+
   // Bright colors
-  brightBlack: '\x1b[90m',
-  brightRed: '\x1b[91m',
-  brightGreen: '\x1b[92m',
-  brightYellow: '\x1b[93m',
-  brightBlue: '\x1b[94m',
-  brightMagenta: '\x1b[95m',
-  brightCyan: '\x1b[96m',
-  brightWhite: '\x1b[97m',
-  
+  brightBlack: "\x1b[90m",
+  brightRed: "\x1b[91m",
+  brightGreen: "\x1b[92m",
+  brightYellow: "\x1b[93m",
+  brightBlue: "\x1b[94m",
+  brightMagenta: "\x1b[95m",
+  brightCyan: "\x1b[96m",
+  brightWhite: "\x1b[97m",
+
   // Background colors
-  bgBlack: '\x1b[40m',
-  bgRed: '\x1b[41m',
-  bgGreen: '\x1b[42m',
-  bgYellow: '\x1b[43m',
-  bgBlue: '\x1b[44m',
-  bgMagenta: '\x1b[45m',
-  bgCyan: '\x1b[46m',
-  bgWhite: '\x1b[47m',
-  
+  bgBlack: "\x1b[40m",
+  bgRed: "\x1b[41m",
+  bgGreen: "\x1b[42m",
+  bgYellow: "\x1b[43m",
+  bgBlue: "\x1b[44m",
+  bgMagenta: "\x1b[45m",
+  bgCyan: "\x1b[46m",
+  bgWhite: "\x1b[47m",
+
   // Bright background colors
-  bgBrightBlack: '\x1b[100m',
-  bgBrightRed: '\x1b[101m',
-  bgBrightGreen: '\x1b[102m',
-  bgBrightYellow: '\x1b[103m',
-  bgBrightBlue: '\x1b[104m',
-  bgBrightMagenta: '\x1b[105m',
-  bgBrightCyan: '\x1b[106m',
-  bgBrightWhite: '\x1b[107m',
-  
+  bgBrightBlack: "\x1b[100m",
+  bgBrightRed: "\x1b[101m",
+  bgBrightGreen: "\x1b[102m",
+  bgBrightYellow: "\x1b[103m",
+  bgBrightBlue: "\x1b[104m",
+  bgBrightMagenta: "\x1b[105m",
+  bgBrightCyan: "\x1b[106m",
+  bgBrightWhite: "\x1b[107m",
+
   // Text styles
-  reset: '\x1b[0m',
-  bold: '\x1b[1m',
-  dim: '\x1b[2m',
-  underline: '\x1b[4m',
-  blink: '\x1b[5m',
-  reverse: '\x1b[7m'
+  reset: "\x1b[0m",
+  bold: "\x1b[1m",
+  dim: "\x1b[2m",
+  underline: "\x1b[4m",
+  blink: "\x1b[5m",
+  reverse: "\x1b[7m",
 } as const;
 
 /**
@@ -151,40 +151,40 @@ const ANSI_COLORS = {
  */
 export const DEFAULT_SELECTION_STYLES = {
   default: {
-    backgroundColor: '#4A90E2',
-    foregroundColor: '#FFFFFF',
+    backgroundColor: "#4A90E2",
+    foregroundColor: "#FFFFFF",
     invert: false,
-    textDecoration: 'none',
-    intensity: 'normal',
-    animation: 'none'
+    textDecoration: "none",
+    intensity: "normal",
+    animation: "none",
   } as SelectionStyle,
-  
+
   subtle: {
-    backgroundColor: '#E8F4F8',
-    foregroundColor: '#2C3E50',
+    backgroundColor: "#E8F4F8",
+    foregroundColor: "#2C3E50",
     invert: false,
-    textDecoration: 'none',
-    intensity: 'subtle',
-    animation: 'none'
+    textDecoration: "none",
+    intensity: "subtle",
+    animation: "none",
   } as SelectionStyle,
-  
+
   strong: {
-    backgroundColor: '#2196F3',
-    foregroundColor: '#FFFFFF',
+    backgroundColor: "#2196F3",
+    foregroundColor: "#FFFFFF",
     invert: false,
-    textDecoration: 'bold',
-    intensity: 'strong',
-    animation: 'pulse'
+    textDecoration: "bold",
+    intensity: "strong",
+    animation: "pulse",
   } as SelectionStyle,
-  
+
   inverted: {
-    backgroundColor: 'transparent',
-    foregroundColor: 'inherit',
+    backgroundColor: "transparent",
+    foregroundColor: "inherit",
     invert: true,
-    textDecoration: 'none',
-    intensity: 'normal',
-    animation: 'none'
-  } as SelectionStyle
+    textDecoration: "none",
+    intensity: "normal",
+    animation: "none",
+  } as SelectionStyle,
 };
 
 /**
@@ -199,10 +199,10 @@ export class ColorUtils {
     if (!rgb) return ANSI_COLORS.white;
 
     // Convert to 6x6x6 color cube
-    const r = Math.round(rgb.r / 255 * 5);
-    const g = Math.round(rgb.g / 255 * 5);
-    const b = Math.round(rgb.b / 255 * 5);
-    const colorCode = 16 + (36 * r) + (6 * g) + b;
+    const r = Math.round((rgb.r / 255) * 5);
+    const g = Math.round((rgb.g / 255) * 5);
+    const b = Math.round((rgb.b / 255) * 5);
+    const colorCode = 16 + 36 * r + 6 * g + b;
 
     return `\x1b[38;5;${colorCode}m`;
   }
@@ -214,10 +214,10 @@ export class ColorUtils {
     const rgb = this.hexToRgb(hex);
     if (!rgb) return ANSI_COLORS.bgBlack;
 
-    const r = Math.round(rgb.r / 255 * 5);
-    const g = Math.round(rgb.g / 255 * 5);
-    const b = Math.round(rgb.b / 255 * 5);
-    const colorCode = 16 + (36 * r) + (6 * g) + b;
+    const r = Math.round((rgb.r / 255) * 5);
+    const g = Math.round((rgb.g / 255) * 5);
+    const b = Math.round((rgb.b / 255) * 5);
+    const colorCode = 16 + 36 * r + 6 * g + b;
 
     return `\x1b[48;5;${colorCode}m`;
   }
@@ -227,11 +227,13 @@ export class ColorUtils {
    */
   static hexToRgb(hex: string): { r: number; g: number; b: number } | null {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : null;
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : null;
   }
 
   /**
@@ -244,20 +246,20 @@ export class ColorUtils {
     }
 
     // Handle hex colors
-    if (color.startsWith('#')) {
-      return isBackground ? 
-        this.hexToAnsiBg256(color) : 
-        this.hexToAnsi256(color);
+    if (color.startsWith("#")) {
+      return isBackground
+        ? this.hexToAnsiBg256(color)
+        : this.hexToAnsi256(color);
     }
 
     // Handle RGB values
-    if (color.startsWith('rgb')) {
+    if (color.startsWith("rgb")) {
       return this.rgbToAnsi(color, isBackground);
     }
 
     // Handle special values
-    if (color === 'transparent' || color === 'inherit') {
-      return '';
+    if (color === "transparent" || color === "inherit") {
+      return "";
     }
 
     // Default
@@ -271,14 +273,12 @@ export class ColorUtils {
     const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
     if (!match) return isBackground ? ANSI_COLORS.bgBlack : ANSI_COLORS.white;
 
-    const r = Math.round(parseInt(match[1]) / 255 * 5);
-    const g = Math.round(parseInt(match[2]) / 255 * 5);
-    const b = Math.round(parseInt(match[3]) / 255 * 5);
-    const colorCode = 16 + (36 * r) + (6 * g) + b;
+    const r = Math.round((parseInt(match[1]) / 255) * 5);
+    const g = Math.round((parseInt(match[2]) / 255) * 5);
+    const b = Math.round((parseInt(match[3]) / 255) * 5);
+    const colorCode = 16 + 36 * r + 6 * g + b;
 
-    return isBackground ? 
-      `\x1b[48;5;${colorCode}m` : 
-      `\x1b[38;5;${colorCode}m`;
+    return isBackground ? `\x1b[48;5;${colorCode}m` : `\x1b[38;5;${colorCode}m`;
   }
 }
 
@@ -295,10 +295,10 @@ export class SelectionRenderer {
    */
   render(context: SelectionRenderContext): RenderedSelection {
     const startTime = performance.now();
-    
+
     // Create cache key
     const cacheKey = this.createCacheKey(context);
-    
+
     // Check cache first
     if (context.optimize && this.renderCache.has(cacheKey)) {
       return this.renderCache.get(cacheKey)!;
@@ -312,22 +312,28 @@ export class SelectionRenderer {
 
     // Generate segments
     const segments = this.generateSelectionSegments(context, normalizedRange);
-    
+
     // Calculate bounds
     const bounds = this.calculateBounds(normalizedRange);
-    
+
     // Create result
     const result: RenderedSelection = {
       segments,
       lineCount: segments.length,
-      characterCount: segments.reduce((sum, seg) => sum + seg.originalText.length, 0),
+      characterCount: segments.reduce(
+        (sum, seg) => sum + seg.originalText.length,
+        0,
+      ),
       bounds,
       metadata: {
         renderTime: performance.now() - startTime,
         segmentCount: segments.length,
-        totalSequenceLength: segments.reduce((sum, seg) => sum + seg.startSequence.length + seg.endSequence.length, 0),
-        hasAnimation: context.style.animation !== 'none'
-      }
+        totalSequenceLength: segments.reduce(
+          (sum, seg) => sum + seg.startSequence.length + seg.endSequence.length,
+          0,
+        ),
+        hasAnimation: context.style.animation !== "none",
+      },
     };
 
     // Cache result if optimizing
@@ -348,11 +354,11 @@ export class SelectionRenderer {
    */
   private generateSelectionSegments(
     context: SelectionRenderContext,
-    range: TextRange
+    range: TextRange,
   ): SelectionSegment[] {
     const segments: SelectionSegment[] = [];
     const { content, style } = context;
-    
+
     // Generate ANSI sequences
     const { startSequence, endSequence } = this.generateAnsiSequences(style);
 
@@ -397,7 +403,7 @@ export class SelectionRenderer {
         originalText,
         renderedText,
         startSequence,
-        endSequence
+        endSequence,
       });
     }
 
@@ -411,58 +417,58 @@ export class SelectionRenderer {
     startSequence: string;
     endSequence: string;
   } {
-    let startSequence = '';
-    
+    let startSequence = "";
+
     // Handle invert mode
     if (style.invert) {
       startSequence += ANSI_COLORS.reverse;
     } else {
       // Background color
-      if (style.backgroundColor && style.backgroundColor !== 'transparent') {
+      if (style.backgroundColor && style.backgroundColor !== "transparent") {
         startSequence += ColorUtils.getAnsiColor(style.backgroundColor, true);
       }
-      
+
       // Foreground color
-      if (style.foregroundColor && style.foregroundColor !== 'inherit') {
+      if (style.foregroundColor && style.foregroundColor !== "inherit") {
         startSequence += ColorUtils.getAnsiColor(style.foregroundColor, false);
       }
     }
 
     // Text decoration
     switch (style.textDecoration) {
-      case 'bold':
+      case "bold":
         startSequence += ANSI_COLORS.bold;
         break;
-      case 'underline':
+      case "underline":
         startSequence += ANSI_COLORS.underline;
         break;
-      case 'dim':
+      case "dim":
         startSequence += ANSI_COLORS.dim;
         break;
     }
 
     // Intensity adjustments
-    if (style.intensity === 'subtle') {
+    if (style.intensity === "subtle") {
       startSequence += ANSI_COLORS.dim;
-    } else if (style.intensity === 'strong') {
+    } else if (style.intensity === "strong") {
       startSequence += ANSI_COLORS.bold;
     }
 
     return {
       startSequence,
-      endSequence: ANSI_COLORS.reset
+      endSequence: ANSI_COLORS.reset,
     };
   }
 
   /**
    * Calculate selection bounds
    */
-  private calculateBounds(range: TextRange): RenderedSelection['bounds'] {
+  private calculateBounds(range: TextRange): RenderedSelection["bounds"] {
     return {
       startLine: range.start.line,
       endLine: range.end.line,
       startColumn: range.start.column,
-      endColumn: range.end.column
+      endColumn: range.end.column,
     };
   }
 
@@ -478,14 +484,14 @@ export class SelectionRenderer {
         startLine: 0,
         endLine: 0,
         startColumn: 0,
-        endColumn: 0
+        endColumn: 0,
       },
       metadata: {
         renderTime: 0,
         segmentCount: 0,
         totalSequenceLength: 0,
-        hasAnimation: false
-      }
+        hasAnimation: false,
+      },
     };
   }
 
@@ -494,7 +500,7 @@ export class SelectionRenderer {
    */
   applyToLines(content: string[], rendered: RenderedSelection): string[] {
     const result = [...content];
-    
+
     for (const segment of rendered.segments) {
       if (segment.line < result.length) {
         const line = result[segment.line];
@@ -503,7 +509,7 @@ export class SelectionRenderer {
         result[segment.line] = before + segment.renderedText + after;
       }
     }
-    
+
     return result;
   }
 
@@ -512,15 +518,16 @@ export class SelectionRenderer {
    */
   renderOverlay(
     context: SelectionRenderContext,
-    viewportLines: string[]
+    viewportLines: string[],
   ): string[] {
     const rendered = this.render(context);
-    
+
     // Filter segments to viewport
     const viewportTop = context.viewport?.scrollTop || 0;
-    const viewportSegments = rendered.segments.filter(segment =>
-      segment.line >= viewportTop &&
-      segment.line < viewportTop + viewportLines.length
+    const viewportSegments = rendered.segments.filter(
+      (segment) =>
+        segment.line >= viewportTop &&
+        segment.line < viewportTop + viewportLines.length,
     );
 
     // Apply segments to viewport lines
@@ -549,21 +556,24 @@ export class SelectionRenderer {
   /**
    * Start animation for selection
    */
-  private startAnimation(cacheKey: string, animation: SelectionStyle['animation']): void {
-    if (animation === 'none') return;
+  private startAnimation(
+    cacheKey: string,
+    animation: SelectionStyle["animation"],
+  ): void {
+    if (animation === "none") return;
 
     // Clear existing animation
     this.stopAnimation(cacheKey);
 
     let intervalMs: number;
     switch (animation) {
-      case 'blink':
+      case "blink":
         intervalMs = 500;
         break;
-      case 'pulse':
+      case "pulse":
         intervalMs = 800;
         break;
-      case 'fade':
+      case "fade":
         intervalMs = 1000;
         break;
       default:
@@ -602,7 +612,7 @@ export class SelectionRenderer {
   getCacheStats(): { size: number; animationsActive: number } {
     return {
       size: this.renderCache.size,
-      animationsActive: this.animationTimers.size
+      animationsActive: this.animationTimers.size,
     };
   }
 
@@ -615,7 +625,7 @@ export class SelectionRenderer {
       clearInterval(timer);
     }
     this.animationTimers.clear();
-    
+
     // Clear cache
     this.renderCache.clear();
   }
@@ -631,7 +641,7 @@ export class SelectionRenderUtils {
   static createStyle(options: Partial<SelectionStyle> = {}): SelectionStyle {
     return {
       ...DEFAULT_SELECTION_STYLES.default,
-      ...options
+      ...options,
     };
   }
 
@@ -648,7 +658,7 @@ export class SelectionRenderUtils {
   static mergeStyles(...styles: Partial<SelectionStyle>[]): SelectionStyle {
     return styles.reduce(
       (merged, style) => ({ ...merged, ...style }),
-      DEFAULT_SELECTION_STYLES.default
+      DEFAULT_SELECTION_STYLES.default,
     ) as SelectionStyle;
   }
 
@@ -657,12 +667,12 @@ export class SelectionRenderUtils {
    */
   static createHighContrastStyle(): SelectionStyle {
     return {
-      backgroundColor: '#000000',
-      foregroundColor: '#FFFFFF',
+      backgroundColor: "#000000",
+      foregroundColor: "#FFFFFF",
       invert: false,
-      textDecoration: 'bold',
-      intensity: 'strong',
-      animation: 'none'
+      textDecoration: "bold",
+      intensity: "strong",
+      animation: "none",
     };
   }
 
@@ -672,21 +682,21 @@ export class SelectionRenderUtils {
   static createThemedStyle(isDark: boolean): SelectionStyle {
     if (isDark) {
       return {
-        backgroundColor: '#4A90E2',
-        foregroundColor: '#FFFFFF',
+        backgroundColor: "#4A90E2",
+        foregroundColor: "#FFFFFF",
         invert: false,
-        textDecoration: 'none',
-        intensity: 'normal',
-        animation: 'none'
+        textDecoration: "none",
+        intensity: "normal",
+        animation: "none",
       };
     } else {
       return {
-        backgroundColor: '#E3F2FD',
-        foregroundColor: '#1976D2',
+        backgroundColor: "#E3F2FD",
+        foregroundColor: "#1976D2",
         invert: false,
-        textDecoration: 'none',
-        intensity: 'normal',
-        animation: 'none'
+        textDecoration: "none",
+        intensity: "normal",
+        animation: "none",
       };
     }
   }
@@ -694,21 +704,24 @@ export class SelectionRenderUtils {
   /**
    * Validate selection style
    */
-  static validateStyle(style: SelectionStyle): { valid: boolean; errors: string[] } {
+  static validateStyle(style: SelectionStyle): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
 
     // Validate colors
     if (style.backgroundColor && !this.isValidColor(style.backgroundColor)) {
-      errors.push('Invalid background color format');
+      errors.push("Invalid background color format");
     }
 
     if (style.foregroundColor && !this.isValidColor(style.foregroundColor)) {
-      errors.push('Invalid foreground color format');
+      errors.push("Invalid foreground color format");
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -718,16 +731,16 @@ export class SelectionRenderUtils {
   private static isValidColor(color: string): boolean {
     // Check named colors
     if (color in ANSI_COLORS) return true;
-    
+
     // Check hex colors
     if (/^#[0-9A-Fa-f]{6}$/.test(color)) return true;
-    
+
     // Check RGB colors
     if (/^rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)$/.test(color)) return true;
-    
+
     // Check special values
-    if (['transparent', 'inherit'].includes(color)) return true;
-    
+    if (["transparent", "inherit"].includes(color)) return true;
+
     return false;
   }
 }

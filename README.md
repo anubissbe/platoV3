@@ -7,7 +7,7 @@
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
 [![Last Commit](https://git.euraika.net/Bert/plato/badges/main/last_commit.svg)](https://git.euraika.net/Bert/plato/-/commits/main)
 
-Status: v1.0.0 - Production Ready with Enhanced TUI Experience
+Status: v1.0.0-beta - 51% Feature Complete (21/41 commands implemented)
 
 ## 🚀 Overview
 
@@ -27,6 +27,7 @@ Plato is an advanced AI-powered terminal coding assistant that provides a Claude
 ## 📦 Installation
 
 ### Prerequisites
+
 - Node.js 18 or higher
 - npm 8 or higher
 - Git (for patch operations)
@@ -51,32 +52,46 @@ npm run dev
 ## 🎯 Quick Start
 
 ### Initial Setup
+
 1. **Start Plato**: `npm run dev`
 2. **Authenticate**: Run `/login` in the TUI for Copilot authentication
 3. **Verify Setup**: Run `/doctor` to check system status
 4. **Start Chatting**: Simply type your message and press Enter
 
-### Essential Commands
-- `/help` - Show available commands
-- `/status` - Display authentication and system status
-- `/model` - Switch between AI models
-- `/memory save` - Save current conversation
-- `/compact` - Optimize long conversations
-- `/resume` - Restore previous session
+### Essential Commands (Current Implementation Status)
+
+#### ✅ Working Commands
+- `/help` - Show available commands and categories
+- `/edit <file>` - Edit files directly
+- `/search <pattern>` - Search codebase
+- `/run <command>` - Execute shell commands
+- `/test` - Run test suites
+- `/git <command>` - Git operations
+- `/browse [path]` - Navigate file system
+- `/output-style [style]` - Change output formatting
+
+#### ⚠️ Coming Soon
+- `/status` - Authentication and system status (placeholder)
+- `/model` - Switch between AI models (placeholder)
+- `/memory` - Conversation memory management (placeholder)
+- `/compact` - History optimization (placeholder)
+- `/resume` - Session restoration (placeholder)
 
 ## 🛠️ Advanced Features
 
 ### Multi-Panel Layout System
+
 - **Main Chat Panel**: Primary conversation interface (60-70% width)
 - **Status Panel**: Real-time metrics and system information (30-40% width)
 - **Info Panel**: Context display and tool output visualization
-- **Keyboard Control**: 
+- **Keyboard Control**:
   - `Ctrl+1/2/3` - Switch between panels
   - `F1` - Toggle status panel
   - `F2` - Expand input area
   - `F3` - Switch layout modes
 
 ### MCP Tool Integration
+
 ```bash
 # Attach an MCP server
 /mcp attach <name> <url>
@@ -90,12 +105,14 @@ npm run dev
 ```
 
 ### Performance Features
+
 - **Virtual Scrolling**: Efficient rendering for large conversations
 - **Smart Caching**: Intelligent response and memory caching
 - **Batch Operations**: Optimized multi-file operations
 - **Progressive Loading**: On-demand content loading
 
 ### Accessibility Support
+
 - **Screen Reader Compatible**: Full ARIA implementation
 - **Keyboard Navigation**: Complete keyboard-only operation
 - **High Contrast Mode**: Customizable color schemes
@@ -104,6 +121,7 @@ npm run dev
 ## 🔧 Configuration
 
 ### Environment Variables
+
 ```bash
 PLATO_CONFIG_DIR=~/.plato          # Configuration directory
 PLATO_LOG_LEVEL=info               # Logging level
@@ -112,7 +130,9 @@ NODE_ENV=production                # Environment mode
 ```
 
 ### Custom Commands
+
 Create custom commands in `.plato/commands/`:
+
 ```json
 {
   "name": "my-command",
@@ -122,7 +142,9 @@ Create custom commands in `.plato/commands/`:
 ```
 
 ### Output Styles
+
 Choose from built-in styles or create custom ones:
+
 - `/output-style default` - Standard formatting
 - `/output-style minimal` - Compact output
 - `/output-style technical` - Detailed technical output
@@ -131,6 +153,7 @@ Choose from built-in styles or create custom ones:
 ## 🐳 Docker Support
 
 ### Using Docker Compose
+
 ```bash
 # Start all services
 docker-compose up -d
@@ -143,6 +166,7 @@ docker-compose down
 ```
 
 ### Building Docker Image
+
 ```bash
 # Build the image
 docker build -t plato:latest .
@@ -171,18 +195,19 @@ npm run test:e2e
 
 ## 📊 Performance Benchmarks
 
-| Metric | Target | Achieved |
-|--------|--------|----------|
-| Input Latency | <50ms | ✅ 35ms |
-| Panel Updates | <100ms | ✅ 75ms |
-| Scroll FPS | 60fps | ✅ 60fps |
-| Memory (Idle) | <50MB | ✅ 42MB |
-| CPU (Idle) | <5% | ✅ 3% |
-| Test Coverage | >80% | ✅ 93% |
+| Metric        | Target | Achieved |
+| ------------- | ------ | -------- |
+| Input Latency | <50ms  | ✅ 35ms  |
+| Panel Updates | <100ms | ✅ 75ms  |
+| Scroll FPS    | 60fps  | ✅ 60fps |
+| Memory (Idle) | <50MB  | ✅ 42MB  |
+| CPU (Idle)    | <5%    | ✅ 3%    |
+| Test Coverage | >80%   | ✅ 93%   |
 
 ## 🏗️ Architecture
 
 ### Component Structure
+
 ```
 src/
 ├── tui/                    # Terminal UI components
@@ -198,6 +223,7 @@ src/
 ```
 
 ### Technology Stack
+
 - **Framework**: React + Ink (Terminal UI)
 - **Language**: TypeScript
 - **Testing**: Jest
@@ -207,12 +233,14 @@ src/
 ## 🚀 CI/CD Pipeline
 
 ### Pipeline Stages
+
 1. **Build**: Compile TypeScript and create artifacts
 2. **Test**: Run unit, integration, and e2e tests
 3. **Quality**: Code quality, security scanning, performance checks
 4. **Deploy**: Automated deployment to staging/production
 
 ### Auto DevOps Features
+
 - Container scanning
 - Dependency scanning
 - SAST (Static Application Security Testing)
@@ -231,6 +259,7 @@ src/
 ## 🤝 Contributing
 
 We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on:
+
 - Code style and standards
 - Testing requirements
 - Commit message format

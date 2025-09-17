@@ -1,4 +1,4 @@
-import simpleGit from 'simple-git';
+import simpleGit from "simple-git";
 
 export const git = simpleGit();
 
@@ -11,7 +11,6 @@ export async function diff() {
 }
 
 export async function commit(message: string) {
-  await git.add('-A');
+  await git.add("-A");
   return git.commit(message);
 }
-

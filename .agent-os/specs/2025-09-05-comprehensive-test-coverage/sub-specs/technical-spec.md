@@ -5,6 +5,7 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
 ## Technical Requirements
 
 ### Testing Framework Setup
+
 - **Test Runner**: Jest 29+ with TypeScript support via ts-jest
 - **Assertion Library**: Built-in Jest matchers with extended matchers from jest-extended
 - **Mocking**: Jest mock functions and manual mocks for complex modules
@@ -14,6 +15,7 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
 ### Test Categories & Implementation
 
 #### Unit Tests (40% of suite)
+
 - Test pure functions in isolation
 - Mock all external dependencies and side effects
 - Focus on: parsers, validators, formatters, utility functions
@@ -21,6 +23,7 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
 - Coverage target: 90% for utility modules
 
 #### Integration Tests (25% of suite)
+
 - Test component interactions without external services
 - Mock only external APIs (GitHub Copilot, filesystem)
 - Focus on: orchestrator flows, command processing, session management
@@ -28,6 +31,7 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
 - Coverage target: 70% for integration points
 
 #### Command Tests (20% of suite)
+
 - Test all 41 slash commands individually
 - Validate command parsing, execution, and output format
 - Mock provider responses but test full command flow
@@ -35,6 +39,7 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
 - Special focus on parity commands: /init, /memory, /agents
 
 #### End-to-End Tests (10% of suite)
+
 - Test complete user workflows
 - Use test fixtures and temp directories
 - Scenarios: login→edit→save, session→restore, custom commands
@@ -42,6 +47,7 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
 - Runtime: May exceed unit test time limits
 
 #### Parity Validation Tests (5% of suite)
+
 - Compare output formats against Claude Code templates
 - Test keyboard shortcuts and special key sequences
 - Validate error message formats
@@ -51,6 +57,7 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
 ### Test Infrastructure
 
 #### Test Utilities
+
 - Create `src/__tests__/helpers/` directory for:
   - Mock factories for common objects
   - Test data builders
@@ -58,25 +65,29 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
   - Terminal output capture utilities
 
 #### Environment Setup
+
 - Test environment: node
 - Setup files for global mocks
 - Separate jest configs for unit vs integration tests
 - Environment variables for test mode detection
 
 #### CI/CD Integration
+
 - GitHub Actions workflow in `.github/workflows/test.yml`
 - Matrix testing: Node 18, 20, 22 × Ubuntu, macOS, Windows
 - Coverage reporting to Codecov or similar service
 - Required checks before PR merge
 
 ### Performance Requirements
+
 - Unit tests: < 10 seconds total
-- Integration tests: < 20 seconds total  
+- Integration tests: < 20 seconds total
 - Command tests: < 15 seconds total
 - E2E tests: < 10 seconds total
 - Full suite: < 60 seconds on modern hardware
 
 ### Quality Gates
+
 - Minimum 80% overall code coverage
 - No test may be skipped or marked as todo
 - All tests must pass before merge
@@ -85,13 +96,15 @@ This is the technical specification for the spec detailed in @.agent-os/specs/20
 ## External Dependencies
 
 ### Testing Libraries
+
 - **jest** (^29.0.0) - Test runner and assertion framework
 - **@types/jest** (^29.0.0) - TypeScript definitions
 - **ts-jest** (^29.0.0) - TypeScript preprocessor for Jest
 - **jest-extended** (^4.0.0) - Additional Jest matchers
 - **Justification**: Jest is the de facto standard for React/TypeScript testing with excellent TS support
 
-### Testing Utilities  
+### Testing Utilities
+
 - **mock-fs** (^5.0.0) - Mock filesystem for testing file operations
 - **Justification**: Needed to test file operations without touching real filesystem
 - **nock** (^13.0.0) - HTTP mocking for API tests

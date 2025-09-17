@@ -46,6 +46,7 @@ npm run dev
 #### Development Workflow
 
 1. **Create a feature branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -56,16 +57,17 @@ npm run dev
    - Update documentation as needed
 
 3. **Test your changes**
+
    ```bash
    # Run tests
    npm test
-   
+
    # Type checking
    npm run typecheck
-   
+
    # Linting
    npm run lint
-   
+
    # Format code
    npm run fmt
    ```
@@ -85,6 +87,7 @@ npm run dev
    ```bash
    git push origin feature/your-feature-name
    ```
+
    - Provide a clear description of changes
    - Reference any related issues
    - Ensure CI/CD pipeline passes
@@ -167,6 +170,7 @@ platoV3/
 ## Questions?
 
 If you have questions about contributing, feel free to:
+
 - Open an issue for discussion
 - Check the Wiki for additional documentation
 - Review existing merge requests for examples

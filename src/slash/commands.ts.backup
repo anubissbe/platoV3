@@ -1,0 +1,2181 @@
+export interface SlashCommand {
+  name: string;
+  description?: string;  // Made optional for backward compatibility
+  summary?: string;
+  category?: string;
+  aliases?: string[];
+  usage?: string;
+  requiresArgs?: boolean;
+  execute?: (args: string[], session: any, provider?: any) => Promise<{
+    output?: string;
+    error?: string;
+    requiresConfirmation?: boolean;
+  }>;
+}
+
+// Export both for backward compatibility
+export const SLASH_COMMANDS: SlashCommand[] = [
+
+  {
+    name: "help",
+    description: "Show help and list all commands",
+    summary: "Show help and list all commands",
+    category: "System",
+    execute: async () => {
+      const { getAvailableCommands } = await import("../commands/router.js");
+      return { output: getAvailableCommands() };
+    }
+  },
+  {
+    name: "status",
+    description: "Show Plato status",
+    summary: "Show Plato status",
+    category: "System"
+  },
+  {
+    name: "statusline",
+    description: "Configure the statusline display",
+    summary: "Configure the statusline display",
+    category: "UI"
+  },
+  {
+    name: "init",
+    description: "Initialize a PLATO.md file with codebase documentation",
+    summary: "Initialize a PLATO.md file with codebase documentation",
+    category: "Project"
+  },
+  {
+    name: "agents",
+    description: "Manage agent configurations",
+    summary: "Manage agent configurations",
+    category: "Configuration"
+  },
+  {
+    name: "permissions",
+    description: "Manage allow/deny tool permission rules",
+    summary: "Manage allow/deny tool permission rules",
+    category: "Security"
+  },
+  {
+    name: "model",
+    description: "List models and switch active model",
+    summary: "List models and switch active model",
+    category: "AI",
+    usage: "[model-id]"
+  },
+  {
+    name: "mouse",
+    description: "Toggle mouse mode (enabled by default for copy/paste)",
+    summary: "Toggle mouse mode (enabled by default for copy/paste)",
+    category: "UI"
+  },
+  {
+    name: "paste",
+    description: "Temporarily disable input for easy copy/paste (default 5s)",
+    summary: "Temporarily disable input for easy copy/paste (default 5s)",
+    category: "UI"
+  },
+  {
+    name: "context",
+    description: "Manage context and visualize token usage",
+    summary: "Manage context and visualize token usage",
+    category: "Session",
+    usage: "[clear|export <file>|compact|status]",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const subcommand = args[0]?.toLowerCase();
+
+        if (!subcommand || subcommand === "status") {
+          return await handleContextStatus(session);
+        }
+
+        switch (subcommand) {
+          case "clear":
+            return await handleContextClear(session);
+          case "export":
+            return await handleContextExport(args.slice(1), session);
+          case "compact":
+            return await handleContextCompact(session);
+          default:
+            return { error: "Unknown context command. Use: status, clear, export <file>, compact" };
+        }
+      } catch (error) {
+        return { error: "Context command failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "add-dir",
+    description: "Add a new working directory to context",
+    summary: "Add a new working directory to context",
+    category: "Project"
+  },
+  {
+    name: "bashes",
+    description: "List and manage shell sessions",
+    summary: "List and manage shell sessions",
+    category: "Project"
+  },
+  {
+    name: "memory",
+    description: "View, edit, or reset memory",
+    summary: "View, edit, or reset memory",
+    category: "Session"
+  },
+  {
+    name: "output-style",
+    description: "Set or switch output style",
+    summary: "Set or switch output style",
+    category: "UI",
+    usage: "[list|set <style>|reset]",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const { getStyleManager } = await import("../styles/manager.js");
+
+        const action = args[0] || "list";
+        const styleManager = getStyleManager();
+        await styleManager.initialize();
+
+        if (action === "list") {
+          const styles = styleManager.listStyles();
+          let output = "Available output styles:\n";
+          output += "─".repeat(25) + "\n";
+
+          for (const style of styles) {
+            const indicator = style.active ? " (active)" : "";
+            const type = style.custom ? " [custom]" : " [built-in]";
+            output += "  " + style.name + type + indicator + "\n";
+            output += "    " + style.description + "\n";
+          }
+
+          return { output };
+        } else if (action === "set") {
+          const styleName = args[1];
+          if (!styleName) {
+            return { error: "Style name required. Usage: /output-style set <style>" };
+          }
+
+          try {
+            await styleManager.setStyle(styleName);
+            return { output: "Output style set to: " + styleName };
+          } catch (error) {
+            return { error: "Failed to set style: " + (error instanceof Error ? error.message : String(error)) };
+          }
+        } else if (action === "reset") {
+          await styleManager.setStyle("default");
+          return { output: "Output style reset to default" };
+        } else {
+          return { error: "Unknown action: " + action + ". Use: list, set <style>, or reset" };
+        }
+      } catch (error) {
+        return { error: "Output style command failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "output-style:new",
+    description: "Create a custom output style",
+    summary: "Create a custom output style",
+    category: "General",
+    usage: "<name> [base-style] [options]",
+    requiresArgs: true,
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const { getStyleManager } = await import("../styles/manager.js");
+        const { BUILTIN_STYLES } = await import("../styles/builtin.js");
+
+        if (args.length === 0) {
+          return {
+            error: "Style name required. Usage: /output-style:new <name> [options]"
+          };
+        }
+
+        const styleName = args[0];
+        let baseStyle = "default";
+        let customizations: any = {
+          description: "Custom style: " + styleName
+        };
+
+        // Check if second argument is a base style (not starting with --)
+        let startIndex = 1;
+        if (args.length > 1 && !args[1].startsWith("--")) {
+          baseStyle = args[1];
+          startIndex = 2;
+        }
+
+        // Parse options
+        for (let i = startIndex; i < args.length; i++) {
+          const arg = args[i];
+          const nextArg = args[i + 1];
+
+          if (arg === "--base" && nextArg) {
+            baseStyle = nextArg;
+            i++; // Skip next arg since we consumed it
+          } else if (arg === "--border" && nextArg) {
+            if (!customizations.formatting) customizations.formatting = {};
+            const borderStyles = ["single", "double", "round", "none"];
+            if (borderStyles.includes(nextArg)) {
+              customizations.formatting.borderStyle = nextArg;
+            } else {
+              return { error: "Invalid border style. Use: " + borderStyles.join(", ") };
+            }
+            i++;
+          } else if (arg === "--padding" && nextArg) {
+            if (!customizations.formatting) customizations.formatting = {};
+            const padding = parseInt(nextArg, 10);
+            if (isNaN(padding) || padding < 0) {
+              return { error: "Invalid padding value. Must be a non-negative number." };
+            }
+            customizations.formatting.padding = padding;
+            i++;
+          } else if (arg === "--icons") {
+            if (!customizations.formatting) customizations.formatting = {};
+            customizations.formatting.showIcons = true;
+          } else if (arg === "--no-icons") {
+            if (!customizations.formatting) customizations.formatting = {};
+            customizations.formatting.showIcons = false;
+          } else if (arg === "--timestamps") {
+            if (!customizations.formatting) customizations.formatting = {};
+            customizations.formatting.showTimestamps = true;
+          } else if (arg === "--no-timestamps") {
+            if (!customizations.formatting) customizations.formatting = {};
+            customizations.formatting.showTimestamps = false;
+          } else if (arg === "--colors" && nextArg) {
+            // Parse color theme overrides in format: primary=blue,error=red
+            if (!customizations.theme) customizations.theme = {};
+            const colorPairs = nextArg.split(",");
+            for (const pair of colorPairs) {
+              const [colorType, colorValue] = pair.split("=");
+              if (colorType && colorValue) {
+                customizations.theme[colorType.trim()] = colorValue.trim();
+              }
+            }
+            i++;
+          } else if (arg === "--description" && nextArg) {
+            customizations.description = nextArg;
+            i++;
+          } else if (arg.startsWith("--")) {
+            return { error: "Unknown option: " + arg + ". Use --base, --border, --padding, --icons, --timestamps, --colors, --description" };
+          }
+        }
+
+        // Validate base style exists
+        const styleManager = getStyleManager();
+        await styleManager.initialize();
+
+        const builtinNames = Object.keys(BUILTIN_STYLES);
+        const customStyles = styleManager.listStyles().filter(s => s.custom).map(s => s.name);
+        const allStyles = [...builtinNames, ...customStyles];
+
+        if (!allStyles.includes(baseStyle)) {
+          return {
+            error: "Base style '" + baseStyle + "' not found. Available styles: " + allStyles.join(", ")
+          };
+        }
+
+        // Check if style name already exists
+        if (allStyles.includes(styleName)) {
+          return {
+            error: "Style '" + styleName + "' already exists. Choose a different name or delete the existing style first."
+          };
+        }
+
+        // Create the custom style
+        await styleManager.createCustomStyle(styleName, baseStyle, customizations);
+
+        let output = "Created custom style '" + styleName + "'\n";
+        output += "Based on: " + baseStyle + "\n";
+
+        if (customizations.formatting) {
+          output += "Customizations:\n";
+          if (customizations.formatting.borderStyle !== undefined) {
+            output += "  Border: " + customizations.formatting.borderStyle + "\n";
+          }
+          if (customizations.formatting.padding !== undefined) {
+            output += "  Padding: " + customizations.formatting.padding + "\n";
+          }
+          if (customizations.formatting.showIcons !== undefined) {
+            output += "  Icons: " + (customizations.formatting.showIcons ? "enabled" : "disabled") + "\n";
+          }
+          if (customizations.formatting.showTimestamps !== undefined) {
+            output += "  Timestamps: " + (customizations.formatting.showTimestamps ? "enabled" : "disabled") + "\n";
+          }
+        }
+
+        if (customizations.theme && Object.keys(customizations.theme).length > 0) {
+          output += "  Colors: " + Object.entries(customizations.theme).map(([k, v]) => k + "=" + v).join(", ") + "\n";
+        }
+
+        output += "\nUse '/output-style " + styleName + "' to activate this style.";
+
+        return { output };
+      } catch (error) {
+        return {
+          error: "Failed to create custom style: " + (error instanceof Error ? error.message : String(error))
+        };
+      }
+    }
+  },
+  {
+    name: "cost",
+    description: "Show tokens, cost, and duration",
+    summary: "Show tokens, cost, and duration",
+    category: "Metrics"
+  },
+  {
+    name: "analytics",
+    description: "View and manage cost tracking analytics",
+    summary: "View and manage cost tracking analytics",
+    category: "Metrics"
+  },
+  {
+    name: "doctor",
+    description: "Diagnose setup and connectivity",
+    summary: "Diagnose setup and connectivity",
+    category: "System"
+  },
+  {
+    name: "compact",
+    description: "Compact conversation history with optional focus instructions",
+    summary: "Compact conversation history with optional focus instructions",
+    category: "Session"
+  },
+  {
+    name: "export",
+    description: "Export conversation to file or clipboard",
+    summary: "Export conversation to file or clipboard",
+    category: "Session"
+  },
+  {
+    name: "mcp",
+    description: "Manage MCP servers with resilience patterns",
+    summary: "Manage MCP servers with circuit breaker protection",
+    category: "Integration",
+    usage: "[list|attach <name> <url>|detach <name>|tools [server]|test <name>|status]",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const subcommand = args[0]?.toLowerCase();
+
+        if (!subcommand || subcommand === "status") {
+          return await handleMcpStatus();
+        }
+
+        switch (subcommand) {
+          case "list":
+            return await handleMcpList();
+          case "attach":
+            return await handleMcpAttach(args.slice(1));
+          case "detach":
+            return await handleMcpDetach(args.slice(1));
+          case "tools":
+            return await handleMcpTools(args.slice(1));
+          case "test":
+            return await handleMcpTest(args.slice(1));
+          default:
+            return { error: "Unknown MCP command. Use: list, attach <name> <url>, detach <name>, tools [server], test <name>, status" };
+        }
+      } catch (error) {
+        return { error: "MCP command failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "login",
+    description: "Authenticate with a provider using resilient OAuth flow",
+    summary: "Authenticate with timeout protection and retry logic",
+    category: "Security",
+    execute: async (args: string[], session: any, provider?: any) => {
+      const { executeLoginCommand } = await import("../commands/resilient-commands.js");
+      return await executeLoginCommand(args, session, provider);
+    }
+  },
+  {
+    name: "logout",
+    description: "Logout and clear credentials",
+    summary: "Logout and clear credentials",
+    category: "Security"
+  },
+  {
+    name: "hooks",
+    description: "Manage hook configurations with path validation",
+    summary: "Secure hook management with input sanitization",
+    category: "Integration",
+    execute: async (args: string[], session: any, provider?: any) => {
+      const { executeHooksCommand } = await import("../commands/resilient-commands.js");
+      return await executeHooksCommand(args, session, provider);
+    }
+  },
+  {
+    name: "security-review",
+    description: "Review pending changes for safety",
+    summary: "Review pending changes for safety",
+    category: "Security",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        // Get all messages from session to analyze pending changes
+        if (!session?.getMessages) {
+          return { error: "No session available to analyze pending changes." };
+        }
+
+        const messages = session.getMessages();
+        const patches: string[] = [];
+        const allContent: string[] = [];
+
+        // Extract patches and collect all assistant content
+        for (const message of messages) {
+          if (message.role === "assistant" && message.content) {
+            const content = message.content;
+            allContent.push(content);
+
+            // Extract patches using the same regex as apply command
+            const patchRegex = /\*\*\*\s+Begin Patch\s*\*+[\s\S]*?\*\*\*\s+End Patch\s*\**/g;
+            const matches = content.match(patchRegex);
+            if (matches) {
+              patches.push(...matches);
+            }
+          }
+        }
+
+        let output = "🔒 Security Review Report\n";
+        output += "═".repeat(30) + "\n\n";
+
+        // Overall risk assessment
+        let overallRiskLevel = "low";
+        let criticalIssues = 0;
+        let highIssues = 0;
+        let mediumIssues = 0;
+        let recommendations: string[] = [];
+
+        // 1. Analyze patches for sensitive data patterns
+        const sensitivePatterns = [
+          { pattern: /(?:password|passwd|pwd)\s*[=:]\s*["']?[^"'\s]+/gi, type: "password", severity: "high" },
+          { pattern: /(?:api[_-]?key|apikey)\s*[=:]\s*["']?[^"'\s]+/gi, type: "API key", severity: "high" },
+          { pattern: /(?:secret[_-]?key|secretkey)\s*[=:]\s*["']?[^"'\s]+/gi, type: "secret key", severity: "high" },
+          { pattern: /(?:token|auth[_-]?token)\s*[=:]\s*["']?[^"'\s]+/gi, type: "token", severity: "high" },
+          { pattern: /(?:private[_-]?key|privatekey)\s*[=:]\s*["']?[^"'\s]+/gi, type: "private key", severity: "critical" },
+          { pattern: /-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----/i, type: "private key", severity: "critical" },
+          { pattern: /(?:database[_-]?url|db[_-]?url)\s*[=:]\s*["']?[^"'\s]+/gi, type: "database URL", severity: "medium" },
+          { pattern: /(?:connection[_-]?string|connectionstring)\s*[=:]\s*["']?[^"'\s]+/gi, type: "connection string", severity: "medium" },
+          { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, type: "email address", severity: "low" }
+        ];
+
+        const sensitiveDataFound: Array<{type: string, severity: string, context: string}> = [];
+
+        for (const content of allContent) {
+          for (const { pattern, type, severity } of sensitivePatterns) {
+            const matches = content.match(pattern);
+            if (matches) {
+              for (const match of matches) {
+                // Get some context around the match
+                const index = content.indexOf(match);
+                const start = Math.max(0, index - 20);
+                const end = Math.min(content.length, index + match.length + 20);
+                const context = content.substring(start, end).replace(/\n/g, " ");
+
+                sensitiveDataFound.push({ type, severity, context });
+
+                if (severity === "critical") criticalIssues++;
+                else if (severity === "high") highIssues++;
+                else if (severity === "medium") mediumIssues++;
+              }
+            }
+          }
+        }
+
+        // 2. Check for dangerous commands and operations
+        const dangerousPatterns = [
+          { pattern: /rm\s+-rf\s+[\/~]/g, type: "recursive delete", severity: "critical" },
+          { pattern: /sudo\s+rm/g, type: "sudo delete", severity: "high" },
+          { pattern: /\beval\s*\(/g, type: "code evaluation", severity: "high" },
+          { pattern: /exec\s*\(/g, type: "command execution", severity: "medium" },
+          { pattern: /system\s*\(/g, type: "system call", severity: "medium" },
+          { pattern: /shell_exec\s*\(/g, type: "shell execution", severity: "high" },
+          { pattern: /\$\{[^}]*\}/g, type: "variable substitution", severity: "low" },
+          { pattern: /chmod\s+777/g, type: "overly permissive permissions", severity: "medium" },
+          { pattern: /--no-verify/g, type: "security bypass", severity: "medium" }
+        ];
+
+        const dangerousCommandsFound: Array<{type: string, severity: string, context: string}> = [];
+
+        for (const content of allContent) {
+          for (const { pattern, type, severity } of dangerousPatterns) {
+            const matches = content.match(pattern);
+            if (matches) {
+              for (const match of matches) {
+                const index = content.indexOf(match);
+                const start = Math.max(0, index - 30);
+                const end = Math.min(content.length, index + match.length + 30);
+                const context = content.substring(start, end).replace(/\n/g, " ");
+
+                dangerousCommandsFound.push({ type, severity, context });
+
+                if (severity === "critical") criticalIssues++;
+                else if (severity === "high") highIssues++;
+                else if (severity === "medium") mediumIssues++;
+              }
+            }
+          }
+        }
+
+        // 3. Analyze patches for file permission changes
+        const permissionIssues: Array<{type: string, severity: string, context: string}> = [];
+
+        for (const patch of patches) {
+          // Check for file creation with potential security implications
+          if (patch.includes("--- /dev/null")) {
+            const fileMatch = patch.match(/\+\+\+ b\/(.+)/);
+            if (fileMatch) {
+              const filename = fileMatch[1];
+
+              // Check for executable files being created
+              if (filename.match(/\.(sh|py|pl|rb|exe|bat|cmd)$/)) {
+                permissionIssues.push({
+                  type: "executable file creation",
+                  severity: "medium",
+                  context: "Creating executable file: " + filename
+                });
+                mediumIssues++;
+              }
+
+              // Check for config files with potential credentials
+              if (filename.match(/\.(conf|config|cfg|ini|env)$/)) {
+                permissionIssues.push({
+                  type: "configuration file creation",
+                  severity: "low",
+                  context: "Creating config file: " + filename
+                });
+              }
+            }
+          }
+        }
+
+        // Determine overall risk level
+        if (criticalIssues > 0) {
+          overallRiskLevel = "critical";
+        } else if (highIssues > 0) {
+          overallRiskLevel = "high";
+        } else if (mediumIssues > 2) {
+          overallRiskLevel = "medium";
+        }
+
+        // Generate risk assessment summary
+        const riskIcon = overallRiskLevel === "critical" ? "🚨" :
+                        overallRiskLevel === "high" ? "⚠️" :
+                        overallRiskLevel === "medium" ? "🟡" : "✅";
+
+        output += "📊 Risk Assessment: " + riskIcon + " " + overallRiskLevel.toUpperCase() + " RISK\n";
+        output += "─".repeat(20) + "\n";
+        output += "Critical issues: " + criticalIssues + "\n";
+        output += "High risk issues: " + highIssues + "\n";
+        output += "Medium risk issues: " + mediumIssues + "\n";
+        output += "Patches analyzed: " + patches.length + "\n\n";
+
+        // Report sensitive data findings
+        if (sensitiveDataFound.length > 0) {
+          output += "🔑 Sensitive Data Detected:\n";
+          output += "─".repeat(25) + "\n";
+          for (const finding of sensitiveDataFound) {
+            const severityIcon = finding.severity === "critical" ? "🚨" :
+                                finding.severity === "high" ? "⚠️" :
+                                finding.severity === "medium" ? "🟡" : "ℹ️";
+            output += severityIcon + " " + finding.type + " detected\n";
+            output += "   Context: ..." + finding.context + "...\n";
+          }
+          output += "\n";
+          recommendations.push("Remove or mask sensitive data before applying changes");
+          recommendations.push("Use environment variables or secure vaults for credentials");
+        }
+
+        // Report dangerous commands
+        if (dangerousCommandsFound.length > 0) {
+          output += "⚡ Dangerous Commands Detected:\n";
+          output += "─".repeat(28) + "\n";
+          for (const finding of dangerousCommandsFound) {
+            const severityIcon = finding.severity === "critical" ? "🚨" :
+                                finding.severity === "high" ? "⚠️" :
+                                finding.severity === "medium" ? "🟡" : "ℹ️";
+            output += severityIcon + " " + finding.type + " detected\n";
+            output += "   Context: ..." + finding.context + "...\n";
+          }
+          output += "\n";
+          recommendations.push("Review dangerous commands for necessity and safety");
+          recommendations.push("Consider using safer alternatives or adding safety checks");
+        }
+
+        // Report permission issues
+        if (permissionIssues.length > 0) {
+          output += "🔐 File Permission Issues:\n";
+          output += "─".repeat(25) + "\n";
+          for (const finding of permissionIssues) {
+            const severityIcon = finding.severity === "medium" ? "🟡" : "ℹ️";
+            output += severityIcon + " " + finding.type + "\n";
+            output += "   " + finding.context + "\n";
+          }
+          output += "\n";
+          recommendations.push("Review file permissions and executable status");
+        }
+
+        // Add patch-specific analysis if patches exist
+        if (patches.length > 0) {
+          output += "📄 Patch Analysis Summary:\n";
+          output += "─".repeat(22) + "\n";
+          output += "Total patches found: " + patches.length + "\n";
+
+          let addedLines = 0;
+          let deletedLines = 0;
+          let modifiedFiles = new Set();
+
+          for (const patch of patches) {
+            const lines = patch.split("\n");
+            for (const line of lines) {
+              if (line.startsWith("+") && !line.startsWith("+++")) addedLines++;
+              if (line.startsWith("-") && !line.startsWith("---")) deletedLines++;
+
+              const fileMatch = line.match(/^\+\+\+ b\/(.+)$/);
+              if (fileMatch) {
+                modifiedFiles.add(fileMatch[1]);
+              }
+            }
+          }
+
+          output += "Files to be modified: " + modifiedFiles.size + "\n";
+          output += "Lines to be added: " + addedLines + "\n";
+          output += "Lines to be deleted: " + deletedLines + "\n\n";
+        }
+
+        // Security recommendations
+        if (recommendations.length > 0) {
+          output += "💡 Security Recommendations:\n";
+          output += "─".repeat(28) + "\n";
+          for (let i = 0; i < recommendations.length; i++) {
+            output += (i + 1) + ". " + recommendations[i] + "\n";
+          }
+          output += "\n";
+        }
+
+        // Add general security recommendations
+        output += "🛡️ General Security Guidelines:\n";
+        output += "─".repeat(30) + "\n";
+        output += "1. Review all changes before applying patches\n";
+        output += "2. Test changes in a safe environment first\n";
+        output += "3. Backup important files before modifications\n";
+        output += "4. Verify patch integrity and authenticity\n";
+        output += "5. Monitor system behavior after changes\n\n";
+
+        // Final warning based on risk level
+        if (overallRiskLevel === "critical") {
+          output += "🚨 CRITICAL: Do not apply these changes without thorough review and security remediation!\n";
+        } else if (overallRiskLevel === "high") {
+          output += "⚠️ HIGH RISK: Review and address security issues before applying changes.\n";
+        } else if (overallRiskLevel === "medium") {
+          output += "🟡 MEDIUM RISK: Consider security implications before proceeding.\n";
+        } else {
+          output += "✅ LOW RISK: Changes appear relatively safe, but always review before applying.\n";
+        }
+
+        return { output };
+      } catch (error) {
+        return { error: "Security review failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "todos",
+    description: "Generate and list TODO items",
+    summary: "Generate and list TODO items",
+    category: "Project"
+  },
+  {
+    name: "vim",
+    description: "Toggle Vim editing mode",
+    summary: "Toggle Vim editing mode",
+    category: "UI"
+  },
+  {
+    name: "proxy",
+    description: "Start an OpenAI-compatible HTTP proxy with resource management",
+    summary: "HTTP proxy with port validation and cleanup",
+    category: "Integration",
+    execute: async (args: string[], session: any, provider?: any) => {
+      const { executeProxyCommand } = await import("../commands/resilient-commands.js");
+      return await executeProxyCommand(args, session, provider);
+    }
+  },
+  {
+    name: "upgrade",
+    description: "Upgrade to higher provider plan",
+    summary: "Upgrade to higher provider plan",
+    category: "Utility"
+  },
+  {
+    name: "resume",
+    description: "Resume a paused conversation",
+    summary: "Resume a paused conversation",
+    category: "Session"
+  },
+  {
+    name: "privacy-settings",
+    description: "View and update privacy settings",
+    summary: "View and update privacy settings",
+    category: "Security",
+    usage: "[redact on|off] [prompt_on_large_payloads on|off] [max_payload_mb <size>] [status]",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const { loadConfig, setConfigValue } = await import("../config.js");
+
+        const config = await loadConfig();
+        const privacyConfig = config.privacy || {};
+
+        // If no arguments or status requested, show current settings
+        if (args.length === 0 || args[0] === "status") {
+          let output = "Privacy Settings Configuration:\n";
+          output += "─".repeat(35) + "\n";
+          output += "Redact sensitive data: " + (privacyConfig.redact ? "enabled" : "disabled") + "\n";
+          output += "Prompt on large payloads: " + (privacyConfig.prompt_on_large_payloads ? "enabled" : "disabled") + "\n";
+          output += "Max payload size: " + (privacyConfig.max_payload_mb || "unlimited") + " MB\n";
+          output += "Skip all prompts: " + (privacyConfig.skip_all_prompts ? "enabled" : "disabled") + "\n";
+          output += "Dangerous mode: " + (privacyConfig.dangerous_mode ? "enabled" : "disabled") + "\n\n";
+
+          output += "Available commands:\n";
+          output += "  redact on|off              - Enable/disable sensitive data redaction\n";
+          output += "  prompt_on_large_payloads on|off - Enable/disable large payload prompts\n";
+          output += "  max_payload_mb <size>      - Set maximum payload size in MB\n";
+          output += "  status                     - Show current configuration";
+
+          return { output };
+        }
+
+        const setting = args[0];
+        const value = args[1];
+
+        if (setting === "redact") {
+          if (value === "on") {
+            await setConfigValue("privacy.redact", "true");
+            return { output: "✅ Sensitive data redaction enabled" };
+          } else if (value === "off") {
+            await setConfigValue("privacy.redact", "false");
+            return { output: "❌ Sensitive data redaction disabled" };
+          } else {
+            return { error: "Invalid value for redact. Use: on|off" };
+          }
+        }
+
+        if (setting === "prompt_on_large_payloads") {
+          if (value === "on") {
+            await setConfigValue("privacy.prompt_on_large_payloads", "true");
+            return { output: "✅ Large payload prompts enabled" };
+          } else if (value === "off") {
+            await setConfigValue("privacy.prompt_on_large_payloads", "false");
+            return { output: "❌ Large payload prompts disabled" };
+          } else {
+            return { error: "Invalid value for prompt_on_large_payloads. Use: on|off" };
+          }
+        }
+
+        if (setting === "max_payload_mb") {
+          const sizeStr = value;
+          if (!sizeStr) {
+            return { error: "Size value required for max_payload_mb" };
+          }
+
+          const size = parseFloat(sizeStr);
+          if (isNaN(size) || size <= 0) {
+            return { error: "Invalid size value. Must be a positive number" };
+          }
+
+          await setConfigValue("privacy.max_payload_mb", sizeStr);
+          return { output: "📏 Maximum payload size set to " + size + " MB" };
+        }
+
+        return { error: "Unknown privacy setting. Use: redact, prompt_on_large_payloads, max_payload_mb, or status" };
+
+      } catch (error) {
+        return { error: "Privacy settings failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "release-notes",
+    description: "Show Plato release notes",
+    summary: "Show Plato release notes",
+    category: "Utility",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const fs = await import("fs/promises");
+        const path = await import("path");
+
+        let output = "Plato Release Notes\n";
+        output += "═".repeat(25) + "\n\n";
+
+        // Try to read package.json for current version
+        try {
+          const packagePath = path.resolve("package.json");
+          const packageContent = await fs.readFile(packagePath, "utf8");
+          const packageJson = JSON.parse(packageContent);
+
+          output += "Current Version: " + (packageJson.version || "unknown") + "\n";
+          output += "Repository: " + (packageJson.repository?.url || "N/A") + "\n\n";
+        } catch (pkgError) {
+          output += "Current Version: 0.1.0 (default)\n\n";
+        }
+
+        // Try to read CHANGELOG.md or similar files
+        const changelogPaths = ["CHANGELOG.md", "CHANGES.md", "RELEASES.md", "HISTORY.md"];
+        let changelogFound = false;
+
+        for (const changelogPath of changelogPaths) {
+          try {
+            const fullPath = path.resolve(changelogPath);
+            const changelogContent = await fs.readFile(fullPath, "utf8");
+
+            output += "Release History:\n";
+            output += "─".repeat(20) + "\n";
+
+            // Show first 50 lines or 2000 characters, whichever is less
+            const lines = changelogContent.split("\n").slice(0, 50);
+            const limitedContent = lines.join("\n");
+            const truncatedContent = limitedContent.length > 2000 ?
+              limitedContent.substring(0, 2000) + "...\n\n[Content truncated - see " + changelogPath + " for full history]" :
+              limitedContent;
+
+            output += truncatedContent;
+            changelogFound = true;
+            break;
+          } catch (error) {
+            // Continue to next changelog file
+          }
+        }
+
+        if (!changelogFound) {
+          output += "Version 0.1.0 - Initial Development Release\n";
+          output += "─".repeat(40) + "\n";
+          output += "Core Features:\n";
+          output += "• Terminal UI with React + Ink framework\n";
+          output += "• GitLab Duo and GitHub Copilot integration\n";
+          output += "• MCP (Model Context Protocol) server support\n";
+          output += "• Tool-call bridge system for extensions\n";
+          output += "• Patch engine with Git integration\n";
+          output += "• Session persistence and memory management\n";
+          output += "• Comprehensive slash command system\n";
+          output += "• Security review and permissions system\n";
+          output += "• Multiple output styles and customization\n";
+          output += "• Cross-platform terminal compatibility\n\n";
+
+          output += "Development Status:\n";
+          output += "• 119 test files with comprehensive coverage\n";
+          output += "• TypeScript with strict type checking\n";
+          output += "• ESLint and Prettier code formatting\n";
+          output += "• Jest testing framework\n";
+          output += "• CI/CD integration ready\n\n";
+
+          output += "Recent Improvements:\n";
+          output += "• Enhanced keyboard handling for WSL compatibility\n";
+          output += "• Improved tool-call preset system\n";
+          output += "• Advanced debug configuration\n";
+          output += "• Better error recovery and graceful degradation\n";
+          output += "• Privacy settings management\n\n";
+        }
+
+        output += "For the latest updates and issues:\n";
+        output += "Repository: https://git.euraika.net/Bert/plato\n";
+        output += "Issues: https://git.euraika.net/Bert/plato/-/issues\n";
+        output += "Documentation: See README.md and src/docs/\n";
+
+        return { output };
+
+      } catch (error) {
+        return { error: "Failed to show release notes: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "keydebug",
+    description: "Capture next key raw bytes (debug)",
+    summary: "Capture next key raw bytes (debug)",
+    category: "UI",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        let output = "🔍 Key Debug Mode\n";
+        output += "═".repeat(20) + "\n\n";
+
+        output += "This command captures the next keypress in raw byte format.\n";
+        output += "Useful for debugging keyboard input issues, especially:\n\n";
+
+        output += "🐛 Common Issues:\n";
+        output += "  • WSL/Docker terminal compatibility\n";
+        output += "  • Special key combinations (Ctrl+C, Shift+Enter)\n";
+        output += "  • Unicode character input problems\n";
+        output += "  • Terminal escape sequence detection\n\n";
+
+        output += "📋 Instructions:\n";
+        output += "1. Run this command\n";
+        output += "2. Press the problematic key combination\n";
+        output += "3. Raw bytes will be displayed in hex format\n";
+        output += "4. Share output with developers for debugging\n\n";
+
+        output += "⚠️ Note: This feature requires raw input mode.\n";
+        output += "If not working, check your terminal configuration:\n";
+        output += "  • Run '/terminal-setup' for configuration help\n";
+        output += "  • Ensure terminal supports raw mode\n";
+        output += "  • Try different terminal emulators\n\n";
+
+        output += "🔧 Terminal Settings:\n";
+        output += "  Current TERM: " + (process.env.TERM || "unknown") + "\n";
+        output += "  Platform: " + process.platform + "\n";
+        output += "  Shell: " + (process.env.SHELL || "unknown") + "\n\n";
+
+        output += "To enable debug mode, press any key now...";
+
+        return { output };
+      } catch (error) {
+        return { error: "Key debug setup failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "apply-mode",
+    description: "Configure patch apply mode: auto, manual, dry-run, strict, off, or status",
+    summary: "Configure patch apply mode: auto, manual, dry-run, strict, off, or status",
+    category: "Utility",
+    usage: "[auto|manual|dry-run|strict|off|status]",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const { loadConfig, setConfigValue } = await import("../config.js");
+        const { status } = await import("../tools/git.js");
+
+        const mode = args[0]?.toLowerCase();
+        const validModes = ["auto", "manual", "dry-run", "strict", "off", "status"];
+
+        if (!mode || mode === "status") {
+          const config = await loadConfig();
+          const currentMode = config.applyMode || "manual";
+
+          let statusOutput = "Patch Apply Mode Configuration:\n";
+          statusOutput += "─".repeat(35) + "\n";
+          statusOutput += "Current mode: " + currentMode + "\n\n";
+          statusOutput += "Available modes:\n";
+          statusOutput += "  auto    - Apply patches automatically (Claude Code parity)\n";
+          statusOutput += "  manual  - Require confirmation before applying (default)\n";
+          statusOutput += "  dry-run - Preview patches only, never apply\n";
+          statusOutput += "  strict  - Require clean git state before applying\n";
+          statusOutput += "  off     - Disable patch processing entirely\n\n";
+          statusOutput += "Usage: /apply-mode [" + validModes.join("|") + "]";
+
+          return { output: statusOutput };
+        }
+
+        if (!validModes.includes(mode)) {
+          return {
+            error: "Invalid apply mode. Use: " + validModes.join(", ")
+          };
+        }
+
+        // Special validation for strict mode - check git status
+        if (mode === "strict") {
+          try {
+            const gitStatus = await status();
+            if (!gitStatus.isClean()) {
+              return {
+                error: "Cannot enable strict mode: Git working directory is not clean. " +
+                      "Commit or stash your changes first."
+              };
+            }
+          } catch (gitError: any) {
+            return {
+              error: "Cannot enable strict mode: Git repository not found. " +
+                    "Initialize a Git repository first with 'git init'."
+            };
+          }
+        }
+
+        await setConfigValue("applyMode", mode);
+
+        let output = "✅ Apply mode set to: " + mode + "\n";
+
+        switch (mode) {
+          case "auto":
+            output += "  Patches will be applied automatically";
+            break;
+          case "manual":
+            output += "  Patches require confirmation before applying";
+            break;
+          case "dry-run":
+            output += "  Patches will be previewed only, never applied";
+            break;
+          case "strict":
+            output += "  Patches require clean Git state and confirmation";
+            break;
+          case "off":
+            output += "  Patch processing is disabled";
+            break;
+        }
+
+        return { output };
+      } catch (error) {
+        return {
+          error: "Apply mode configuration failed: " + (error instanceof Error ? error.message : String(error))
+        };
+      }
+    }
+  },
+  {
+    name: "tool-call-preset",
+    description: "Configure tool call preset: enable/disable, strict mode, heuristics, custom messages, and per-model overrides",
+    summary: "Configure tool call preset: enable/disable, strict mode, heuristics, custom messages, and per-model overrides",
+    category: "Configuration",
+    usage: "[enable|disable|strict on|off|heuristics on|off|message <text>|override <model> <message>|status]",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const { loadConfig, setConfigValue } = await import("../config.js");
+
+        const subcommand = args[0]?.toLowerCase();
+
+        if (!subcommand || subcommand === "status") {
+          const config = await loadConfig();
+          const preset = config.toolCallPreset || { enabled: true, strictOnly: true };
+
+          let output = "Tool Call Preset Configuration:\n";
+          output += "─".repeat(35) + "\n";
+          output += "Enabled: " + (preset.enabled !== false ? "yes" : "no") + "\n";
+          output += "Strict mode: " + (preset.strictOnly !== false ? "on" : "off") + "\n";
+          output += "Heuristics: " + (preset.allowHeuristics === true ? "on" : "off") + "\n";
+          output += "Custom message: " + (preset.messageOverride || "none") + "\n";
+
+          if (preset.overrides && Object.keys(preset.overrides).length > 0) {
+            output += "\nPer-model overrides:\n";
+            for (const [model, message] of Object.entries(preset.overrides)) {
+              output += "  " + model + ": " + message + "\n";
+            }
+          } else {
+            output += "Per-model overrides: none\n";
+          }
+
+          output += "\nUsage:\n";
+          output += "  enable/disable     - Enable or disable tool call preset\n";
+          output += "  strict on/off      - Configure strict JSON-only mode\n";
+          output += "  heuristics on/off  - Allow legacy heuristics when not strict\n";
+          output += "  message <text>     - Set custom preset message\n";
+          output += "  override <model> <message> - Set per-model override\n";
+          output += "  status             - Show current configuration";
+
+          return { output };
+        }
+
+        const config = await loadConfig();
+        let currentPreset = config.toolCallPreset || { enabled: true, strictOnly: true };
+
+        if (subcommand === "enable") {
+          currentPreset.enabled = true;
+          await setConfigValue("toolCallPreset", JSON.stringify(currentPreset));
+          return { output: "✅ Tool call preset enabled" };
+        }
+
+        if (subcommand === "disable") {
+          currentPreset.enabled = false;
+          await setConfigValue("toolCallPreset", JSON.stringify(currentPreset));
+          return { output: "❌ Tool call preset disabled" };
+        }
+
+        if (subcommand === "strict") {
+          const mode = args[1]?.toLowerCase();
+          if (mode === "on") {
+            currentPreset.strictOnly = true;
+            await setConfigValue("toolCallPreset", JSON.stringify(currentPreset));
+            return { output: "🔒 Strict mode enabled - only fenced JSON tool calls accepted" };
+          } else if (mode === "off") {
+            currentPreset.strictOnly = false;
+            await setConfigValue("toolCallPreset", JSON.stringify(currentPreset));
+            return { output: "🔓 Strict mode disabled - legacy heuristics allowed" };
+          } else {
+            return { error: "Invalid strict mode. Use: strict on|off" };
+          }
+        }
+
+        if (subcommand === "heuristics") {
+          const mode = args[1]?.toLowerCase();
+          if (mode === "on") {
+            currentPreset.allowHeuristics = true;
+            await setConfigValue("toolCallPreset", JSON.stringify(currentPreset));
+            return { output: "🧠 Heuristics enabled - legacy tool detection allowed" };
+          } else if (mode === "off") {
+            currentPreset.allowHeuristics = false;
+            await setConfigValue("toolCallPreset", JSON.stringify(currentPreset));
+            return { output: "🚫 Heuristics disabled - strict JSON only" };
+          } else {
+            return { error: "Invalid heuristics mode. Use: heuristics on|off" };
+          }
+        }
+
+        if (subcommand === "message") {
+          if (args.length < 2) {
+            return { error: "Message text required. Usage: message <text>" };
+          }
+          const message = args.slice(1).join(" ");
+          currentPreset.messageOverride = message;
+          await setConfigValue("toolCallPreset", JSON.stringify(currentPreset));
+          return { output: "💬 Custom message set: " + message };
+        }
+
+        if (subcommand === "override") {
+          if (args.length < 3) {
+            return { error: "Model and message required. Usage: override <model> <message>" };
+          }
+          const model = args[1];
+          const message = args.slice(2).join(" ");
+
+          if (!currentPreset.overrides) {
+            currentPreset.overrides = {};
+          }
+          currentPreset.overrides[model] = message;
+
+          await setConfigValue("toolCallPreset", JSON.stringify(currentPreset));
+          return { output: "🎯 Override set for " + model + ": " + message };
+        }
+
+        return {
+          error: "Unknown subcommand. Use: enable|disable|strict|heuristics|message|override|status"
+        };
+
+      } catch (error) {
+        return {
+          error: "Tool call preset configuration failed: " + (error instanceof Error ? error.message : String(error))
+        };
+      }
+    }
+  },
+  {
+    name: "ide",
+    description: "Connect to IDE for file awareness and linter warnings",
+    summary: "Connect to IDE for file awareness and linter warnings",
+    category: "Integration",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        let output = "🔗 IDE Integration Setup\n";
+        output += "═".repeat(25) + "\n\n";
+
+        output += "Plato can integrate with your IDE for enhanced development experience:\n\n";
+
+        output += "🎯 Benefits:\n";
+        output += "  • Real-time file change awareness\n";
+        output += "  • Linter warnings and error reporting\n";
+        output += "  • Code completion suggestions\n";
+        output += "  • Automatic workspace synchronization\n";
+        output += "  • Jump to definition support\n\n";
+
+        output += "📋 Supported IDEs:\n";
+        output += "─".repeat(20) + "\n";
+
+        output += "1. VS Code (Recommended)\n";
+        output += "   • Install Language Server Protocol extension\n";
+        output += "   • Configure workspace settings for Plato\n";
+        output += "   • Enable file watchers and auto-save\n\n";
+
+        output += "2. JetBrains IDEs (IntelliJ, WebStorm, PyCharm)\n";
+        output += "   • Enable External Tools integration\n";
+        output += "   • Configure file system monitoring\n";
+        output += "   • Set up LSP client plugin\n\n";
+
+        output += "3. Vim/Neovim\n";
+        output += "   • Configure LSP client (coc.nvim, nvim-lsp)\n";
+        output += "   • Set up file change notifications\n";
+        output += "   • Enable terminal integration\n\n";
+
+        output += "4. Emacs\n";
+        output += "   • Use lsp-mode or eglot\n";
+        output += "   • Configure file watchers\n";
+        output += "   • Set up compilation mode\n\n";
+
+        output += "⚙️ Configuration Steps:\n";
+        output += "─".repeat(25) + "\n";
+
+        output += "1. Language Server Setup:\n";
+        output += "   • Start Plato LSP server: '/mcp attach lsp http://localhost:9999'\n";
+        output += "   • Configure IDE to connect to localhost:9999\n";
+        output += "   • Enable workspace folder monitoring\n\n";
+
+        output += "2. File Watcher Configuration:\n";
+        output += "   • Watch patterns: **/*.{ts,js,json,md}\n";
+        output += "   • Exclude: node_modules, .git, dist, build\n";
+        output += "   • Enable auto-save and format on save\n\n";
+
+        output += "3. Workspace Settings (VS Code example):\n";
+        output += "   {\n";
+        output += "     \"plato.enable\": true,\n";
+        output += "     \"plato.lspPort\": 9999,\n";
+        output += "     \"files.watcherExclude\": {\n";
+        output += "       \"**/.plato/**\": true,\n";
+        output += "       \"**/node_modules/**\": true\n";
+        output += "     }\n";
+        output += "   }\n\n";
+
+        output += "4. Terminal Integration:\n";
+        output += "   • Set PLATO_IDE=vscode in environment\n";
+        output += "   • Configure shell integration scripts\n";
+        output += "   • Enable terminal focus handling\n\n";
+
+        output += "🚀 Quick Start Commands:\n";
+        output += "─".repeat(25) + "\n";
+
+        if (process.env.TERM_PROGRAM === "vscode") {
+          output += "✅ VS Code detected! Quick setup:\n";
+          output += "   1. Install 'Plato Integration' extension\n";
+          output += "   2. Restart VS Code\n";
+          output += "   3. Run '/ide connect' to establish connection\n\n";
+        } else {
+          output += "Auto-detection:\n";
+          output += "   • TERM_PROGRAM: " + (process.env.TERM_PROGRAM || "unknown") + "\n";
+          output += "   • EDITOR: " + (process.env.EDITOR || "unknown") + "\n";
+          output += "   • VISUAL: " + (process.env.VISUAL || "unknown") + "\n\n";
+        }
+
+        output += "📖 Manual Setup:\n";
+        output += "   1. Choose your IDE from the list above\n";
+        output += "   2. Follow configuration steps for your IDE\n";
+        output += "   3. Test connection with '/ide test'\n";
+        output += "   4. Enable features with '/ide enable <feature>'\n\n";
+
+        output += "🔧 Troubleshooting:\n";
+        output += "─".repeat(20) + "\n";
+        output += "  • Connection issues: Check firewall and port 9999\n";
+        output += "  • File sync problems: Verify file watcher permissions\n";
+        output += "  • LSP errors: Check IDE LSP client configuration\n";
+        output += "  • Performance issues: Exclude large directories\n\n";
+
+        output += "Next steps: Run '/ide connect' to start IDE integration";
+
+        return { output };
+      } catch (error) {
+        return { error: "IDE integration setup failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "install-gitlab-app",
+    description: "Configure GitLab integrations with resilient webhook setup",
+    summary: "GitLab integration with timeout protection and validation",
+    category: "Integration",
+    execute: async (args: string[], session: any, provider?: any) => {
+      const { executeInstallGitlabAppCommand } = await import("../commands/resilient-commands.js");
+      return await executeInstallGitlabAppCommand(args, session, provider);
+    }
+  },
+  {
+    name: "terminal-setup",
+    description: "Fix terminal configuration (Shift+Enter, key bindings)",
+    summary: "Fix terminal configuration (Shift+Enter, key bindings)",
+    category: "Utility",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        let output = "🖥️ Terminal Configuration Setup\n";
+        output += "═".repeat(35) + "\n\n";
+
+        output += "Fix common terminal configuration issues for optimal Plato experience.\n\n";
+
+        output += "🔧 Current Environment:\n";
+        output += "─".repeat(25) + "\n";
+        output += "  Platform: " + process.platform + " (" + process.arch + ")\n";
+        output += "  Terminal: " + (process.env.TERM || "unknown") + "\n";
+        output += "  Term Program: " + (process.env.TERM_PROGRAM || "unknown") + "\n";
+        output += "  Shell: " + (process.env.SHELL || "unknown") + "\n";
+        output += "  Colorterm: " + (process.env.COLORTERM || "not set") + "\n";
+        output += "  SSH Connection: " + (process.env.SSH_CONNECTION ? "yes" : "no") + "\n\n";
+
+        output += "🎯 Common Issues & Solutions:\n";
+        output += "─".repeat(30) + "\n\n";
+
+        output += "1. Shift+Enter Key Binding Issues:\n";
+        output += "   Problem: Shift+Enter sends newline instead of submitting\n";
+        output += "   Solutions:\n";
+        output += "   • Terminal: Configure key binding for '\u001b[13;2~'\n";
+        output += "   • VS Code: Check terminal.integrated.sendKeybindingsToShell\n";
+        output += "   • iTerm2: Profiles → Keys → Add '\u001b[13;2~' → Send Text\n";
+        output += "   • Windows Terminal: Add key binding in settings.json\n\n";
+
+        output += "2. Raw Mode / Input Handling:\n";
+        output += "   Problem: Special keys not working correctly\n";
+        output += "   Solutions:\n";
+        output += "   • Enable raw mode: export PLATO_RAW_MODE=1\n";
+        output += "   • WSL fix: export PLATO_WSL_COMPAT=1\n";
+        output += "   • Docker: export PLATO_STATIC_TUI=1\n\n";
+
+        output += "3. Mouse Support Issues:\n";
+        output += "   Problem: Mouse interactions not working\n";
+        output += "   Solutions:\n";
+        output += "   • Enable mouse: /mouse on\n";
+        output += "   • Terminal: Check if mouse reporting supported\n";
+        output += "   • SSH: Enable X11 forwarding if needed\n\n";
+
+        output += "4. Color/Unicode Display:\n";
+        output += "   Problem: Colors or unicode characters broken\n";
+        output += "   Solutions:\n";
+        output += "   • Set COLORTERM=truecolor\n";
+        output += "   • UTF-8: export LC_ALL=en_US.UTF-8\n";
+        output += "   • Force colors: export FORCE_COLOR=1\n\n";
+
+        output += "📋 Configuration Files:\n";
+        output += "─".repeat(25) + "\n\n";
+
+        if (process.platform === "darwin") {
+          output += "macOS Terminal.app:\n";
+          output += "  1. Preferences → Profiles → Keyboard\n";
+          output += "  2. Add key binding: '\\033[13;2~' for Shift+Enter\n";
+          output += "  3. Enable 'Use Option as Meta key'\n\n";
+
+          output += "iTerm2:\n";
+          output += "  1. Preferences → Profiles → Keys → Key Mappings\n";
+          output += "  2. Add: Shift+Enter → Send Escape Sequence → [13;2~\n";
+          output += "  3. Enable mouse reporting\n\n";
+        }
+
+        if (process.platform === "win32" || process.env.WSL_DISTRO_NAME) {
+          output += "Windows Terminal:\n";
+          output += "  Add to settings.json:\n";
+          output += "  {\n";
+          output += "    \"actions\": [\n";
+          output += "      {\n";
+          output += "        \"command\": {\n";
+          output += "          \"action\": \"sendInput\",\n";
+          output += "          \"input\": \"\\u001b[13;2~\"\n";
+          output += "        },\n";
+          output += "        \"keys\": \"shift+enter\"\n";
+          output += "      }\n";
+          output += "    ]\n";
+          output += "  }\n\n";
+
+          if (process.env.WSL_DISTRO_NAME) {
+            output += "WSL Configuration:\n";
+            output += "  # Add to ~/.bashrc or ~/.zshrc:\n";
+            output += "  export PLATO_WSL_COMPAT=1\n";
+            output += "  export PLATO_STATIC_TUI=1\n";
+            output += "  export TERM=xterm-256color\n\n";
+          }
+        }
+
+        if (process.platform === "linux") {
+          output += "GNOME Terminal:\n";
+          output += "  1. Preferences → Shortcuts\n";
+          output += "  2. Disable conflicting shortcuts\n";
+          output += "  3. Enable mouse and scroll events\n\n";
+
+          output += "Konsole:\n";
+          output += "  1. Settings → Configure Shortcuts\n";
+          output += "  2. Configure key bindings\n";
+          output += "  3. Enable bidirectional text support\n\n";
+        }
+
+        output += "VS Code Integrated Terminal:\n";
+        output += "  Add to settings.json:\n";
+        output += "  {\n";
+        output += "    \"terminal.integrated.sendKeybindingsToShell\": false,\n";
+        output += "    \"terminal.integrated.allowMnemonics\": false,\n";
+        output += "    \"terminal.integrated.commandsToSkipShell\": [\n";
+        output += "      \"workbench.action.terminal.sendSequence\"\n";
+        output += "    ]\n";
+        output += "  }\n\n";
+
+        output += "🚀 Quick Fix Commands:\n";
+        output += "─".repeat(25) + "\n\n";
+
+        const subcommand = args[0]?.toLowerCase();
+
+        if (subcommand === "test") {
+          output += "Running terminal capability tests...\n\n";
+          output += "✅ Process platform: " + process.platform + "\n";
+          output += "✅ TTY support: " + (process.stdout.isTTY ? "yes" : "no") + "\n";
+          output += "✅ Color support: " + (process.stdout.hasColors && process.stdout.hasColors() ? "yes" : "basic") + "\n";
+          output += "✅ Unicode support: " + (process.env.LC_ALL?.includes("UTF") ? "yes" : "unknown") + "\n\n";
+          output += "Run '/keydebug' to test specific key combinations\n\n";
+        } else if (subcommand === "fix") {
+          output += "Applying automatic fixes...\n\n";
+          output += "Environment variables to set:\n";
+          if (process.env.WSL_DISTRO_NAME) {
+            output += "  export PLATO_WSL_COMPAT=1\n";
+            output += "  export PLATO_STATIC_TUI=1\n";
+          }
+          output += "  export TERM=xterm-256color\n";
+          output += "  export COLORTERM=truecolor\n";
+          output += "  export LC_ALL=en_US.UTF-8\n\n";
+          output += "Add these to your shell profile (~/.bashrc, ~/.zshrc)\n\n";
+        } else {
+          output += "Available commands:\n";
+          output += "  /terminal-setup test    - Test terminal capabilities\n";
+          output += "  /terminal-setup fix     - Show environment variable fixes\n";
+          output += "  /terminal-setup help    - Show detailed help (this output)\n\n";
+        }
+
+        output += "🔍 Diagnostic Commands:\n";
+        output += "─".repeat(25) + "\n";
+        output += "  /keydebug     - Debug specific key combinations\n";
+        output += "  /doctor       - Overall Plato setup diagnosis\n";
+        output += "  /debug on     - Enable debug mode for troubleshooting\n";
+        output += "  /mouse toggle - Test mouse mode\n\n";
+
+        output += "📚 Reference Documentation:\n";
+        output += "─".repeat(30) + "\n";
+        output += "  • Terminal escape sequences: https://invisible-island.net/xterm/ctlseqs/ctlseqs.html\n";
+        output += "  • ANSI color codes: https://en.wikipedia.org/wiki/ANSI_escape_code\n";
+        output += "  • Unicode in terminals: https://unicode.org/charts/\n\n";
+
+        output += "💡 Pro Tips:\n";
+        output += "─".repeat(15) + "\n";
+        output += "  • Test in multiple terminals to isolate issues\n";
+        output += "  • Use '/paste' command for large text input\n";
+        output += "  • Configure terminal scrollback buffer size\n";
+        output += "  • Enable terminal bells for notifications\n";
+        output += "  • Set up terminal profiles for different projects\n\n";
+
+        output += "🔧 Still having issues?\n";
+        output += "  Run '/bug' to report terminal-specific problems with full environment details.";
+
+        return { output };
+      } catch (error) {
+        return { error: "Terminal setup failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "bug",
+    description: "Report bug - opens Plato GitLab issues page",
+    summary: "Report bug - opens Plato GitLab issues page",
+    category: "Utility",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const fs = await import("fs/promises");
+        const path = await import("path");
+
+        // Get repository URL from package.json
+        let issuesUrl = "https://git.euraika.net/Bert/plato/-/issues";
+
+        try {
+          const packagePath = path.resolve("package.json");
+          const packageContent = await fs.readFile(packagePath, "utf8");
+          const packageJson = JSON.parse(packageContent);
+
+          if (packageJson.bugs?.url) {
+            issuesUrl = packageJson.bugs.url;
+          } else if (packageJson.repository?.url) {
+            // Convert repository URL to issues URL
+            const repoUrl = packageJson.repository.url
+              .replace(/\.git$/, "")
+              .replace(/^git\+/, "");
+            issuesUrl = repoUrl + "/-/issues";
+          }
+        } catch (error) {
+          // Use default URL if package.json cannot be read
+        }
+
+        let output = "🐛 Bug Report\n";
+        output += "═".repeat(15) + "\n\n";
+
+        output += "To report a bug or issue with Plato:\n\n";
+
+        output += "1. 📋 Gather Information:\n";
+        output += "   • What were you trying to do?\n";
+        output += "   • What actually happened?\n";
+        output += "   • What did you expect to happen?\n";
+        output += "   • Can you reproduce the issue?\n\n";
+
+        output += "2. 🔧 System Information:\n";
+        output += "   • Operating System: " + process.platform + " " + process.arch + "\n";
+        output += "   • Node.js Version: " + process.version + "\n";
+        output += "   • Terminal: " + (process.env.TERM || "unknown") + "\n";
+        output += "   • Shell: " + (process.env.SHELL || "unknown") + "\n\n";
+
+        // Get current Plato version if possible
+        try {
+          const packagePath = path.resolve("package.json");
+          const packageContent = await fs.readFile(packagePath, "utf8");
+          const packageJson = JSON.parse(packageContent);
+          output += "   • Plato Version: " + (packageJson.version || "unknown") + "\n\n";
+        } catch (error) {
+          output += "   • Plato Version: unknown\n\n";
+        }
+
+        output += "3. 📝 Include Debug Information:\n";
+        output += "   • Run '/debug on' to enable debug mode\n";
+        output += "   • Reproduce the issue\n";
+        output += "   • Run '/debug logs' to get debug information\n";
+        output += "   • Include relevant logs in your report\n\n";
+
+        output += "4. 🌐 Submit Issue:\n";
+        output += "   Open: " + issuesUrl + "\n\n";
+
+        output += "💡 Tips for Better Bug Reports:\n";
+        output += "   • Use clear, descriptive titles\n";
+        output += "   • Include step-by-step reproduction steps\n";
+        output += "   • Attach screenshots or terminal output\n";
+        output += "   • Mention if the issue is new or recurring\n";
+        output += "   • Check existing issues first to avoid duplicates\n\n";
+
+        output += "🔍 Common Issues to Check First:\n";
+        output += "   • Run '/doctor' to diagnose setup problems\n";
+        output += "   • Check '/terminal-setup' for terminal configuration\n";
+        output += "   • Verify '/status' shows proper authentication\n";
+        output += "   • Try '/debug status' to check debug configuration\n\n";
+
+        output += "Thank you for helping improve Plato! 🙏";
+
+        // Attempt to open URL automatically if possible
+        const shouldTryOpen = args.includes("--open") || args.includes("-o");
+        if (shouldTryOpen) {
+          try {
+            const { spawn } = await import("child_process");
+
+            // Try to determine the platform and open command
+            let openCommand: string;
+            let openArgs: string[];
+
+            if (process.platform === "darwin") {
+              openCommand = "open";
+              openArgs = [issuesUrl];
+            } else if (process.platform === "win32") {
+              openCommand = "start";
+              openArgs = ["", issuesUrl];
+            } else {
+              // Linux and other Unix-like systems
+              openCommand = "xdg-open";
+              openArgs = [issuesUrl];
+            }
+
+            spawn(openCommand, openArgs, { detached: true, stdio: "ignore" });
+            output += "\n\n🌐 Opening issues page in your default browser...";
+
+          } catch (openError) {
+            // Silently ignore if we can't open the URL
+            output += "\n\n(Use --open or -o flag to attempt opening URL automatically)";
+          }
+        } else {
+          output += "\n\n(Use '/bug --open' to try opening the URL automatically)";
+        }
+
+        return { output };
+
+      } catch (error) {
+        return { error: "Bug report command failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+  {
+    name: "debug",
+    description: "Manage debug mode settings and diagnostic output",
+    summary: "Manage debug mode settings and diagnostic output",
+    category: "System",
+    usage: "[on|off|level <level>|logs|clear|targets [target...]|status]",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        const { loadConfig, setConfigValue } = await import("../config.js");
+        const fs = await import("fs/promises");
+        const path = await import("path");
+
+        const subcommand = args[0]?.toLowerCase();
+        const config = await loadConfig();
+        const debugConfig = config.debug || {
+          enabled: false,
+          level: "minimal",
+          targets: [],
+          logFile: ".plato/debug.log",
+        };
+
+        // Default to status if no subcommand provided
+        if (!subcommand || subcommand === "status") {
+          let output = "Debug Configuration:\n";
+          output += "─".repeat(25) + "\n";
+          output += "Enabled: " + (debugConfig.enabled ? "yes" : "no") + "\n";
+          output += "Level: " + (debugConfig.level || "minimal") + "\n";
+          output += "Log file: " + (debugConfig.logFile || ".plato/debug.log") + "\n";
+          output += "Targets: " + (debugConfig.targets && debugConfig.targets.length > 0 ? debugConfig.targets.join(", ") : "none") + "\n\n";
+
+          output += "Available commands:\n";
+          output += "  on/off           - Enable or disable debug mode\n";
+          output += "  level <level>    - Set debug level (minimal|verbose|full)\n";
+          output += "  logs             - Show recent debug logs\n";
+          output += "  clear            - Clear debug logs\n";
+          output += "  targets [names]  - Set debug targets (space-separated)\n";
+          output += "  status           - Show current configuration";
+
+          return { output };
+        }
+
+        // Handle enable/disable
+        if (subcommand === "on") {
+          await setConfigValue("debug.enabled", "true");
+          return { output: "✅ Debug mode enabled" };
+        }
+
+        if (subcommand === "off") {
+          await setConfigValue("debug.enabled", "false");
+          return { output: "❌ Debug mode disabled" };
+        }
+
+        // Handle debug level
+        if (subcommand === "level") {
+          const level = args[1]?.toLowerCase();
+          if (!level) {
+            return { error: "Debug level required. Use: minimal, verbose, or full" };
+          }
+
+          if (!["minimal", "verbose", "full"].includes(level)) {
+            return { error: "Invalid debug level. Use: minimal, verbose, or full" };
+          }
+
+          await setConfigValue("debug.level", level);
+
+          let output = "🔧 Debug level set to: " + level + "\n";
+          switch (level) {
+            case "minimal":
+              output += "  Basic error messages and warnings only";
+              break;
+            case "verbose":
+              output += "  Detailed operation logs and timing information";
+              break;
+            case "full":
+              output += "  Complete diagnostic output with all internal operations";
+              break;
+          }
+
+          return { output };
+        }
+
+        // Handle logs display
+        if (subcommand === "logs") {
+          const logFile = debugConfig.logFile || ".plato/debug.log";
+
+          try {
+            const logPath = path.resolve(logFile);
+            const logContent = await fs.readFile(logPath, "utf8");
+
+            if (!logContent.trim()) {
+              return { output: "Debug log is empty" };
+            }
+
+            // Show last 50 lines
+            const lines = logContent.trim().split("\n");
+            const recentLines = lines.slice(-50);
+
+            let output = "Recent Debug Logs (" + recentLines.length + " of " + lines.length + " lines):\n";
+            output += "─".repeat(40) + "\n";
+            output += recentLines.join("\n");
+
+            return { output };
+          } catch (error: any) {
+            if (error.code === "ENOENT") {
+              return { output: "No debug log file found at: " + logFile };
+            }
+            return { error: "Failed to read debug logs: " + error.message };
+          }
+        }
+
+        // Handle log clearing
+        if (subcommand === "clear") {
+          const logFile = debugConfig.logFile || ".plato/debug.log";
+
+          try {
+            const logPath = path.resolve(logFile);
+            await fs.writeFile(logPath, "", "utf8");
+            return { output: "🗑️ Debug logs cleared" };
+          } catch (error: any) {
+            return { error: "Failed to clear debug logs: " + error.message };
+          }
+        }
+
+        // Handle debug targets
+        if (subcommand === "targets") {
+          const targets = args.slice(1);
+
+          if (targets.length === 0) {
+            const currentTargets = debugConfig.targets || [];
+            let output = "Current debug targets:\n";
+            if (currentTargets.length === 0) {
+              output += "  None - debugging all components";
+            } else {
+              output += "  " + currentTargets.join(", ");
+            }
+            output += "\n\nCommon targets:\n";
+            output += "  mcp, tools, runtime, tui, keyboard, providers, auth, config";
+            return { output };
+          }
+
+          // Validate targets
+          const validTargets = ["mcp", "tools", "runtime", "tui", "keyboard", "providers", "auth", "config", "permissions", "context", "memory"];
+          const invalidTargets = targets.filter(t => !validTargets.includes(t.toLowerCase()));
+
+          if (invalidTargets.length > 0) {
+            return { error: "Invalid targets: " + invalidTargets.join(", ") + ". Valid targets: " + validTargets.join(", ") };
+          }
+
+          const newDebugConfig = {
+            ...debugConfig,
+            targets: targets.map(t => t.toLowerCase()),
+          };
+
+          await setConfigValue("debug", JSON.stringify(newDebugConfig));
+
+          return { output: "🎯 Debug targets set to: " + targets.join(", ") };
+        }
+
+        return { error: "Unknown debug command. Use: on, off, level, logs, clear, targets, or status" };
+
+      } catch (error) {
+        return { error: "Debug command failed: " + (error instanceof Error ? error.message : String(error)) };
+      }
+    }
+  },
+];
+
+export const SLASH_MAP = new Map(
+  SLASH_COMMANDS.map((c) => [c.name, c] as const),
+);
+
+
+// Export for router
+export const slashCommands = SLASH_COMMANDS;
+
+// Helper functions for MCP command implementation
+async function handleMcpStatus(): Promise<{ output: string }> {
+  try {
+    const { listServers, health } = await import("../integrations/mcp.js");
+
+    const servers = await listServers();
+    const healthResults = await health();
+
+    let output = "MCP System Status\n";
+    output += "═".repeat(20) + "\n";
+    output += "Total servers: " + servers.length + "\n";
+
+    if (servers.length === 0) {
+      output += "No MCP servers attached\n\n";
+      output += "Usage: /mcp attach <name> <url>\n";
+      output += "Example: /mcp attach local http://localhost:8719";
+      return { output };
+    }
+
+    output += "\nServer Health:\n";
+    output += "─".repeat(15) + "\n";
+
+    for (const result of healthResults) {
+      const statusIcon = result.ok ? "✅" : "❌";
+      const statusText = result.ok ? "Healthy" : "Unreachable";
+      const statusCode = result.status ? " (" + result.status + ")" : "";
+      output += "  " + statusIcon + " " + result.id + ": " + statusText + statusCode + "\n";
+    }
+
+    return { output };
+  } catch (error) {
+    return { output: "Failed to get MCP status: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+async function handleMcpList(): Promise<{ output: string }> {
+  try {
+    const { listServers, health } = await import("../integrations/mcp.js");
+
+    const servers = await listServers();
+    const healthResults = await health();
+    const healthMap = new Map(healthResults.map(h => [h.id, h]));
+
+    let output = "Attached MCP Servers:\n";
+    output += "─".repeat(25) + "\n";
+
+    if (servers.length === 0) {
+      output += "No servers attached\n\n";
+      output += "To attach a server: /mcp attach <name> <url>";
+      return { output };
+    }
+
+    for (const server of servers) {
+      const healthInfo = healthMap.get(server.id);
+      const statusIcon = healthInfo?.ok ? "🟢" : "🔴";
+      const statusText = healthInfo?.ok ? "Online" : "Offline";
+
+      output += "  " + statusIcon + " " + server.id + "\n";
+      output += "    URL: " + server.url + "\n";
+      output += "    Status: " + statusText + "\n";
+      if (healthInfo?.status) {
+        output += "    Last response: " + healthInfo.status + "\n";
+      }
+      output += "\n";
+    }
+
+    return { output };
+  } catch (error) {
+    return { output: "Failed to list MCP servers: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+async function handleMcpAttach(args: string[]): Promise<{ output?: string; error?: string }> {
+  if (args.length < 2) {
+    return { error: "Usage: /mcp attach <name> <url>" };
+  }
+
+  const [name, url] = args;
+
+  // Validate URL format
+  try {
+    new URL(url);
+  } catch {
+    return { error: "Invalid URL format: " + url };
+  }
+
+  // Check if URL is reachable
+  try {
+    const response = await fetch(url + "/health", {
+      method: "HEAD",
+      signal: AbortSignal.timeout(10000)
+    });
+
+    if (!response.ok && response.status !== 404) {
+      return { error: "Server health check failed: " + response.status + " " + response.statusText };
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { error: "Failed to connect to MCP server: " + message };
+  }
+
+  try {
+    const { attachServer } = await import("../integrations/mcp.js");
+    await attachServer(name, url);
+
+    return { output: "Successfully attached MCP server '" + name + "' at " + url };
+  } catch (error) {
+    return { error: "Failed to attach server: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+async function handleMcpDetach(args: string[]): Promise<{ output?: string; error?: string }> {
+  if (args.length < 1) {
+    return { error: "Usage: /mcp detach <name>" };
+  }
+
+  const name = args[0];
+
+  try {
+    const { detachServer } = await import("../integrations/mcp.js");
+    await detachServer(name);
+
+    return { output: "Successfully detached MCP server '" + name + "'" };
+  } catch (error) {
+    return { error: "Failed to detach server: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+async function handleMcpTools(args: string[]): Promise<{ output: string }> {
+  try {
+    const { listTools } = await import("../integrations/mcp.js");
+
+    const serverId = args[0];
+    const toolsByServer = await listTools(serverId);
+
+    let output = "Available MCP Tools:\n";
+    output += "─".repeat(25) + "\n";
+
+    if (toolsByServer.length === 0) {
+      output += "No tools available\n";
+      if (serverId) {
+        output += "Server '" + serverId + "' not found or has no tools";
+      } else {
+        output += "No MCP servers attached or no tools exposed";
+      }
+      return { output };
+    }
+
+    for (const { server, tools } of toolsByServer) {
+      output += "\n📦 Server: " + server + "\n";
+
+      if (tools.length === 0) {
+        output += "  No tools available\n";
+        continue;
+      }
+
+      for (const tool of tools) {
+        output += "  🔧 " + tool.name + "\n";
+        if (tool.description) {
+          output += "    " + tool.description + "\n";
+        }
+        if (tool.input_schema?.properties) {
+          const params = Object.keys(tool.input_schema.properties);
+          if (params.length > 0) {
+            output += "    Parameters: " + params.join(", ") + "\n";
+          }
+        }
+      }
+    }
+
+    return { output };
+  } catch (error) {
+    return { output: "Failed to list tools: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+async function handleMcpTest(args: string[]): Promise<{ output?: string; error?: string }> {
+  if (args.length < 1) {
+    return { error: "Usage: /mcp test <name>" };
+  }
+
+  const name = args[0];
+
+  try {
+    const { health, listServers } = await import("../integrations/mcp.js");
+
+    // Check if server exists
+    const servers = await listServers();
+    const server = servers.find(s => s.id === name);
+
+    if (!server) {
+      return { error: "Server '" + name + "' not found. Use /mcp list to see attached servers." };
+    }
+
+    // Test connectivity
+    const healthResults = await health(name);
+    const result = healthResults[0];
+
+    let output = "MCP Server Test: " + name + "\n";
+    output += "─".repeat(20 + name.length) + "\n";
+    output += "URL: " + server.url + "\n";
+
+    if (result.ok) {
+      output += "Status: ✅ Online\n";
+      output += "Response code: " + (result.status || "200") + "\n";
+
+      // Test tools endpoint
+      try {
+        const { listTools } = await import("../integrations/mcp.js");
+        const toolsByServer = await listTools(name);
+        const tools = toolsByServer.find(ts => ts.server === name)?.tools || [];
+
+        output += "Tools available: " + tools.length + "\n";
+        if (tools.length > 0) {
+          output += "Sample tools: " + tools.slice(0, 3).map(t => t.name).join(", ");
+          if (tools.length > 3) {
+            output += " (+" + (tools.length - 3) + " more)";
+          }
+          output += "\n";
+        }
+      } catch (toolError) {
+        output += "Tools endpoint: ⚠️ Error accessing tools\n";
+      }
+
+      output += "\n✅ Connection test passed";
+    } else {
+      output += "Status: ❌ Offline\n";
+      output += "Error: Connection failed\n";
+      output += "\n❌ Connection test failed";
+    }
+
+    return { output };
+  } catch (error) {
+    return { error: "Test failed: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+// Helper functions for context command implementation
+async function handleContextStatus(session: any): Promise<{ output: string }> {
+  try {
+    let output = "Context Status\n";
+    output += "═".repeat(15) + "\n";
+
+    // Get conversation metrics
+    const stats = session?.getStats ? session.getStats() : { messageCount: 0, inputTokens: 0, outputTokens: 0 };
+
+    output += "📊 Conversation Metrics:\n";
+    output += "  Messages: " + (stats.messageCount || stats.messages || 0) + "\n";
+    output += "  Input tokens: " + (stats.inputTokens || stats.tokens?.input || 0) + "\n";
+    output += "  Output tokens: " + (stats.outputTokens || stats.tokens?.output || 0) + "\n";
+    output += "  Total tokens: " + ((stats.inputTokens || 0) + (stats.outputTokens || 0)) + "\n\n";
+
+    // Token usage breakdown
+    const totalTokens = (stats.inputTokens || 0) + (stats.outputTokens || 0);
+    const contextLimit = 128000; // Default context limit for most models
+    const usagePercent = Math.round((totalTokens / contextLimit) * 100);
+
+    output += "🎯 Context Usage:\n";
+    output += "  Current: " + totalTokens + " / " + contextLimit + " tokens (" + usagePercent + "%)\n";
+
+    // Create ASCII progress bar
+    const barLength = 20;
+    const filledBars = Math.round((usagePercent / 100) * barLength);
+    const emptyBars = barLength - filledBars;
+    const progressBar = "█".repeat(filledBars) + "░".repeat(emptyBars);
+
+    let barColor = "";
+    if (usagePercent < 50) barColor = "🟢";
+    else if (usagePercent < 75) barColor = "🟡";
+    else if (usagePercent < 90) barColor = "🟠";
+    else barColor = "🔴";
+
+    output += "  Progress: " + barColor + " [" + progressBar + "] " + usagePercent + "%\n\n";
+
+    // Memory pressure warnings
+    if (usagePercent > 90) {
+      output += "⚠️ HIGH MEMORY PRESSURE\n";
+      output += "  Context is nearly full. Consider:\n";
+      output += "  • /context compact - Compress old context\n";
+      output += "  • /context clear - Clear conversation history\n";
+      output += "  • /context export <file> - Save before clearing\n\n";
+    } else if (usagePercent > 75) {
+      output += "🟡 MODERATE MEMORY USAGE\n";
+      output += "  Context is getting full. Monitor usage.\n\n";
+    } else {
+      output += "✅ OPTIMAL MEMORY USAGE\n";
+      output += "  Context usage is within healthy limits.\n\n";
+    }
+
+    // Context breakdown
+    const messages = session?.getHistory ? session.getHistory() : [];
+    const userMessages = messages.filter((m: any) => m.role === "user").length;
+    const assistantMessages = messages.filter((m: any) => m.role === "assistant").length;
+    const systemMessages = messages.filter((m: any) => m.role === "system").length;
+
+    output += "📝 Message Breakdown:\n";
+    output += "  User messages: " + userMessages + "\n";
+    output += "  Assistant messages: " + assistantMessages + "\n";
+    output += "  System messages: " + systemMessages + "\n\n";
+
+    output += "🛠️ Available Commands:\n";
+    output += "  /context clear        - Clear conversation context\n";
+    output += "  /context export <file> - Export context to file\n";
+    output += "  /context compact      - Compress old context\n";
+    output += "  /context status       - Show this status (default)";
+
+    return { output };
+  } catch (error) {
+    return { output: "Failed to get context status: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+async function handleContextClear(session: any): Promise<{ output?: string; error?: string; requiresConfirmation?: boolean }> {
+  try {
+    if (!session?.clearHistory) {
+      return { error: "No session available or session does not support clearing history." };
+    }
+
+    const stats = session.getStats ? session.getStats() : { messageCount: 0 };
+    const messageCount = stats.messageCount || stats.messages || 0;
+
+    if (messageCount === 0) {
+      return { output: "Context is already empty." };
+    }
+
+    // Clear the conversation history
+    session.clearHistory();
+
+    // Reset token metrics if available
+    if (session.resetTokenMetrics) {
+      session.resetTokenMetrics();
+    }
+
+    let output = "🗑️ Context Cleared\n";
+    output += "─".repeat(20) + "\n";
+    output += "Removed " + messageCount + " messages from conversation history.\n";
+    output += "Token counters reset.\n\n";
+    output += "✅ Context is now empty and ready for new conversation.";
+
+    return { output };
+  } catch (error) {
+    return { error: "Failed to clear context: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+async function handleContextExport(args: string[], session: any): Promise<{ output?: string; error?: string }> {
+  if (args.length < 1) {
+    return { error: "Usage: /context export <filename>" };
+  }
+
+  const filename = args[0];
+
+  try {
+    const fs = await import("fs/promises");
+    const path = await import("path");
+
+    if (!session?.getHistory) {
+      return { error: "No session available or session does not support exporting." };
+    }
+
+    const messages = session.getHistory();
+    if (messages.length === 0) {
+      return { error: "No conversation history to export." };
+    }
+
+    // Create export data
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      messageCount: messages.length,
+      stats: session.getStats ? session.getStats() : {},
+      messages: messages
+    };
+
+    // Determine file format based on extension
+    const ext = path.extname(filename).toLowerCase();
+    let content: string;
+
+    if (ext === ".json") {
+      content = JSON.stringify(exportData, null, 2);
+    } else if (ext === ".md" || ext === ".txt" || ext === "") {
+      // Plain text/markdown format
+      content = "# Conversation Export\n\n";
+      content += "Exported: " + exportData.exportedAt + "\n";
+      content += "Messages: " + exportData.messageCount + "\n\n";
+      content += "---\n\n";
+
+      for (const message of messages) {
+        content += "## " + message.role.charAt(0).toUpperCase() + message.role.slice(1) + "\n\n";
+        content += message.content + "\n\n";
+      }
+    } else {
+      return { error: "Unsupported file format. Use .json, .md, or .txt" };
+    }
+
+    // Write to file
+    const fullPath = path.resolve(filename);
+    await fs.writeFile(fullPath, content, "utf8");
+
+    let output = "📁 Context Exported\n";
+    output += "─".repeat(20) + "\n";
+    output += "File: " + fullPath + "\n";
+    output += "Format: " + (ext || "text") + "\n";
+    output += "Messages: " + messages.length + "\n";
+    output += "Size: " + Math.round(content.length / 1024) + " KB\n\n";
+    output += "✅ Export completed successfully.";
+
+    return { output };
+  } catch (error) {
+    return { error: "Failed to export context: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}
+
+async function handleContextCompact(session: any): Promise<{ output?: string; error?: string }> {
+  try {
+    if (!session?.compactHistoryWithFocus) {
+      return { error: "Session does not support context compaction." };
+    }
+
+    const beforeStats = session.getStats ? session.getStats() : { messageCount: 0 };
+    const beforeCount = beforeStats.messageCount || beforeStats.messages || 0;
+
+    if (beforeCount === 0) {
+      return { output: "No conversation history to compact." };
+    }
+
+    // Perform compaction
+    const result = await session.compactHistoryWithFocus();
+    const originalLength = result.originalLength || beforeCount;
+    const newLength = result.newLength || beforeCount;
+    const saved = originalLength - newLength;
+    const savedPercent = originalLength > 0 ? Math.round((saved / originalLength) * 100) : 0;
+
+    let output = "🗜️ Context Compacted\n";
+    output += "─".repeat(20) + "\n";
+    output += "Original messages: " + originalLength + "\n";
+    output += "Compacted to: " + newLength + "\n";
+    output += "Removed: " + saved + " messages (" + savedPercent + "%)\n\n";
+
+    if (saved > 0) {
+      output += "✅ Context successfully compacted to preserve memory.";
+    } else {
+      output += "ℹ️ No compaction needed - context is already optimized.";
+    }
+
+    return { output };
+  } catch (error) {
+    return { error: "Failed to compact context: " + (error instanceof Error ? error.message : String(error)) };
+  }
+}

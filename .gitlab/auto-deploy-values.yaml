@@ -99,15 +99,15 @@ networkPolicy:
   enabled: true
   ingress:
     - from:
-      - namespaceSelector:
-          matchLabels:
-            name: ingress-nginx
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
   egress:
     - to:
-      - ipBlock:
-          cidr: 0.0.0.0/0
-          except:
-            - 169.254.169.254/32  # Block metadata service
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32 # Block metadata service
 
 # Pod Security Policy
 podSecurityContext:
@@ -145,11 +145,11 @@ monitoring:
 # Database (if needed in future)
 postgresql:
   enabled: false
-  
+
 redis:
   enabled: false
 
 # Review apps configuration
 reviewApps:
   enabled: true
-  lifecycle: 7d  # Auto-delete after 7 days
+  lifecycle: 7d # Auto-delete after 7 days

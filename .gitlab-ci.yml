@@ -21,7 +21,7 @@ default:
 
 # Variables
 variables:
-  NODE_ENV: "development"  # Need dev dependencies for build process
+  NODE_ENV: "development" # Need dev dependencies for build process
 
 # Build stage
 build:

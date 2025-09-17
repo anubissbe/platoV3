@@ -1,9 +1,9 @@
-export type IndicatorSeverity = 'info' | 'warning' | 'error' | 'critical';
-export type ToolOperationStatus = 'running' | 'success' | 'error' | 'cancelled';
+export type IndicatorSeverity = "info" | "warning" | "error" | "critical";
+export type ToolOperationStatus = "running" | "success" | "error" | "cancelled";
 
 export interface Animation {
   name: string;
-  type: 'spinner' | 'dots' | 'pulse' | 'custom';
+  type: "spinner" | "dots" | "pulse" | "custom";
   frames: string[];
   interval: number;
 }
@@ -32,18 +32,18 @@ export class VisualIndicators {
   // Streaming indicators
   getStreamingIndicator(): Animation {
     return {
-      name: 'streaming',
-      type: 'spinner',
-      frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+      name: "streaming",
+      type: "spinner",
+      frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
       interval: 80,
     };
   }
 
   getTypingIndicator(): Animation {
     return {
-      name: 'typing',
-      type: 'dots',
-      frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+      name: "typing",
+      type: "dots",
+      frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
       interval: 100,
     };
   }
@@ -71,7 +71,7 @@ export class VisualIndicators {
   }
 
   // Error indicators
-  setError(message: string, severity: IndicatorSeverity = 'error'): void {
+  setError(message: string, severity: IndicatorSeverity = "error"): void {
     this.error = { message, severity };
   }
 
@@ -88,17 +88,17 @@ export class VisualIndicators {
   }
 
   getErrorIndicator(): string {
-    if (!this.error) return '';
-    
+    if (!this.error) return "";
+
     switch (this.error.severity) {
-      case 'info':
-        return 'ℹ️';
-      case 'warning':
-        return '⚠️';
-      case 'error':
-        return '❌';
-      case 'critical':
-        return '🚨';
+      case "info":
+        return "ℹ️";
+      case "warning":
+        return "⚠️";
+      case "error":
+        return "❌";
+      case "critical":
+        return "🚨";
     }
   }
 
@@ -119,7 +119,11 @@ export class VisualIndicators {
     }
   }
 
-  completeToolOperation(name: string, result: ToolOperationStatus, status?: string): void {
+  completeToolOperation(
+    name: string,
+    result: ToolOperationStatus,
+    status?: string,
+  ): void {
     const operation = this.toolOperations.get(name);
     if (operation) {
       operation.result = result;
@@ -131,8 +135,10 @@ export class VisualIndicators {
   }
 
   hasActiveTools(): boolean {
-    return this.toolOperations.size > 0 && 
-           Array.from(this.toolOperations.values()).some(op => !op.result);
+    return (
+      this.toolOperations.size > 0 &&
+      Array.from(this.toolOperations.values()).some((op) => !op.result)
+    );
   }
 
   getActiveTools(): string[] {
@@ -153,57 +159,59 @@ export class VisualIndicators {
 
   getToolIcon(toolName: string): string {
     const icons: Record<string, string> = {
-      'search': '🔍',
-      'edit': '✏️',
-      'delete': '🗑️',
-      'compile': '🔨',
-      'test': '🧪',
-      'deploy': '🚀',
-      'download': '⬇️',
-      'upload': '⬆️',
-      'refresh': '🔄',
-      'save': '💾',
+      search: "🔍",
+      edit: "✏️",
+      delete: "🗑️",
+      compile: "🔨",
+      test: "🧪",
+      deploy: "🚀",
+      download: "⬇️",
+      upload: "⬆️",
+      refresh: "🔄",
+      save: "💾",
     };
-    
-    return icons[toolName] || '⚙️';
+
+    return icons[toolName] || "⚙️";
   }
 
   // Status transitions
   transitionStatus(from: string, to: string): StatusTransition {
     const transitions: Record<string, StatusTransition> = {
-      'idle-loading': {
-        from: 'idle',
-        to: 'loading',
+      "idle-loading": {
+        from: "idle",
+        to: "loading",
         duration: 300,
-        frames: ['○', '◔', '◑', '◕', '●'],
+        frames: ["○", "◔", "◑", "◕", "●"],
       },
-      'loading-idle': {
-        from: 'loading',
-        to: 'idle',
+      "loading-idle": {
+        from: "loading",
+        to: "idle",
         duration: 300,
-        frames: ['●', '◕', '◑', '◔', '○'],
+        frames: ["●", "◕", "◑", "◔", "○"],
       },
-      'idle-error': {
-        from: 'idle',
-        to: 'error',
+      "idle-error": {
+        from: "idle",
+        to: "error",
         duration: 200,
-        frames: ['○', '⊗', '⊙', '⊛', '⊜', '❌'],
+        frames: ["○", "⊗", "⊙", "⊛", "⊜", "❌"],
       },
-      'loading-success': {
-        from: 'loading',
-        to: 'success',
+      "loading-success": {
+        from: "loading",
+        to: "success",
         duration: 400,
-        frames: ['●', '◉', '◎', '◌', '✓', '✅'],
+        frames: ["●", "◉", "◎", "◌", "✓", "✅"],
       },
     };
 
     const key = `${from}-${to}`;
-    return transitions[key] || {
-      from,
-      to,
-      duration: 200,
-      frames: [from, to],
-    };
+    return (
+      transitions[key] || {
+        from,
+        to,
+        duration: 200,
+        frames: [from, to],
+      }
+    );
   }
 
   setStatus(key: string, value: string): void {
@@ -226,56 +234,60 @@ export class LoadingAnimations {
 
   private initializeAnimations(): void {
     // Spinner animation
-    this.animations.set('spinner', {
-      name: 'spinner',
-      type: 'spinner',
-      frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+    this.animations.set("spinner", {
+      name: "spinner",
+      type: "spinner",
+      frames: ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"],
       interval: 80,
     });
 
     // Dots animation
-    this.animations.set('dots', {
-      name: 'dots',
-      type: 'dots',
-      frames: ['.', '..', '...', '....', '.....', '......'],
+    this.animations.set("dots", {
+      name: "dots",
+      type: "dots",
+      frames: [".", "..", "...", "....", ".....", "......"],
       interval: 200,
     });
 
     // Pulse animation
-    this.animations.set('pulse', {
-      name: 'pulse',
-      type: 'pulse',
-      frames: ['◯', '◔', '◑', '◕', '●', '◕', '◑', '◔'],
+    this.animations.set("pulse", {
+      name: "pulse",
+      type: "pulse",
+      frames: ["◯", "◔", "◑", "◕", "●", "◕", "◑", "◔"],
       interval: 150,
     });
 
     // Progress bar characters
-    this.animations.set('progress', {
-      name: 'progress',
-      type: 'custom',
-      frames: ['░', '▒', '▓', '█'],
+    this.animations.set("progress", {
+      name: "progress",
+      type: "custom",
+      frames: ["░", "▒", "▓", "█"],
       interval: 0,
     });
   }
 
   getSpinner(): Animation {
-    return this.animations.get('spinner')!;
+    return this.animations.get("spinner")!;
   }
 
   getDots(): Animation {
-    return this.animations.get('dots')!;
+    return this.animations.get("dots")!;
   }
 
   getPulse(): Animation {
-    return this.animations.get('pulse')!;
+    return this.animations.get("pulse")!;
   }
 
   getProgressBar(current: number, total: number, width: number = 20): string {
     const percentage = current / total;
     const filled = Math.floor(percentage * width);
     const empty = width - filled;
-    
-    return '█'.repeat(filled) + '░'.repeat(empty) + ` ${Math.floor(percentage * 100)}%`;
+
+    return (
+      "█".repeat(filled) +
+      "░".repeat(empty) +
+      ` ${Math.floor(percentage * 100)}%`
+    );
   }
 
   getAnimation(name: string): Animation | undefined {
@@ -288,20 +300,20 @@ export class LoadingAnimations {
 
   compose(animations: Animation[]): Animation {
     const frames: string[] = [];
-    const maxFrames = Math.max(...animations.map(a => a.frames.length));
-    
+    const maxFrames = Math.max(...animations.map((a) => a.frames.length));
+
     for (let i = 0; i < maxFrames; i++) {
       const frame = animations
-        .map(a => a.frames[i % a.frames.length])
-        .join(' ');
+        .map((a) => a.frames[i % a.frames.length])
+        .join(" ");
       frames.push(frame);
     }
 
     return {
-      name: 'composed',
-      type: 'custom',
+      name: "composed",
+      type: "custom",
       frames,
-      interval: Math.min(...animations.map(a => a.interval)),
+      interval: Math.min(...animations.map((a) => a.interval)),
     };
   }
 
@@ -323,37 +335,40 @@ export class LoadingAnimations {
 }
 
 export class StatusIndicators {
-  private connectionStatus: 'connected' | 'disconnected' | 'connecting' = 'disconnected';
+  private connectionStatus: "connected" | "disconnected" | "connecting" =
+    "disconnected";
   private connectionQuality: number = 100;
-  private inputMode: string = 'normal';
+  private inputMode: string = "normal";
   private shortcutMode: string | null = null;
   private activities: Map<string, { id: string; label: string }> = new Map();
   private notifications: Map<string, number> = new Map();
 
   // Connection status
-  setConnectionStatus(status: 'connected' | 'disconnected' | 'connecting'): void {
+  setConnectionStatus(
+    status: "connected" | "disconnected" | "connecting",
+  ): void {
     this.connectionStatus = status;
   }
 
   getConnectionIndicator(): string {
     switch (this.connectionStatus) {
-      case 'connected':
-        return '🟢';
-      case 'disconnected':
-        return '🔴';
-      case 'connecting':
-        return '🟡';
+      case "connected":
+        return "🟢";
+      case "disconnected":
+        return "🔴";
+      case "connecting":
+        return "🟡";
     }
   }
 
   getConnectionLabel(): string {
     switch (this.connectionStatus) {
-      case 'connected':
-        return 'Connected';
-      case 'disconnected':
-        return 'Disconnected';
-      case 'connecting':
-        return 'Connecting...';
+      case "connected":
+        return "Connected";
+      case "disconnected":
+        return "Disconnected";
+      case "connecting":
+        return "Connecting...";
     }
   }
 
@@ -362,11 +377,11 @@ export class StatusIndicators {
   }
 
   getConnectionQuality(): string {
-    if (this.connectionQuality >= 80) return 'excellent';
-    if (this.connectionQuality >= 60) return 'good';
-    if (this.connectionQuality >= 40) return 'fair';
-    if (this.connectionQuality >= 20) return 'poor';
-    return 'critical';
+    if (this.connectionQuality >= 80) return "excellent";
+    if (this.connectionQuality >= 60) return "good";
+    if (this.connectionQuality >= 40) return "fair";
+    if (this.connectionQuality >= 20) return "poor";
+    return "critical";
   }
 
   // Mode indicators
@@ -391,7 +406,7 @@ export class StatusIndicators {
   }
 
   getShortcutModeIndicator(): string {
-    return this.shortcutMode?.toUpperCase() || '';
+    return this.shortcutMode?.toUpperCase() || "";
   }
 
   // Activity indicators
@@ -409,8 +424,8 @@ export class StatusIndicators {
 
   getActivitySummary(): string {
     const count = this.activities.size;
-    if (count === 0) return '';
-    if (count === 1) return '1 activity';
+    if (count === 0) return "";
+    if (count === 1) return "1 activity";
     return `${count} activities`;
   }
 
@@ -425,8 +440,8 @@ export class StatusIndicators {
 
   getNotificationBadge(type: string): string {
     const count = this.notifications.get(type);
-    if (!count || count === 0) return '';
-    if (count > 99) return '99+';
+    if (!count || count === 0) return "";
+    if (count > 99) return "99+";
     return count.toString();
   }
 

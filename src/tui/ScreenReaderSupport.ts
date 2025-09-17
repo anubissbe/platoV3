@@ -9,11 +9,11 @@ export interface ScreenReaderOptions {
 }
 
 export interface AriaAttributes {
-  'aria-label'?: string;
-  'aria-describedby'?: string;
-  'aria-expanded'?: boolean;
-  'aria-hidden'?: boolean;
-  'aria-live'?: 'polite' | 'assertive' | 'off';
+  "aria-label"?: string;
+  "aria-describedby"?: string;
+  "aria-expanded"?: boolean;
+  "aria-hidden"?: boolean;
+  "aria-live"?: "polite" | "assertive" | "off";
   role?: string;
 }
 
@@ -26,16 +26,16 @@ export class ScreenReaderSupport {
       announceChanges: true,
       verboseMode: false,
       skipHidden: true,
-      ...options
+      ...options,
     };
   }
 
   /**
    * Announce a message to screen readers
    */
-  announce(message: string, priority: 'polite' | 'assertive' = 'polite'): void {
+  announce(message: string, priority: "polite" | "assertive" = "polite"): void {
     if (!this.options.announceChanges) return;
-    
+
     this.announcements.push(message);
     // In a real implementation, this would create a live region element
     if (this.options.verboseMode) {
@@ -46,21 +46,24 @@ export class ScreenReaderSupport {
   /**
    * Get ARIA attributes for an element
    */
-  getAriaAttributes(elementType: string, state?: Record<string, any>): AriaAttributes {
+  getAriaAttributes(
+    elementType: string,
+    state?: Record<string, any>,
+  ): AriaAttributes {
     const attrs: AriaAttributes = {};
 
     switch (elementType) {
-      case 'button':
-        attrs.role = 'button';
-        if (state?.disabled) attrs['aria-hidden'] = true;
+      case "button":
+        attrs.role = "button";
+        if (state?.disabled) attrs["aria-hidden"] = true;
         break;
-      case 'dialog':
-        attrs.role = 'dialog';
-        attrs['aria-live'] = 'polite';
+      case "dialog":
+        attrs.role = "dialog";
+        attrs["aria-live"] = "polite";
         break;
-      case 'status':
-        attrs.role = 'status';
-        attrs['aria-live'] = 'polite';
+      case "status":
+        attrs.role = "status";
+        attrs["aria-live"] = "polite";
         break;
       default:
         break;

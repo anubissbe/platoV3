@@ -3,6 +3,7 @@
 ## Executive Summary
 
 Plato must be **visually and functionally identical** to Claude Code, with only these differences:
+
 1. Uses "Plato" instead of "Claude Code" in text
 2. Authenticates with GitHub Copilot instead of Claude API
 3. Uses `.plato/` directory instead of `.claude/`
@@ -11,23 +12,23 @@ Plato must be **visually and functionally identical** to Claude Code, with only 
 
 ### ✅ Visual Elements Already Matching
 
-| Element | Claude Code | Plato | Status |
-|---------|------------|-------|--------|
-| Welcome Message | `✻ Welcome to Claude Code!` | `✻ Welcome to Plato!` | ✅ Match |
+| Element            | Claude Code                                                 | Plato                                                 | Status   |
+| ------------------ | ----------------------------------------------------------- | ----------------------------------------------------- | -------- |
+| Welcome Message    | `✻ Welcome to Claude Code!`                                 | `✻ Welcome to Plato!`                                 | ✅ Match |
 | Status Line Format | `claude code \| {provider} \| {model} \| {tokens} {branch}` | `plato \| {provider} \| {model} \| {tokens} {branch}` | ✅ Match |
-| Error Format | Red text with ❌ | Red text with ❌ | ✅ Match |
-| Success Format | Green text with ✅ | Green text with ✅ | ✅ Match |
-| Tool Call Display | Gray text output | Gray text output | ✅ Match |
+| Error Format       | Red text with ❌                                            | Red text with ❌                                      | ✅ Match |
+| Success Format     | Green text with ✅                                          | Green text with ✅                                    | ✅ Match |
+| Tool Call Display  | Gray text output                                            | Gray text output                                      | ✅ Match |
 
 ### ⚠️ Visual Elements Needing Verification
 
-| Element | Claude Code Format | Plato Current | Action Required |
-|---------|-------------------|---------------|-----------------|
-| File Write Output | `📝 Writing filename...`<br>`  ✓ Wrote X lines to filename` | Need to verify exact format | Test and adjust |
-| Patch Display | Unified diff with markers | Implemented but needs testing | Verify markers match |
-| Command Prompts | Specific phrasing and formatting | Various implementations | Audit all prompts |
-| Progress Indicators | Spinner styles and text | Mixed implementations | Standardize |
-| Color Scheme | Specific color codes for each element | Partially matched | Full audit needed |
+| Element             | Claude Code Format                                          | Plato Current                 | Action Required      |
+| ------------------- | ----------------------------------------------------------- | ----------------------------- | -------------------- |
+| File Write Output   | `📝 Writing filename...`<br>`  ✓ Wrote X lines to filename` | Need to verify exact format   | Test and adjust      |
+| Patch Display       | Unified diff with markers                                   | Implemented but needs testing | Verify markers match |
+| Command Prompts     | Specific phrasing and formatting                            | Various implementations       | Audit all prompts    |
+| Progress Indicators | Spinner styles and text                                     | Mixed implementations         | Standardize          |
+| Color Scheme        | Specific color codes for each element                       | Partially matched             | Full audit needed    |
 
 ## Functional Parity Checklist
 
@@ -45,6 +46,7 @@ Plato must be **visually and functionally identical** to Claude Code, with only 
 ### Slash Commands (35 Total)
 
 #### ✅ Fully Implemented & Verified
+
 - `/help` - Command list display
 - `/status` - System status
 - `/login` - OAuth device flow
@@ -56,6 +58,7 @@ Plato must be **visually and functionally identical** to Claude Code, with only 
 - `/proxy` - OpenAI proxy
 
 #### ⚠️ Implemented But Need Parity Verification
+
 - `/model` - Model switching (verify exact output format)
 - `/context` - File context (verify visualization matches)
 - `/init` - Project doc generation (check if PLATO.md format matches CLAUDE.md)
@@ -95,12 +98,14 @@ Plato must be **visually and functionally identical** to Claude Code, with only 
 ### Phase 2: Functional Completeness (Critical)
 
 1. **Memory System Implementation**
+
    ```typescript
    // Currently: getMemory() returns {}
    // Needed: Full persistence to .plato/memory/
    ```
 
 2. **Agent System**
+
    ```typescript
    // Currently: Placeholder in /agents command
    // Needed: Full agent switching capability
@@ -148,9 +153,9 @@ Plato must be **visually and functionally identical** to Claude Code, with only 
 
 ```typescript
 // Every output must match this exact format
-test('file write format', () => {
-  const output = captureOutput(() => writeFile('test.js'));
-  expect(output).toBe('📝 Writing test.js...\n  ✓ Wrote 5 lines to test.js');
+test("file write format", () => {
+  const output = captureOutput(() => writeFile("test.js"));
+  expect(output).toBe("📝 Writing test.js...\n  ✓ Wrote 5 lines to test.js");
 });
 ```
 
@@ -165,6 +170,7 @@ plato /resume  # Should work without errors
 ## Verification Metrics
 
 ### Success Criteria
+
 - [ ] 100% of user-visible strings match Claude Code format
 - [ ] All 35 slash commands produce identical output
 - [ ] Sessions are cross-compatible
@@ -172,6 +178,7 @@ plato /resume  # Should work without errors
 - [ ] Same response times and performance characteristics
 
 ### Current Gaps Count
+
 - **Visual Gaps**: ~5-10 formatting inconsistencies
 - **Functional Gaps**: 4 critical (memory, agents, output styles, config)
 - **Command Gaps**: ~10 commands need output verification

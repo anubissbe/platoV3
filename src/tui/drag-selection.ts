@@ -3,9 +3,14 @@
  * Integrates mouse drag events with text selection for real-time selection updates
  */
 
-import { MouseEvent } from './mouse-types.js';
-import { TextSelection, TextPosition, TextRange, SelectionEvent } from './text-selection.js';
-import { ComponentRegistry } from './component-registry.js';
+import { MouseEvent } from "./mouse-types.js";
+import {
+  TextSelection,
+  TextPosition,
+  TextRange,
+  SelectionEvent,
+} from "./text-selection.js";
+import { ComponentRegistry } from "./component-registry.js";
 
 /**
  * Drag selection state
@@ -24,7 +29,7 @@ export interface DragSelectionState {
   /** Total drag distance */
   dragDistance: number;
   /** Drag direction */
-  direction: 'horizontal' | 'vertical' | 'diagonal' | 'none';
+  direction: "horizontal" | "vertical" | "diagonal" | "none";
 }
 
 /**
@@ -74,7 +79,7 @@ export interface TerminalViewport {
 /**
  * Auto-scroll direction
  */
-export type AutoScrollDirection = 'up' | 'down' | 'left' | 'right';
+export type AutoScrollDirection = "up" | "down" | "left" | "right";
 
 /**
  * Default drag selection configuration
@@ -89,14 +94,14 @@ const DEFAULT_DRAG_CONFIG: DragSelectionConfig = {
   autoScrollThreshold: 2,
   enableWordSnap: false,
   wordSnapThreshold: 5,
-  debug: false
+  debug: false,
 };
 
 /**
  * Drag selection event types
  */
 export interface DragSelectionEvent {
-  type: 'dragStart' | 'dragUpdate' | 'dragEnd' | 'dragCancel' | 'autoScroll';
+  type: "dragStart" | "dragUpdate" | "dragEnd" | "dragCancel" | "autoScroll";
   dragState: DragSelectionState;
   selectionRange: TextRange | null;
   mouseEvent: MouseEvent;
@@ -106,7 +111,9 @@ export interface DragSelectionEvent {
 /**
  * Drag selection event handlers
  */
-export type DragSelectionEventHandler = (event: DragSelectionEvent) => void | Promise<void>;
+export type DragSelectionEventHandler = (
+  event: DragSelectionEvent,
+) => void | Promise<void>;
 
 export interface DragSelectionEventHandlers {
   onDragStart?: DragSelectionEventHandler;
@@ -124,21 +131,24 @@ export class CoordinateMapper {
    * Convert mouse coordinates to text position
    */
   static mouseToTextPosition(
-    mouseX: number, 
-    mouseY: number, 
+    mouseX: number,
+    mouseY: number,
     viewport: TerminalViewport,
-    content: string[]
+    content: string[],
   ): TextPosition {
     // Convert screen coordinates to content coordinates
-    const line = Math.max(0, Math.min(mouseY + viewport.scrollTop, content.length - 1));
+    const line = Math.max(
+      0,
+      Math.min(mouseY + viewport.scrollTop, content.length - 1),
+    );
     const column = Math.max(0, mouseX + viewport.scrollLeft);
-    
+
     // Clamp column to line length
     if (line < content.length) {
       const clampedColumn = Math.min(column, content[line].length);
       return { line, column: clampedColumn };
     }
-    
+
     return { line: content.length - 1, column: 0 };
   }
 
@@ -147,22 +157,27 @@ export class CoordinateMapper {
    */
   static textToScreenPosition(
     position: TextPosition,
-    viewport: TerminalViewport
+    viewport: TerminalViewport,
   ): { x: number; y: number } {
     return {
       x: position.column - viewport.scrollLeft,
-      y: position.line - viewport.scrollTop
+      y: position.line - viewport.scrollTop,
     };
   }
 
   /**
    * Check if position is within viewport
    */
-  static isPositionInViewport(position: TextPosition, viewport: TerminalViewport): boolean {
-    return position.line >= viewport.scrollTop &&
-           position.line < viewport.scrollTop + viewport.height &&
-           position.column >= viewport.scrollLeft &&
-           position.column < viewport.scrollLeft + viewport.width;
+  static isPositionInViewport(
+    position: TextPosition,
+    viewport: TerminalViewport,
+  ): boolean {
+    return (
+      position.line >= viewport.scrollTop &&
+      position.line < viewport.scrollTop + viewport.height &&
+      position.column >= viewport.scrollLeft &&
+      position.column < viewport.scrollLeft + viewport.width
+    );
   }
 
   /**
@@ -177,14 +192,17 @@ export class CoordinateMapper {
   /**
    * Determine drag direction
    */
-  static getDragDirection(start: TextPosition, current: TextPosition): DragSelectionState['direction'] {
+  static getDragDirection(
+    start: TextPosition,
+    current: TextPosition,
+  ): DragSelectionState["direction"] {
     const dx = Math.abs(current.column - start.column);
     const dy = Math.abs(current.line - start.line);
-    
-    if (dx < 2 && dy < 2) return 'none';
-    if (dx > dy * 2) return 'horizontal';
-    if (dy > dx * 2) return 'vertical';
-    return 'diagonal';
+
+    if (dx < 2 && dy < 2) return "none";
+    if (dx > dy * 2) return "horizontal";
+    if (dy > dx * 2) return "vertical";
+    return "diagonal";
   }
 }
 
@@ -195,7 +213,8 @@ export class AutoScrollManager {
   private viewport: TerminalViewport;
   private config: DragSelectionConfig;
   private scrollTimer: NodeJS.Timeout | null = null;
-  private scrollCallbacks: Set<(direction: AutoScrollDirection) => void> = new Set();
+  private scrollCallbacks: Set<(direction: AutoScrollDirection) => void> =
+    new Set();
 
   constructor(viewport: TerminalViewport, config: DragSelectionConfig) {
     this.viewport = viewport;
@@ -210,10 +229,10 @@ export class AutoScrollManager {
 
     const threshold = this.config.autoScrollThreshold;
 
-    if (mouseY < threshold) return 'up';
-    if (mouseY > this.viewport.height - threshold) return 'down';
-    if (mouseX < threshold) return 'left';
-    if (mouseX > this.viewport.width - threshold) return 'right';
+    if (mouseY < threshold) return "up";
+    if (mouseY > this.viewport.height - threshold) return "down";
+    if (mouseX < threshold) return "left";
+    if (mouseX > this.viewport.width - threshold) return "right";
 
     return null;
   }
@@ -244,36 +263,42 @@ export class AutoScrollManager {
    */
   private performScroll(direction: AutoScrollDirection): void {
     switch (direction) {
-      case 'up':
+      case "up":
         if (this.viewport.scrollTop > 0) {
           this.viewport.scrollTop = Math.max(0, this.viewport.scrollTop - 1);
         }
         break;
-      case 'down':
-        if (this.viewport.scrollTop < this.viewport.contentHeight - this.viewport.height) {
+      case "down":
+        if (
+          this.viewport.scrollTop <
+          this.viewport.contentHeight - this.viewport.height
+        ) {
           this.viewport.scrollTop = Math.min(
             this.viewport.contentHeight - this.viewport.height,
-            this.viewport.scrollTop + 1
+            this.viewport.scrollTop + 1,
           );
         }
         break;
-      case 'left':
+      case "left":
         if (this.viewport.scrollLeft > 0) {
           this.viewport.scrollLeft = Math.max(0, this.viewport.scrollLeft - 1);
         }
         break;
-      case 'right':
-        if (this.viewport.scrollLeft < this.viewport.contentWidth - this.viewport.width) {
+      case "right":
+        if (
+          this.viewport.scrollLeft <
+          this.viewport.contentWidth - this.viewport.width
+        ) {
           this.viewport.scrollLeft = Math.min(
             this.viewport.contentWidth - this.viewport.width,
-            this.viewport.scrollLeft + 1
+            this.viewport.scrollLeft + 1,
           );
         }
         break;
     }
 
     // Notify callbacks
-    this.scrollCallbacks.forEach(callback => callback(direction));
+    this.scrollCallbacks.forEach((callback) => callback(direction));
   }
 
   /**
@@ -325,7 +350,7 @@ export class DragSelectionManager {
     textSelection: TextSelection,
     componentRegistry: ComponentRegistry,
     viewport: TerminalViewport,
-    config: Partial<DragSelectionConfig> = {}
+    config: Partial<DragSelectionConfig> = {},
   ) {
     this.config = { ...DEFAULT_DRAG_CONFIG, ...config };
     this.textSelection = textSelection;
@@ -351,7 +376,7 @@ export class DragSelectionManager {
       startTime: 0,
       lastUpdate: 0,
       dragDistance: 0,
-      direction: 'none'
+      direction: "none",
     };
   }
 
@@ -380,16 +405,16 @@ export class DragSelectionManager {
     }
 
     switch (event.type) {
-      case 'click':
+      case "click":
         await this.handleMouseDown(event);
         break;
-      case 'move':
+      case "move":
         await this.handleMouseMove(event);
         break;
-      case 'drag_end':
+      case "drag_end":
         await this.handleMouseUp(event);
         break;
-      case 'drag':
+      case "drag":
         await this.handleMouseDrag(event);
         break;
     }
@@ -404,11 +429,14 @@ export class DragSelectionManager {
       event.coordinates.x,
       event.coordinates.y,
       this.viewport,
-      this.content
+      this.content,
     );
 
     // Check if clicking on a UI component (should not start text selection)
-    const component = this.componentRegistry.findAt(event.coordinates.x, event.coordinates.y);
+    const component = this.componentRegistry.findAt(
+      event.coordinates.x,
+      event.coordinates.y,
+    );
     if (component) {
       return; // Let component handle the interaction
     }
@@ -421,14 +449,16 @@ export class DragSelectionManager {
       startTime: event.timestamp,
       lastUpdate: event.timestamp,
       dragDistance: 0,
-      direction: 'none'
+      direction: "none",
     };
 
     // Start selection at position
-    this.textSelection.startSelection(textPosition, 'character', 'mouse');
+    this.textSelection.startSelection(textPosition, "character", "mouse");
 
     if (this.config.debug) {
-      console.debug(`[DragSelection] Mouse down at text position (${textPosition.line}, ${textPosition.column})`);
+      console.debug(
+        `[DragSelection] Mouse down at text position (${textPosition.line}, ${textPosition.column})`,
+      );
     }
   }
 
@@ -444,17 +474,20 @@ export class DragSelectionManager {
       event.coordinates.x,
       event.coordinates.y,
       this.viewport,
-      this.content
+      this.content,
     );
 
     // Calculate drag distance
     const dragDistance = CoordinateMapper.calculateDistance(
       this.dragState.startPosition,
-      textPosition
+      textPosition,
     );
 
     // Check if drag threshold is exceeded
-    if (!this.dragState.isDragging && dragDistance >= this.config.dragThreshold) {
+    if (
+      !this.dragState.isDragging &&
+      dragDistance >= this.config.dragThreshold
+    ) {
       this.dragState.isDragging = true;
       await this.startDragSelection(event);
     }
@@ -465,21 +498,22 @@ export class DragSelectionManager {
       this.dragState.dragDistance = dragDistance;
       this.dragState.direction = CoordinateMapper.getDragDirection(
         this.dragState.startPosition,
-        textPosition
+        textPosition,
       );
       this.dragState.lastUpdate = event.timestamp;
 
       // Apply word snapping if enabled
-      const finalPosition = this.config.enableWordSnap ? 
-        this.applyWordSnap(textPosition) : textPosition;
+      const finalPosition = this.config.enableWordSnap
+        ? this.applyWordSnap(textPosition)
+        : textPosition;
 
       // Update text selection
-      this.textSelection.updateSelection(finalPosition, 'mouse');
+      this.textSelection.updateSelection(finalPosition, "mouse");
 
       // Check for auto-scroll
       const scrollDirection = this.autoScrollManager.shouldAutoScroll(
         event.coordinates.x,
-        event.coordinates.y
+        event.coordinates.y,
       );
 
       if (scrollDirection) {
@@ -489,7 +523,7 @@ export class DragSelectionManager {
       }
 
       // Fire drag update event
-      await this.fireDragEvent('dragUpdate', event);
+      await this.fireDragEvent("dragUpdate", event);
 
       // Throttle updates if configured
       if (this.config.updateInterval > 0) {
@@ -515,14 +549,16 @@ export class DragSelectionManager {
       this.autoScrollManager.stopAutoScroll();
 
       // Finalize selection
-      const finalRange = this.textSelection.endSelection('mouse');
+      const finalRange = this.textSelection.endSelection("mouse");
 
       // Fire drag end event
-      await this.fireDragEvent('dragEnd', event);
+      await this.fireDragEvent("dragEnd", event);
 
       if (this.config.debug && finalRange) {
         const selectedText = this.textSelection.getSelectedText();
-        console.debug(`[DragSelection] Drag completed: "${selectedText.substring(0, 30)}${selectedText.length > 30 ? '...' : ''}"`);
+        console.debug(
+          `[DragSelection] Drag completed: "${selectedText.substring(0, 30)}${selectedText.length > 30 ? "..." : ""}"`,
+        );
       }
     } else if (this.dragState.startPosition) {
       // Single click - clear any existing selection
@@ -538,7 +574,7 @@ export class DragSelectionManager {
    * Start drag selection
    */
   private async startDragSelection(event: MouseEvent): Promise<void> {
-    await this.fireDragEvent('dragStart', event);
+    await this.fireDragEvent("dragStart", event);
 
     if (this.config.debug) {
       console.debug(`[DragSelection] Drag selection started`);
@@ -581,27 +617,29 @@ export class DragSelectionManager {
   /**
    * Handle auto-scroll event
    */
-  private async handleAutoScroll(direction: AutoScrollDirection): Promise<void> {
+  private async handleAutoScroll(
+    direction: AutoScrollDirection,
+  ): Promise<void> {
     if (!this.dragState.isDragging || !this.dragState.currentPosition) {
       return;
     }
 
     // Update selection with current position after scroll
-    this.textSelection.updateSelection(this.dragState.currentPosition, 'mouse');
+    this.textSelection.updateSelection(this.dragState.currentPosition, "mouse");
 
     // Fire auto-scroll event
     const event: DragSelectionEvent = {
-      type: 'autoScroll',
+      type: "autoScroll",
       dragState: { ...this.dragState },
       selectionRange: this.textSelection.getSelection(),
       mouseEvent: {
-        type: 'move',
+        type: "move",
         coordinates: { x: 0, y: 0 }, // Not relevant for auto-scroll
-        button: 'left',
+        button: "left",
         modifiers: { shift: false, ctrl: false, alt: false, meta: false },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     if (this.eventHandlers.onAutoScroll) {
@@ -636,33 +674,36 @@ export class DragSelectionManager {
   /**
    * Fire drag selection event
    */
-  private async fireDragEvent(type: DragSelectionEvent['type'], mouseEvent: MouseEvent): Promise<void> {
+  private async fireDragEvent(
+    type: DragSelectionEvent["type"],
+    mouseEvent: MouseEvent,
+  ): Promise<void> {
     const event: DragSelectionEvent = {
       type,
       dragState: { ...this.dragState },
       selectionRange: this.textSelection.getSelection(),
       mouseEvent,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
 
     // Call appropriate handler
     switch (type) {
-      case 'dragStart':
+      case "dragStart":
         if (this.eventHandlers.onDragStart) {
           await this.eventHandlers.onDragStart(event);
         }
         break;
-      case 'dragUpdate':
+      case "dragUpdate":
         if (this.eventHandlers.onDragUpdate) {
           await this.eventHandlers.onDragUpdate(event);
         }
         break;
-      case 'dragEnd':
+      case "dragEnd":
         if (this.eventHandlers.onDragEnd) {
           await this.eventHandlers.onDragEnd(event);
         }
         break;
-      case 'dragCancel':
+      case "dragCancel":
         if (this.eventHandlers.onDragCancel) {
           await this.eventHandlers.onDragCancel(event);
         }
@@ -680,17 +721,17 @@ export class DragSelectionManager {
 
       // Fire cancel event
       const event: DragSelectionEvent = {
-        type: 'dragCancel',
+        type: "dragCancel",
         dragState: { ...this.dragState },
         selectionRange: null,
         mouseEvent: {
-          type: 'move',
+          type: "move",
           coordinates: { x: 0, y: 0 },
-          button: 'left',
+          button: "left",
           modifiers: { shift: false, ctrl: false, alt: false, meta: false },
-          timestamp: Date.now()
+          timestamp: Date.now(),
         },
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
 
       this.eventHandlers.onDragCancel?.(event);
@@ -745,7 +786,7 @@ export class DragSelectionManager {
       viewport: this.viewport,
       contentLineCount: this.content.length,
       hasUpdateTimer: this.updateTimer !== null,
-      textSelectionActive: this.textSelection.isSelectionActive()
+      textSelectionActive: this.textSelection.isSelectionActive(),
     };
   }
 

@@ -3,8 +3,13 @@
  * Manages selection states and cursor position tracking with persistence
  */
 
-import { TextPosition, TextRange, SelectionState, SelectionEvent } from './text-selection.js';
-import { ClipboardManager } from './clipboard-manager.js';
+import {
+  TextPosition,
+  TextRange,
+  SelectionState,
+  SelectionEvent,
+} from "./text-selection.js";
+import { ClipboardManager } from "./clipboard-manager.js";
 
 /**
  * Cursor state information
@@ -39,9 +44,9 @@ export interface SelectionHistoryEntry {
   /** Creation timestamp */
   timestamp: number;
   /** Selection source */
-  source: 'mouse' | 'keyboard' | 'api';
+  source: "mouse" | "keyboard" | "api";
   /** Selection type */
-  type: 'character' | 'word' | 'line';
+  type: "character" | "word" | "line";
   /** Duration of selection */
   duration: number;
 }
@@ -97,7 +102,7 @@ export interface SelectionAnalytics {
   /** Average selection duration */
   averageSelectionDuration: number;
   /** Most common selection type */
-  mostCommonType: 'character' | 'word' | 'line';
+  mostCommonType: "character" | "word" | "line";
   /** Selection frequency by hour */
   frequencyByHour: Record<string, number>;
   /** Most selected content patterns */
@@ -109,21 +114,27 @@ export interface SelectionAnalytics {
  */
 const DEFAULT_STATE_CONFIG: SelectionStateConfig = {
   enablePersistence: true,
-  persistencePath: '.plato/selection-state.json',
+  persistencePath: ".plato/selection-state.json",
   autoSaveInterval: 5000, // 5 seconds
   maxHistoryEntries: 100,
   enableCursorTracking: true,
   cursorBlinkInterval: 500,
   enableAnalytics: false,
   selectionTimeout: 0,
-  debug: false
+  debug: false,
 };
 
 /**
  * Selection state event types
  */
 export interface SelectionStateEvent {
-  type: 'stateChange' | 'cursorMove' | 'selectionStart' | 'selectionEnd' | 'historyAdd' | 'persistenceSave';
+  type:
+    | "stateChange"
+    | "cursorMove"
+    | "selectionStart"
+    | "selectionEnd"
+    | "historyAdd"
+    | "persistenceSave";
   timestamp: number;
   data: any;
 }
@@ -131,7 +142,9 @@ export interface SelectionStateEvent {
 /**
  * Selection state event handlers
  */
-export type SelectionStateEventHandler = (event: SelectionStateEvent) => void | Promise<void>;
+export type SelectionStateEventHandler = (
+  event: SelectionStateEvent,
+) => void | Promise<void>;
 
 export interface SelectionStateEventHandlers {
   onStateChange?: SelectionStateEventHandler;
@@ -164,7 +177,7 @@ export class SelectionStateManager {
 
   constructor(
     clipboardManager: ClipboardManager,
-    config: Partial<SelectionStateConfig> = {}
+    config: Partial<SelectionStateConfig> = {},
   ) {
     this.config = { ...DEFAULT_STATE_CONFIG, ...config };
     this.clipboardManager = clipboardManager;
@@ -194,7 +207,7 @@ export class SelectionStateManager {
       isVisible: false,
       startTime: 0,
       lastUpdate: Date.now(),
-      mode: 'character'
+      mode: "character",
     };
   }
 
@@ -209,7 +222,7 @@ export class SelectionStateManager {
       lastMovement: Date.now(),
       velocity: { x: 0, y: 0 },
       atEndOfLine: false,
-      preferredColumn: 0
+      preferredColumn: 0,
     };
   }
 
@@ -221,9 +234,9 @@ export class SelectionStateManager {
       totalSelections: 0,
       totalCharactersSelected: 0,
       averageSelectionDuration: 0,
-      mostCommonType: 'character',
+      mostCommonType: "character",
       frequencyByHour: {},
-      commonPatterns: []
+      commonPatterns: [],
     };
   }
 
@@ -244,14 +257,19 @@ export class SelectionStateManager {
    * Setup cursor blinking
    */
   private setupCursorBlink(): void {
-    if (!this.config.enableCursorTracking || this.config.cursorBlinkInterval <= 0) {
+    if (
+      !this.config.enableCursorTracking ||
+      this.config.cursorBlinkInterval <= 0
+    ) {
       return;
     }
 
     this.cursorBlinkTimer = setInterval(() => {
       if (this.cursorState.blinking) {
         this.cursorState.visible = !this.cursorState.visible;
-        this.fireStateEvent('cursorMove', { visible: this.cursorState.visible });
+        this.fireStateEvent("cursorMove", {
+          visible: this.cursorState.visible,
+        });
       }
     }, this.config.cursorBlinkInterval);
   }
@@ -261,10 +279,10 @@ export class SelectionStateManager {
    */
   updateContent(content: string[]): void {
     this.content = [...content];
-    
+
     // Validate and adjust cursor position if needed
     this.validateCursorPosition();
-    
+
     // Validate current selection
     if (this.currentSelection && !this.isValidRange(this.currentSelection)) {
       this.clearSelection();
@@ -276,15 +294,15 @@ export class SelectionStateManager {
    */
   setCursorPosition(position: TextPosition): void {
     const clampedPosition = this.clampPosition(position);
-    
+
     // Calculate velocity for smooth movement animations
     const dx = clampedPosition.column - this.cursorState.position.column;
     const dy = clampedPosition.line - this.cursorState.position.line;
     const dt = Date.now() - this.cursorState.lastMovement;
-    
+
     this.cursorState.velocity = {
       x: dt > 0 ? dx / dt : 0,
-      y: dt > 0 ? dy / dt : 0
+      y: dt > 0 ? dy / dt : 0,
     };
 
     // Update cursor state
@@ -294,7 +312,7 @@ export class SelectionStateManager {
       lastMovement: Date.now(),
       atEndOfLine: this.isAtEndOfLine(clampedPosition),
       preferredColumn: clampedPosition.column,
-      visible: true // Show cursor when moved
+      visible: true, // Show cursor when moved
     };
 
     // Reset cursor blink
@@ -302,13 +320,15 @@ export class SelectionStateManager {
       this.cursorState.visible = true;
     }
 
-    this.fireStateEvent('cursorMove', {
+    this.fireStateEvent("cursorMove", {
       position: clampedPosition,
-      velocity: this.cursorState.velocity
+      velocity: this.cursorState.velocity,
     });
 
     if (this.config.debug) {
-      console.debug(`[SelectionStateManager] Cursor moved to (${clampedPosition.line}, ${clampedPosition.column})`);
+      console.debug(
+        `[SelectionStateManager] Cursor moved to (${clampedPosition.line}, ${clampedPosition.column})`,
+      );
     }
   }
 
@@ -331,8 +351,8 @@ export class SelectionStateManager {
    */
   startSelection(
     position?: TextPosition,
-    mode: SelectionState['mode'] = 'character',
-    source: SelectionEvent['source'] = 'keyboard'
+    mode: SelectionState["mode"] = "character",
+    source: SelectionEvent["source"] = "keyboard",
   ): void {
     const startPos = position || this.cursorState.position;
     const clampedPos = this.clampPosition(startPos);
@@ -346,65 +366,72 @@ export class SelectionStateManager {
       isVisible: true,
       startTime: Date.now(),
       lastUpdate: Date.now(),
-      mode
+      mode,
     };
 
     // Set initial range
     this.currentSelection = {
       start: clampedPos,
-      end: clampedPos
+      end: clampedPos,
     };
 
     // Update cursor position to start
     this.setCursorPosition(clampedPos);
 
-    this.fireStateEvent('selectionStart', {
+    this.fireStateEvent("selectionStart", {
       position: clampedPos,
       mode,
-      source
+      source,
     });
 
     if (this.config.debug) {
-      console.debug(`[SelectionStateManager] Started ${mode} selection at (${clampedPos.line}, ${clampedPos.column})`);
+      console.debug(
+        `[SelectionStateManager] Started ${mode} selection at (${clampedPos.line}, ${clampedPos.column})`,
+      );
     }
   }
 
   /**
    * Update selection to position
    */
-  updateSelection(position: TextPosition, source: SelectionEvent['source'] = 'keyboard'): void {
+  updateSelection(
+    position: TextPosition,
+    source: SelectionEvent["source"] = "keyboard",
+  ): void {
     if (!this.selectionState.isActive || !this.currentSelection) {
       return;
     }
 
     const clampedPos = this.clampPosition(position);
-    
+
     // Update selection range
     this.currentSelection = {
       ...this.currentSelection,
-      end: clampedPos
+      end: clampedPos,
     };
 
     // Update selection state
     this.selectionState = {
       ...this.selectionState,
-      lastUpdate: Date.now()
+      lastUpdate: Date.now(),
     };
 
     // Update cursor position to end
     this.setCursorPosition(clampedPos);
 
-    this.fireStateEvent('stateChange', {
+    this.fireStateEvent("stateChange", {
       selection: this.currentSelection,
       cursor: clampedPos,
-      source
+      source,
     });
   }
 
   /**
    * End selection
    */
-  endSelection(source: SelectionEvent['source'] = 'keyboard'): TextRange | null {
+  endSelection(
+    source: SelectionEvent["source"] = "keyboard",
+  ): TextRange | null {
     if (!this.selectionState.isActive || !this.currentSelection) {
       return null;
     }
@@ -418,7 +445,7 @@ export class SelectionStateManager {
     // Update selection state
     this.selectionState = {
       ...this.selectionState,
-      isActive: false
+      isActive: false,
     };
 
     // Start selection timeout if configured
@@ -426,15 +453,17 @@ export class SelectionStateManager {
       this.startSelectionTimeout();
     }
 
-    this.fireStateEvent('selectionEnd', {
+    this.fireStateEvent("selectionEnd", {
       range: finalRange,
       duration,
-      source
+      source,
     });
 
     if (this.config.debug) {
       const content = this.getSelectedContent(finalRange);
-      console.debug(`[SelectionStateManager] Ended selection: "${content.substring(0, 30)}${content.length > 30 ? '...' : ''}"`);
+      console.debug(
+        `[SelectionStateManager] Ended selection: "${content.substring(0, 30)}${content.length > 30 ? "..." : ""}"`,
+      );
     }
 
     return finalRange;
@@ -452,9 +481,9 @@ export class SelectionStateManager {
     this.selectionState = this.createInitialSelectionState();
     this.clearSelectionTimeout();
 
-    this.fireStateEvent('stateChange', {
+    this.fireStateEvent("stateChange", {
       selection: null,
-      cleared: true
+      cleared: true,
     });
 
     if (this.config.debug) {
@@ -475,10 +504,13 @@ export class SelectionStateManager {
       return false;
     }
 
-    const result = await this.clipboardManager.copyText(content, 'selection');
-    
+    const result = await this.clipboardManager.copyText(content, "selection");
+
     if (this.config.debug) {
-      console.debug(`[SelectionStateManager] Copy selection result:`, result.success);
+      console.debug(
+        `[SelectionStateManager] Copy selection result:`,
+        result.success,
+      );
     }
 
     return result.success;
@@ -491,15 +523,22 @@ export class SelectionStateManager {
     const normalizedRange = this.normalizeRange(range);
     const lines: string[] = [];
 
-    for (let lineNum = normalizedRange.start.line; lineNum <= normalizedRange.end.line; lineNum++) {
+    for (
+      let lineNum = normalizedRange.start.line;
+      lineNum <= normalizedRange.end.line;
+      lineNum++
+    ) {
       if (lineNum >= this.content.length) break;
 
       const line = this.content[lineNum];
-      let lineText = '';
+      let lineText = "";
 
       if (normalizedRange.start.line === normalizedRange.end.line) {
         // Single line selection
-        lineText = line.substring(normalizedRange.start.column, normalizedRange.end.column);
+        lineText = line.substring(
+          normalizedRange.start.column,
+          normalizedRange.end.column,
+        );
       } else if (lineNum === normalizedRange.start.line) {
         // First line of multi-line selection
         lineText = line.substring(normalizedRange.start.column);
@@ -514,7 +553,7 @@ export class SelectionStateManager {
       lines.push(lineText);
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -522,12 +561,12 @@ export class SelectionStateManager {
    */
   private addToHistory(
     range: TextRange,
-    type: SelectionState['mode'],
-    source: SelectionEvent['source'],
-    duration: number
+    type: SelectionState["mode"],
+    source: SelectionEvent["source"],
+    duration: number,
   ): void {
     const content = this.getSelectedContent(range);
-    
+
     const entry: SelectionHistoryEntry = {
       id: this.generateHistoryId(),
       range,
@@ -535,7 +574,7 @@ export class SelectionStateManager {
       timestamp: Date.now(),
       source,
       type,
-      duration
+      duration,
     };
 
     // Add to beginning of history
@@ -549,7 +588,7 @@ export class SelectionStateManager {
     // Update analytics
     this.updateAnalytics(entry);
 
-    this.fireStateEvent('historyAdd', { entry });
+    this.fireStateEvent("historyAdd", { entry });
   }
 
   /**
@@ -569,27 +608,35 @@ export class SelectionStateManager {
 
     this.selectionAnalytics.totalSelections++;
     this.selectionAnalytics.totalCharactersSelected += entry.content.length;
-    
+
     // Update average duration
-    const totalDuration = this.selectionAnalytics.averageSelectionDuration * 
-                         (this.selectionAnalytics.totalSelections - 1) + entry.duration;
-    this.selectionAnalytics.averageSelectionDuration = 
+    const totalDuration =
+      this.selectionAnalytics.averageSelectionDuration *
+        (this.selectionAnalytics.totalSelections - 1) +
+      entry.duration;
+    this.selectionAnalytics.averageSelectionDuration =
       totalDuration / this.selectionAnalytics.totalSelections;
 
     // Update frequency by hour
     const hour = new Date(entry.timestamp).getHours().toString();
-    this.selectionAnalytics.frequencyByHour[hour] = 
+    this.selectionAnalytics.frequencyByHour[hour] =
       (this.selectionAnalytics.frequencyByHour[hour] || 0) + 1;
 
     // Update common patterns (simple word extraction)
     const words = entry.content.toLowerCase().match(/\w+/g) || [];
     for (const word of words) {
-      if (word.length > 2) { // Only track meaningful words
-        const existing = this.selectionAnalytics.commonPatterns.find(p => p.pattern === word);
+      if (word.length > 2) {
+        // Only track meaningful words
+        const existing = this.selectionAnalytics.commonPatterns.find(
+          (p) => p.pattern === word,
+        );
         if (existing) {
           existing.count++;
         } else {
-          this.selectionAnalytics.commonPatterns.push({ pattern: word, count: 1 });
+          this.selectionAnalytics.commonPatterns.push({
+            pattern: word,
+            count: 1,
+          });
         }
       }
     }
@@ -606,7 +653,7 @@ export class SelectionStateManager {
    */
   private startSelectionTimeout(): void {
     this.clearSelectionTimeout();
-    
+
     this.selectionTimeoutTimer = setTimeout(() => {
       this.clearSelection();
     }, this.config.selectionTimeout);
@@ -630,7 +677,10 @@ export class SelectionStateManager {
       return { line: 0, column: 0 };
     }
 
-    const clampedLine = Math.max(0, Math.min(position.line, this.content.length - 1));
+    const clampedLine = Math.max(
+      0,
+      Math.min(position.line, this.content.length - 1),
+    );
     const lineLength = this.content[clampedLine]?.length || 0;
     const clampedColumn = Math.max(0, Math.min(position.column, lineLength));
 
@@ -642,8 +692,10 @@ export class SelectionStateManager {
    */
   private validateCursorPosition(): void {
     const validPosition = this.clampPosition(this.cursorState.position);
-    if (validPosition.line !== this.cursorState.position.line || 
-        validPosition.column !== this.cursorState.position.column) {
+    if (
+      validPosition.line !== this.cursorState.position.line ||
+      validPosition.column !== this.cursorState.position.column
+    ) {
       this.setCursorPosition(validPosition);
     }
   }
@@ -672,7 +724,10 @@ export class SelectionStateManager {
     if (position.line < 0 || position.line >= this.content.length) {
       return false;
     }
-    if (position.column < 0 || position.column > this.content[position.line].length) {
+    if (
+      position.column < 0 ||
+      position.column > this.content[position.line].length
+    ) {
       return false;
     }
     return true;
@@ -683,11 +738,14 @@ export class SelectionStateManager {
    */
   private normalizeRange(range: TextRange): TextRange {
     const { start, end } = range;
-    
-    if (start.line > end.line || (start.line === end.line && start.column > end.column)) {
+
+    if (
+      start.line > end.line ||
+      (start.line === end.line && start.column > end.column)
+    ) {
       return { start: end, end: start };
     }
-    
+
     return range;
   }
 
@@ -704,12 +762,15 @@ export class SelectionStateManager {
       cursorPosition: this.cursorState.position,
       history: this.selectionHistory.slice(0, 20), // Save only recent history
       lastUpdate: Date.now(),
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
 
     // Only save if state changed
-    if (this.lastPersistenceData && 
-        JSON.stringify(persistenceData) === JSON.stringify(this.lastPersistenceData)) {
+    if (
+      this.lastPersistenceData &&
+      JSON.stringify(persistenceData) ===
+        JSON.stringify(this.lastPersistenceData)
+    ) {
       return;
     }
 
@@ -717,9 +778,9 @@ export class SelectionStateManager {
       // In a real implementation, this would write to file system
       // For now, we'll store in memory
       this.lastPersistenceData = persistenceData;
-      
-      this.fireStateEvent('persistenceSave', { data: persistenceData });
-      
+
+      this.fireStateEvent("persistenceSave", { data: persistenceData });
+
       if (this.config.debug) {
         console.debug(`[SelectionStateManager] Saved state to persistence`);
       }
@@ -743,13 +804,15 @@ export class SelectionStateManager {
       // For now, we'll check if we have stored data
       if (this.lastPersistenceData) {
         const data = this.lastPersistenceData;
-        
+
         this.currentSelection = data.currentSelection;
         this.cursorState.position = data.cursorPosition;
         this.selectionHistory = data.history || [];
-        
+
         if (this.config.debug) {
-          console.debug(`[SelectionStateManager] Loaded state from persistence`);
+          console.debug(
+            `[SelectionStateManager] Loaded state from persistence`,
+          );
         }
       }
     } catch (error) {
@@ -762,31 +825,31 @@ export class SelectionStateManager {
   /**
    * Fire state event
    */
-  private fireStateEvent(type: SelectionStateEvent['type'], data: any): void {
+  private fireStateEvent(type: SelectionStateEvent["type"], data: any): void {
     const event: SelectionStateEvent = {
       type,
       timestamp: Date.now(),
-      data
+      data,
     };
 
     // Call appropriate handler
     switch (type) {
-      case 'stateChange':
+      case "stateChange":
         this.eventHandlers.onStateChange?.(event);
         break;
-      case 'cursorMove':
+      case "cursorMove":
         this.eventHandlers.onCursorMove?.(event);
         break;
-      case 'selectionStart':
+      case "selectionStart":
         this.eventHandlers.onSelectionStart?.(event);
         break;
-      case 'selectionEnd':
+      case "selectionEnd":
         this.eventHandlers.onSelectionEnd?.(event);
         break;
-      case 'historyAdd':
+      case "historyAdd":
         this.eventHandlers.onHistoryAdd?.(event);
         break;
-      case 'persistenceSave':
+      case "persistenceSave":
         this.eventHandlers.onPersistenceSave?.(event);
         break;
     }
@@ -832,7 +895,7 @@ export class SelectionStateManager {
    */
   updateConfig(config: Partial<SelectionStateConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     // Restart timers if intervals changed
     if (config.autoSaveInterval !== undefined) {
       if (this.autoSaveTimer) {
@@ -841,7 +904,7 @@ export class SelectionStateManager {
       }
       this.setupAutoSave();
     }
-    
+
     if (config.cursorBlinkInterval !== undefined) {
       if (this.cursorBlinkTimer) {
         clearInterval(this.cursorBlinkTimer);
@@ -873,9 +936,9 @@ export class SelectionStateManager {
       hasTimers: {
         autoSave: this.autoSaveTimer !== null,
         cursorBlink: this.cursorBlinkTimer !== null,
-        selectionTimeout: this.selectionTimeoutTimer !== null
+        selectionTimeout: this.selectionTimeoutTimer !== null,
       },
-      contentLineCount: this.content.length
+      contentLineCount: this.content.length,
     };
   }
 
@@ -885,20 +948,20 @@ export class SelectionStateManager {
   dispose(): void {
     // Save final state
     this.saveState();
-    
+
     // Clear timers
     if (this.autoSaveTimer) {
       clearInterval(this.autoSaveTimer);
       this.autoSaveTimer = null;
     }
-    
+
     if (this.cursorBlinkTimer) {
       clearInterval(this.cursorBlinkTimer);
       this.cursorBlinkTimer = null;
     }
-    
+
     this.clearSelectionTimeout();
-    
+
     // Clear state
     this.currentSelection = null;
     this.selectionHistory = [];

@@ -1,6 +1,6 @@
 /**
- * Jest setup file for global test configuration
- * This runs before all test suites
+ * Simplified Jest setup file for global test configuration
+ * Focuses on reliability and proper resource cleanup
  */
 
 // Suppress console output during tests unless explicitly needed
@@ -21,207 +21,186 @@ afterAll(() => {
 });
 
 // Set test environment variables
-process.env.NODE_ENV = 'test';
-process.env.PLATO_TEST_MODE = 'true';
+process.env.NODE_ENV = "test";
+process.env.PLATO_TEST_MODE = "true";
 
-// Setup fs mocks with ACTUAL implementations for tool tests
-import { tmpdir } from 'os';
-import path from 'path';
-import * as realFs from 'fs/promises';
-import fs from 'fs';
+// Simple fs mock with clear boundaries
+import { tmpdir } from "os";
+import path from "path";
+import * as realFs from "fs/promises";
 
-// Create a virtual file system for tests
+// In-memory mock file system
 const mockFiles = new Map<string, Buffer>();
 const mockStats = new Map<string, any>();
-let mockTempDirs = new Set<string>();
 
-// Mock fs/promises with selective real implementations
-jest.mock('fs/promises', () => {
-  const originalFs = jest.requireActual('fs/promises');
-  
+// Helper to determine if path should use real fs
+const isRealPath = (filePath: string): boolean => {
+  const normalized = path.resolve(filePath);
+  const projectRoot = process.cwd();
+
+  // Use real fs for:
+  // - temp directories and node_modules
+  // - project root files (package.json, README.md, .gitignore, etc.)
+  // - .github directory and subdirectories
+  // - jest config files
+  return (
+    normalized.startsWith(tmpdir()) ||
+    normalized.includes("node_modules") ||
+    normalized.startsWith("/tmp/") ||
+    normalized === path.join(projectRoot, "package.json") ||
+    normalized === path.join(projectRoot, "README.md") ||
+    normalized === path.join(projectRoot, ".gitignore") ||
+    normalized.startsWith(path.join(projectRoot, ".github")) ||
+    normalized.includes("jest.config") ||
+    normalized === path.join(projectRoot, "tsconfig.json") ||
+    normalized === path.join(projectRoot, "tsconfig.test.json")
+  );
+};
+
+// Simplified fs mock
+jest.mock("fs/promises", () => {
+  const originalFs = jest.requireActual("fs/promises");
+
   return {
-    readFile: jest.fn().mockImplementation(async (filePath: string, options?: any) => {
-      const normalizedPath = path.resolve(filePath);
-      
-      // Check if it's a mock file first
-      if (mockFiles.has(normalizedPath)) {
-        const buffer = mockFiles.get(normalizedPath)!;
-        if (options && typeof options === 'string') {
-          return buffer.toString(options as BufferEncoding);
-        }
-        if (options && options.encoding) {
-          return buffer.toString(options.encoding);
-        }
-        return buffer;
-      }
-      
-      // For temp directories created by tests, use real fs
-      for (const tempDir of mockTempDirs) {
-        if (normalizedPath.startsWith(tempDir)) {
+    readFile: jest
+      .fn()
+      .mockImplementation(async (filePath: string, options?: any) => {
+        if (isRealPath(filePath)) {
           return originalFs.readFile(filePath, options);
         }
-      }
-      
-      // Default: throw ENOENT
-      const error = new Error(`ENOENT: no such file or directory, open '${filePath}'`) as NodeJS.ErrnoException;
-      error.code = 'ENOENT';
-      error.errno = -2;
-      error.syscall = 'open';
-      error.path = filePath;
-      throw error;
-    }),
-    
-    writeFile: jest.fn().mockImplementation(async (filePath: string, data: any, options?: any) => {
-      const normalizedPath = path.resolve(filePath);
-      
-      // For temp directories, use real fs
-      for (const tempDir of mockTempDirs) {
-        if (normalizedPath.startsWith(tempDir)) {
-          return originalFs.writeFile(filePath, data, options);
+
+        const normalizedPath = path.resolve(filePath);
+        if (mockFiles.has(normalizedPath)) {
+          const buffer = mockFiles.get(normalizedPath)!;
+          if (options?.encoding) {
+            return buffer.toString(options.encoding);
+          }
+          return buffer;
         }
-      }
-      
-      // Store in mock files
-      const buffer = Buffer.isBuffer(data) ? data : Buffer.from(data.toString(), options?.encoding || 'utf8');
-      mockFiles.set(normalizedPath, buffer);
-      
-      // Mock the stats
-      mockStats.set(normalizedPath, {
-        isFile: () => true,
-        isDirectory: () => false,
-        size: buffer.length,
-        mtime: new Date(),
-        ctime: new Date(),
-        atime: new Date(),
-      });
-    }),
-    
+
+        const error = new Error(
+          `ENOENT: no such file or directory, open '${filePath}'`,
+        ) as NodeJS.ErrnoException;
+        error.code = "ENOENT";
+        throw error;
+      }),
+
+    writeFile: jest
+      .fn()
+      .mockImplementation(
+        async (filePath: string, data: any, options?: any) => {
+          if (isRealPath(filePath)) {
+            return originalFs.writeFile(filePath, data, options);
+          }
+
+          const normalizedPath = path.resolve(filePath);
+          const buffer = Buffer.isBuffer(data)
+            ? data
+            : Buffer.from(data.toString());
+          mockFiles.set(normalizedPath, buffer);
+          mockStats.set(normalizedPath, {
+            isFile: () => true,
+            isDirectory: () => false,
+            size: buffer.length,
+            mtime: new Date(),
+          });
+        },
+      ),
+
     stat: jest.fn().mockImplementation(async (filePath: string) => {
+      if (isRealPath(filePath)) {
+        return originalFs.stat(filePath);
+      }
+
       const normalizedPath = path.resolve(filePath);
-      
-      // Check mock files first
       if (mockStats.has(normalizedPath)) {
         return mockStats.get(normalizedPath);
       }
-      
-      // For temp directories, use real fs
-      for (const tempDir of mockTempDirs) {
-        if (normalizedPath.startsWith(tempDir)) {
-          return originalFs.stat(filePath);
-        }
-      }
-      
-      // Default: throw ENOENT
-      const error = new Error(`ENOENT: no such file or directory, stat '${filePath}'`) as NodeJS.ErrnoException;
-      error.code = 'ENOENT';
-      error.errno = -2;
-      error.syscall = 'stat';
-      error.path = filePath;
+
+      const error = new Error(
+        `ENOENT: no such file or directory, stat '${filePath}'`,
+      ) as NodeJS.ErrnoException;
+      error.code = "ENOENT";
       throw error;
     }),
-    
-    realpath: jest.fn().mockImplementation(async (filePath: string) => {
-      const normalizedPath = path.resolve(filePath);
-      
-      // Check if file exists in mocks
-      if (mockFiles.has(normalizedPath)) {
-        return normalizedPath;
-      }
-      
-      // For temp directories, use real fs
-      for (const tempDir of mockTempDirs) {
-        if (normalizedPath.startsWith(tempDir)) {
-          return originalFs.realpath(filePath);
+
+    access: jest
+      .fn()
+      .mockImplementation(async (filePath: string, mode?: number) => {
+        if (isRealPath(filePath)) {
+          return originalFs.access(filePath, mode);
         }
-      }
-      
-      // Default: throw ENOENT
-      const error = new Error(`ENOENT: no such file or directory, realpath '${filePath}'`) as NodeJS.ErrnoException;
-      error.code = 'ENOENT';
-      error.errno = -2;
-      error.syscall = 'realpath';
-      error.path = filePath;
-      throw error;
-    }),
-    
-    mkdtemp: jest.fn().mockImplementation(async (prefix: string) => {
-      const tempPath = path.join(tmpdir(), `${prefix}${Math.random().toString(36).substr(2, 9)}`);
-      
-      // Actually create the directory
-      await originalFs.mkdir(tempPath, { recursive: true });
-      mockTempDirs.add(tempPath);
-      
-      return tempPath;
-    }),
-    
-    mkdir: jest.fn().mockImplementation(async (dirPath: string, options?: any) => {
-      const normalizedPath = path.resolve(dirPath);
-      
-      // For temp directories, use real fs
-      for (const tempDir of mockTempDirs) {
-        if (normalizedPath.startsWith(tempDir)) {
+
+        const normalizedPath = path.resolve(filePath);
+        if (mockFiles.has(normalizedPath) || mockStats.has(normalizedPath)) {
+          return; // File exists in mock
+        }
+
+        const error = new Error(
+          `ENOENT: no such file or directory, access '${filePath}'`,
+        ) as NodeJS.ErrnoException;
+        error.code = "ENOENT";
+        throw error;
+      }),
+
+    mkdir: jest
+      .fn()
+      .mockImplementation(async (dirPath: string, options?: any) => {
+        if (isRealPath(dirPath)) {
           return originalFs.mkdir(dirPath, options);
         }
+
+        const normalizedPath = path.resolve(dirPath);
+        mockStats.set(normalizedPath, {
+          isFile: () => false,
+          isDirectory: () => true,
+          size: 0,
+          mtime: new Date(),
+        });
+      }),
+
+    readdir: jest.fn().mockImplementation(async (dirPath: string) => {
+      if (isRealPath(dirPath)) {
+        return originalFs.readdir(dirPath);
       }
-      
-      // Mock the directory
-      mockStats.set(normalizedPath, {
-        isFile: () => false,
-        isDirectory: () => true,
-        size: 0,
-        mtime: new Date(),
-        ctime: new Date(),
-        atime: new Date(),
-      });
-    }),
-    
-    rmdir: jest.fn().mockImplementation(async (dirPath: string, options?: any) => {
+
       const normalizedPath = path.resolve(dirPath);
-      
-      // For temp directories, use real fs
-      for (const tempDir of mockTempDirs) {
-        if (normalizedPath.startsWith(tempDir) || normalizedPath === tempDir) {
-          mockTempDirs.delete(tempDir);
-          return originalFs.rmdir ? originalFs.rmdir(dirPath, options) : originalFs.rm(dirPath, { recursive: true, force: true });
+      const files: string[] = [];
+
+      // Find all files that start with this directory path
+      for (const filePath of mockFiles.keys()) {
+        if (filePath.startsWith(normalizedPath + path.sep)) {
+          const relativePath = path.relative(normalizedPath, filePath);
+          const firstSegment = relativePath.split(path.sep)[0];
+          if (!files.includes(firstSegment)) {
+            files.push(firstSegment);
+          }
         }
       }
-      
-      // Remove from mocks
-      mockStats.delete(normalizedPath);
-      for (const key of mockFiles.keys()) {
-        if (key.startsWith(normalizedPath)) {
-          mockFiles.delete(key);
-          mockStats.delete(key);
-        }
-      }
+
+      return files;
     }),
-    
-    access: jest.fn().mockImplementation(async (filePath: string) => {
+
+    unlink: jest.fn().mockImplementation(async (filePath: string) => {
+      if (isRealPath(filePath)) {
+        return originalFs.unlink(filePath);
+      }
+
       const normalizedPath = path.resolve(filePath);
-      
-      // Check mock files
-      if (mockFiles.has(normalizedPath) || mockStats.has(normalizedPath)) {
-        return; // Access OK
+      if (mockFiles.has(normalizedPath)) {
+        mockFiles.delete(normalizedPath);
+        mockStats.delete(normalizedPath);
+      } else {
+        const error = new Error(
+          `ENOENT: no such file or directory, unlink '${filePath}'`,
+        ) as NodeJS.ErrnoException;
+        error.code = "ENOENT";
+        throw error;
       }
-      
-      // For temp directories, use real fs
-      for (const tempDir of mockTempDirs) {
-        if (normalizedPath.startsWith(tempDir)) {
-          return originalFs.access(filePath);
-        }
-      }
-      
-      // Default: throw ENOENT
-      const error = new Error(`ENOENT: no such file or directory, access '${filePath}'`) as NodeJS.ErrnoException;
-      error.code = 'ENOENT';
-      error.errno = -2;
-      error.syscall = 'access';
-      error.path = filePath;
-      throw error;
     }),
-    
-    readdir: originalFs.readdir,
-    unlink: originalFs.unlink,
+
+    mkdtemp: originalFs.mkdtemp,
+    rmdir: originalFs.rm || originalFs.rmdir,
     rename: originalFs.rename,
     copyFile: originalFs.copyFile,
     appendFile: originalFs.appendFile,
@@ -232,50 +211,174 @@ jest.mock('fs/promises', () => {
 });
 
 // Mock execa for command execution
-jest.mock('execa', () => ({
+jest.mock("execa", () => ({
   execaCommand: jest.fn().mockResolvedValue({
-    stdout: '',
-    stderr: '',
+    stdout: "",
+    stderr: "",
     exitCode: 0,
   }),
   execa: jest.fn().mockResolvedValue({
-    stdout: '',
-    stderr: '',
+    stdout: "",
+    stderr: "",
     exitCode: 0,
   }),
 }));
 
-// Mock terminal-specific functionality that doesn't work in tests
-// We check if the module exists before mocking
-try {
-  jest.mock('ink', () => ({
-    render: jest.fn(),
-    Box: jest.fn(),
-    Text: jest.fn(),
+// Mock Ink for TUI tests
+jest.mock("ink", () => {
+  const React = require("react");
+  return {
+    render: jest.fn().mockImplementation(() => ({
+      lastFrame: () => "mocked output",
+      rerender: jest.fn(),
+      waitUntilExit: jest.fn().mockResolvedValue(undefined),
+      unmount: jest.fn(),
+    })),
+    Box: jest
+      .fn()
+      .mockImplementation((props) => React.createElement("div", props)),
+    Text: jest
+      .fn()
+      .mockImplementation((props) => React.createElement("span", props)),
     useApp: jest.fn(() => ({ exit: jest.fn() })),
     useInput: jest.fn(),
     useStdin: jest.fn(() => ({
-      stdin: {
-        ...process.stdin,
-        setRawMode: jest.fn(),
-        isRaw: false,
-        write: jest.fn(),
-      },
+      stdin: process.stdin,
       setRawMode: jest.fn(),
       isRawModeSupported: false,
     })),
-  }));
-} catch {
-  // Ink module not used in this test
-}
+    useEffect: React.useEffect,
+    useState: React.useState,
+    useRef: React.useRef,
+    useMemo: React.useMemo,
+  };
+});
+
+// Test cleanup utilities with flexible timer types
+const testCleanup = {
+  timers: new Set<any>(),
+  intervals: new Set<any>(),
+  listeners: new Map<any, Array<{ event: string; listener: Function }>>(),
+
+  addTimer: (timer: any) => {
+    testCleanup.timers.add(timer);
+    return timer;
+  },
+
+  addInterval: (interval: any) => {
+    testCleanup.intervals.add(interval);
+    return interval;
+  },
+
+  addListener: (emitter: any, event: string, listener: Function) => {
+    if (!testCleanup.listeners.has(emitter)) {
+      testCleanup.listeners.set(emitter, []);
+    }
+    testCleanup.listeners.get(emitter)!.push({ event, listener });
+    emitter.on(event, listener);
+  },
+
+  cleanup: () => {
+    // Clear all timers
+    testCleanup.timers.forEach((timer) => clearTimeout(timer));
+    testCleanup.timers.clear();
+
+    // Clear all intervals
+    testCleanup.intervals.forEach((interval) => clearInterval(interval));
+    testCleanup.intervals.clear();
+
+    // Remove all event listeners
+    testCleanup.listeners.forEach((listeners, emitter) => {
+      listeners.forEach(({ event, listener }) => {
+        try {
+          emitter.removeListener(event, listener);
+        } catch (e) {
+          // Ignore errors during cleanup
+        }
+      });
+    });
+    testCleanup.listeners.clear();
+
+    // Clear mock file system
+    mockFiles.clear();
+    mockStats.clear();
+
+    // Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+    }
+  },
+};
+
+// Global cleanup after each test
+afterEach(() => {
+  testCleanup.cleanup();
+});
+
+// Global test utilities
+global.testUtils = {
+  // Resource management helpers
+  cleanup: testCleanup,
+
+  // Timer helpers that auto-cleanup
+  setTimeout: (fn: Function, delay: number): any => {
+    const timer = setTimeout(fn, delay);
+    testCleanup.addTimer(timer);
+    return timer;
+  },
+
+  setInterval: (fn: Function, delay: number): any => {
+    const interval = setInterval(fn, delay);
+    testCleanup.addInterval(interval);
+    return interval;
+  },
+
+  // Event listener helper that auto-cleans
+  addEventListener: (emitter: any, event: string, listener: Function) => {
+    testCleanup.addListener(emitter, event, listener);
+  },
+
+  // Helper to wait for async operations
+  waitFor: (condition: () => boolean, timeout = 1000): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      const timer = setInterval(() => {
+        if (condition()) {
+          clearInterval(timer);
+          resolve();
+        } else if (Date.now() - startTime > timeout) {
+          clearInterval(timer);
+          reject(new Error(`Timeout waiting for condition after ${timeout}ms`));
+        }
+      }, 10);
+      testCleanup.addInterval(timer);
+    });
+  },
+
+  // Create isolated test directory
+  createTempDir: async (): Promise<string> => {
+    const tempDir = await realFs.mkdtemp(path.join(tmpdir(), "plato-test-"));
+    // Register for cleanup
+    process.on("exit", () => {
+      try {
+        realFs.rm(tempDir, { recursive: true, force: true });
+      } catch (e) {
+        // Ignore cleanup errors on exit
+      }
+    });
+    return tempDir;
+  },
+};
 
 // Prevent mouse mode terminal escape sequences in tests
-if (process.env.NODE_ENV === 'test') {
+if (process.env.NODE_ENV === "test") {
   const originalWrite = process.stdout.write.bind(process.stdout);
   process.stdout.write = ((chunk: any, ...args: any[]) => {
-    // Filter out mouse mode escape sequences
-    if (typeof chunk === 'string') {
-      const filtered = chunk.replace(/\x1b\[\?1000[hl]|\x1b\[\?1002[hl]|\x1b\[\?1006[hl]|\x1b\[\?1005[hl]|\x1b\[\?1015[hl]|\x1b\[\?1004[hl]/g, '');
+    if (typeof chunk === "string") {
+      const filtered = chunk.replace(
+        /\x1b\[\?1000[hl]|\x1b\[\?1002[hl]|\x1b\[\?1006[hl]/g,
+        "",
+      );
       if (filtered !== chunk) {
         return true; // Silently ignore mouse escape sequences
       }
@@ -284,46 +387,18 @@ if (process.env.NODE_ENV === 'test') {
   }) as any;
 }
 
-// Global test utilities
-global.testUtils = {
-  // Helper to wait for async operations
-  waitFor: (condition: () => boolean, timeout = 5000): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const startTime = Date.now();
-      const interval = setInterval(() => {
-        if (condition()) {
-          clearInterval(interval);
-          resolve();
-        } else if (Date.now() - startTime > timeout) {
-          clearInterval(interval);
-          reject(new Error('Timeout waiting for condition'));
-        }
-      }, 100);
-    });
-  },
-  
-  // Mock file system helpers
-  mockFs: {
-    setup: () => {
-      jest.mock('fs/promises');
-    },
-    restore: () => {
-      jest.unmock('fs/promises');
-    },
-  },
-};
-
-// Extend Jest matchers with jest-extended
-import 'jest-extended/all';
+// Extended Jest matchers
+import "jest-extended/all";
 
 // TypeScript declarations for global test utilities
 declare global {
   var testUtils: {
+    cleanup: typeof testCleanup;
+    setTimeout: (fn: Function, delay: number) => any;
+    setInterval: (fn: Function, delay: number) => any;
+    addEventListener: (emitter: any, event: string, listener: Function) => void;
     waitFor: (condition: () => boolean, timeout?: number) => Promise<void>;
-    mockFs: {
-      setup: () => void;
-      restore: () => void;
-    };
+    createTempDir: () => Promise<string>;
   };
 }
 

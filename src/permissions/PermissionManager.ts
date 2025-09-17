@@ -1,16 +1,16 @@
-import { EventEmitter } from 'events';
-import { ProfileManager } from './ProfileManager.js';
-import { AuditLogger } from './AuditLogger.js';
-import { RuleEngine } from './RuleEngine.js';
-import { SafetyGuard } from './SafetyGuard.js';
-import { RiskAssessment } from './RiskAssessment.js';
+import { EventEmitter } from "events";
+import { ProfileManager } from "./ProfileManager.js";
+import { AuditLogger } from "./AuditLogger.js";
+import { RuleEngine } from "./RuleEngine.js";
+import { SafetyGuard } from "./SafetyGuard.js";
+import { RiskAssessment } from "./RiskAssessment.js";
 import {
   PermissionQuery,
   PermissionResult,
   PermissionAction,
   Profile,
   Rule,
-} from './types.js';
+} from "./types.js";
 
 export interface PermissionManagerOptions {
   profileManager: ProfileManager;
@@ -35,7 +35,7 @@ export class PermissionManager extends EventEmitter {
     super();
 
     this.options = {
-      configPath: options.configPath || '.plato/permissions.yml',
+      configPath: options.configPath || ".plato/permissions.yml",
       enableSafetyGuards: options.enableSafetyGuards ?? true,
       enableRiskAssessment: options.enableRiskAssessment ?? true,
       ...options,
@@ -56,11 +56,11 @@ export class PermissionManager extends EventEmitter {
   async initialize(): Promise<void> {
     // Initialize components
     await this.auditLogger.initialize?.();
-    
+
     // Load initial configuration
     await this.profileManager.loadProfiles();
-    
-    this.emit('initialized');
+
+    this.emit("initialized");
   }
 
   /**
@@ -74,65 +74,97 @@ export class PermissionManager extends EventEmitter {
       if (this.options.enableSafetyGuards) {
         const safetyResult = this.safetyGuard.validateOperation(query);
         if (!safetyResult.valid) {
-          return this.createResult('deny', query, safetyResult.reason || 'Safety guard violation', startTime);
+          return this.createResult(
+            "deny",
+            query,
+            safetyResult.reason || "Safety guard violation",
+            startTime,
+          );
         }
       }
 
       // 2. Get current profile
       const currentProfile = this.profileManager.getCurrentProfile();
       if (!currentProfile) {
-        return this.createResult('deny', query, 'No active profile', startTime);
+        return this.createResult("deny", query, "No active profile", startTime);
       }
 
       // 3. Rule evaluation
       const ruleResult = await this.ruleEngine.evaluatePermission(
-        query, 
-        currentProfile.rules, 
+        query,
+        currentProfile.rules,
         currentProfile.defaults,
-        currentProfile
+        currentProfile,
       );
       if (ruleResult) {
-        return this.createResult(ruleResult.action, query, ruleResult.reason, startTime);
+        return this.createResult(
+          ruleResult.action,
+          query,
+          ruleResult.reason,
+          startTime,
+        );
       }
 
       // 4. Risk assessment (if enabled)
       if (this.options.enableRiskAssessment) {
         const riskLevel = RiskAssessment.assessRisk(query);
-        if (riskLevel.level === 'critical') {
-          return this.createResult('deny', query, `Critical risk: ${riskLevel.factors.join(', ')}`, startTime);
+        if (riskLevel.level === "critical") {
+          return this.createResult(
+            "deny",
+            query,
+            `Critical risk: ${riskLevel.factors.join(", ")}`,
+            startTime,
+          );
         }
-        if (riskLevel.level === 'high') {
-          return this.createResult('confirm', query, `High risk: ${riskLevel.factors.join(', ')}`, startTime);
+        if (riskLevel.level === "high") {
+          return this.createResult(
+            "confirm",
+            query,
+            `High risk: ${riskLevel.factors.join(", ")}`,
+            startTime,
+          );
         }
       }
 
       // 5. Fall back to profile defaults
       const defaultAction = this.getDefaultAction(query, currentProfile);
-      return this.createResult(defaultAction, query, 'Default policy', startTime);
-
+      return this.createResult(
+        defaultAction,
+        query,
+        "Default policy",
+        startTime,
+      );
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      return this.createResult('deny', query, `Permission check failed: ${errorMsg}`, startTime);
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      return this.createResult(
+        "deny",
+        query,
+        `Permission check failed: ${errorMsg}`,
+        startTime,
+      );
     }
   }
 
   /**
    * Get default action from profile
    */
-  private getDefaultAction(query: PermissionQuery, profile: Profile): PermissionAction {
+  private getDefaultAction(
+    query: PermissionQuery,
+    profile: Profile,
+  ): PermissionAction {
     // Map tool types to profile defaults
     const toolMapping: Record<string, string> = {
-      'mcp_operation': 'network_request',
-      'mcp_call': 'network_request',
-      'fs_write': 'fs_write',
-      'fs_read': 'fs_read',
-      'shell_execute': 'shell_execute',
-      'bash': 'shell_execute',
-      'git': 'shell_execute',
+      mcp_operation: "network_request",
+      mcp_call: "network_request",
+      fs_write: "fs_write",
+      fs_read: "fs_read",
+      shell_execute: "shell_execute",
+      bash: "shell_execute",
+      git: "shell_execute",
     };
 
-    const defaultKey = toolMapping[query.tool] || 'fs_write';
-    return profile.defaults[defaultKey] || 'confirm';
+    const defaultKey = toolMapping[query.tool] || "fs_write";
+    return profile.defaults[defaultKey] || "confirm";
   }
 
   /**
@@ -142,7 +174,7 @@ export class PermissionManager extends EventEmitter {
     action: PermissionAction,
     query: PermissionQuery,
     reason: string,
-    startTime: number
+    startTime: number,
   ): Promise<PermissionResult> {
     const result: PermissionResult = {
       action,
@@ -156,7 +188,7 @@ export class PermissionManager extends EventEmitter {
     await this.auditLogger.logPermissionDecision(query, result);
 
     // Emit event
-    this.emit('permissionChecked', { query, result });
+    this.emit("permissionChecked", { query, result });
 
     return result;
   }
@@ -167,7 +199,7 @@ export class PermissionManager extends EventEmitter {
   async addTemporaryRule(rule: Rule, duration?: number): Promise<void> {
     const currentProfile = this.profileManager.getCurrentProfile();
     if (!currentProfile) {
-      throw new Error('No active profile to add rule to');
+      throw new Error("No active profile to add rule to");
     }
 
     const tempRule: Rule = {
@@ -177,7 +209,7 @@ export class PermissionManager extends EventEmitter {
     };
 
     this.profileManager.addTemporaryRule(tempRule);
-    this.emit('ruleAdded', { rule: tempRule, profile: currentProfile.name });
+    this.emit("ruleAdded", { rule: tempRule, profile: currentProfile.name });
   }
 
   /**
@@ -191,12 +223,12 @@ export class PermissionManager extends EventEmitter {
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    this.profileManager.on('profileChanged', (event) => {
-      this.emit('profileChanged', event);
+    this.profileManager.on("profileChanged", (event) => {
+      this.emit("profileChanged", event);
     });
 
-    this.auditLogger.on('logRotated', (data) => {
-      this.emit('auditLogRotated', data);
+    this.auditLogger.on("logRotated", (data) => {
+      this.emit("auditLogRotated", data);
     });
   }
 
@@ -227,14 +259,14 @@ export class PermissionManager extends EventEmitter {
    */
   setSafeMode(enabled: boolean): void {
     // SafetyGuard doesn't have safe mode methods, no-op for now
-    this.emit('safeModeChanged', enabled);
+    this.emit("safeModeChanged", enabled);
   }
 
   /**
    * Emergency stop - disable all permissions
    */
   emergencyStop(): void {
-    this.emit('emergencyStop');
+    this.emit("emergencyStop");
     // Implementation would disable all permission checks
   }
 
@@ -244,6 +276,6 @@ export class PermissionManager extends EventEmitter {
   async cleanup(): Promise<void> {
     await this.auditLogger.cleanup?.();
     this.removeAllListeners();
-    this.emit('cleanup');
+    this.emit("cleanup");
   }
 }

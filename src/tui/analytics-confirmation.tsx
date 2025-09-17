@@ -3,8 +3,8 @@
  * Provides interactive confirmation for destructive analytics operations
  */
 
-import React, { useState, useCallback } from 'react';
-import { Box, Text, useInput } from 'ink';
+import React, { useState, useCallback } from "react";
+import { Box, Text, useInput } from "ink";
 
 export interface AnalyticsConfirmationProps {
   title: string;
@@ -24,38 +24,47 @@ export const AnalyticsConfirmation: React.FC<AnalyticsConfirmationProps> = ({
   title,
   message,
   details = [],
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText = "Confirm",
+  cancelText = "Cancel",
   destructive = false,
   onConfirm,
-  onCancel
+  onCancel,
 }) => {
-  const [selectedOption, setSelectedOption] = useState<'confirm' | 'cancel'>('cancel');
+  const [selectedOption, setSelectedOption] = useState<"confirm" | "cancel">(
+    "cancel",
+  );
 
   useInput((input, key) => {
     if (key.leftArrow || key.rightArrow) {
-      setSelectedOption(prev => prev === 'confirm' ? 'cancel' : 'confirm');
+      setSelectedOption((prev) => (prev === "confirm" ? "cancel" : "confirm"));
     } else if (key.return) {
-      if (selectedOption === 'confirm') {
+      if (selectedOption === "confirm") {
         onConfirm();
       } else {
         onCancel();
       }
     } else if (key.escape) {
       onCancel();
-    } else if (input.toLowerCase() === 'y') {
+    } else if (input.toLowerCase() === "y") {
       onConfirm();
-    } else if (input.toLowerCase() === 'n') {
+    } else if (input.toLowerCase() === "n") {
       onCancel();
     }
   });
 
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor="yellow" paddingX={2} paddingY={1}>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor="yellow"
+      paddingX={2}
+      paddingY={1}
+    >
       {/* Title */}
       <Box marginBottom={1}>
-        <Text bold color={destructive ? 'red' : 'yellow'}>
-          {destructive ? '⚠️  ' : '❓ '}{title}
+        <Text bold color={destructive ? "red" : "yellow"}>
+          {destructive ? "⚠️  " : "❓ "}
+          {title}
         </Text>
       </Box>
 
@@ -69,7 +78,7 @@ export const AnalyticsConfirmation: React.FC<AnalyticsConfirmationProps> = ({
         <Box flexDirection="column" marginBottom={1}>
           {details.map((detail, index) => (
             <Box key={index}>
-              <Text color="gray">  • {detail}</Text>
+              <Text color="gray"> • {detail}</Text>
             </Box>
           ))}
         </Box>
@@ -79,7 +88,7 @@ export const AnalyticsConfirmation: React.FC<AnalyticsConfirmationProps> = ({
       {destructive && (
         <Box marginBottom={1}>
           <Text bold color="red">
-            ⚠️  This action cannot be undone!
+            ⚠️ This action cannot be undone!
           </Text>
         </Box>
       )}
@@ -88,18 +97,24 @@ export const AnalyticsConfirmation: React.FC<AnalyticsConfirmationProps> = ({
       <Box marginTop={1}>
         <Box marginRight={2}>
           <Text
-            bold={selectedOption === 'confirm'}
-            color={selectedOption === 'confirm' ? (destructive ? 'red' : 'green') : 'gray'}
+            bold={selectedOption === "confirm"}
+            color={
+              selectedOption === "confirm"
+                ? destructive
+                  ? "red"
+                  : "green"
+                : "gray"
+            }
           >
-            [{selectedOption === 'confirm' ? '▶' : ' '}] {confirmText} (Y)
+            [{selectedOption === "confirm" ? "▶" : " "}] {confirmText} (Y)
           </Text>
         </Box>
         <Box>
           <Text
-            bold={selectedOption === 'cancel'}
-            color={selectedOption === 'cancel' ? 'cyan' : 'gray'}
+            bold={selectedOption === "cancel"}
+            color={selectedOption === "cancel" ? "cyan" : "gray"}
           >
-            [{selectedOption === 'cancel' ? '▶' : ' '}] {cancelText} (N)
+            [{selectedOption === "cancel" ? "▶" : " "}] {cancelText} (N)
           </Text>
         </Box>
       </Box>
@@ -125,25 +140,28 @@ export interface AnalyticsResetConfirmationProps {
   onCancel: () => void;
 }
 
-export const AnalyticsResetConfirmation: React.FC<AnalyticsResetConfirmationProps> = ({
-  dateRange,
-  estimatedRecords,
-  onConfirm,
-  onCancel
-}) => {
+export const AnalyticsResetConfirmation: React.FC<
+  AnalyticsResetConfirmationProps
+> = ({ dateRange, estimatedRecords, onConfirm, onCancel }) => {
   const details: string[] = [];
 
   if (dateRange) {
-    details.push(`Date range: ${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`);
+    details.push(
+      `Date range: ${dateRange.start.toLocaleDateString()} - ${dateRange.end.toLocaleDateString()}`,
+    );
   } else {
-    details.push('All analytics data will be deleted');
+    details.push("All analytics data will be deleted");
   }
 
   if (estimatedRecords !== undefined) {
-    details.push(`Approximately ${estimatedRecords.toLocaleString()} records will be deleted`);
+    details.push(
+      `Approximately ${estimatedRecords.toLocaleString()} records will be deleted`,
+    );
   }
 
-  details.push('This includes all cost metrics, session data, and aggregated statistics');
+  details.push(
+    "This includes all cost metrics, session data, and aggregated statistics",
+  );
 
   return (
     <AnalyticsConfirmation

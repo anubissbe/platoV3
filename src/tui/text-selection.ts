@@ -36,7 +36,7 @@ export interface SelectionState {
   /** Last update time */
   lastUpdate: number;
   /** Selection mode */
-  mode: 'character' | 'word' | 'line';
+  mode: "character" | "word" | "line";
 }
 
 /**
@@ -65,7 +65,7 @@ export interface SelectionMetrics {
  */
 export interface SelectionEvent {
   /** Event type */
-  type: 'start' | 'update' | 'end' | 'clear' | 'expand';
+  type: "start" | "update" | "end" | "clear" | "expand";
   /** Current selection range */
   range: TextRange | null;
   /** Selection metrics */
@@ -73,7 +73,7 @@ export interface SelectionEvent {
   /** Timestamp */
   timestamp: number;
   /** Event source */
-  source: 'mouse' | 'keyboard' | 'api';
+  source: "mouse" | "keyboard" | "api";
 }
 
 /**
@@ -106,13 +106,15 @@ const DEFAULT_SELECTION_CONFIG: SelectionConfig = {
   allowLineSelection: true,
   enableClipboard: true,
   selectionTimeout: 0,
-  debug: false
+  debug: false,
 };
 
 /**
  * Selection event handler types
  */
-export type SelectionEventHandler = (event: SelectionEvent) => void | Promise<void>;
+export type SelectionEventHandler = (
+  event: SelectionEvent,
+) => void | Promise<void>;
 
 export interface SelectionEventHandlers {
   onSelectionStart?: SelectionEventHandler;
@@ -133,11 +135,14 @@ export class RangeValidator {
     if (position.line < 0 || position.line >= content.length) {
       return false;
     }
-    
-    if (position.column < 0 || position.column > content[position.line].length) {
+
+    if (
+      position.column < 0 ||
+      position.column > content[position.line].length
+    ) {
       return false;
     }
-    
+
     return true;
   }
 
@@ -145,24 +150,35 @@ export class RangeValidator {
    * Check if range is valid within content bounds
    */
   static isValidRange(range: TextRange, content: string[]): boolean {
-    return this.isValidPosition(range.start, content) && 
-           this.isValidPosition(range.end, content);
+    return (
+      this.isValidPosition(range.start, content) &&
+      this.isValidPosition(range.end, content)
+    );
   }
 
   /**
    * Clamp position to valid bounds
    */
-  static clampPosition(position: TextPosition, content: string[]): TextPosition {
+  static clampPosition(
+    position: TextPosition,
+    content: string[],
+  ): TextPosition {
     if (content.length === 0) {
       return { line: 0, column: 0 };
     }
 
-    const clampedLine = Math.max(0, Math.min(position.line, content.length - 1));
-    const clampedColumn = Math.max(0, Math.min(position.column, content[clampedLine].length));
-    
+    const clampedLine = Math.max(
+      0,
+      Math.min(position.line, content.length - 1),
+    );
+    const clampedColumn = Math.max(
+      0,
+      Math.min(position.column, content[clampedLine].length),
+    );
+
     return {
       line: clampedLine,
-      column: clampedColumn
+      column: clampedColumn,
     };
   }
 
@@ -171,11 +187,14 @@ export class RangeValidator {
    */
   static normalizeRange(range: TextRange): TextRange {
     const { start, end } = range;
-    
-    if (start.line > end.line || (start.line === end.line && start.column > end.column)) {
+
+    if (
+      start.line > end.line ||
+      (start.line === end.line && start.column > end.column)
+    ) {
       return { start: end, end: start };
     }
-    
+
     return range;
   }
 
@@ -190,8 +209,10 @@ export class RangeValidator {
    * Check if two ranges are equal
    */
   static isRangeEqual(range1: TextRange, range2: TextRange): boolean {
-    return this.isPositionEqual(range1.start, range2.start) && 
-           this.isPositionEqual(range1.end, range2.end);
+    return (
+      this.isPositionEqual(range1.start, range2.start) &&
+      this.isPositionEqual(range1.end, range2.end)
+    );
   }
 
   /**
@@ -221,9 +242,9 @@ export class SelectionAlgorithms {
 
     // If not on a word character, return single character selection
     if (!char || !/\w/.test(char)) {
-      return { 
-        start: position, 
-        end: { line: position.line, column: position.column + 1 }
+      return {
+        start: position,
+        end: { line: position.line, column: position.column + 1 },
       };
     }
 
@@ -243,7 +264,7 @@ export class SelectionAlgorithms {
 
     return {
       start: { line: position.line, column: start },
-      end: { line: position.line, column: end }
+      end: { line: position.line, column: end },
     };
   }
 
@@ -257,7 +278,7 @@ export class SelectionAlgorithms {
 
     return {
       start: { line: position.line, column: 0 },
-      end: { line: position.line + 1, column: 0 }
+      end: { line: position.line + 1, column: 0 },
     };
   }
 
@@ -272,13 +293,20 @@ export class SelectionAlgorithms {
     let { line, column } = position;
 
     // Skip current word
-    while (line < content.length && column < content[line].length && /\w/.test(content[line][column])) {
+    while (
+      line < content.length &&
+      column < content[line].length &&
+      /\w/.test(content[line][column])
+    ) {
       column++;
     }
 
     // Skip whitespace
     while (line < content.length) {
-      while (column < content[line].length && /\s/.test(content[line][column])) {
+      while (
+        column < content[line].length &&
+        /\s/.test(content[line][column])
+      ) {
         column++;
       }
 
@@ -297,7 +325,10 @@ export class SelectionAlgorithms {
   /**
    * Find previous word position
    */
-  static findPreviousWord(position: TextPosition, content: string[]): TextPosition {
+  static findPreviousWord(
+    position: TextPosition,
+    content: string[],
+  ): TextPosition {
     if (!RangeValidator.isValidPosition(position, content)) {
       return position;
     }
@@ -349,11 +380,15 @@ export class SelectionAlgorithms {
   static getAffectedLines(range: TextRange): number[] {
     const normalized = RangeValidator.normalizeRange(range);
     const lines: number[] = [];
-    
-    for (let line = normalized.start.line; line <= normalized.end.line; line++) {
+
+    for (
+      let line = normalized.start.line;
+      line <= normalized.end.line;
+      line++
+    ) {
       lines.push(line);
     }
-    
+
     return lines;
   }
 
@@ -362,19 +397,28 @@ export class SelectionAlgorithms {
    */
   static isPositionInRange(position: TextPosition, range: TextRange): boolean {
     const normalized = RangeValidator.normalizeRange(range);
-    
-    if (position.line < normalized.start.line || position.line > normalized.end.line) {
+
+    if (
+      position.line < normalized.start.line ||
+      position.line > normalized.end.line
+    ) {
       return false;
     }
-    
-    if (position.line === normalized.start.line && position.column < normalized.start.column) {
+
+    if (
+      position.line === normalized.start.line &&
+      position.column < normalized.start.column
+    ) {
       return false;
     }
-    
-    if (position.line === normalized.end.line && position.column >= normalized.end.column) {
+
+    if (
+      position.line === normalized.end.line &&
+      position.column >= normalized.end.column
+    ) {
       return false;
     }
-    
+
     return true;
   }
 }
@@ -406,7 +450,7 @@ export class TextSelection {
       isVisible: false,
       startTime: 0,
       lastUpdate: 0,
-      mode: 'character'
+      mode: "character",
     };
   }
 
@@ -415,9 +459,12 @@ export class TextSelection {
    */
   updateContent(content: string[]): void {
     this.content = [...content];
-    
+
     // Validate current selection against new content
-    if (this.currentRange && !RangeValidator.isValidRange(this.currentRange, this.content)) {
+    if (
+      this.currentRange &&
+      !RangeValidator.isValidRange(this.currentRange, this.content)
+    ) {
       this.clearSelection();
     }
   }
@@ -425,27 +472,40 @@ export class TextSelection {
   /**
    * Start text selection at position
    */
-  startSelection(position: TextPosition, mode: SelectionState['mode'] = 'character', source: SelectionEvent['source'] = 'mouse'): void {
+  startSelection(
+    position: TextPosition,
+    mode: SelectionState["mode"] = "character",
+    source: SelectionEvent["source"] = "mouse",
+  ): void {
     if (!this.config.enabled) {
       return;
     }
 
     // Validate and clamp position
-    const clampedPosition = RangeValidator.clampPosition(position, this.content);
-    
+    const clampedPosition = RangeValidator.clampPosition(
+      position,
+      this.content,
+    );
+
     // Set initial range based on mode
     let initialRange: TextRange;
     switch (mode) {
-      case 'word':
+      case "word":
         if (this.config.allowWordSelection) {
-          initialRange = SelectionAlgorithms.expandToWord(clampedPosition, this.content);
+          initialRange = SelectionAlgorithms.expandToWord(
+            clampedPosition,
+            this.content,
+          );
         } else {
           initialRange = { start: clampedPosition, end: clampedPosition };
         }
         break;
-      case 'line':
+      case "line":
         if (this.config.allowLineSelection) {
-          initialRange = SelectionAlgorithms.expandToLine(clampedPosition, this.content);
+          initialRange = SelectionAlgorithms.expandToLine(
+            clampedPosition,
+            this.content,
+          );
         } else {
           initialRange = { start: clampedPosition, end: clampedPosition };
         }
@@ -460,7 +520,7 @@ export class TextSelection {
       isVisible: this.config.showVisualIndicators,
       startTime: Date.now(),
       lastUpdate: Date.now(),
-      mode
+      mode,
     };
 
     // Clear any existing timeout
@@ -474,45 +534,63 @@ export class TextSelection {
     }
 
     // Fire selection start event
-    this.fireSelectionEvent('start', source);
+    this.fireSelectionEvent("start", source);
 
     if (this.config.debug) {
-      console.debug(`[TextSelection] Started ${mode} selection at (${clampedPosition.line}, ${clampedPosition.column})`);
+      console.debug(
+        `[TextSelection] Started ${mode} selection at (${clampedPosition.line}, ${clampedPosition.column})`,
+      );
     }
   }
 
   /**
    * Update selection to new position
    */
-  updateSelection(position: TextPosition, source: SelectionEvent['source'] = 'mouse'): void {
-    if (!this.config.enabled || !this.selectionState.isActive || !this.currentRange) {
+  updateSelection(
+    position: TextPosition,
+    source: SelectionEvent["source"] = "mouse",
+  ): void {
+    if (
+      !this.config.enabled ||
+      !this.selectionState.isActive ||
+      !this.currentRange
+    ) {
       return;
     }
 
     // Validate and clamp position
-    const clampedPosition = RangeValidator.clampPosition(position, this.content);
-    
+    const clampedPosition = RangeValidator.clampPosition(
+      position,
+      this.content,
+    );
+
     // Update range based on selection mode
     let newRange: TextRange;
     switch (this.selectionState.mode) {
-      case 'word':
-        const wordRange = SelectionAlgorithms.expandToWord(clampedPosition, this.content);
+      case "word":
+        const wordRange = SelectionAlgorithms.expandToWord(
+          clampedPosition,
+          this.content,
+        );
         newRange = {
           start: this.currentRange.start,
-          end: wordRange.end
+          end: wordRange.end,
         };
         break;
-      case 'line':
-        const lineRange = SelectionAlgorithms.expandToLine(clampedPosition, this.content);
+      case "line":
+        const lineRange = SelectionAlgorithms.expandToLine(
+          clampedPosition,
+          this.content,
+        );
         newRange = {
           start: this.currentRange.start,
-          end: lineRange.end
+          end: lineRange.end,
         };
         break;
       default:
         newRange = {
           start: this.currentRange.start,
-          end: clampedPosition
+          end: clampedPosition,
         };
     }
 
@@ -522,11 +600,13 @@ export class TextSelection {
       this.selectionState.lastUpdate = Date.now();
 
       // Fire selection update event
-      this.fireSelectionEvent('update', source);
+      this.fireSelectionEvent("update", source);
 
       if (this.config.debug) {
         const metrics = this.getSelectionMetrics();
-        console.debug(`[TextSelection] Updated selection: ${metrics?.characterCount} chars, ${metrics?.lineCount} lines`);
+        console.debug(
+          `[TextSelection] Updated selection: ${metrics?.characterCount} chars, ${metrics?.lineCount} lines`,
+        );
       }
     }
   }
@@ -534,7 +614,7 @@ export class TextSelection {
   /**
    * End selection and finalize range
    */
-  endSelection(source: SelectionEvent['source'] = 'mouse'): TextRange | null {
+  endSelection(source: SelectionEvent["source"] = "mouse"): TextRange | null {
     if (!this.config.enabled || !this.selectionState.isActive) {
       return null;
     }
@@ -544,11 +624,13 @@ export class TextSelection {
     this.clearSelectionTimeout();
 
     // Fire selection end event
-    this.fireSelectionEvent('end', source);
+    this.fireSelectionEvent("end", source);
 
     if (this.config.debug && finalRange) {
       const text = this.getSelectedText();
-      console.debug(`[TextSelection] Ended selection: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+      console.debug(
+        `[TextSelection] Ended selection: "${text.substring(0, 50)}${text.length > 50 ? "..." : ""}"`,
+      );
     }
 
     return finalRange;
@@ -567,7 +649,7 @@ export class TextSelection {
     this.clearSelectionTimeout();
 
     // Fire selection clear event
-    this.fireSelectionEvent('clear', 'api');
+    this.fireSelectionEvent("clear", "api");
 
     if (this.config.debug) {
       console.debug(`[TextSelection] Cleared selection`);
@@ -577,7 +659,10 @@ export class TextSelection {
   /**
    * Expand current selection using algorithms
    */
-  expandSelection(mode: 'word' | 'line', source: SelectionEvent['source'] = 'keyboard'): void {
+  expandSelection(
+    mode: "word" | "line",
+    source: SelectionEvent["source"] = "keyboard",
+  ): void {
     if (!this.config.enabled || !this.currentRange) {
       return;
     }
@@ -586,22 +671,37 @@ export class TextSelection {
     const normalized = RangeValidator.normalizeRange(this.currentRange);
 
     switch (mode) {
-      case 'word':
+      case "word":
         if (!this.config.allowWordSelection) return;
-        const startWordRange = SelectionAlgorithms.expandToWord(normalized.start, this.content);
-        const endWordRange = SelectionAlgorithms.expandToWord(normalized.end, this.content);
+        const startWordRange = SelectionAlgorithms.expandToWord(
+          normalized.start,
+          this.content,
+        );
+        const endWordRange = SelectionAlgorithms.expandToWord(
+          normalized.end,
+          this.content,
+        );
         expandedRange = {
           start: startWordRange.start,
-          end: endWordRange.end
+          end: endWordRange.end,
         };
         break;
-      case 'line':
+      case "line":
         if (!this.config.allowLineSelection) return;
-        const startLineRange = SelectionAlgorithms.expandToLine(normalized.start, this.content);
-        const endLineRange = SelectionAlgorithms.expandToLine(normalized.end, this.content);
+        const startLineRange = SelectionAlgorithms.expandToLine(
+          normalized.start,
+          this.content,
+        );
+        const endLineRange = SelectionAlgorithms.expandToLine(
+          normalized.end,
+          this.content,
+        );
         expandedRange = {
           start: startLineRange.start,
-          end: { line: normalized.end.line, column: this.content[normalized.end.line]?.length || 0 }
+          end: {
+            line: normalized.end.line,
+            column: this.content[normalized.end.line]?.length || 0,
+          },
         };
         break;
       default:
@@ -613,7 +713,7 @@ export class TextSelection {
     this.selectionState.lastUpdate = Date.now();
 
     // Fire selection expand event
-    this.fireSelectionEvent('expand', source);
+    this.fireSelectionEvent("expand", source);
 
     if (this.config.debug) {
       console.debug(`[TextSelection] Expanded selection to ${mode} boundaries`);
@@ -632,7 +732,7 @@ export class TextSelection {
    */
   getSelectedText(): string {
     if (!this.currentRange) {
-      return '';
+      return "";
     }
 
     return this.extractTextFromRange(this.currentRange);
@@ -645,15 +745,22 @@ export class TextSelection {
     const normalized = RangeValidator.normalizeRange(range);
     const lines: string[] = [];
 
-    for (let lineNum = normalized.start.line; lineNum <= normalized.end.line; lineNum++) {
+    for (
+      let lineNum = normalized.start.line;
+      lineNum <= normalized.end.line;
+      lineNum++
+    ) {
       if (lineNum >= this.content.length) break;
 
       const line = this.content[lineNum];
-      let lineText = '';
+      let lineText = "";
 
       if (normalized.start.line === normalized.end.line) {
         // Single line selection
-        lineText = line.substring(normalized.start.column, normalized.end.column);
+        lineText = line.substring(
+          normalized.start.column,
+          normalized.end.column,
+        );
       } else if (lineNum === normalized.start.line) {
         // First line of multi-line selection
         lineText = line.substring(normalized.start.column);
@@ -668,7 +775,7 @@ export class TextSelection {
       lines.push(lineText);
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -681,29 +788,33 @@ export class TextSelection {
 
     const text = this.getSelectedText();
     const normalized = RangeValidator.normalizeRange(this.currentRange);
-    
+
     return {
       characterCount: text.length,
       lineCount: normalized.end.line - normalized.start.line + 1,
       wordCount: text.trim() ? text.trim().split(/\s+/).length : 0,
-      bounds: this.calculateSelectionBounds(normalized)
+      bounds: this.calculateSelectionBounds(normalized),
     };
   }
 
   /**
    * Calculate selection visual bounds
    */
-  private calculateSelectionBounds(range: TextRange): SelectionMetrics['bounds'] {
+  private calculateSelectionBounds(
+    range: TextRange,
+  ): SelectionMetrics["bounds"] {
     const normalized = RangeValidator.normalizeRange(range);
-    
+
     return {
       startX: normalized.start.column,
       startY: normalized.start.line,
       endX: normalized.end.column,
       endY: normalized.end.line,
-      width: normalized.end.line === normalized.start.line ? 
-             normalized.end.column - normalized.start.column : -1,
-      height: normalized.end.line - normalized.start.line + 1
+      width:
+        normalized.end.line === normalized.start.line
+          ? normalized.end.column - normalized.start.column
+          : -1,
+      height: normalized.end.line - normalized.start.line + 1,
     };
   }
 
@@ -762,7 +873,7 @@ export class TextSelection {
    */
   updateConfig(config: Partial<SelectionConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     // Update visual indicators if changed
     if (this.selectionState.isActive) {
       this.selectionState.isVisible = this.config.showVisualIndicators;
@@ -779,30 +890,33 @@ export class TextSelection {
   /**
    * Fire selection event
    */
-  private fireSelectionEvent(type: SelectionEvent['type'], source: SelectionEvent['source']): void {
+  private fireSelectionEvent(
+    type: SelectionEvent["type"],
+    source: SelectionEvent["source"],
+  ): void {
     const event: SelectionEvent = {
       type,
       range: this.currentRange ? { ...this.currentRange } : null,
       metrics: this.getSelectionMetrics(),
       timestamp: Date.now(),
-      source
+      source,
     };
 
     // Call appropriate handler
     switch (type) {
-      case 'start':
+      case "start":
         this.eventHandlers.onSelectionStart?.(event);
         break;
-      case 'update':
+      case "update":
         this.eventHandlers.onSelectionUpdate?.(event);
         break;
-      case 'end':
+      case "end":
         this.eventHandlers.onSelectionEnd?.(event);
         break;
-      case 'clear':
+      case "clear":
         this.eventHandlers.onSelectionClear?.(event);
         break;
-      case 'expand':
+      case "expand":
         this.eventHandlers.onSelectionExpand?.(event);
         break;
     }
@@ -828,7 +942,7 @@ export class TextSelection {
       currentRange: this.currentRange,
       contentLineCount: this.content.length,
       hasTimeout: this.selectionTimeout !== null,
-      eventHandlers: Object.keys(this.eventHandlers)
+      eventHandlers: Object.keys(this.eventHandlers),
     };
   }
 

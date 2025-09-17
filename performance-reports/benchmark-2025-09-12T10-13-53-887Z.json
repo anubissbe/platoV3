@@ -1,0 +1,283 @@
+{
+  "timestamp": "2025-09-12T10:13:53.887Z",
+  "metadata": {
+    "nodeVersion": "v24.5.0",
+    "platform": "linux",
+    "arch": "x64",
+    "totalBenchmarks": 8
+  },
+  "summary": {
+    "total": 8,
+    "statusCounts": {
+      "excellent": 1,
+      "good": 7,
+      "warning": 0,
+      "critical": 0
+    },
+    "overallHealth": "good"
+  },
+  "results": {
+    "cli_startup": {
+      "pathId": "cli_startup",
+      "measurements": [
+        397.499372, 386.5366409999999, 204.344331, 425.5025489999998,
+        313.4145360000002, 200.36193700000013, 413.2710940000002, 297.355818,
+        367.47338200000013, 427.5061820000001
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:13:15.462Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 10,
+        "warmupIterations": 3,
+        "successfulRuns": 10
+      },
+      "stats": {
+        "count": 10,
+        "min": 200.36193700000013,
+        "max": 427.5061820000001,
+        "mean": 343.32658420000007,
+        "median": 377.0050115,
+        "p90": 427.5061820000001,
+        "p95": 427.5061820000001,
+        "p99": 427.5061820000001,
+        "stdDev": 81.77970111496101
+      },
+      "performance": {
+        "status": "excellent",
+        "message": "Within target (500ms)"
+      }
+    },
+    "tui_initialization": {
+      "pathId": "tui_initialization",
+      "measurements": [
+        199.2471429999996, 143.2081420000004, 108.11800999999923,
+        257.3450670000002, 227.23056199999974, 150.2336489999998, 275.34519,
+        213.29262599999947, 136.2254069999999, 265.37510999999995
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:13:18.020Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 10,
+        "warmupIterations": 3,
+        "successfulRuns": 10
+      },
+      "stats": {
+        "count": 10,
+        "min": 108.11800999999923,
+        "max": 275.34519,
+        "mean": 197.56209059999983,
+        "median": 206.26988449999953,
+        "p90": 275.34519,
+        "p95": 275.34519,
+        "p99": 275.34519,
+        "stdDev": 56.84196793088184
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (400ms threshold)"
+      }
+    },
+    "chat_completion": {
+      "pathId": "chat_completion",
+      "measurements": [
+        141.17742400000043, 54.173752000000604, 68.14962600000035,
+        98.21328699999958, 135.22616600000038, 52.15183199999956,
+        120.20300000000043, 100.25661599999967, 142.2982550000006,
+        100.18461500000012
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:13:19.257Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 10,
+        "warmupIterations": 3,
+        "successfulRuns": 10
+      },
+      "stats": {
+        "count": 10,
+        "min": 52.15183199999956,
+        "max": 142.2982550000006,
+        "mean": 101.20345730000017,
+        "median": 100.2206154999999,
+        "p90": 142.2982550000006,
+        "p95": 142.2982550000006,
+        "p99": 142.2982550000006,
+        "stdDev": 32.44459014553716
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (200ms threshold)"
+      }
+    },
+    "mcp_tool_call": {
+      "pathId": "mcp_tool_call",
+      "measurements": [
+        812.8147979999994, 673.6271610000003, 1458.124713000001,
+        650.6078470000011, 895.9014910000005, 1353.2376219999987,
+        1481.9256160000004, 686.4633099999992, 1107.1575589999993,
+        603.6652549999999
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:13:33.048Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 10,
+        "warmupIterations": 3,
+        "successfulRuns": 10
+      },
+      "stats": {
+        "count": 10,
+        "min": 603.6652549999999,
+        "max": 1481.9256160000004,
+        "mean": 972.3525372,
+        "median": 854.3581445,
+        "p90": 1481.9256160000004,
+        "p95": 1481.9256160000004,
+        "p99": 1481.9256160000004,
+        "stdDev": 331.75317363691664
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (2000ms threshold)"
+      }
+    },
+    "file_operations": {
+      "pathId": "file_operations",
+      "measurements": [
+        55.1798060000001, 69.20123700000113, 67.19115900000179,
+        31.102406999998493, 57.133011000001716, 62.196187999998074,
+        42.111172000000806, 42.10534800000096, 53.136474999999336,
+        44.10101999999824
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:13:33.707Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 10,
+        "warmupIterations": 3,
+        "successfulRuns": 10
+      },
+      "stats": {
+        "count": 10,
+        "min": 31.102406999998493,
+        "max": 69.20123700000113,
+        "mean": 52.34578230000007,
+        "median": 54.15814049999972,
+        "p90": 69.20123700000113,
+        "p95": 69.20123700000113,
+        "p99": 69.20123700000113,
+        "stdDev": 11.670335646557499
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (100ms threshold)"
+      }
+    },
+    "session_persistence": {
+      "pathId": "session_persistence",
+      "measurements": [
+        73.33568400000149, 82.19181200000094, 133.11483399999997,
+        95.16840699999739, 113.09845399999904, 99.12242300000071,
+        114.21511900000041, 137.21576899999855, 95.27522099999987,
+        95.19338400000197
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:13:34.981Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 10,
+        "warmupIterations": 3,
+        "successfulRuns": 10
+      },
+      "stats": {
+        "count": 10,
+        "min": 73.33568400000149,
+        "max": 137.21576899999855,
+        "mean": 103.79311070000003,
+        "median": 97.19882200000029,
+        "p90": 137.21576899999855,
+        "p95": 137.21576899999855,
+        "p99": 137.21576899999855,
+        "stdDev": 19.516728067297784
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (250ms threshold)"
+      }
+    },
+    "context_indexing": {
+      "pathId": "context_indexing",
+      "measurements": [
+        1063.150314999999, 945.9525959999992, 1977.2314799999986,
+        778.454055000002, 2245.362201, 1595.156461999999, 1690.7103570000036,
+        2089.2362869999997, 2164.941847000002, 612.6383170000045
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:13:53.594Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 10,
+        "warmupIterations": 3,
+        "successfulRuns": 10
+      },
+      "stats": {
+        "count": 10,
+        "min": 612.6383170000045,
+        "max": 2245.362201,
+        "mean": 1516.2833917000007,
+        "median": 1642.9334095000013,
+        "p90": 2245.362201,
+        "p95": 2245.362201,
+        "p99": 2245.362201,
+        "stdDev": 584.9171687028008
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (3000ms threshold)"
+      }
+    },
+    "memory_operations": {
+      "pathId": "memory_operations",
+      "measurements": [
+        30.16337499999645, 12.100270000002638, 22.082446000000346,
+        19.083630999994057, 14.103565000004892, 28.134078000002773,
+        19.14233300000342, 16.10916499999439, 33.120052999998734,
+        32.13454300000012
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:13:53.887Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 10,
+        "warmupIterations": 3,
+        "successfulRuns": 10
+      },
+      "stats": {
+        "count": 10,
+        "min": 12.100270000002638,
+        "max": 33.120052999998734,
+        "mean": 22.617345899999783,
+        "median": 20.612389500001882,
+        "p90": 33.120052999998734,
+        "p95": 33.120052999998734,
+        "p99": 33.120052999998734,
+        "stdDev": 7.338661514125854
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (50ms threshold)"
+      }
+    }
+  },
+  "recommendations": []
+}

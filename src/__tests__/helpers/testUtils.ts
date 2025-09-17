@@ -2,17 +2,17 @@
  * General test utilities
  */
 
-import { promises as fs } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { randomBytes } from 'crypto';
+import { promises as fs } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import { randomBytes } from "crypto";
 
 /**
  * Create a temporary directory for testing
  */
 export async function createTempDir(): Promise<string> {
   const tempBase = tmpdir();
-  const randomName = `plato-test-${randomBytes(8).toString('hex')}`;
+  const randomName = `plato-test-${randomBytes(8).toString("hex")}`;
   const tempPath = join(tempBase, randomName);
   await fs.mkdir(tempPath, { recursive: true });
   return tempPath;
@@ -34,20 +34,20 @@ export async function cleanupTempDir(path: string): Promise<void> {
  */
 export function waitFor(
   condition: () => boolean | Promise<boolean>,
-  options: { timeout?: number; interval?: number } = {}
+  options: { timeout?: number; interval?: number } = {},
 ): Promise<void> {
   const { timeout = 5000, interval = 100 } = options;
-  
+
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
-    
+
     const check = async () => {
       try {
         const result = await condition();
         if (result) {
           resolve();
         } else if (Date.now() - startTime > timeout) {
-          reject(new Error('Timeout waiting for condition'));
+          reject(new Error("Timeout waiting for condition"));
         } else {
           setTimeout(check, interval);
         }
@@ -55,7 +55,7 @@ export function waitFor(
         reject(error);
       }
     };
-    
+
     check();
   });
 }
@@ -73,17 +73,17 @@ export class ConsoleCapture {
     this.originalLog = console.log;
     this.originalError = console.error;
     this.originalWarn = console.warn;
-    
+
     console.log = (...args) => {
-      this.captured.push({ type: 'log', args });
+      this.captured.push({ type: "log", args });
     };
-    
+
     console.error = (...args) => {
-      this.captured.push({ type: 'error', args });
+      this.captured.push({ type: "error", args });
     };
-    
+
     console.warn = (...args) => {
-      this.captured.push({ type: 'warn', args });
+      this.captured.push({ type: "warn", args });
     };
   }
 
@@ -94,10 +94,10 @@ export class ConsoleCapture {
   }
 
   getOutput(): string[] {
-    return this.captured.map(entry => 
-      entry.args.map(arg => 
-        typeof arg === 'string' ? arg : JSON.stringify(arg)
-      ).join(' ')
+    return this.captured.map((entry) =>
+      entry.args
+        .map((arg) => (typeof arg === "string" ? arg : JSON.stringify(arg)))
+        .join(" "),
     );
   }
 
@@ -113,25 +113,26 @@ export class MockStdin {
   private listeners: Array<(data: Buffer) => void> = [];
 
   on(event: string, listener: (data: Buffer) => void) {
-    if (event === 'data') {
+    if (event === "data") {
       this.listeners.push(listener);
     }
   }
 
   send(input: string) {
     const buffer = Buffer.from(input);
-    this.listeners.forEach(listener => listener(buffer));
+    this.listeners.forEach((listener) => listener(buffer));
   }
 
   sendSequence(inputs: string[], delay = 100): Promise<void> {
     return inputs.reduce((promise, input, index) => {
-      return promise.then(() => 
-        new Promise(resolve => {
-          setTimeout(() => {
-            this.send(input);
-            resolve(undefined);
-          }, delay * index);
-        })
+      return promise.then(
+        () =>
+          new Promise((resolve) => {
+            setTimeout(() => {
+              this.send(input);
+              resolve(undefined);
+            }, delay * index);
+          }),
       );
     }, Promise.resolve());
   }
@@ -157,10 +158,10 @@ export async function expectAsync(promise: Promise<any>) {
     async toThrow(expected?: string | RegExp | Error) {
       try {
         await promise;
-        throw new Error('Expected promise to throw');
+        throw new Error("Expected promise to throw");
       } catch (error: any) {
         if (expected) {
-          if (typeof expected === 'string') {
+          if (typeof expected === "string") {
             expect(error.message).toContain(expected);
           } else if (expected instanceof RegExp) {
             expect(error.message).toMatch(expected);

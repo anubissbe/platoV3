@@ -7,8 +7,8 @@ import {
   MouseEvent,
   MouseEventType,
   MouseCoordinates,
-  MouseEventProcessingOptions
-} from './mouse-types.js';
+  MouseEventProcessingOptions,
+} from "./mouse-types.js";
 
 /**
  * Performance optimization configuration
@@ -88,19 +88,19 @@ class MouseEventPool {
 
   private createNewEvent(): MouseEvent {
     return {
-      type: 'move',
+      type: "move",
       coordinates: { x: 0, y: 0 },
-      button: 'left',
+      button: "left",
       modifiers: { shift: false, ctrl: false, alt: false, meta: false },
-      timestamp: 0
+      timestamp: 0,
     };
   }
 
   private resetEvent(event: MouseEvent): void {
-    event.type = 'move';
+    event.type = "move";
     event.coordinates.x = 0;
     event.coordinates.y = 0;
-    event.button = 'left';
+    event.button = "left";
     event.modifiers.shift = false;
     event.modifiers.ctrl = false;
     event.modifiers.alt = false;
@@ -147,7 +147,7 @@ class CoordinateCache {
         this.cache.delete(firstKey);
       }
     }
-    
+
     this.cache.set(key, { ...coordinates });
   }
 
@@ -180,7 +180,7 @@ class FrameBatcher {
 
   constructor(
     targetFPS = 60,
-    private processCallback: (events: MouseEvent[]) => void
+    private processCallback: (events: MouseEvent[]) => void,
   ) {
     this.targetFPS = targetFPS;
     this.frameInterval = 1000 / targetFPS;
@@ -260,7 +260,7 @@ export class MousePerformanceOptimizer {
 
   constructor(
     config: Partial<MousePerformanceConfig> = {},
-    private eventProcessor?: (events: MouseEvent[]) => void
+    private eventProcessor?: (events: MouseEvent[]) => void,
   ) {
     this.config = {
       enableFrameBatching: true,
@@ -271,7 +271,7 @@ export class MousePerformanceOptimizer {
       enablePredictiveThrottling: true,
       eventPoolSize: 100,
       enableMonitoring: true,
-      ...config
+      ...config,
     };
 
     this.eventPool = new MouseEventPool(this.config.eventPoolSize);
@@ -281,7 +281,7 @@ export class MousePerformanceOptimizer {
     if (this.config.enableFrameBatching && this.eventProcessor) {
       this.frameBatcher = new FrameBatcher(
         this.config.targetFPS,
-        this.eventProcessor
+        this.eventProcessor,
       );
     }
   }
@@ -301,7 +301,10 @@ export class MousePerformanceOptimizer {
       }
 
       // Apply predictive throttling
-      if (this.config.enablePredictiveThrottling && this.shouldThrottleEvent(event)) {
+      if (
+        this.config.enablePredictiveThrottling &&
+        this.shouldThrottleEvent(event)
+      ) {
         this.metrics.droppedEvents++;
         return [];
       }
@@ -354,9 +357,11 @@ export class MousePerformanceOptimizer {
     if (!lastEvent) return false;
 
     // For move events, check if coordinates are the same
-    if (event.type === 'move' && lastEvent.type === 'move') {
-      return event.coordinates.x === lastEvent.coordinates.x &&
-             event.coordinates.y === lastEvent.coordinates.y;
+    if (event.type === "move" && lastEvent.type === "move") {
+      return (
+        event.coordinates.x === lastEvent.coordinates.x &&
+        event.coordinates.y === lastEvent.coordinates.y
+      );
     }
 
     // For other events, check if they occurred too recently
@@ -372,14 +377,14 @@ export class MousePerformanceOptimizer {
     if (!lastEvent) return false;
 
     const timeDiff = event.timestamp - lastEvent.timestamp;
-    
+
     // Throttle rapid move events more aggressively
-    if (event.type === 'move') {
+    if (event.type === "move") {
       return timeDiff < 8; // Max 120 fps for move events
     }
 
     // Moderate throttling for drag events
-    if (event.type === 'drag') {
+    if (event.type === "drag") {
       return timeDiff < 12; // Max 83 fps for drag events
     }
 
@@ -392,7 +397,7 @@ export class MousePerformanceOptimizer {
   private optimizeCoordinates(coordinates: MouseCoordinates): MouseCoordinates {
     const key = `${coordinates.x},${coordinates.y}`;
     const cached = this.coordinateCache.get(key);
-    
+
     if (cached) {
       return cached;
     }
@@ -410,22 +415,24 @@ export class MousePerformanceOptimizer {
     if (!this.config.enableMonitoring) return;
 
     // Update processing times
-    this.metrics.averageProcessingTime = 
-      (this.metrics.averageProcessingTime * (this.metrics.processedEvents - 1) + processingTime) / 
+    this.metrics.averageProcessingTime =
+      (this.metrics.averageProcessingTime * (this.metrics.processedEvents - 1) +
+        processingTime) /
       this.metrics.processedEvents;
-    
+
     this.metrics.peakProcessingTime = Math.max(
       this.metrics.peakProcessingTime,
-      processingTime
+      processingTime,
     );
 
     // Update cache hit rate
     this.metrics.cacheHitRate = this.coordinateCache.getHitRate();
 
     // Update throttling rate
-    this.metrics.throttlingRate = 
-      this.metrics.totalEvents > 0 ? 
-      this.metrics.droppedEvents / this.metrics.totalEvents : 0;
+    this.metrics.throttlingRate =
+      this.metrics.totalEvents > 0
+        ? this.metrics.droppedEvents / this.metrics.totalEvents
+        : 0;
 
     // Estimate memory usage (simplified)
     this.metrics.memoryUsage = this.estimateMemoryUsage();
@@ -438,10 +445,10 @@ export class MousePerformanceOptimizer {
     // Rough estimate based on object counts
     const eventSize = 200; // bytes per event object
     const cacheEntrySize = 50; // bytes per cache entry
-    
+
     const eventMemory = this.metrics.processedEvents * eventSize;
-    const cacheMemory = this.coordinateCache['cache'].size * cacheEntrySize;
-    
+    const cacheMemory = this.coordinateCache["cache"].size * cacheEntrySize;
+
     return (eventMemory + cacheMemory) / 1024; // Convert to KB
   }
 
@@ -473,7 +480,7 @@ export class MousePerformanceOptimizer {
       peakProcessingTime: 0,
       memoryUsage: 0,
       cacheHitRate: 0,
-      throttlingRate: 0
+      throttlingRate: 0,
     };
   }
 
@@ -493,7 +500,10 @@ export class MousePerformanceOptimizer {
     this.config = { ...this.config, ...config };
 
     // Recreate frame batcher if settings changed
-    if (config.enableFrameBatching !== undefined || config.targetFPS !== undefined) {
+    if (
+      config.enableFrameBatching !== undefined ||
+      config.targetFPS !== undefined
+    ) {
       if (this.frameBatcher) {
         this.frameBatcher.dispose();
         this.frameBatcher = null;
@@ -502,7 +512,7 @@ export class MousePerformanceOptimizer {
       if (this.config.enableFrameBatching && this.eventProcessor) {
         this.frameBatcher = new FrameBatcher(
           this.config.targetFPS,
-          this.eventProcessor
+          this.eventProcessor,
         );
       }
     }

@@ -2,7 +2,7 @@
 
 ## Pitch
 
-PlatoV3 is an exact visual and functional clone of Claude Code that uses GitHub Copilot authentication instead of Claude API. Every pixel, every command, every interaction is identical - the only difference is you sign in with Copilot instead of Claude, saving 70% on costs. 
+PlatoV3 is an exact visual and functional clone of Claude Code that uses GitHub Copilot authentication instead of Claude API. Every pixel, every command, every interaction is identical - the only difference is you sign in with Copilot instead of Claude, saving 70% on costs.
 
 Beyond perfect Claude Code parity, PlatoV3 is self-hostable and runs entirely in the terminal with no vendor lock-in. It adds persistent context memory across sessions, an extensible platform for custom MCP servers, and future support for multiple AI backends. It's the terminal-native AI coding assistant that gives you Claude Code's exact experience at 70% lower cost, with full developer control.
 
@@ -19,12 +19,14 @@ Beyond perfect Claude Code parity, PlatoV3 is self-hostable and runs entirely in
 ### User Personas
 
 **Terminal Power User** (25-40 years old)
+
 - **Role:** Senior developer, DevOps engineer, or system architect
 - **Context:** Lives in the terminal, values control and customization over convenience
 - **Pain Points:** IDE vendor lock-in, lack of control over AI tools, context loss between sessions
 - **Goals:** Terminal-native workflow, extensible platform, self-hosted control
 
 **Privacy-Conscious Team Lead** (30-45 years old)
+
 - **Role:** Engineering manager or tech lead at regulated company
 - **Context:** Managing team development with compliance requirements
 - **Pain Points:** Data privacy concerns with cloud AI, need for audit trails, custom integration requirements

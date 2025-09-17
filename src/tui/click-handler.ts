@@ -3,14 +3,14 @@
  * Manages click events for buttons, links, and interactive elements
  */
 
-import { MouseEvent } from './mouse-types.js';
-import { 
-  ClickableComponent, 
-  VisualFeedback, 
+import { MouseEvent } from "./mouse-types.js";
+import {
+  ClickableComponent,
+  VisualFeedback,
   ComponentState,
   VisualFeedbackUtils,
-  ComponentValidator
-} from './interactive-components.js';
+  ComponentValidator,
+} from "./interactive-components.js";
 
 /**
  * Click event context information
@@ -89,18 +89,25 @@ const DEFAULT_CLICK_CONFIG: ClickConfig = {
   enableVisualFeedback: true,
   feedbackDuration: 200,
   debug: false,
-  enableSoundFeedback: false
+  enableSoundFeedback: false,
 };
 
 /**
  * Click event handler types
  */
-export type ClickEventHandler = (context: ClickContext) => Promise<ClickResult> | ClickResult;
-export type DoubleClickEventHandler = (context: ClickContext) => Promise<ClickResult> | ClickResult;
+export type ClickEventHandler = (
+  context: ClickContext,
+) => Promise<ClickResult> | ClickResult;
+export type DoubleClickEventHandler = (
+  context: ClickContext,
+) => Promise<ClickResult> | ClickResult;
 
 export interface ClickEventHandlers {
   beforeClick?: ClickEventHandler;
-  afterClick?: (context: ClickContext, result: ClickResult) => void | Promise<void>;
+  afterClick?: (
+    context: ClickContext,
+    result: ClickResult,
+  ) => void | Promise<void>;
   onClickError?: (context: ClickContext, error: Error) => void | Promise<void>;
   onDoubleClick?: DoubleClickEventHandler;
 }
@@ -137,7 +144,7 @@ export class ClickHandlerSystem {
    */
   async processClick(
     component: ClickableComponent,
-    event: MouseEvent
+    event: MouseEvent,
   ): Promise<ClickResult> {
     const startTime = performance.now();
     this.stats.totalClicks++;
@@ -148,7 +155,7 @@ export class ClickHandlerSystem {
         return {
           handled: false,
           preventDefault: false,
-          stopPropagation: false
+          stopPropagation: false,
         };
       }
 
@@ -191,9 +198,10 @@ export class ClickHandlerSystem {
       return result;
     } catch (error) {
       this.stats.failedClicks++;
-      
+
       const context = await this.createClickContext(component, event);
-      const clickError = error instanceof Error ? error : new Error(String(error));
+      const clickError =
+        error instanceof Error ? error : new Error(String(error));
 
       // Call error handler
       if (this.eventHandlers.onClickError) {
@@ -201,14 +209,17 @@ export class ClickHandlerSystem {
       }
 
       if (this.config.debug) {
-        console.error(`[ClickHandler] Error processing click for ${component.id}:`, error);
+        console.error(
+          `[ClickHandler] Error processing click for ${component.id}:`,
+          error,
+        );
       }
 
       return {
         handled: false,
         preventDefault: false,
         stopPropagation: false,
-        error: clickError
+        error: clickError,
       };
     } finally {
       // Update performance metrics
@@ -227,7 +238,7 @@ export class ClickHandlerSystem {
       return {
         handled: false,
         preventDefault: false,
-        stopPropagation: false
+        stopPropagation: false,
       };
     }
 
@@ -246,16 +257,20 @@ export class ClickHandlerSystem {
       }, this.config.feedbackDuration);
 
       if (this.config.debug) {
-        console.debug(`[ClickHandler] Handled single click for ${component.id}`);
+        console.debug(
+          `[ClickHandler] Handled single click for ${component.id}`,
+        );
       }
 
       return {
         handled: true,
         preventDefault: false,
-        stopPropagation: false
+        stopPropagation: false,
       };
     } catch (error) {
-      throw new Error(`Click handler failed for ${component.id}: ${error instanceof Error ? error.message : error}`);
+      throw new Error(
+        `Click handler failed for ${component.id}: ${error instanceof Error ? error.message : error}`,
+      );
     }
   }
 
@@ -269,7 +284,7 @@ export class ClickHandlerSystem {
       return {
         handled: false,
         preventDefault: false,
-        stopPropagation: false
+        stopPropagation: false,
       };
     }
 
@@ -295,16 +310,20 @@ export class ClickHandlerSystem {
       }
 
       if (this.config.debug) {
-        console.debug(`[ClickHandler] Handled double click for ${component.id}`);
+        console.debug(
+          `[ClickHandler] Handled double click for ${component.id}`,
+        );
       }
 
       return {
         handled: true,
         preventDefault: true, // Double-click typically prevents other actions
-        stopPropagation: true
+        stopPropagation: true,
       };
     } catch (error) {
-      throw new Error(`Double-click handler failed for ${component.id}: ${error instanceof Error ? error.message : error}`);
+      throw new Error(
+        `Double-click handler failed for ${component.id}: ${error instanceof Error ? error.message : error}`,
+      );
     }
   }
 
@@ -313,23 +332,26 @@ export class ClickHandlerSystem {
    */
   private async createClickContext(
     component: ClickableComponent,
-    event: MouseEvent
+    event: MouseEvent,
   ): Promise<ClickContext> {
     // Calculate local coordinates
     const localCoordinates = {
       x: event.coordinates.x - component.bounds.x,
-      y: event.coordinates.y - component.bounds.y
+      y: event.coordinates.y - component.bounds.y,
     };
 
     // Check for double-click
-    const { isDoubleClick, timeSinceLastClick } = this.detectDoubleClick(component, event);
+    const { isDoubleClick, timeSinceLastClick } = this.detectDoubleClick(
+      component,
+      event,
+    );
 
     return {
       component,
       event,
       localCoordinates,
       isDoubleClick,
-      timeSinceLastClick
+      timeSinceLastClick,
     };
   }
 
@@ -338,7 +360,7 @@ export class ClickHandlerSystem {
    */
   private detectDoubleClick(
     component: ClickableComponent,
-    event: MouseEvent
+    event: MouseEvent,
   ): { isDoubleClick: boolean; timeSinceLastClick: number } {
     const now = event.timestamp;
     const lastClick = this.clickTracks.get(component.id);
@@ -349,21 +371,25 @@ export class ClickHandlerSystem {
         componentId: component.id,
         timestamp: now,
         position: event.coordinates,
-        clickCount: 1
+        clickCount: 1,
       });
       return { isDoubleClick: false, timeSinceLastClick: 0 };
     }
 
     const timeSinceLastClick = now - lastClick.timestamp;
-    const isWithinThreshold = timeSinceLastClick <= this.config.doubleClickThreshold;
-    const isNearPosition = this.isNearPreviousClick(event.coordinates, lastClick.position);
+    const isWithinThreshold =
+      timeSinceLastClick <= this.config.doubleClickThreshold;
+    const isNearPosition = this.isNearPreviousClick(
+      event.coordinates,
+      lastClick.position,
+    );
 
     if (isWithinThreshold && isNearPosition) {
       // This is a double-click
       lastClick.clickCount++;
       lastClick.timestamp = now;
       lastClick.position = event.coordinates;
-      
+
       return { isDoubleClick: true, timeSinceLastClick };
     } else {
       // Reset click tracking
@@ -371,9 +397,9 @@ export class ClickHandlerSystem {
         componentId: component.id,
         timestamp: now,
         position: event.coordinates,
-        clickCount: 1
+        clickCount: 1,
       });
-      
+
       return { isDoubleClick: false, timeSinceLastClick };
     }
   }
@@ -384,7 +410,7 @@ export class ClickHandlerSystem {
   private isNearPreviousClick(
     current: { x: number; y: number },
     previous: { x: number; y: number },
-    threshold = 2
+    threshold = 2,
   ): boolean {
     const dx = Math.abs(current.x - previous.x);
     const dy = Math.abs(current.y - previous.y);
@@ -394,7 +420,10 @@ export class ClickHandlerSystem {
   /**
    * Check if component can handle click
    */
-  private canHandleClick(component: ClickableComponent, event: MouseEvent): boolean {
+  private canHandleClick(
+    component: ClickableComponent,
+    event: MouseEvent,
+  ): boolean {
     // Basic validation
     if (!component.isEnabled || !component.isVisible) {
       return false;
@@ -404,21 +433,31 @@ export class ClickHandlerSystem {
     const validation = ComponentValidator.validate(component);
     if (!validation.valid) {
       if (this.config.debug) {
-        console.warn(`[ClickHandler] Invalid component ${component.id}:`, validation.errors);
+        console.warn(
+          `[ClickHandler] Invalid component ${component.id}:`,
+          validation.errors,
+        );
       }
       return false;
     }
 
     // Check if component can handle the event at coordinates
-    return ComponentValidator.canHandleEventAt(component, event.coordinates.x, event.coordinates.y, event.type);
+    return ComponentValidator.canHandleEventAt(
+      component,
+      event.coordinates.x,
+      event.coordinates.y,
+      event.type,
+    );
   }
 
   /**
    * Apply visual feedback for click
    */
-  private async applyClickFeedback(component: ClickableComponent): Promise<void> {
+  private async applyClickFeedback(
+    component: ClickableComponent,
+  ): Promise<void> {
     const feedback = this.getClickFeedback(component);
-    
+
     // Store feedback in component state
     const componentState = this.getOrCreateComponentState(component.id);
     componentState.visualFeedback = feedback;
@@ -433,26 +472,35 @@ export class ClickHandlerSystem {
     }
 
     if (this.config.debug) {
-      console.debug(`[ClickHandler] Applied ${feedback.type} feedback to ${component.id}`);
+      console.debug(
+        `[ClickHandler] Applied ${feedback.type} feedback to ${component.id}`,
+      );
     }
   }
 
   /**
    * Apply visual feedback for double-click
    */
-  private async applyDoubleClickFeedback(component: ClickableComponent): Promise<void> {
-    const feedback = VisualFeedbackUtils.createClickFeedback(this.config.feedbackDuration * 1.5);
-    feedback.intensity = 'strong';
-    feedback.animation = 'pulse';
+  private async applyDoubleClickFeedback(
+    component: ClickableComponent,
+  ): Promise<void> {
+    const feedback = VisualFeedbackUtils.createClickFeedback(
+      this.config.feedbackDuration * 1.5,
+    );
+    feedback.intensity = "strong";
+    feedback.animation = "pulse";
 
     const componentState = this.getOrCreateComponentState(component.id);
     componentState.visualFeedback = feedback;
 
-    setTimeout(() => {
-      if (componentState.visualFeedback === feedback) {
-        componentState.visualFeedback = null;
-      }
-    }, feedback.duration || this.config.feedbackDuration * 1.5);
+    setTimeout(
+      () => {
+        if (componentState.visualFeedback === feedback) {
+          componentState.visualFeedback = null;
+        }
+      },
+      feedback.duration || this.config.feedbackDuration * 1.5,
+    );
   }
 
   /**
@@ -466,26 +514,30 @@ export class ClickHandlerSystem {
 
     // Use type-specific feedback
     switch (component.type) {
-      case 'button':
-        return VisualFeedbackUtils.createClickFeedback(this.config.feedbackDuration);
-      case 'link':
+      case "button":
+        return VisualFeedbackUtils.createClickFeedback(
+          this.config.feedbackDuration,
+        );
+      case "link":
         return {
-          type: 'color_change',
-          intensity: 'normal',
-          color: '#8FC7FF',
+          type: "color_change",
+          intensity: "normal",
+          color: "#8FC7FF",
           duration: this.config.feedbackDuration,
-          animation: 'fade'
+          animation: "fade",
         };
-      case 'menu_item':
+      case "menu_item":
         return {
-          type: 'highlight',
-          intensity: 'normal',
-          color: '#555',
+          type: "highlight",
+          intensity: "normal",
+          color: "#555",
           duration: this.config.feedbackDuration,
-          animation: 'none'
+          animation: "none",
         };
       default:
-        return VisualFeedbackUtils.createClickFeedback(this.config.feedbackDuration);
+        return VisualFeedbackUtils.createClickFeedback(
+          this.config.feedbackDuration,
+        );
     }
   }
 
@@ -499,7 +551,7 @@ export class ClickHandlerSystem {
         isFocused: false,
         isActive: false,
         visualFeedback: null,
-        lastInteraction: Date.now()
+        lastInteraction: Date.now(),
       });
     }
     return this.componentStates.get(componentId)!;
@@ -510,15 +562,16 @@ export class ClickHandlerSystem {
    */
   private updateProcessingTime(time: number): void {
     this.processingTimes.push(time);
-    
+
     // Keep only last 100 measurements
     if (this.processingTimes.length > 100) {
       this.processingTimes.shift();
     }
 
     // Update average
-    this.stats.averageProcessingTime = 
-      this.processingTimes.reduce((sum, t) => sum + t, 0) / this.processingTimes.length;
+    this.stats.averageProcessingTime =
+      this.processingTimes.reduce((sum, t) => sum + t, 0) /
+      this.processingTimes.length;
   }
 
   /**
@@ -531,7 +584,7 @@ export class ClickHandlerSystem {
       failedClicks: 0,
       doubleClicks: 0,
       averageProcessingTime: 0,
-      clickFrequency: 0
+      clickFrequency: 0,
     };
   }
 
@@ -556,11 +609,11 @@ export class ClickHandlerSystem {
     // Calculate click frequency (clicks per minute)
     const now = Date.now();
     const recentClicks = Array.from(this.clickTracks.values()).filter(
-      track => now - track.timestamp < 60000 // Last minute
+      (track) => now - track.timestamp < 60000, // Last minute
     );
-    
+
     this.stats.clickFrequency = recentClicks.length;
-    
+
     return { ...this.stats };
   }
 
@@ -592,7 +645,7 @@ export class ClickHandlerSystem {
   clearOldClickTracks(): void {
     const now = Date.now();
     const timeout = this.config.clickTimeout;
-    
+
     for (const [componentId, track] of this.clickTracks) {
       if (now - track.timestamp > timeout) {
         this.clickTracks.delete(componentId);
@@ -617,7 +670,7 @@ export class ClickHandlerSystem {
       stats: this.getStats(),
       componentStatesCount: this.componentStates.size,
       clickTracksCount: this.clickTracks.size,
-      processingTimesCount: this.processingTimes.length
+      processingTimesCount: this.processingTimes.length,
     };
   }
 

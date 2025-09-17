@@ -3,12 +3,12 @@
  * Provides on-demand loading and memory-efficient handling of large codebases
  */
 
-import { SemanticIndex, FileAnalyzer } from './semantic-index.js';
-import { FileIndex, SymbolReference, SymbolInfo } from './types.js';
-import { SemanticIndexCache, CachedSemanticIndex } from './index-cache.js';
-import { ChangeDetector } from './incremental-index.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { SemanticIndex, FileAnalyzer } from "./semantic-index.js";
+import { FileIndex, SymbolReference, SymbolInfo } from "./types.js";
+import { SemanticIndexCache, CachedSemanticIndex } from "./index-cache.js";
+import { ChangeDetector } from "./incremental-index.js";
+import * as fs from "fs/promises";
+import * as path from "path";
 
 export interface LazyLoadingOptions {
   maxLoadedFiles?: number; // Maximum files to keep in memory
@@ -66,7 +66,7 @@ export class LoadingQueue {
       // Update priority if higher
       const currentPriority = this.priorities.get(filePath) || 0;
       if (priority <= currentPriority) return;
-      
+
       // Remove from current priority queue
       const currentQueue = this.queue.get(currentPriority);
       currentQueue?.delete(filePath);
@@ -78,7 +78,7 @@ export class LoadingQueue {
     if (!this.queue.has(priority)) {
       this.queue.set(priority, new Set());
     }
-    
+
     this.queue.get(priority)!.add(filePath);
     this.pending.add(filePath);
     this.priorities.set(filePath, priority);
@@ -89,11 +89,13 @@ export class LoadingQueue {
    */
   dequeue(batchSize: number = 10): string[] {
     const batch: string[] = [];
-    const sortedPriorities = Array.from(this.queue.keys()).sort((a, b) => b - a);
+    const sortedPriorities = Array.from(this.queue.keys()).sort(
+      (a, b) => b - a,
+    );
 
     for (const priority of sortedPriorities) {
       const files = this.queue.get(priority)!;
-      
+
       while (files.size > 0 && batch.length < batchSize) {
         const filePath = files.values().next().value;
         if (filePath) {
@@ -105,11 +107,11 @@ export class LoadingQueue {
           break;
         }
       }
-      
+
       if (files.size === 0) {
         this.queue.delete(priority);
       }
-      
+
       if (batch.length >= batchSize) break;
     }
 
@@ -145,50 +147,52 @@ export class LoadingQueue {
  */
 export class LoadingStrategies {
   static readonly IMMEDIATE: LoadingStrategy = {
-    name: 'immediate',
+    name: "immediate",
     shouldLoad: (filePath, context) => {
       return filePath === context.currentFile;
     },
-    priority: 100
+    priority: 100,
   };
 
   static readonly RECENTLY_ACCESSED: LoadingStrategy = {
-    name: 'recently_accessed',
+    name: "recently_accessed",
     shouldLoad: (filePath, context) => {
       return context.recentFiles.includes(filePath);
     },
-    priority: 90
+    priority: 90,
   };
 
   static readonly FREQUENTLY_ACCESSED: LoadingStrategy = {
-    name: 'frequently_accessed',
+    name: "frequently_accessed",
     shouldLoad: (filePath, context) => {
       const accessCount = context.accessPattern.get(filePath) || 0;
       return accessCount > 5;
     },
-    priority: 80
+    priority: 80,
   };
 
   static readonly IMPORT_RELATED: LoadingStrategy = {
-    name: 'import_related',
+    name: "import_related",
     shouldLoad: (filePath, context) => {
       // This would require index data to determine import relationships
       // For now, use simple heuristics
       if (!context.currentFile) return false;
-      
+
       const currentDir = path.dirname(context.currentFile);
       const targetDir = path.dirname(filePath);
-      
+
       // Same directory or parent/child relationship
-      return currentDir === targetDir || 
-             currentDir.startsWith(targetDir) || 
-             targetDir.startsWith(currentDir);
+      return (
+        currentDir === targetDir ||
+        currentDir.startsWith(targetDir) ||
+        targetDir.startsWith(currentDir)
+      );
     },
-    priority: 70
+    priority: 70,
   };
 
   static readonly PATTERN_PRIORITY: LoadingStrategy = {
-    name: 'pattern_priority',
+    name: "pattern_priority",
     shouldLoad: (filePath, context) => {
       // High priority patterns (types, configs, main entry points)
       const highPriorityPatterns = [
@@ -196,26 +200,28 @@ export class LoadingStrategies {
         /types?\.(ts|js)$/,
         /config\.(ts|js)$/,
         /index\.(ts|js)$/,
-        /main\.(ts|js)$/
+        /main\.(ts|js)$/,
       ];
-      
-      return highPriorityPatterns.some(pattern => pattern.test(filePath));
+
+      return highPriorityPatterns.some((pattern) => pattern.test(filePath));
     },
-    priority: 60
+    priority: 60,
   };
 
   static readonly QUERY_MATCHING: LoadingStrategy = {
-    name: 'query_matching',
+    name: "query_matching",
     shouldLoad: (filePath, context) => {
       if (!context.userQuery) return false;
-      
+
       const fileName = path.basename(filePath);
       const query = context.userQuery.toLowerCase();
-      
-      return fileName.toLowerCase().includes(query) ||
-             filePath.toLowerCase().includes(query);
+
+      return (
+        fileName.toLowerCase().includes(query) ||
+        filePath.toLowerCase().includes(query)
+      );
     },
-    priority: 85
+    priority: 85,
   };
 
   static getDefaultStrategies(): LoadingStrategy[] {
@@ -225,7 +231,7 @@ export class LoadingStrategies {
       this.QUERY_MATCHING,
       this.FREQUENTLY_ACCESSED,
       this.IMPORT_RELATED,
-      this.PATTERN_PRIORITY
+      this.PATTERN_PRIORITY,
     ];
   }
 }
@@ -244,12 +250,12 @@ export class LazyFileManager {
     pendingLoads: 0,
     hitRate: 0,
     averageLoadTime: 0,
-    memoryUsage: 0
+    memoryUsage: 0,
   };
 
   constructor(
     private options: LazyLoadingOptions = {},
-    private cache?: SemanticIndexCache
+    private cache?: SemanticIndexCache,
   ) {
     this.analyzer = new FileAnalyzer();
     this.options = {
@@ -257,9 +263,9 @@ export class LazyFileManager {
       preloadRadius: 5,
       loadTimeoutMs: 5000,
       batchSize: 10,
-      priorityPatterns: ['**/*.ts', '**/*.tsx'],
-      excludePatterns: ['**/node_modules/**', '**/dist/**'],
-      ...options
+      priorityPatterns: ["**/*.ts", "**/*.tsx"],
+      excludePatterns: ["**/node_modules/**", "**/dist/**"],
+      ...options,
     };
   }
 
@@ -309,7 +315,7 @@ export class LazyFileManager {
    */
   async loadBatch(filePaths: string[]): Promise<Map<string, FileIndex | null>> {
     const results = new Map<string, FileIndex | null>();
-    const loadPromises = filePaths.map(async filePath => {
+    const loadPromises = filePaths.map(async (filePath) => {
       const result = await this.loadFile(filePath);
       results.set(filePath, result);
       return { filePath, result };
@@ -322,12 +328,18 @@ export class LazyFileManager {
   /**
    * Preload files based on context
    */
-  async preloadFiles(context: LoadingContext, strategies: LoadingStrategy[]): Promise<void> {
+  async preloadFiles(
+    context: LoadingContext,
+    strategies: LoadingStrategy[],
+  ): Promise<void> {
     const candidates = this.findCandidateFiles(context);
     const toLoad: Array<{ filePath: string; priority: number }> = [];
 
     for (const filePath of candidates) {
-      if (this.loadedFiles.has(filePath) || this.loadingPromises.has(filePath)) {
+      if (
+        this.loadedFiles.has(filePath) ||
+        this.loadingPromises.has(filePath)
+      ) {
         continue;
       }
 
@@ -343,11 +355,11 @@ export class LazyFileManager {
     toLoad.sort((a, b) => b.priority - a.priority);
     const priorityFiles = toLoad
       .slice(0, this.options.preloadRadius || 5)
-      .map(item => item.filePath);
+      .map((item) => item.filePath);
 
     // Load in background without waiting
-    this.loadBatch(priorityFiles).catch(error => {
-      console.warn('Error in preload operation:', error);
+    this.loadBatch(priorityFiles).catch((error) => {
+      console.warn("Error in preload operation:", error);
     });
   }
 
@@ -392,13 +404,13 @@ export class LazyFileManager {
    */
   evictFile(filePath: string): boolean {
     if (!this.loadedFiles.has(filePath)) return false;
-    
+
     this.loadedFiles.delete(filePath);
     const index = this.accessOrder.indexOf(filePath);
     if (index !== -1) {
       this.accessOrder.splice(index, 1);
     }
-    
+
     this.updateStats();
     return true;
   }
@@ -407,27 +419,28 @@ export class LazyFileManager {
    * Force eviction of least recently used files
    */
   forceEviction(targetCount?: number): number {
-    const target = targetCount || Math.floor((this.options.maxLoadedFiles || 1000) * 0.8);
+    const target =
+      targetCount || Math.floor((this.options.maxLoadedFiles || 1000) * 0.8);
     let evicted = 0;
-    
+
     while (this.loadedFiles.size > target && this.accessOrder.length > 0) {
       const lruFile = this.accessOrder.pop()!;
       if (this.loadedFiles.delete(lruFile)) {
         evicted++;
       }
     }
-    
+
     if (evicted > 0) {
       this.stats.lastEvictionTime = Date.now();
       this.updateStats();
     }
-    
+
     return evicted;
   }
 
   private async performLoad(filePath: string): Promise<FileIndex | null> {
     const startTime = performance.now();
-    
+
     try {
       // Try cache first
       if (this.cache) {
@@ -441,14 +454,17 @@ export class LazyFileManager {
 
       // Load from file system
       const content = await Promise.race([
-        fs.readFile(filePath, 'utf-8'),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Load timeout')), this.options.loadTimeoutMs)
-        )
+        fs.readFile(filePath, "utf-8"),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error("Load timeout")),
+            this.options.loadTimeoutMs,
+          ),
+        ),
       ]);
 
       const fileIndex = await this.analyzer.analyzeFile(filePath, content);
-      
+
       // Cache if available
       if (this.cache) {
         this.cache.cacheFile(filePath, fileIndex);
@@ -469,21 +485,21 @@ export class LazyFileManager {
     // This would typically scan the project directory
     // For now, return files from context
     const candidates: string[] = [];
-    
+
     if (context.currentFile) {
       candidates.push(context.currentFile);
     }
-    
+
     candidates.push(...context.recentFiles);
-    
+
     // Add files from access pattern
     const frequentFiles = Array.from(context.accessPattern.entries())
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 20)
       .map(([file]) => file);
-    
+
     candidates.push(...frequentFiles);
-    
+
     return [...new Set(candidates)];
   }
 
@@ -497,7 +513,7 @@ export class LazyFileManager {
 
   private evictIfNecessary(): void {
     const maxFiles = this.options.maxLoadedFiles || 1000;
-    
+
     while (this.loadedFiles.size > maxFiles) {
       const lruFile = this.accessOrder.pop();
       if (lruFile && this.loadedFiles.delete(lruFile)) {
@@ -510,15 +526,18 @@ export class LazyFileManager {
     // Update running average
     const currentAvg = this.stats.averageLoadTime;
     const loadedCount = this.stats.loadedFiles;
-    
-    this.stats.averageLoadTime = (currentAvg * loadedCount + loadTime) / (loadedCount + 1);
+
+    this.stats.averageLoadTime =
+      (currentAvg * loadedCount + loadTime) / (loadedCount + 1);
   }
 
   private updateStats(): void {
     this.stats.loadedFiles = this.loadedFiles.size;
-    this.stats.memoryUsage = Array.from(this.loadedFiles.values())
-      .reduce((sum, file) => sum + (JSON.stringify(file).length * 2), 0);
-    
+    this.stats.memoryUsage = Array.from(this.loadedFiles.values()).reduce(
+      (sum, file) => sum + JSON.stringify(file).length * 2,
+      0,
+    );
+
     const total = this.stats.loadedFiles + this.stats.pendingLoads;
     this.stats.hitRate = total > 0 ? this.stats.loadedFiles / total : 0;
   }
@@ -536,7 +555,7 @@ export class LazySemanticIndex {
   constructor(
     private baseIndex: SemanticIndex,
     options: LazyLoadingOptions = {},
-    cache?: SemanticIndexCache
+    cache?: SemanticIndexCache,
   ) {
     this.fileManager = new LazyFileManager(options, cache);
     this.loadingQueue = new LoadingQueue();
@@ -544,7 +563,7 @@ export class LazySemanticIndex {
     this.context = {
       recentFiles: [],
       accessPattern: new Map(),
-      lastAccess: new Map()
+      lastAccess: new Map(),
     };
   }
 
@@ -554,22 +573,22 @@ export class LazySemanticIndex {
   async getFile(filePath: string): Promise<FileIndex | undefined> {
     // Update access tracking
     this.updateAccess(filePath);
-    
+
     // Try to get already loaded file
     const loaded = this.fileManager.getLoadedFile(filePath);
     if (loaded) return loaded;
-    
+
     // Check base index
     const baseFile = this.baseIndex.getFile(filePath);
     if (baseFile) return baseFile;
-    
+
     // Load on demand
     const lazyLoaded = await this.fileManager.loadFile(filePath);
     if (lazyLoaded) {
       await this.baseIndex.addFile(lazyLoaded);
       return lazyLoaded;
     }
-    
+
     return undefined;
   }
 
@@ -583,13 +602,16 @@ export class LazySemanticIndex {
   /**
    * Search files with lazy loading of matches
    */
-  async searchFiles(query: string, maxResults: number = 10): Promise<FileIndex[]> {
+  async searchFiles(
+    query: string,
+    maxResults: number = 10,
+  ): Promise<FileIndex[]> {
     this.context.userQuery = query;
-    
+
     // Get all known files
     const allFiles = this.baseIndex.getAllFiles();
     const matches: FileIndex[] = [];
-    
+
     // Find matches in already loaded files
     for (const file of allFiles) {
       if (this.matchesQuery(file, query)) {
@@ -597,12 +619,12 @@ export class LazySemanticIndex {
         if (matches.length >= maxResults) break;
       }
     }
-    
+
     // If we need more matches, trigger lazy loading
     if (matches.length < maxResults) {
       await this.fileManager.preloadFiles(this.context, this.strategies);
     }
-    
+
     return matches.slice(0, maxResults);
   }
 
@@ -611,13 +633,13 @@ export class LazySemanticIndex {
    */
   updateContext(updates: Partial<LoadingContext>): void {
     Object.assign(this.context, updates);
-    
+
     if (updates.currentFile) {
       this.updateAccess(updates.currentFile);
     }
-    
+
     if (updates.recentFiles) {
-      updates.recentFiles.forEach(file => this.updateAccess(file));
+      updates.recentFiles.forEach((file) => this.updateAccess(file));
     }
   }
 
@@ -635,7 +657,7 @@ export class LazySemanticIndex {
     const lazyStats = this.fileManager.getStats();
     return {
       ...lazyStats,
-      baseIndexSize: this.baseIndex.getAllFiles().length
+      baseIndexSize: this.baseIndex.getAllFiles().length,
     };
   }
 
@@ -657,25 +679,25 @@ export class LazySemanticIndex {
   private updateAccess(filePath: string): void {
     const now = Date.now();
     const currentCount = this.context.accessPattern.get(filePath) || 0;
-    
+
     this.context.accessPattern.set(filePath, currentCount + 1);
     this.context.lastAccess.set(filePath, now);
-    
+
     // Update recent files
-    const recent = this.context.recentFiles.filter(f => f !== filePath);
+    const recent = this.context.recentFiles.filter((f) => f !== filePath);
     recent.unshift(filePath);
     this.context.recentFiles = recent.slice(0, 10);
   }
 
   private matchesQuery(file: FileIndex, query: string): boolean {
     const queryLower = query.toLowerCase();
-    
+
     // Check file path
     if (file.path.toLowerCase().includes(queryLower)) return true;
-    
+
     // Check symbols
-    return file.symbols.some(symbol => 
-      symbol.name.toLowerCase().includes(queryLower)
+    return file.symbols.some((symbol) =>
+      symbol.name.toLowerCase().includes(queryLower),
     );
   }
 }

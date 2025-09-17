@@ -17,6 +17,7 @@ npm install -g @anthropic-ai/claude-code
 ```
 
 Run in your project directory:
+
 ```bash
 claude
 ```
@@ -24,16 +25,19 @@ claude
 ## Visual Appearance & UI Elements
 
 ### Welcome Message
+
 - Format: Simple text-based welcome in terminal
 - Displays current working directory
 - Shows help hint: `/help for help`
 
 ### Status Line
+
 - Customizable via `/statusline` command
 - Shows: Model, tokens, current branch
 - Format: `claude code | {provider} | {model} | {tokens} {branch}`
 
 ### UI Elements
+
 - **Terminal-based interface** - No GUI, pure command line
 - **Box borders** - Single line borders for UI sections
 - **Colors**:
@@ -59,11 +63,13 @@ claude
 9. **`/cost`** - Show token usage statistics
 
 ### Authentication & Account
+
 10. **`/login`** - Switch Anthropic accounts
 11. **`/logout`** - Sign out from your Anthropic account
 12. **`/upgrade`** - Information about plan upgrades
 
 ### Development Tools
+
 13. **`/bug`** - Report bugs (sends conversation to Anthropic)
 14. **`/doctor`** - Check health of Claude Code installation
 15. **`/ide`** - Connect to IDE for file awareness and linter warnings
@@ -73,20 +79,24 @@ claude
 19. **`/permissions`** - Manage tool permissions and safety settings
 
 ### File & Directory Management
+
 20. **`/add-dir`** - Add additional working directories
 21. **`/context`** - Debug and manage context issues
 22. **`/export`** - Export conversation history
 23. **`/todos`** - List current TODO items in codebase
 
 ### MCP & Integration
+
 24. **`/mcp`** - Manage MCP server connections and OAuth
 25. **`/terminal-setup`** - Fix terminal configuration issues
 
 ### Session Management
+
 26. **`/resume`** - Resume previous session
 27. **`/statusline`** - Customize status line display
 
 ### Output & Display
+
 28. **`/output-style`** - Switch output style profiles
 29. **`/privacy-settings`** - Manage privacy preferences
 30. **`/release-notes`** - View release notes
@@ -94,6 +104,7 @@ claude
 ## Custom Commands
 
 Create custom slash commands in `.claude/commands/` directory:
+
 - Add `commandname.md` files
 - Write prompts in natural language
 - Use `$ARGUMENTS` placeholder for arguments
@@ -103,6 +114,7 @@ Create custom slash commands in `.claude/commands/` directory:
 ## Keyboard Shortcuts & Navigation
 
 ### Essential Shortcuts
+
 - **Escape** - Stop Claude (not Ctrl+C which exits)
 - **Escape twice** - Show list of previous messages to jump to
 - **Ctrl+R** - Transcript mode
@@ -113,12 +125,14 @@ Create custom slash commands in `.claude/commands/` directory:
 - **Vim-style navigation** - In menus
 
 ### File Operations
+
 - **Shift+Drag** - Reference files properly (vs normal drag which opens in new tab)
 - **@-tagging** - Reference files with @ symbol
 
 ## Command Line Arguments
 
 ### Basic Usage
+
 ```bash
 claude                                    # Interactive mode
 claude -p "prompt"                       # Headless mode (no UI)
@@ -126,11 +140,13 @@ claude --dangerously-skip-permissions    # Skip all permission prompts
 ```
 
 ### Advanced Options
+
 - **`-p`** - Headless mode for scripts and automation
 - **`--output-format stream-json`** - Streaming JSON output
 - **`--print`** - Output results directly
 
 ### Composable Usage
+
 ```bash
 tail -f app.log | claude -p "Alert on anomalies"
 claude -p "Translate new strings to French" | git commit
@@ -139,6 +155,7 @@ claude -p "Translate new strings to French" | git commit
 ## Features & Capabilities
 
 ### Core Features
+
 1. **Natural language commands** - Understands conversational requests
 2. **Direct file editing** - Can modify files without confirmation (with permissions)
 3. **Command execution** - Runs shell commands
@@ -149,6 +166,7 @@ claude -p "Translate new strings to French" | git commit
 8. **Image paste/upload** - Visual input support
 
 ### Development Workflows
+
 - Bug fixes and debugging
 - Feature implementation
 - Code refactoring
@@ -159,6 +177,7 @@ claude -p "Translate new strings to French" | git commit
 - Performance optimization
 
 ### MCP (Model Context Protocol)
+
 - Connect external tools and services
 - GitHub integration for PR reviews
 - Custom server connections
@@ -166,12 +185,14 @@ claude -p "Translate new strings to French" | git commit
 - Dynamic command discovery from servers
 
 ### Hooks System
+
 - Pre/post execution hooks
 - Custom automation workflows
 - Team-shareable configurations
 - JSON or interactive configuration
 
 ### Session Management
+
 - Auto-save sessions
 - Resume previous conversations
 - Context preservation
@@ -180,12 +201,14 @@ claude -p "Translate new strings to French" | git commit
 ## Configuration
 
 ### Project Configuration
+
 - **`.claude/`** directory for project-specific settings
 - **`CLAUDE.md`** - Project memory and context
 - **`.claude/commands/`** - Custom commands
 - **`.claude/hooks/`** - Hook configurations
 
 ### User Configuration
+
 - Model selection (Opus 4.1, Sonnet 4, Haiku 3.5)
 - Permission settings
 - Privacy preferences
@@ -195,18 +218,21 @@ claude -p "Translate new strings to French" | git commit
 ## Best Practices
 
 ### Context Management
+
 1. **Use `/clear` frequently** - Between tasks to reset context
 2. **Use `/compact` at breakpoints** - After completing features
 3. **Maintain CLAUDE.md** - Keep project context updated
 4. **@-tag specific files** - Don't include unnecessary context
 
 ### Performance Optimization
+
 - Clear history to save tokens
 - Switch models based on task complexity
 - Use Opus for complex work, Sonnet for routine tasks
 - Leverage custom commands for repeated workflows
 
 ### Workflow Tips
+
 - Initialize with `/init` for new projects
 - Use `--dangerously-skip-permissions` for uninterrupted work
 - Create team-shareable custom commands
@@ -216,12 +242,14 @@ claude -p "Translate new strings to French" | git commit
 ## Error Handling & Recovery
 
 ### Common Issues
+
 - **Permission fatigue** - Use skip-permissions flag
 - **Context overflow** - Use /clear or /compact
 - **Terminal issues** - Run /terminal-setup
 - **Connection problems** - Check with /doctor
 
 ### Error Formats
+
 - Red text with ❌ for errors
 - Yellow text with ⚠️ for warnings
 - Detailed error messages with suggestions
@@ -229,17 +257,20 @@ claude -p "Translate new strings to French" | git commit
 ## File Operation Formats
 
 ### Writing Files
+
 ```
 📝 Writing filename.js...
   ✓ Wrote 42 lines to filename.js
 ```
 
 ### Tool Calls
+
 - Displayed in gray/muted text
 - Shows tool name and parameters
 - Real-time output streaming
 
 ### Success Messages
+
 ```
 ✅ Task completed successfully
 ```
@@ -247,11 +278,13 @@ claude -p "Translate new strings to French" | git commit
 ## Model Support
 
 ### Available Models
+
 1. **Claude Opus 4.1** - Most capable, complex tasks
 2. **Claude Sonnet 4** - Balanced performance
 3. **Claude Haiku 3.5** - Fast, routine tasks
 
 ### Enterprise Options
+
 - Amazon Bedrock integration
 - Google Cloud Vertex AI support
 - Custom model endpoints
@@ -259,6 +292,7 @@ claude -p "Translate new strings to French" | git commit
 ## Version History Highlights
 
 ### Recent Major Features
+
 - Custom subagents for specialized tasks
 - Web search capability
 - PDF reading support
@@ -269,6 +303,7 @@ claude -p "Translate new strings to French" | git commit
 - SDK releases (TypeScript, Python)
 
 ### UI/UX Improvements
+
 - Enhanced file path autocomplete
 - Improved spinner animations
 - Vim-style navigation
@@ -279,18 +314,21 @@ claude -p "Translate new strings to French" | git commit
 ## Integration Capabilities
 
 ### IDE Integration
+
 - VS Code extension available
 - File awareness from IDE
 - Linter warning access
 - Open file detection
 
 ### Version Control
+
 - Git workflow automation
 - PR creation and review
 - Commit message generation
 - Branch management
 
 ### CI/CD Integration
+
 - Headless mode for automation
 - Scriptable operations
 - Pipeline integration

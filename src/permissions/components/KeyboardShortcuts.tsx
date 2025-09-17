@@ -1,7 +1,7 @@
-import React, { useEffect } from 'react';
-import { Box, Text, useInput } from 'ink';
-import { ProfileManager } from '../ProfileManager';
-import { PermissionManager } from '../PermissionManager.js';
+import React, { useEffect } from "react";
+import { Box, Text, useInput } from "ink";
+import { ProfileManager } from "../ProfileManager";
+import { PermissionManager } from "../PermissionManager.js";
 
 export interface KeyboardShortcutsProps {
   profileManager: ProfileManager;
@@ -28,32 +28,32 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
     if (!enabled) return;
 
     // Ctrl+P: Switch profile
-    if (key.ctrl && input === 'p') {
+    if (key.ctrl && input === "p") {
       handleProfileSwitch();
     }
 
     // Ctrl+D: Show dashboard
-    if (key.ctrl && input === 'd' && onShowDashboard) {
+    if (key.ctrl && input === "d" && onShowDashboard) {
       onShowDashboard();
     }
 
     // Ctrl+A: Show audit log
-    if (key.ctrl && input === 'a' && onShowAudit) {
+    if (key.ctrl && input === "a" && onShowAudit) {
       onShowAudit();
     }
 
     // Ctrl+R: Reload configuration
-    if (key.ctrl && input === 'r' && onReload) {
+    if (key.ctrl && input === "r" && onReload) {
       onReload();
     }
 
     // Ctrl+S: Toggle safe mode
-    if (key.ctrl && input === 's' && permissionManager) {
+    if (key.ctrl && input === "s" && permissionManager) {
       handleSafeModeToggle();
     }
 
     // Ctrl+E: Emergency stop (deny all)
-    if (key.ctrl && input === 'e' && permissionManager) {
+    if (key.ctrl && input === "e" && permissionManager) {
       handleEmergencyStop();
     }
   });
@@ -61,18 +61,18 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
   const handleProfileSwitch = () => {
     const profiles = profileManager.getAllProfiles();
     const currentProfile = profileManager.getCurrentProfile();
-    
+
     if (profiles.length === 0) return;
-    
+
     // Find current profile index
-    const currentIndex = currentProfile 
+    const currentIndex = currentProfile
       ? profiles.findIndex((p: any) => p.name === currentProfile.name)
       : -1;
-    
+
     // Switch to next profile (cycle)
     const nextIndex = (currentIndex + 1) % profiles.length;
     const nextProfile = profiles[nextIndex];
-    
+
     profileManager.switchProfile(nextProfile.name);
   };
 
@@ -95,22 +95,22 @@ export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
 /**
  * Help overlay showing available keyboard shortcuts
  */
-export const KeyboardShortcutsHelp: React.FC<{ visible?: boolean }> = ({ 
-  visible = false 
+export const KeyboardShortcutsHelp: React.FC<{ visible?: boolean }> = ({
+  visible = false,
 }) => {
   if (!visible) return null;
 
   const shortcuts = [
-    { key: 'Ctrl+P', description: 'Switch profile' },
-    { key: 'Ctrl+D', description: 'Show dashboard' },
-    { key: 'Ctrl+A', description: 'Show audit log' },
-    { key: 'Ctrl+R', description: 'Reload configuration' },
-    { key: 'Ctrl+S', description: 'Toggle safe mode' },
-    { key: 'Ctrl+E', description: 'Emergency stop (deny all)' },
-    { key: 'Ctrl+H', description: 'Show/hide this help' },
-    { key: 'ESC', description: 'Close dialogs' },
-    { key: 'Y/N', description: 'Allow/Deny in prompts' },
-    { key: 'Shift+Y/N', description: 'Always Allow/Deny' },
+    { key: "Ctrl+P", description: "Switch profile" },
+    { key: "Ctrl+D", description: "Show dashboard" },
+    { key: "Ctrl+A", description: "Show audit log" },
+    { key: "Ctrl+R", description: "Reload configuration" },
+    { key: "Ctrl+S", description: "Toggle safe mode" },
+    { key: "Ctrl+E", description: "Emergency stop (deny all)" },
+    { key: "Ctrl+H", description: "Show/hide this help" },
+    { key: "ESC", description: "Close dialogs" },
+    { key: "Y/N", description: "Allow/Deny in prompts" },
+    { key: "Shift+Y/N", description: "Always Allow/Deny" },
   ];
 
   return (
@@ -124,7 +124,7 @@ export const KeyboardShortcutsHelp: React.FC<{ visible?: boolean }> = ({
       <Text bold color="cyan">
         🎮 Keyboard Shortcuts
       </Text>
-      
+
       <Box marginTop={1} flexDirection="column">
         {shortcuts.map((shortcut, index) => (
           <Box key={index} marginTop={index > 0 ? 0.5 : 0}>
@@ -135,7 +135,7 @@ export const KeyboardShortcutsHelp: React.FC<{ visible?: boolean }> = ({
           </Box>
         ))}
       </Box>
-      
+
       <Box marginTop={1}>
         <Text dimColor italic>
           Press Ctrl+H to hide this help
@@ -155,7 +155,7 @@ export const QuickActionBar: React.FC<{
   onDashboardClick?: () => void;
   onAuditClick?: () => void;
 }> = ({
-  currentProfile = 'Default',
+  currentProfile = "Default",
   safeMode = false,
   onProfileClick,
   onDashboardClick,
@@ -165,12 +165,12 @@ export const QuickActionBar: React.FC<{
     <Box flexDirection="row" gap={2}>
       <Box>
         <Text dimColor>Profile: </Text>
-        <Text color="cyan" bold>{currentProfile}</Text>
-        {onProfileClick && (
-          <Text dimColor> (Ctrl+P)</Text>
-        )}
+        <Text color="cyan" bold>
+          {currentProfile}
+        </Text>
+        {onProfileClick && <Text dimColor> (Ctrl+P)</Text>}
       </Box>
-      
+
       {safeMode && (
         <Box>
           <Text color="yellow" bold>
@@ -178,22 +178,18 @@ export const QuickActionBar: React.FC<{
           </Text>
         </Box>
       )}
-      
+
       <Box flexGrow={1} />
-      
+
       {onDashboardClick && (
         <Box>
-          <Text dimColor>
-            [Ctrl+D] Dashboard
-          </Text>
+          <Text dimColor>[Ctrl+D] Dashboard</Text>
         </Box>
       )}
-      
+
       {onAuditClick && (
         <Box>
-          <Text dimColor>
-            [Ctrl+A] Audit
-          </Text>
+          <Text dimColor>[Ctrl+A] Audit</Text>
         </Box>
       )}
     </Box>

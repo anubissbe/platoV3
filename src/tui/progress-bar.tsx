@@ -3,8 +3,8 @@
  * Displays progress with percentage, streaming indicators, and various styles
  */
 
-import React, { useMemo, useEffect, useState } from 'react';
-import { Box, Text } from 'ink';
+import React, { useMemo, useEffect, useState } from "react";
+import { Box, Text } from "ink";
 
 export interface ProgressBarProps {
   current?: number;
@@ -15,15 +15,15 @@ export interface ProgressBarProps {
   indeterminate?: boolean;
   indeterminateLabel?: string;
   streaming?: boolean;
-  streamingSpeed?: 'slow' | 'normal' | 'fast';
-  style?: 'classic' | 'modern' | 'simple' | 'ascii';
+  streamingSpeed?: "slow" | "normal" | "fast";
+  style?: "classic" | "modern" | "simple" | "ascii";
   fillChar?: string;
   emptyChar?: string;
   colorByProgress?: boolean;
   gradient?: boolean;
   gradientColors?: string[];
   label?: string;
-  labelPosition?: 'left' | 'right' | 'above' | 'below';
+  labelPosition?: "left" | "right" | "above" | "below";
   valueFormatter?: (current: number, total: number) => string;
   eta?: number;
   showETA?: boolean;
@@ -32,7 +32,7 @@ export interface ProgressBarProps {
   secondary?: { current: number; total: number };
   showSecondary?: boolean;
   pulse?: boolean;
-  pulseSpeed?: 'slow' | 'normal' | 'fast';
+  pulseSpeed?: "slow" | "normal" | "fast";
   showCompletionAnimation?: boolean;
   smooth?: boolean;
   ariaLabel?: string;
@@ -41,28 +41,28 @@ export interface ProgressBarProps {
 
 // Bar style configurations
 const barStyles = {
-  classic: { fill: '█', empty: '░', start: '[', end: ']' },
-  modern: { fill: '▰', empty: '▱', start: '⟨', end: '⟩' },
-  simple: { fill: '=', empty: '-', start: '[', end: ']' },
-  ascii: { fill: '#', empty: '-', start: '[', end: ']' }
+  classic: { fill: "█", empty: "░", start: "[", end: "]" },
+  modern: { fill: "▰", empty: "▱", start: "⟨", end: "⟩" },
+  simple: { fill: "=", empty: "-", start: "[", end: "]" },
+  ascii: { fill: "#", empty: "-", start: "[", end: "]" },
 };
 
 // Indeterminate animation frames
 const indeterminateFrames = [
-  '░▒▓█▓▒░░░░',
-  '░░▒▓█▓▒░░░',
-  '░░░▒▓█▓▒░░',
-  '░░░░▒▓█▓▒░',
-  '░░░░░▒▓█▓▒',
-  '▒░░░░░▒▓█▓',
-  '▓▒░░░░░▒▓█',
-  '█▓▒░░░░░▒▓',
-  '▓█▓▒░░░░░▒',
-  '▒▓█▓▒░░░░░'
+  "░▒▓█▓▒░░░░",
+  "░░▒▓█▓▒░░░",
+  "░░░▒▓█▓▒░░",
+  "░░░░▒▓█▓▒░",
+  "░░░░░▒▓█▓▒",
+  "▒░░░░░▒▓█▓",
+  "▓▒░░░░░▒▓█",
+  "█▓▒░░░░░▒▓",
+  "▓█▓▒░░░░░▒",
+  "▒▓█▓▒░░░░░",
 ];
 
 // Streaming animation characters
-const streamingChars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const streamingChars = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
   current = 0,
@@ -71,17 +71,17 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   showPercentage = false,
   showValues = false,
   indeterminate = false,
-  indeterminateLabel = 'Processing...',
+  indeterminateLabel = "Processing...",
   streaming = false,
-  streamingSpeed = 'normal',
-  style = 'classic',
+  streamingSpeed = "normal",
+  style = "classic",
   fillChar,
   emptyChar,
   colorByProgress = false,
   gradient = false,
-  gradientColors = ['blue', 'cyan', 'green'],
+  gradientColors = ["blue", "cyan", "green"],
   label,
-  labelPosition = 'left',
+  labelPosition = "left",
   valueFormatter,
   eta,
   showETA = false,
@@ -90,11 +90,11 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   secondary,
   showSecondary = false,
   pulse = false,
-  pulseSpeed = 'normal',
+  pulseSpeed = "normal",
   showCompletionAnimation = false,
   smooth = false,
   ariaLabel,
-  onProgressAnnounce
+  onProgressAnnounce,
 }) => {
   const [animationFrame, setAnimationFrame] = useState(0);
   const [streamingFrame, setStreamingFrame] = useState(0);
@@ -108,18 +108,18 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       const diff = current - displayCurrent;
       const steps = Math.abs(diff) > 10 ? 10 : Math.abs(diff);
       const increment = diff / steps;
-      
+
       let step = 0;
       const timer = setInterval(() => {
         if (step >= steps) {
           setDisplayCurrent(current);
           clearInterval(timer);
         } else {
-          setDisplayCurrent(prev => prev + increment);
+          setDisplayCurrent((prev) => prev + increment);
           step++;
         }
       }, 30);
-      
+
       return () => clearInterval(timer);
     } else {
       setDisplayCurrent(current);
@@ -137,17 +137,17 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   useEffect(() => {
     if (indeterminate || streaming) {
       const speeds = { slow: 200, normal: 100, fast: 50 };
-      const speed = speeds[streamingSpeed || 'normal'];
-      
+      const speed = speeds[streamingSpeed || "normal"];
+
       const timer = setInterval(() => {
         if (indeterminate) {
-          setAnimationFrame(prev => (prev + 1) % indeterminateFrames.length);
+          setAnimationFrame((prev) => (prev + 1) % indeterminateFrames.length);
         }
         if (streaming) {
-          setStreamingFrame(prev => (prev + 1) % streamingChars.length);
+          setStreamingFrame((prev) => (prev + 1) % streamingChars.length);
         }
       }, speed);
-      
+
       return () => clearInterval(timer);
     }
   }, [indeterminate, streaming, streamingSpeed]);
@@ -156,19 +156,23 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   useEffect(() => {
     if (pulse) {
       const speeds = { slow: 1000, normal: 500, fast: 250 };
-      const speed = speeds[pulseSpeed || 'normal'];
-      
+      const speed = speeds[pulseSpeed || "normal"];
+
       const timer = setInterval(() => {
-        setPulseOpacity(prev => prev === 1 ? 0.5 : 1);
+        setPulseOpacity((prev) => (prev === 1 ? 0.5 : 1));
       }, speed);
-      
+
       return () => clearInterval(timer);
     }
   }, [pulse, pulseSpeed]);
 
   // Completion animation
   useEffect(() => {
-    if (showCompletionAnimation && displayCurrent >= total && !completionAnimated) {
+    if (
+      showCompletionAnimation &&
+      displayCurrent >= total &&
+      !completionAnimated
+    ) {
       setCompletionAnimated(true);
       // Could trigger additional visual effects here
     } else if (displayCurrent < total) {
@@ -186,11 +190,11 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   // Determine bar color
   const getProgressColor = () => {
     if (colorByProgress) {
-      if (percentage < 33) return 'red';
-      if (percentage < 66) return 'yellow';
-      return 'green';
+      if (percentage < 33) return "red";
+      if (percentage < 66) return "yellow";
+      return "green";
     }
-    return 'cyan';
+    return "cyan";
   };
 
   // Format values
@@ -203,7 +207,9 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const formatETA = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
+    return mins > 0
+      ? `${mins}:${secs.toString().padStart(2, "0")}`
+      : `${secs}s`;
   };
 
   // Build the bar
@@ -211,44 +217,50 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     const barStyle = barStyles[style];
     const fill = fillChar || barStyle.fill;
     const empty = emptyChar || barStyle.empty;
-    
+
     if (indeterminate) {
       // Indeterminate animation
       const frame = indeterminateFrames[animationFrame];
-      const scaled = frame.repeat(Math.ceil(width / frame.length)).substring(0, width);
+      const scaled = frame
+        .repeat(Math.ceil(width / frame.length))
+        .substring(0, width);
       return (
         <Text>
-          {barStyle.start}{scaled}{barStyle.end}
+          {barStyle.start}
+          {scaled}
+          {barStyle.end}
         </Text>
       );
     }
-    
+
     if (segments && segments.length > 0) {
       // Segmented bar
-      let bar = '';
+      let bar = "";
       let usedWidth = 0;
-      
-      segments.forEach(segment => {
+
+      segments.forEach((segment) => {
         const segmentWidth = Math.floor((segment.value / 100) * width);
         bar += fill.repeat(segmentWidth);
         usedWidth += segmentWidth;
       });
-      
+
       bar += empty.repeat(width - usedWidth);
-      
+
       return (
         <Text>
-          {barStyle.start}{bar}{barStyle.end}
+          {barStyle.start}
+          {bar}
+          {barStyle.end}
         </Text>
       );
     }
-    
+
     // Regular progress bar
     const filledWidth = Math.floor((percentage / 100) * width);
     const emptyWidth = width - filledWidth;
-    
+
     let bar = fill.repeat(filledWidth);
-    
+
     // Add streaming indicator
     if (streaming && filledWidth < width) {
       bar += streamingChars[streamingFrame];
@@ -256,32 +268,35 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
     } else {
       bar += empty.repeat(emptyWidth);
     }
-    
+
     return (
       <Text color={getProgressColor()}>
-        {barStyle.start}{bar}{barStyle.end}
+        {barStyle.start}
+        {bar}
+        {barStyle.end}
       </Text>
     );
   };
 
   // Build the complete component
-  const progressText = showPercentage && !indeterminate ? (
-    <Text color={getProgressColor()} bold>
-      {Math.round(percentage)}%
-    </Text>
-  ) : null;
+  const progressText =
+    showPercentage && !indeterminate ? (
+      <Text color={getProgressColor()} bold>
+        {Math.round(percentage)}%
+      </Text>
+    ) : null;
 
-  const valuesText = showValues && !indeterminate ? (
-    <Text dimColor>
-      {valueFormatter 
-        ? valueFormatter(displayCurrent, total)
-        : `${formatValue(displayCurrent)}/${formatValue(total)}`}
-    </Text>
-  ) : null;
+  const valuesText =
+    showValues && !indeterminate ? (
+      <Text dimColor>
+        {valueFormatter
+          ? valueFormatter(displayCurrent, total)
+          : `${formatValue(displayCurrent)}/${formatValue(total)}`}
+      </Text>
+    ) : null;
 
-  const etaText = showETA && eta ? (
-    <Text dimColor>ETA: {formatETA(eta)}</Text>
-  ) : null;
+  const etaText =
+    showETA && eta ? <Text dimColor>ETA: {formatETA(eta)}</Text> : null;
 
   const labelText = label ? (
     <Text bold>{label}</Text>
@@ -290,46 +305,48 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   ) : null;
 
   // Secondary progress bar
-  const secondaryBar = showSecondary && secondary ? (
-    <Box marginTop={-1}>
-      <ProgressBar
-        current={secondary.current}
-        total={secondary.total}
-        width={width}
-        style="simple"
-        showPercentage={true}
-      />
-    </Box>
-  ) : null;
+  const secondaryBar =
+    showSecondary && secondary ? (
+      <Box marginTop={-1}>
+        <ProgressBar
+          current={secondary.current}
+          total={secondary.total}
+          width={width}
+          style="simple"
+          showPercentage={true}
+        />
+      </Box>
+    ) : null;
 
   // Legend for segments
-  const legend = showLegend && segments ? (
-    <Box flexDirection="row" marginTop={1}>
-      {segments.map((segment, index) => (
-        <Box key={index} marginRight={2}>
-          <Text color={segment.color}>■ {segment.label}</Text>
-        </Box>
-      ))}
-    </Box>
-  ) : null;
+  const legend =
+    showLegend && segments ? (
+      <Box flexDirection="row" marginTop={1}>
+        {segments.map((segment, index) => (
+          <Box key={index} marginRight={2}>
+            <Text color={segment.color}>■ {segment.label}</Text>
+          </Box>
+        ))}
+      </Box>
+    ) : null;
 
   // Layout based on label position
   const content = (
     <Box flexDirection="row" gap={1}>
-      {labelPosition === 'left' && labelText}
+      {labelPosition === "left" && labelText}
       {renderBar()}
       {progressText}
       {valuesText}
       {etaText}
-      {labelPosition === 'right' && labelText}
+      {labelPosition === "right" && labelText}
     </Box>
   );
 
   return (
     <Box flexDirection="column">
-      {labelPosition === 'above' && labelText}
+      {labelPosition === "above" && labelText}
       {content}
-      {labelPosition === 'below' && labelText}
+      {labelPosition === "below" && labelText}
       {secondaryBar}
       {legend}
     </Box>

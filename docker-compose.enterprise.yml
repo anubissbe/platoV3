@@ -1,0 +1,248 @@
+# Enterprise Docker Compose for Plato TUI
+# Complete production stack with monitoring, logging, and observability
+
+version: '3.8'
+
+services:
+  # Main Plato TUI Application
+  plato-tui:
+    build:
+      context: .
+      dockerfile: Dockerfile.enterprise
+      target: runner
+    container_name: plato-tui-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - LOG_LEVEL=info
+      - TELEMETRY_ENDPOINT=http://jaeger:14268/api/traces
+      - METRICS_ENDPOINT=http://prometheus:9090
+      - PLATO_CONFIG_PATH=/app/config
+    volumes:
+      - plato_data:/app/.plato
+      - plato_logs:/app/logs
+      - ./config:/app/config:ro
+    ports:
+      - "8719:8719"  # MCP Server
+      - "3000:3000"   # HTTP API
+    networks:
+      - plato-network
+    depends_on:
+      - redis
+      - postgres
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.plato.rule=Host(`plato.local`)"
+      - "traefik.http.services.plato.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD", "node", "dist/cli.js", "--version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: plato-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=plato
+      - POSTGRES_USER=plato_user
+      - POSTGRES_PASSWORD_FILE=/run/secrets/postgres_password
+    secrets:
+      - postgres_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - plato-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plato_user -d plato"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: plato-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-plato123}
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - plato-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # Prometheus Metrics Collection
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: plato-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - plato-network
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: plato-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - plato-network
+    depends_on:
+      - prometheus
+
+  # Jaeger Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: plato-jaeger
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # HTTP collector
+    networks:
+      - plato-network
+
+  # ELK Stack - Elasticsearch
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: plato-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    networks:
+      - plato-network
+
+  # ELK Stack - Logstash
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: plato-logstash
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - plato_logs:/var/log/plato:ro
+    ports:
+      - "5044:5044"
+    networks:
+      - plato-network
+    depends_on:
+      - elasticsearch
+
+  # ELK Stack - Kibana
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: plato-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - plato-network
+    depends_on:
+      - elasticsearch
+
+  # Load Balancer
+  traefik:
+    image: traefik:v2.10
+    container_name: plato-traefik
+    restart: unless-stopped
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - plato-network
+
+  # Node Exporter for system metrics
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: plato-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    networks:
+      - plato-network
+
+# Networks
+networks:
+  plato-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volumes
+volumes:
+  plato_data:
+    driver: local
+  plato_logs:
+    driver: local
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+
+# Secrets
+secrets:
+  postgres_password:
+    file: ./secrets/postgres_password.txt

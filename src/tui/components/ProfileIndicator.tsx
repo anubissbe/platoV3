@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Text } from 'ink';
-import { Profile } from '../../permissions/types';
+import React from "react";
+import { Box, Text } from "ink";
+import { Profile } from "../../permissions/types.js";
 
 export interface ProfileIndicatorProps {
   currentProfile: Profile | null;
@@ -11,7 +11,7 @@ export interface ProfileIndicatorProps {
 export const ProfileIndicator: React.FC<ProfileIndicatorProps> = ({
   currentProfile,
   isActive,
-  onClick
+  onClick,
 }) => {
   if (!currentProfile) {
     return (
@@ -26,39 +26,35 @@ export const ProfileIndicator: React.FC<ProfileIndicatorProps> = ({
   // Determine colors based on profile type and status
   const getProfileColors = () => {
     if (!isActive) {
-      return { color: 'gray', backgroundColor: undefined };
+      return { color: "gray", backgroundColor: undefined };
     }
 
     // Color coding based on profile name/type
     switch (currentProfile.name.toLowerCase()) {
-      case 'production':
-      case 'prod':
-        return { color: 'red', backgroundColor: 'redBright' };
-      case 'staging':
-      case 'stage':
-        return { color: 'yellow', backgroundColor: 'yellowBright' };
-      case 'development':
-      case 'dev':
-      case 'develop':
-        return { color: 'green', backgroundColor: 'greenBright' };
-      case 'testing':
-      case 'test':
-        return { color: 'blue', backgroundColor: 'blueBright' };
+      case "production":
+      case "prod":
+        return { color: "red", backgroundColor: "redBright" };
+      case "staging":
+      case "stage":
+        return { color: "yellow", backgroundColor: "yellowBright" };
+      case "development":
+      case "dev":
+      case "develop":
+        return { color: "green", backgroundColor: "greenBright" };
+      case "testing":
+      case "test":
+        return { color: "blue", backgroundColor: "blueBright" };
       default:
-        return { color: 'cyan', backgroundColor: 'cyanBright' };
+        return { color: "cyan", backgroundColor: "cyanBright" };
     }
   };
 
   const { color, backgroundColor } = getProfileColors();
   const displayName = currentProfile.name.toUpperCase();
   const restrictionLevel = getRestrictionLevel(currentProfile);
-  
+
   return (
-    <Box
-      borderStyle="round"
-      borderColor={color}
-      paddingX={1}
-    >
+    <Box borderStyle="round" borderColor={color} paddingX={1}>
       <Box marginRight={1}>
         <Text color={color} bold>
           {displayName}
@@ -90,17 +86,19 @@ export const ProfileIndicator: React.FC<ProfileIndicatorProps> = ({
  */
 function getRestrictionLevel(profile: Profile): string {
   const defaults = profile.defaults;
-  const restrictiveCount = Object.values(defaults).filter(action => action === 'deny').length;
+  const restrictiveCount = Object.values(defaults).filter(
+    (action) => action === "deny",
+  ).length;
   const totalActions = Object.values(defaults).length;
-  
-  if (totalActions === 0) return 'UNKNOWN';
-  
+
+  if (totalActions === 0) return "UNKNOWN";
+
   const restrictionRatio = restrictiveCount / totalActions;
-  
-  if (restrictionRatio >= 0.8) return 'STRICT';
-  if (restrictionRatio >= 0.5) return 'MODERATE';
-  if (restrictionRatio >= 0.2) return 'RELAXED';
-  return 'PERMISSIVE';
+
+  if (restrictionRatio >= 0.8) return "STRICT";
+  if (restrictionRatio >= 0.5) return "MODERATE";
+  if (restrictionRatio >= 0.2) return "RELAXED";
+  return "PERMISSIVE";
 }
 
 export default ProfileIndicator;
