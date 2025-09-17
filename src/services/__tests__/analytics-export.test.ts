@@ -47,8 +47,8 @@ describe("Analytics Export Functionality", () => {
   describe("CSV Export", () => {
     const mockMetrics: CostMetric[] = [
       {
-        timestamp: new Date("2025-01-15T10:00:00"),
-        provider: "github-copilot",
+        timestamp: new Date("2025-01-15T10:00:00").getTime(),
+        provider: "copilot",
         model: "gpt-4",
         inputTokens: 1000,
         outputTokens: 500,
@@ -59,7 +59,7 @@ describe("Analytics Export Functionality", () => {
         metadata: { command: "/analyze" },
       },
       {
-        timestamp: new Date("2025-01-15T11:00:00"),
+        timestamp: new Date("2025-01-15T11:00:00").getTime(),
         provider: "openai",
         model: "gpt-3.5-turbo",
         inputTokens: 2000,
@@ -94,7 +94,7 @@ describe("Analytics Export Functionality", () => {
         "timestamp,provider,model,inputTokens,outputTokens,totalTokens,cost,sessionId,duration",
       );
       expect(lines[1]).toContain("2025-01-15T10:00:00");
-      expect(lines[1]).toContain("github-copilot");
+      expect(lines[1]).toContain("copilot");
       expect(lines[1]).toContain("gpt-4");
       expect(lines[1]).toContain("0.045");
     });
@@ -184,8 +184,8 @@ describe("Analytics Export Functionality", () => {
   describe("JSON Export", () => {
     const mockMetrics: CostMetric[] = [
       {
-        timestamp: new Date("2025-01-15T10:00:00"),
-        provider: "github-copilot",
+        timestamp: new Date("2025-01-15T10:00:00").getTime(),
+        provider: "copilot",
         model: "gpt-4",
         inputTokens: 1000,
         outputTokens: 500,
@@ -248,7 +248,7 @@ describe("Analytics Export Functionality", () => {
       const multipleMetrics: CostMetric[] = [
         ...mockMetrics,
         {
-          timestamp: new Date("2025-01-16T10:00:00"),
+          timestamp: new Date("2025-01-16T10:00:00").getTime(),
           provider: "openai",
           model: "gpt-3.5-turbo",
           inputTokens: 500,
@@ -334,8 +334,8 @@ describe("Analytics Export Functionality", () => {
       const largeMetrics: CostMetric[] = Array.from(
         { length: 10000 },
         (_, i) => ({
-          timestamp: new Date(`2025-01-${(i % 30) + 1}T10:00:00`),
-          provider: i % 2 === 0 ? "github-copilot" : "openai",
+          timestamp: new Date(`2025-01-${(i % 30) + 1}T10:00:00`).getTime(),
+          provider: i % 2 === 0 ? "copilot" : "openai",
           model: i % 2 === 0 ? "gpt-4" : "gpt-3.5-turbo",
           inputTokens: 1000 + i,
           outputTokens: 500 + i,
@@ -373,8 +373,8 @@ describe("Analytics Export Functionality", () => {
       // This would be implemented with actual streaming support
       // For now, we test that the method exists and returns expected structure
       const mockMetrics = Array.from({ length: 100 }, (_, i) => ({
-        timestamp: new Date(`2025-01-01T${i}:00:00`),
-        provider: "github-copilot",
+        timestamp: new Date(`2025-01-01T${i}:00:00`).getTime(),
+        provider: "copilot",
         model: "gpt-4",
         inputTokens: 100,
         outputTokens: 50,
