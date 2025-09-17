@@ -92,9 +92,43 @@ class Orchestrator {
   };
   private transcriptMode = false;
   private backgroundMode = false;
+  private provider: any = null; // Provider from session
+  private session: any = null; // Session object
 
   constructor() {
     this.history = [];
+  }
+
+  /**
+   * Set the provider (Claude Code parity)
+   */
+  setProvider(provider: any): void {
+    this.provider = provider;
+  }
+
+  /**
+   * Set the session (Claude Code parity)
+   */
+  setSession(session: any): void {
+    this.session = session;
+    // Update memory manager's session if it exists
+    if (this.memoryManager) {
+      this.memoryManager.setSession(session);
+    }
+  }
+
+  /**
+   * Get the provider
+   */
+  getProvider(): any {
+    return this.provider;
+  }
+
+  /**
+   * Get the session
+   */
+  getSession(): any {
+    return this.session;
   }
 
   /**

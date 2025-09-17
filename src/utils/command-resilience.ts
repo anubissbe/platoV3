@@ -221,12 +221,13 @@ export class ResilientCommandExecutor {
 
     // Execute with automatic resource cleanup if enabled
     if (options.resources?.cleanup) {
-      return await globalResourceManager.withResource(
+      let result: T;
+      await globalResourceManager.withResource(
         `cmd-${options.commandName}-${Date.now()}`,
         'command-execution',
         async () => ({ operation, args, context }),
         async (resource) => {
-          return await operation(args, context);
+          result = await operation(args, context);
         },
         async (resource) => {
           // Resource cleanup handled by resource manager
@@ -243,6 +244,7 @@ export class ResilientCommandExecutor {
           }
         }
       );
+      return result!;
     } else {
       return await operation(args, context);
     }

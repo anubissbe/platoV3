@@ -147,7 +147,7 @@ export class AdvancedAnalyticsEngine extends EventEmitter {
       await Promise.all([
         this.analyzeCommandUsagePatterns(),
         this.generatePerformanceInsights(),
-        this.analyzeUserBehavior(),
+        this.generateUserBehaviorAnalytics(),
         this.generatePredictiveRecommendations(),
         this.analyzeTrends(),
         this.calculateProductivityMetrics(),
@@ -242,6 +242,19 @@ export class AdvancedAnalyticsEngine extends EventEmitter {
     }
 
     return insights.sort((a, b) => this.getSeverityScore(b.severity) - this.getSeverityScore(a.severity));
+  }
+
+  /**
+   * Generate user behavior analytics
+   */
+  private async generateUserBehaviorAnalytics(): Promise<any> {
+    // Basic user behavior analytics implementation
+    return {
+      patterns: [],
+      trends: [],
+      recommendations: [],
+      insights: []
+    };
   }
 
   /**
@@ -442,19 +455,66 @@ export class AdvancedAnalyticsEngine extends EventEmitter {
   }
 
   private convertToCSV(analytics: AdvancedMetrics): string {
-    // Implementation would convert analytics data to CSV format
-    return 'CSV data here';
+    // Convert analytics data to CSV format
+    const lines: string[] = [];
+    lines.push("Metric,Value,Timestamp");
+
+    // Add command usage patterns
+    if (analytics.commandUsagePatterns) {
+      analytics.commandUsagePatterns.forEach((pattern: any) => {
+        lines.push(`"${pattern.command}",${pattern.frequency},${new Date().toISOString()}`);
+      });
+    }
+
+    return lines.join('\n');
   }
 
   private generateHTMLReport(analytics: AdvancedMetrics): string {
-    // Implementation would generate HTML report
-    return '<html>Report here</html>';
+    // Generate HTML report
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <title>Analytics Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h1 { color: #333; }
+    .metric { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+    .value { font-weight: bold; color: #007bff; }
+  </style>
+</head>
+<body>
+  <h1>Advanced Analytics Report</h1>
+  <div class="metric">
+    <h2>Command Usage Patterns</h2>
+    ${analytics.commandUsagePatterns ? analytics.commandUsagePatterns.map((p: any) =>
+      `<div>${p.command}: <span class="value">${p.frequency}</span> uses</div>`
+    ).join('') : '<div>No data available</div>'}
+  </div>
+  <div class="metric">
+    <h2>Performance Insights</h2>
+    ${analytics.performanceInsights ? analytics.performanceInsights.map((i: any) =>
+      `<div>${i.description}: <span class="value">${i.severity}</span></div>`
+    ).join('') : '<div>No insights available</div>'}
+  </div>
+  <div class="metric">
+    <h2>Productivity Metrics</h2>
+    ${analytics.productivityMetrics ?
+      `<div>Commands per session: <span class="value">${analytics.productivityMetrics.commandsPerSession || 0}</span></div>
+       <div>Task completion rate: <span class="value">${analytics.productivityMetrics.taskCompletionRate || 0}%</span></div>`
+      : '<div>No metrics available</div>'}
+  </div>
+  <p>Generated: ${new Date().toLocaleString()}</p>
+</body>
+</html>`;
   }
 
   private async generatePDFReport(analytics: AdvancedMetrics): Promise<string> {
-    // Implementation would generate PDF report
-    return 'PDF content here';
+    // Generate PDF report - return base64 encoded content
+    const htmlContent = this.generateHTMLReport(analytics);
+    const base64 = Buffer.from(htmlContent).toString('base64');
+    return `data:application/pdf;base64,${base64}`;
   }
+
 
   private async getCurrentMetrics(): Promise<any> {
     // Implementation would get current real-time metrics

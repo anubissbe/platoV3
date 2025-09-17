@@ -44,8 +44,7 @@ export const ENHANCED_SLASH_COMMANDS: SlashCommand[] = [
     name: "analytics-advanced",
     description: "Advanced analytics dashboard with AI insights and predictive recommendations",
     summary: "View comprehensive analytics with intelligent insights",
-    category: "Analytics",
-    aliases: ["analytics+", "insights", "ai-analytics"],
+    category: "System" as const,
     usage: "analytics-advanced [dashboard|export|insights|trends|predictions]",
     requiresArgs: false,
     execute: async (args: string[], session: any, provider?: any) => {
@@ -129,8 +128,7 @@ export const ENHANCED_SLASH_COMMANDS: SlashCommand[] = [
     name: "smart-suggest",
     description: "Get intelligent command suggestions based on current context and AI analysis",
     summary: "AI-powered command suggestions and workflow recommendations",
-    category: "AI Assistant",
-    aliases: ["suggest", "ai-help", "recommend"],
+    category: "AI" as const,
     usage: "smart-suggest [context] or 'smart-suggest for <goal>'",
     requiresArgs: false,
     execute: async (args: string[], session: any, provider?: any) => {
@@ -178,8 +176,7 @@ export const ENHANCED_SLASH_COMMANDS: SlashCommand[] = [
     name: "search-semantic",
     description: "Advanced semantic search across commands, documentation, and history with AI understanding",
     summary: "Intelligent search with natural language understanding",
-    category: "Search",
-    aliases: ["search+", "find-smart", "ai-search"],
+    category: "System" as const,
     usage: "search-semantic <natural language query>",
     requiresArgs: true,
     execute: async (args: string[], session: any, provider?: any) => {
@@ -240,8 +237,7 @@ export const ENHANCED_SLASH_COMMANDS: SlashCommand[] = [
     name: "productivity-insights",
     description: "Get personalized productivity insights and automation recommendations",
     summary: "AI-powered productivity analysis and optimization suggestions",
-    category: "Productivity",
-    aliases: ["productivity", "optimize", "efficiency"],
+    category: "System" as const,
     usage: "productivity-insights [summary|detailed|automation|trends]",
     requiresArgs: false,
     execute: async (args: string[], session: any, provider?: any) => {
@@ -347,7 +343,6 @@ ${insights.slice(0, 3).map((insight: any, i: number) =>
     description: "Initialize advanced enterprise features with intelligent configuration",
     summary: "Set up AI-powered features and enterprise capabilities",
     category: "System",
-    aliases: ["init-advanced", "setup-enterprise", "enable-ai"],
     usage: "advanced-init [--analytics] [--ai] [--productivity] [--monitoring] [--ux]",
     requiresArgs: false,
     execute: async (args: string[], session: any, provider?: any) => {
@@ -425,7 +420,6 @@ ${enabledFeatures.map(f => `  • ${f}`).join('\n')}
     description: "Configure advanced features and personalization settings",
     summary: "Customize AI behavior, analytics, and enterprise features",
     category: "System",
-    aliases: ["config-advanced", "settings-enterprise"],
     usage: "advanced-config [show|set|reset] [setting] [value]",
     requiresArgs: false,
     execute: async (args: string[], session: any, provider?: any) => {
@@ -522,8 +516,7 @@ Usage:
     name: "enterprise-dashboard",
     description: "View comprehensive enterprise monitoring dashboard with real-time metrics",
     summary: "Real-time enterprise monitoring and compliance dashboard",
-    category: "Enterprise",
-    aliases: ["dashboard", "monitoring", "enterprise"],
+    category: "System" as const,
     usage: "enterprise-dashboard [overview|security|compliance|performance]",
     requiresArgs: false,
     execute: async (args: string[], session: any, provider?: any) => {
@@ -607,7 +600,7 @@ Usage:
 ═══════════════════
 
 🚨 Threat Status:
-  • Risk Level: ${dashboard.monitoring?.security.riskScore > 7 ? '🔴 High' : dashboard.monitoring?.security.riskScore > 4 ? '🟡 Medium' : '🟢 Low'}
+  • Risk Level: ${dashboard.monitoring?.security?.riskScore && dashboard.monitoring.security.riskScore > 7 ? '🔴 High' : dashboard.monitoring?.security?.riskScore && dashboard.monitoring.security.riskScore > 4 ? '🟡 Medium' : '🟢 Low'}
   • Threats Detected: ${dashboard.monitoring?.security.threatsDetected || 0} (24h)
   • Security Events: ${dashboard.monitoring?.security.securityEvents || 0} (24h)
   • Vulnerabilities: ${dashboard.monitoring?.security.vulnerabilitiesFound || 0} open
@@ -695,7 +688,9 @@ function createExecutionContext(session: any, args: string[]): CommandExecutionC
     sessionId: session?.sessionId || `session-${Date.now()}`,
     timestamp: new Date(),
     workingDirectory: process.cwd(),
-    environment: process.env,
+    environment: Object.fromEntries(
+      Object.entries(process.env).filter(([_, v]) => v !== undefined)
+    ) as Record<string, string>,
     projectContext: detectProjectContext(),
     recentCommands: session?.recentCommands || [],
     userSkillLevel: session?.userSkillLevel || 'intermediate',

@@ -55,7 +55,7 @@ export interface DateRange {
 /**
  * Export format options
  */
-export type ExportFormat = "json" | "csv";
+export type ExportFormat = "json" | "csv" | "html" | "pdf";
 
 /**
  * Most expensive session information

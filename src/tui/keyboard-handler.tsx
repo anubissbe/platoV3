@@ -6,6 +6,9 @@ import { loadConfig, setConfigValue } from "../config.js";
 import { SLASH_COMMANDS } from "../slash/commands.js";
 import { processSlashCommand } from "../commands/router.js";
 import orchestrator from "../runtime/orchestrator.js";
+import { CopilotProvider } from "../providers/copilot-provider.js";
+import { Session } from "../core/session.js";
+import { MemoryManager } from "../memory/manager.js";
 import {
   StyledBox,
   StyledText,
@@ -58,6 +61,12 @@ export function App() {
     proceed: () => Promise<void>;
   }>(null);
   const [branch, setBranch] = useState<string>("");
+
+  // Provider and Session state (Claude Code parity)
+  const [provider, setProvider] = useState<CopilotProvider | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [memoryManager, setMemoryManager] = useState<MemoryManager | null>(null);
+  const [providerStatus, setProviderStatus] = useState<"connecting" | "connected" | "disconnected" | "error">("connecting");
 
   // Stable session start time to prevent re-renders
   const sessionStartTime = React.useRef(new Date()).current;
@@ -116,15 +125,68 @@ export function App() {
       if (!trusted) {
         setTrustPrompt(true);
       }
-      setCfg(await loadConfig());
+
+      // Load configuration
+      const config = await loadConfig();
+      setCfg(config);
+
+      // Initialize Provider (Claude Code parity)
+      try {
+        setProviderStatus("connecting");
+        const copilotProvider = new CopilotProvider();
+        await copilotProvider.initialize();
+        setProvider(copilotProvider);
+
+        // Create Session with system prompt (Claude Code parity)
+        const systemPrompt = "You are a helpful coding assistant. Be concise and accurate.";
+        const newSession = new Session(systemPrompt);
+        setSession(newSession);
+
+        // Initialize Memory Manager and connect to session
+        const memory = new MemoryManager();
+        await memory.initialize();
+        memory.setSession(newSession);
+        setMemoryManager(memory);
+
+        // Pass provider and session to orchestrator
+        orchestrator.setProvider(copilotProvider);
+        orchestrator.setSession(newSession);
+
+        // Check authentication status
+        const isAuth = await copilotProvider.isAuthenticated();
+        setProviderStatus(isAuth ? "connected" : "disconnected");
+
+        if (isAuth) {
+          setLines((prev) => [
+            ...prev,
+            "✓ Connected to GitHub Copilot",
+          ]);
+        } else {
+          setLines((prev) => [
+            ...prev,
+            "⚠ Not authenticated. Use /login to authenticate with GitHub Copilot",
+          ]);
+        }
+      } catch (error) {
+        setProviderStatus("error");
+        setLines((prev) => [
+          ...prev,
+          `⚠ Failed to initialize provider: ${error}`,
+          "Some commands may not work properly. Use /login to authenticate.",
+        ]);
+      }
+
       // Initialize style manager
       await initializeStyleManager();
+
       // Initialize streaming manager
       const manager = new StreamingMessageManager();
       manager.setUpdateCallback(setStreamingMessage);
       streamingManagerRef.current = manager;
-      // Auto-restore session on startup
-      await orchestrator.restoreSession();
+
+      // Session restoration would be handled by memory manager
+      // The simple Session class doesn't have restore method
+
       // Load project context if available
       const context = await orchestrator.getProjectContext();
       if (context) {
@@ -747,10 +809,13 @@ export function App() {
 
   // Handle slash commands (existing implementation from app.tsx)
   const handleSlashCommand = async (text: string) => {
-    // First try the new command router
-    // Note: orchestrator doesn't expose session/provider directly, so we pass null for now
-    // The router will handle commands that don't need these
-    const commandResult = await processSlashCommand(text, null as any, null as any);
+    // Pass actual provider and session to command router (Claude Code parity)
+    // Handle case where session/provider might not be initialized yet
+    if (!session) {
+      setLines((prev) => [...prev, "⚠ Session not initialized. Commands may not work properly."]);
+      return;
+    }
+    const commandResult = await processSlashCommand(text, session, provider);
 
     if (commandResult.handled) {
       // Command was processed by router

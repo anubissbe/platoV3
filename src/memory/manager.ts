@@ -17,6 +17,7 @@ export class MemoryManager {
   private options: Required<MemoryManagerOptions>;
   private memoryStore: MemoryStore;
   private autoSaveTimer?: NodeJS.Timeout;
+  private session?: any; // Session object
 
   constructor(options: MemoryManagerOptions = {}) {
     this.options = {
@@ -63,6 +64,20 @@ export class MemoryManager {
     if (this.options.autoSave) {
       this.startAutoSave();
     }
+  }
+
+  /**
+   * Set the session for this memory manager (Claude Code parity)
+   */
+  setSession(session: any): void {
+    this.session = session;
+  }
+
+  /**
+   * Get the session
+   */
+  getSession(): any {
+    return this.session;
   }
 
   /**

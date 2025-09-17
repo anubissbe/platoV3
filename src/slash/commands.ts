@@ -6,6 +6,10 @@
 
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { EditTool } from "../tools/native/edit-tool.js";
+import { SearchTool } from "../tools/native/search-tool.js";
+import { run } from "../tools/exec.js";
+import * as git from "../tools/git.js";
 
 export interface SlashCommand {
   name: string;
@@ -14,10 +18,12 @@ export interface SlashCommand {
   category: "Core" | "MCP" | "AI" | "System" | "File" | "UI" | "Config" | "Testing";
   usage?: string;
   requiresArgs?: boolean;
+  aliases?: string[];
   execute: (args: string[], session: any, provider?: any) => Promise<{
     output?: string;
     error?: string;
     metadata?: Record<string, any>;
+    requiresConfirmation?: boolean;
   }>;
 }
 
@@ -1986,6 +1992,424 @@ export const SLASH_COMMANDS: SlashCommand[] = [
         return {
           output: "❌ MCP command failed",
           error: error instanceof Error ? error.message : String(error)
+        };
+      }
+    }
+  },
+
+  // Core Claude Commands - integrating native tools with slash command system
+  {
+    name: "edit",
+    description: "Edit files with pattern matching, line-based editing, and diff generation",
+    summary: "Edit files using advanced native editing tools",
+    category: "Core",
+    usage: "<file> [pattern] [replacement] [options]",
+    requiresArgs: true,
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        if (args.length === 0) {
+          return {
+            error: "❌ File path required\n\n" +
+              "Usage: /edit <file> [pattern] [replacement] [options]\n\n" +
+              "Examples:\n" +
+              "  /edit src/app.ts                     - Open file for editing\n" +
+              "  /edit config.json \"port.*8080\" \"port: 3000\"  - Replace pattern\n" +
+              "  /edit README.md --lines 10-20        - Edit specific lines"
+          };
+        }
+
+        const editTool = new EditTool();
+        const filePath = args[0];
+
+        if (args.length === 1) {
+          // Just show file info
+          try {
+            const stats = await fs.stat(filePath);
+            let output = "📝 Edit File: " + filePath + "\n";
+            output += "═".repeat(15 + filePath.length) + "\n\n";
+            output += "📊 File Info:\n";
+            output += "├─ Size: " + (stats.size / 1024).toFixed(2) + " KB\n";
+            output += "├─ Modified: " + stats.mtime.toLocaleDateString() + "\n";
+            output += "└─ Type: " + (stats.isDirectory() ? "Directory" : "File") + "\n\n";
+            output += "💡 Use with pattern to make edits:\n";
+            output += "  /edit " + filePath + " \"old pattern\" \"new pattern\"";
+            return { output };
+          } catch (error) {
+            return {
+              error: "❌ File not found: " + filePath + "\n" +
+                "Check the file path and try again"
+            };
+          }
+        }
+
+        // Pattern-based editing
+        const pattern = args[1];
+        const replacement = args[2] || "";
+
+        const result = await editTool.execute({
+          path: filePath,
+          pattern: pattern,
+          replacement: replacement,
+          lineNumber: args.includes("--lines") ? parseInt(args[args.indexOf("--lines") + 1]) : undefined,
+          backup: !args.includes("--no-backup"),
+          generateDiff: true
+        });
+
+        if (result.error) {
+          return { error: "❌ Edit failed: " + result.error };
+        }
+
+        let output = "✅ Edit completed: " + filePath + "\n\n";
+        if (result.diff) {
+          output += "📋 Changes made:\n" + result.diff + "\n";
+        }
+        if (result.linesModified) {
+          output += "📊 Lines changed: " + result.linesModified.length;
+        }
+
+        return { output };
+      } catch (error) {
+        return {
+          error: "Edit command failed: " + (error instanceof Error ? error.message : String(error))
+        };
+      }
+    }
+  },
+
+  {
+    name: "search",
+    description: "Search codebase with ripgrep integration and regex support",
+    summary: "Search files using advanced pattern matching",
+    category: "Core",
+    usage: "<pattern> [path] [options]",
+    requiresArgs: true,
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        if (args.length === 0) {
+          return {
+            error: "❌ Search pattern required\n\n" +
+              "Usage: /search <pattern> [path] [options]\n\n" +
+              "Examples:\n" +
+              "  /search \"function.*export\"           - Find exported functions\n" +
+              "  /search \"TODO\" src/                  - Find TODOs in src/\n" +
+              "  /search \"bug\" --case-insensitive    - Case insensitive search"
+          };
+        }
+
+        const searchTool = new SearchTool();
+        const pattern = args[0];
+        const searchPath = args[1] || ".";
+
+        const flags = args.filter(arg => arg.startsWith("--"));
+
+        const result = await searchTool.execute({
+          pattern: pattern,
+          path: searchPath,
+          regex: flags.includes("--regex"),
+          caseInsensitive: flags.includes("--case-insensitive"),
+          wholeWord: flags.includes("--whole-word"),
+          contextLines: flags.includes("--context") ? 3 : 0,
+          maxResults: 50
+        });
+
+        if (result.error) {
+          return { error: "❌ Search failed: " + result.error };
+        }
+
+        let output = "🔍 Search Results for: \"" + pattern + "\"\n";
+        output += "═".repeat(25 + pattern.length) + "\n\n";
+
+        if (result.matches && result.matches.length > 0) {
+          output += "📊 Found " + result.totalMatches + " matches in " + result.filesWithMatches + " files\n\n";
+
+          for (const match of result.matches.slice(0, 20)) {
+            output += "📁 " + match.file + ":" + match.line + "\n";
+            output += "  " + match.content.trim() + "\n\n";
+          }
+
+          if (result.matches.length > 20) {
+            output += "... and " + (result.matches.length - 20) + " more matches\n";
+          }
+        } else {
+          output += "❌ No matches found for pattern: \"" + pattern + "\"\n\n";
+          output += "💡 Try:\n";
+          output += "  • Different search terms\n";
+          output += "  • Case insensitive search (--case-insensitive)\n";
+          output += "  • Regex search (--regex)";
+        }
+
+        return { output };
+      } catch (error) {
+        return {
+          error: "Search command failed: " + (error instanceof Error ? error.message : String(error))
+        };
+      }
+    }
+  },
+
+  {
+    name: "run",
+    description: "Execute shell commands with output capture and error handling",
+    summary: "Run shell commands safely",
+    category: "Core",
+    usage: "<command> [args...]",
+    requiresArgs: true,
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        if (args.length === 0) {
+          return {
+            error: "❌ Command required\n\n" +
+              "Usage: /run <command> [args...]\n\n" +
+              "Examples:\n" +
+              "  /run npm test                    - Run npm tests\n" +
+              "  /run git status                  - Check git status\n" +
+              "  /run ls -la                      - List files with details"
+          };
+        }
+
+        const command = args.join(" ");
+        let output = "🚀 Running: " + command + "\n";
+        output += "═".repeat(12 + command.length) + "\n\n";
+
+        try {
+          const child = await run(command);
+          const result = await child;
+
+          output += "✅ Command completed\n\n";
+
+          if (result.stdout) {
+            output += "📤 Output:\n" + result.stdout + "\n\n";
+          }
+
+          if (result.stderr) {
+            output += "⚠️ Errors:\n" + result.stderr + "\n\n";
+          }
+
+          output += "📊 Exit code: " + result.exitCode;
+
+          return { output };
+        } catch (error: any) {
+          output += "❌ Command failed\n\n";
+
+          if (error.stdout) {
+            output += "📤 Output:\n" + error.stdout + "\n\n";
+          }
+
+          if (error.stderr) {
+            output += "⚠️ Error output:\n" + error.stderr + "\n\n";
+          }
+
+          output += "📊 Exit code: " + (error.exitCode || "unknown") + "\n";
+          output += "❌ Error: " + error.message;
+
+          return { output };
+        }
+      } catch (error) {
+        return {
+          error: "Run command failed: " + (error instanceof Error ? error.message : String(error))
+        };
+      }
+    }
+  },
+
+  {
+    name: "test",
+    description: "Run test suites with comprehensive output and coverage information",
+    summary: "Execute project tests",
+    category: "Core",
+    usage: "[test-pattern] [options]",
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        let output = "🧪 Test Execution\n";
+        output += "═══════════════\n\n";
+
+        // Detect test framework
+        let testCommand = "";
+        try {
+          const packageJson = await fs.readFile("package.json", "utf-8");
+          const pkg = JSON.parse(packageJson);
+
+          if (pkg.scripts?.test) {
+            testCommand = "npm test";
+          } else if (pkg.devDependencies?.jest || pkg.dependencies?.jest) {
+            testCommand = "npx jest";
+          } else if (pkg.devDependencies?.mocha || pkg.dependencies?.mocha) {
+            testCommand = "npx mocha";
+          } else {
+            return {
+              error: "❌ No test framework detected\n\n" +
+                "Supported frameworks:\n" +
+                "  • Jest (npx jest)\n" +
+                "  • Mocha (npx mocha)\n" +
+                "  • npm test script\n\n" +
+                "Add a test script to package.json or install a test framework"
+            };
+          }
+        } catch (error) {
+          testCommand = "npm test"; // fallback
+        }
+
+        // Add test pattern if provided
+        if (args.length > 0 && !args[0].startsWith("--")) {
+          testCommand += " " + args[0];
+        }
+
+        // Add flags
+        const flags = args.filter(arg => arg.startsWith("--"));
+        if (flags.includes("--coverage")) {
+          testCommand += " --coverage";
+        }
+        if (flags.includes("--watch")) {
+          testCommand += " --watch";
+        }
+
+        output += "🎯 Command: " + testCommand + "\n\n";
+
+        try {
+          const child = await run(testCommand);
+          const result = await child;
+
+          output += "✅ Tests completed\n\n";
+
+          if (result.stdout) {
+            output += "📋 Test Results:\n" + result.stdout + "\n\n";
+          }
+
+          if (result.stderr) {
+            output += "⚠️ Test Warnings:\n" + result.stderr + "\n\n";
+          }
+
+          output += "📊 Exit code: " + result.exitCode;
+
+          if (result.exitCode === 0) {
+            output += " (All tests passed!)";
+          } else {
+            output += " (Some tests failed)";
+          }
+
+          return { output };
+        } catch (error: any) {
+          output += "❌ Tests failed\n\n";
+
+          if (error.stdout) {
+            output += "📋 Test Output:\n" + error.stdout + "\n\n";
+          }
+
+          if (error.stderr) {
+            output += "❌ Test Errors:\n" + error.stderr + "\n\n";
+          }
+
+          output += "📊 Exit code: " + (error.exitCode || "unknown");
+
+          return { output };
+        }
+      } catch (error) {
+        return {
+          error: "Test command failed: " + (error instanceof Error ? error.message : String(error))
+        };
+      }
+    }
+  },
+
+  {
+    name: "git",
+    description: "Git operations with status, diff, commit, and branch management",
+    summary: "Git version control operations",
+    category: "Core",
+    usage: "<operation> [args...]",
+    requiresArgs: true,
+    execute: async (args: string[], session: any, provider?: any) => {
+      try {
+        if (args.length === 0) {
+          return {
+            error: "❌ Git operation required\n\n" +
+              "Usage: /git <operation> [args...]\n\n" +
+              "Operations:\n" +
+              "  /git status              - Show working tree status\n" +
+              "  /git diff                - Show changes\n" +
+              "  /git commit \"message\"    - Commit changes\n" +
+              "  /git log                 - Show commit history\n" +
+              "  /git branch              - Show branches"
+          };
+        }
+
+        const operation = args[0];
+        let output = "🌿 Git: " + operation + "\n";
+        output += "═".repeat(8 + operation.length) + "\n\n";
+
+        try {
+          switch (operation) {
+            case "status":
+              const status = await git.status();
+              output += "📊 Repository Status:\n\n";
+              output += "📂 Current branch: " + status.current + "\n";
+
+              if (status.ahead > 0) {
+                output += "⬆️ Ahead by " + status.ahead + " commits\n";
+              }
+              if (status.behind > 0) {
+                output += "⬇️ Behind by " + status.behind + " commits\n";
+              }
+
+              if (status.files.length === 0) {
+                output += "\n✅ Working tree clean";
+              } else {
+                output += "\n📝 Changes:\n";
+                for (const file of status.files) {
+                  const icon = file.index === "M" ? "📝" : file.index === "A" ? "➕" : file.index === "D" ? "❌" : "❓";
+                  output += "  " + icon + " " + file.path + "\n";
+                }
+              }
+              break;
+
+            case "diff":
+              const diff = await git.diff();
+              if (diff) {
+                output += "📋 Changes:\n\n" + diff;
+              } else {
+                output += "✅ No changes to display";
+              }
+              break;
+
+            case "commit":
+              if (args.length < 2) {
+                return {
+                  error: "❌ Commit message required\n" +
+                    "Usage: /git commit \"Your commit message\""
+                };
+              }
+              const message = args.slice(1).join(" ");
+              const commitResult = await git.commit(message);
+              output += "✅ Committed: " + commitResult.commit + "\n";
+              output += "📝 Message: " + message;
+              break;
+
+            default:
+              // For other operations, use shell execution
+              const command = "git " + args.join(" ");
+              const child = await run(command);
+              const result = await child;
+
+              if (result.stdout) {
+                output += result.stdout;
+              }
+              if (result.stderr) {
+                output += "\n⚠️ " + result.stderr;
+              }
+              break;
+          }
+
+          return { output };
+        } catch (error: any) {
+          return {
+            error: "❌ Git operation failed: " + error.message + "\n\n" +
+              "💡 Make sure you're in a Git repository\n" +
+              "💡 Run 'git init' to initialize a repository"
+          };
+        }
+      } catch (error) {
+        return {
+          error: "Git command failed: " + (error instanceof Error ? error.message : String(error))
         };
       }
     }

@@ -224,15 +224,15 @@ export class ResourceManager {
     const toRelease = Array.from(this.resources.values())
       .filter(resource => resource.type === type);
 
-    let released = 0;
+    let releasedCount = 0;
     for (const resource of toRelease) {
-      const released = await this.release(resource.id);
-      if (released) {
-        released++;
+      const wasReleased = await this.release(resource.id);
+      if (wasReleased) {
+        releasedCount++;
       }
     }
 
-    return released;
+    return releasedCount;
   }
 
   /**
