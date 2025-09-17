@@ -6,25 +6,25 @@ This document provides comprehensive documentation of mouse support capabilities
 
 ## Platform Support Matrix
 
-| Platform | Mouse Support | Protocol | Max Coordinates | Notes |
-|----------|--------------|----------|-----------------|-------|
-| **Windows** | | | | |
-| Windows Terminal | ✅ Full | SGR | 65535×65535 | Best support on Windows |
-| ConPTY | ✅ Full | SGR | 65535×65535 | Windows 10+ native |
-| Command Prompt | ⚠️ Limited | Legacy | 255×255 | Basic click only |
-| PowerShell | ✅ Full | SGR | 65535×65535 | Via Windows Terminal |
-| Git Bash | ✅ Full | Xterm | 255×255 | MINGW environment |
-| **macOS** | | | | |
-| Terminal.app | ✅ Full | SGR | 65535×65535 | Native macOS terminal |
-| iTerm2 | ✅ Full | SGR | 65535×65535 | Advanced features, drag & drop |
-| Alacritty | ✅ Full | SGR | 65535×65535 | GPU-accelerated |
-| Kitty | ✅ Full | SGR/Custom | 65535×65535 | Custom protocol available |
-| **Linux** | | | | |
-| GNOME Terminal | ✅ Full | SGR | 65535×65535 | Default on GNOME |
-| Konsole | ✅ Full | SGR | 65535×65535 | KDE terminal |
-| xterm | ✅ Full | Xterm/SGR | 255×255/65535×65535 | Original implementation |
-| rxvt-unicode | ✅ Full | Xterm | 255×255 | Lightweight option |
-| Linux Console (TTY) | ❌ None | - | - | No mouse in pure TTY |
+| Platform            | Mouse Support | Protocol   | Max Coordinates     | Notes                          |
+| ------------------- | ------------- | ---------- | ------------------- | ------------------------------ |
+| **Windows**         |               |            |                     |                                |
+| Windows Terminal    | ✅ Full       | SGR        | 65535×65535         | Best support on Windows        |
+| ConPTY              | ✅ Full       | SGR        | 65535×65535         | Windows 10+ native             |
+| Command Prompt      | ⚠️ Limited    | Legacy     | 255×255             | Basic click only               |
+| PowerShell          | ✅ Full       | SGR        | 65535×65535         | Via Windows Terminal           |
+| Git Bash            | ✅ Full       | Xterm      | 255×255             | MINGW environment              |
+| **macOS**           |               |            |                     |                                |
+| Terminal.app        | ✅ Full       | SGR        | 65535×65535         | Native macOS terminal          |
+| iTerm2              | ✅ Full       | SGR        | 65535×65535         | Advanced features, drag & drop |
+| Alacritty           | ✅ Full       | SGR        | 65535×65535         | GPU-accelerated                |
+| Kitty               | ✅ Full       | SGR/Custom | 65535×65535         | Custom protocol available      |
+| **Linux**           |               |            |                     |                                |
+| GNOME Terminal      | ✅ Full       | SGR        | 65535×65535         | Default on GNOME               |
+| Konsole             | ✅ Full       | SGR        | 65535×65535         | KDE terminal                   |
+| xterm               | ✅ Full       | Xterm/SGR  | 255×255/65535×65535 | Original implementation        |
+| rxvt-unicode        | ✅ Full       | Xterm      | 255×255             | Lightweight option             |
+| Linux Console (TTY) | ❌ None       | -          | -                   | No mouse in pure TTY           |
 
 ## Environment-Specific Capabilities
 
@@ -239,9 +239,9 @@ class PlatformDetector {
       isDocker: this.detectDocker(),
       isSSH: this.detectSSH(),
       terminal: this.detectTerminal(),
-      mouseCapabilities: this.detectMouseCapabilities()
+      mouseCapabilities: this.detectMouseCapabilities(),
     };
-    
+
     return info;
   }
 
@@ -249,14 +249,14 @@ class PlatformDetector {
     return !!(
       process.env.WSL_DISTRO_NAME ||
       process.env.WSL_INTEROP ||
-      fs.existsSync('/proc/sys/fs/binfmt_misc/WSLInterop')
+      fs.existsSync("/proc/sys/fs/binfmt_misc/WSLInterop")
     );
   }
 
   private detectDocker(): boolean {
     return !!(
       process.env.container ||
-      fs.existsSync('/.dockerenv') ||
+      fs.existsSync("/.dockerenv") ||
       this.checkCGroup()
     );
   }
@@ -270,46 +270,46 @@ class PlatformDetector {
   }
 
   private detectTerminal(): TerminalInfo {
-    const term = process.env.TERM || 'unknown';
-    const program = process.env.TERM_PROGRAM || '';
-    
+    const term = process.env.TERM || "unknown";
+    const program = process.env.TERM_PROGRAM || "";
+
     return {
       type: term,
       program: program,
       isWindowsTerminal: !!process.env.WT_SESSION,
       isVSCode: !!process.env.TERM_PROGRAM_VERSION,
       tmux: !!process.env.TMUX,
-      screen: !!process.env.STY
+      screen: !!process.env.STY,
     };
   }
 
   private detectMouseCapabilities(): MouseCapabilities {
-    const term = process.env.TERM || '';
-    
-    if (term === 'dumb' || term === 'cons25') {
-      return { supported: false, protocol: 'none' };
+    const term = process.env.TERM || "";
+
+    if (term === "dumb" || term === "cons25") {
+      return { supported: false, protocol: "none" };
     }
 
-    if (term.includes('xterm-256color')) {
-      return { 
-        supported: true, 
-        protocol: 'sgr',
-        fallback: 'xterm'
+    if (term.includes("xterm-256color")) {
+      return {
+        supported: true,
+        protocol: "sgr",
+        fallback: "xterm",
       };
     }
 
-    if (term.includes('xterm')) {
-      return { 
-        supported: true, 
-        protocol: 'xterm',
-        fallback: 'dec'
+    if (term.includes("xterm")) {
+      return {
+        supported: true,
+        protocol: "xterm",
+        fallback: "dec",
       };
     }
 
-    return { 
-      supported: true, 
-      protocol: 'dec',
-      fallback: 'none'
+    return {
+      supported: true,
+      protocol: "dec",
+      fallback: "none",
     };
   }
 }
@@ -343,12 +343,12 @@ class PlatformDetector {
 
 ```typescript
 class MouseManager {
-  private protocol: MouseProtocol = 'none';
+  private protocol: MouseProtocol = "none";
   private enabled: boolean = false;
 
   async initialize(): Promise<void> {
-    const protocols: MouseProtocol[] = ['sgr', 'xterm', 'dec'];
-    
+    const protocols: MouseProtocol[] = ["sgr", "xterm", "dec"];
+
     for (const protocol of protocols) {
       if (await this.tryProtocol(protocol)) {
         this.protocol = protocol;
@@ -356,9 +356,9 @@ class MouseManager {
         return;
       }
     }
-    
+
     // All protocols failed, use keyboard fallback
-    console.warn('Mouse support unavailable, using keyboard navigation');
+    console.warn("Mouse support unavailable, using keyboard navigation");
     this.enabled = false;
   }
 
@@ -366,7 +366,7 @@ class MouseManager {
     try {
       const sequence = this.getEnableSequence(protocol);
       await this.writeToTerminal(sequence);
-      
+
       // Test with a timeout
       const response = await this.waitForMouseEvent(100);
       return !!response;
@@ -380,6 +380,7 @@ class MouseManager {
 ## Best Practices
 
 ### Do's
+
 - ✅ Always detect capabilities before enabling
 - ✅ Provide keyboard fallbacks for all mouse operations
 - ✅ Test in target environments during development
@@ -388,6 +389,7 @@ class MouseManager {
 - ✅ Clean up (disable mouse) on exit
 
 ### Don'ts
+
 - ❌ Assume mouse support exists
 - ❌ Use platform-specific features without detection
 - ❌ Ignore terminal multiplexers
@@ -398,6 +400,7 @@ class MouseManager {
 ## Testing Checklist
 
 ### Environment Testing
+
 - [ ] Windows Terminal on Windows 10/11
 - [ ] Terminal.app on macOS
 - [ ] GNOME Terminal on Ubuntu
@@ -409,6 +412,7 @@ class MouseManager {
 - [ ] CI/CD environment (GitHub Actions)
 
 ### Feature Testing
+
 - [ ] Left click
 - [ ] Right click
 - [ ] Middle click
@@ -425,24 +429,28 @@ class MouseManager {
 ### Common Issues
 
 **Issue**: Mouse events not received
+
 - Check `$TERM` environment variable
 - Verify terminal emulator settings
 - Test with `cat -v` to see raw input
 - Check for terminal multiplexers
 
 **Issue**: Wrong coordinates
+
 - Verify protocol detection
 - Check for coordinate overflow
 - Account for terminal padding/borders
 - Consider DPI scaling on macOS
 
 **Issue**: Clipboard not working
+
 - Platform-specific clipboard commands
 - Check for `pbcopy`, `xclip`, `clip.exe`
 - Verify permissions in containers
 - Test with simple echo pipe
 
 **Issue**: Mouse breaks in SSH
+
 - Ensure client terminal supports mouse
 - Check SSH forwarding settings
 - Verify both ends have compatible `$TERM`

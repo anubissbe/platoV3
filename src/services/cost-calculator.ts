@@ -1,15 +1,19 @@
 /**
  * Cost Calculator Service
- * 
+ *
  * Provides cost calculation functionality for different AI providers
  * Based on token usage and provider-specific pricing models
  */
 
-import { TokenPricing, ProviderPricing, MetricValidationError } from './analytics-types.js';
+import {
+  TokenPricing,
+  ProviderPricing,
+  MetricValidationError,
+} from "./analytics-types.js";
 
 /**
  * CostCalculator - Calculates AI usage costs based on provider pricing
- * 
+ *
  * Supports multiple providers with different pricing models and allows
  * dynamic pricing updates for changing provider rates
  */
@@ -19,18 +23,18 @@ export class CostCalculator {
    * Based on current market rates as of 2025-09-08
    */
   private static readonly DEFAULT_PRICING: ProviderPricing = {
-    'copilot': { 
-      input: 0.000002,  // $0.002 per 1K input tokens
-      output: 0.000008  // $0.008 per 1K output tokens
+    copilot: {
+      input: 0.000002, // $0.002 per 1K input tokens
+      output: 0.000008, // $0.008 per 1K output tokens
     },
-    'gpt-4': { 
-      input: 0.00003,   // $0.03 per 1K input tokens
-      output: 0.00006   // $0.06 per 1K output tokens
+    "gpt-4": {
+      input: 0.00003, // $0.03 per 1K input tokens
+      output: 0.00006, // $0.06 per 1K output tokens
     },
-    'claude-3': { 
-      input: 0.000015,  // $0.015 per 1K input tokens
-      output: 0.000075  // $0.075 per 1K output tokens
-    }
+    "claude-3": {
+      input: 0.000015, // $0.015 per 1K input tokens
+      output: 0.000075, // $0.075 per 1K output tokens
+    },
   };
 
   /**
@@ -44,12 +48,17 @@ export class CostCalculator {
   constructor(customPricing?: Partial<ProviderPricing>) {
     // Create a properly typed pricing object
     this.pricing = { ...CostCalculator.DEFAULT_PRICING };
-    
+
     // Apply custom pricing if provided
     if (customPricing) {
-      Object.keys(customPricing).forEach(provider => {
+      Object.keys(customPricing).forEach((provider) => {
         const pricing = customPricing[provider];
-        if (pricing && typeof pricing === "object" && "input" in pricing && "output" in pricing) {
+        if (
+          pricing &&
+          typeof pricing === "object" &&
+          "input" in pricing &&
+          "output" in pricing
+        ) {
           this.pricing[provider] = pricing;
         }
       });
@@ -58,13 +67,13 @@ export class CostCalculator {
 
   /**
    * Calculate the cost for an AI interaction
-   * 
+   *
    * @param provider - AI provider name ('copilot', 'gpt-4', 'claude-3', etc.)
    * @param model - Specific model name (for future multi-model support)
    * @param inputTokens - Number of tokens in the input/prompt
    * @param outputTokens - Number of tokens in the generated response
    * @returns Total cost in USD for this interaction
-   * 
+   *
    * @example
    * ```typescript
    * const calculator = new CostCalculator();
@@ -73,10 +82,10 @@ export class CostCalculator {
    * ```
    */
   calculateCost(
-    provider: string, 
-    model: string, 
-    inputTokens: number, 
-    outputTokens: number
+    provider: string,
+    model: string,
+    inputTokens: number,
+    outputTokens: number,
   ): number {
     // Validate inputs
     this.validateCalculationInputs(provider, model, inputTokens, outputTokens);
@@ -100,10 +109,10 @@ export class CostCalculator {
 
   /**
    * Update pricing for a specific provider
-   * 
+   *
    * @param provider - Provider name to update
    * @param pricing - New pricing configuration
-   * 
+   *
    * @example
    * ```typescript
    * calculator.updatePricing('copilot', {
@@ -114,19 +123,22 @@ export class CostCalculator {
    */
   updatePricing(provider: string, pricing: TokenPricing): void {
     // Validate pricing input
-    if (typeof pricing.input !== 'number' || typeof pricing.output !== 'number') {
+    if (
+      typeof pricing.input !== "number" ||
+      typeof pricing.output !== "number"
+    ) {
       throw new MetricValidationError(
-        'Pricing must contain valid input and output numbers',
-        'cost',
-        pricing
+        "Pricing must contain valid input and output numbers",
+        "cost",
+        pricing,
       );
     }
 
     if (pricing.input < 0 || pricing.output < 0) {
       throw new MetricValidationError(
-        'Pricing values cannot be negative',
-        'cost',
-        pricing
+        "Pricing values cannot be negative",
+        "cost",
+        pricing,
       );
     }
 
@@ -136,7 +148,7 @@ export class CostCalculator {
 
   /**
    * Get current pricing for a provider
-   * 
+   *
    * @param provider - Provider name
    * @returns Current pricing configuration or undefined if not found
    */
@@ -146,7 +158,7 @@ export class CostCalculator {
 
   /**
    * Get all current provider pricing
-   * 
+   *
    * @returns Copy of all provider pricing configurations
    */
   getAllPricing(): ProviderPricing {
@@ -160,7 +172,7 @@ export class CostCalculator {
 
   /**
    * Check if a provider is supported
-   * 
+   *
    * @param provider - Provider name to check
    * @returns True if provider is supported
    */
@@ -170,7 +182,7 @@ export class CostCalculator {
 
   /**
    * Get list of supported providers
-   * 
+   *
    * @returns Array of supported provider names
    */
   getSupportedProviders(): string[] {
@@ -186,7 +198,7 @@ export class CostCalculator {
 
   /**
    * Calculate cost breakdown for detailed analysis
-   * 
+   *
    * @param provider - AI provider name
    * @param model - Model name
    * @param inputTokens - Input token count
@@ -197,7 +209,7 @@ export class CostCalculator {
     provider: string,
     model: string,
     inputTokens: number,
-    outputTokens: number
+    outputTokens: number,
   ): {
     provider: string;
     model: string;
@@ -212,7 +224,9 @@ export class CostCalculator {
 
     const providerPricing = this.pricing[provider] || null;
     const inputCost = providerPricing ? inputTokens * providerPricing.input : 0;
-    const outputCost = providerPricing ? outputTokens * providerPricing.output : 0;
+    const outputCost = providerPricing
+      ? outputTokens * providerPricing.output
+      : 0;
     const totalCost = inputCost + outputCost;
 
     return {
@@ -223,13 +237,13 @@ export class CostCalculator {
       inputCost: Math.round(inputCost * 1000000) / 1000000,
       outputCost: Math.round(outputCost * 1000000) / 1000000,
       totalCost: Math.round(totalCost * 1000000) / 1000000,
-      pricing: providerPricing ? { ...providerPricing } : null
+      pricing: providerPricing ? { ...providerPricing } : null,
     };
   }
 
   /**
    * Estimate monthly cost based on daily usage patterns
-   * 
+   *
    * @param dailyMetrics - Average daily usage
    * @returns Estimated monthly cost
    */
@@ -244,7 +258,7 @@ export class CostCalculator {
       dailyMetrics.provider,
       dailyMetrics.model,
       dailyMetrics.avgInputTokens * dailyMetrics.interactions,
-      dailyMetrics.avgOutputTokens * dailyMetrics.interactions
+      dailyMetrics.avgOutputTokens * dailyMetrics.interactions,
     );
 
     // Multiply by 30 days for monthly estimate
@@ -253,23 +267,23 @@ export class CostCalculator {
 
   /**
    * Compare costs between different providers for the same usage
-   * 
+   *
    * @param inputTokens - Input token count
    * @param outputTokens - Output token count
    * @returns Cost comparison across all supported providers
    */
   compareProviderCosts(
-    inputTokens: number, 
-    outputTokens: number
+    inputTokens: number,
+    outputTokens: number,
   ): Array<{
     provider: string;
     cost: number;
     savings?: number;
     savingsPercentage?: number;
   }> {
-    const results = this.getSupportedProviders().map(provider => ({
+    const results = this.getSupportedProviders().map((provider) => ({
       provider,
-      cost: this.calculateCost(provider, '', inputTokens, outputTokens)
+      cost: this.calculateCost(provider, "", inputTokens, outputTokens),
     }));
 
     // Sort by cost (lowest first)
@@ -277,13 +291,19 @@ export class CostCalculator {
 
     // Calculate savings relative to most expensive
     const mostExpensive = results[results.length - 1];
-    
-    return results.map(result => ({
+
+    return results.map((result) => ({
       ...result,
-      savings: result.cost < mostExpensive.cost ? mostExpensive.cost - result.cost : undefined,
-      savingsPercentage: result.cost < mostExpensive.cost 
-        ? Math.round(((mostExpensive.cost - result.cost) / mostExpensive.cost) * 100)
-        : undefined
+      savings:
+        result.cost < mostExpensive.cost
+          ? mostExpensive.cost - result.cost
+          : undefined,
+      savingsPercentage:
+        result.cost < mostExpensive.cost
+          ? Math.round(
+              ((mostExpensive.cost - result.cost) / mostExpensive.cost) * 100,
+            )
+          : undefined,
     }));
   }
 
@@ -294,37 +314,41 @@ export class CostCalculator {
     provider: string,
     model: string,
     inputTokens: number,
-    outputTokens: number
+    outputTokens: number,
   ): void {
-    if (typeof provider !== 'string' || provider.trim().length === 0) {
+    if (typeof provider !== "string" || provider.trim().length === 0) {
       throw new MetricValidationError(
-        'Provider must be a non-empty string',
-        'provider',
-        provider
+        "Provider must be a non-empty string",
+        "provider",
+        provider,
       );
     }
 
-    if (typeof model !== 'string') {
+    if (typeof model !== "string") {
+      throw new MetricValidationError("Model must be a string", "model", model);
+    }
+
+    if (
+      typeof inputTokens !== "number" ||
+      inputTokens < 0 ||
+      !Number.isInteger(inputTokens)
+    ) {
       throw new MetricValidationError(
-        'Model must be a string',
-        'model',
-        model
+        "Input tokens must be a non-negative integer",
+        "inputTokens",
+        inputTokens,
       );
     }
 
-    if (typeof inputTokens !== 'number' || inputTokens < 0 || !Number.isInteger(inputTokens)) {
+    if (
+      typeof outputTokens !== "number" ||
+      outputTokens < 0 ||
+      !Number.isInteger(outputTokens)
+    ) {
       throw new MetricValidationError(
-        'Input tokens must be a non-negative integer',
-        'inputTokens',
-        inputTokens
-      );
-    }
-
-    if (typeof outputTokens !== 'number' || outputTokens < 0 || !Number.isInteger(outputTokens)) {
-      throw new MetricValidationError(
-        'Output tokens must be a non-negative integer',
-        'outputTokens',
-        outputTokens
+        "Output tokens must be a non-negative integer",
+        "outputTokens",
+        outputTokens,
       );
     }
 
@@ -333,8 +357,8 @@ export class CostCalculator {
     if (inputTokens > MAX_TOKENS || outputTokens > MAX_TOKENS) {
       throw new MetricValidationError(
         `Token count exceeds maximum allowed (${MAX_TOKENS})`,
-        inputTokens > MAX_TOKENS ? 'inputTokens' : 'outputTokens',
-        inputTokens > MAX_TOKENS ? inputTokens : outputTokens
+        inputTokens > MAX_TOKENS ? "inputTokens" : "outputTokens",
+        inputTokens > MAX_TOKENS ? inputTokens : outputTokens,
       );
     }
   }

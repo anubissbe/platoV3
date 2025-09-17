@@ -3,42 +3,47 @@
  * Manages conversation state, metrics collection, and progress tracking
  */
 
-import { EventEmitter } from 'events';
+import { EventEmitter } from "events";
 
-export type ConversationState = 'idle' | 'streaming' | 'processing' | 'error' | 'waiting';
+export type ConversationState =
+  | "idle"
+  | "streaming"
+  | "processing"
+  | "error"
+  | "waiting";
 
 export interface StatusMetrics {
   // Token metrics
   inputTokens: number;
   outputTokens: number;
   totalTokens: number;
-  
+
   // Performance metrics
   responseTime: number;
   averageResponseTime: number;
-  
+
   // Memory metrics
   memoryUsageMB: number;
   memoryPercentage: number;
-  
+
   // Session metrics
   sessionTurns: number;
   sessionTokens: number;
-  
+
   // Streaming metrics
   streamProgress: number;
   charactersStreamed: number;
-  
+
   // Tool call metrics
   activeToolCall: string | null;
   toolCallHistory: ToolCallRecord[];
-  
+
   // Error state
   lastError: string | null;
-  
+
   // Progress indicators
   indeterminateProgress: boolean;
-  
+
   // Cost analytics metrics
   currentCost: number;
   sessionCost: number;
@@ -85,7 +90,7 @@ export interface SerializedState {
 type MetricFormatter = (value: number) => string;
 
 export class StatusManager {
-  private state: ConversationState = 'idle';
+  private state: ConversationState = "idle";
   private metrics: StatusMetrics;
   private eventEmitter: EventEmitter;
   private config: StatusConfig;
@@ -105,11 +110,11 @@ export class StatusManager {
       memoryCheckInterval: 5000,
       collectMetrics: true,
       maxHistorySize: 100,
-      ...config
+      ...config,
     };
-    
+
     this.metrics = this.initializeMetrics();
-    
+
     if (this.config.collectMetrics && this.config.memoryCheckInterval) {
       this.startMemoryMonitoring();
     }
@@ -139,7 +144,7 @@ export class StatusManager {
       projectedCost: 0,
       costThreshold: undefined,
       model: undefined,
-      provider: undefined
+      provider: undefined,
     };
   }
 
@@ -150,11 +155,14 @@ export class StatusManager {
         heapUsed: usage.heapUsed,
         heapTotal: usage.heapTotal,
         external: usage.external,
-        rss: usage.rss
+        rss: usage.rss,
       });
     };
-    
-    this.memoryCheckTimer = setInterval(checkMemory, this.config.memoryCheckInterval);
+
+    this.memoryCheckTimer = setInterval(
+      checkMemory,
+      this.config.memoryCheckInterval,
+    );
     checkMemory(); // Initial check
   }
 
@@ -172,7 +180,7 @@ export class StatusManager {
 
   public configure(config: Partial<StatusConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     // Restart memory monitoring if interval changed
     if (config.memoryCheckInterval !== undefined && this.memoryCheckTimer) {
       clearInterval(this.memoryCheckTimer);
@@ -185,23 +193,23 @@ export class StatusManager {
   private setState(newState: ConversationState): void {
     const oldState = this.state;
     this.state = newState;
-    
-    this.eventEmitter.emit('status:stateChange', {
+
+    this.eventEmitter.emit("status:stateChange", {
       oldState,
       newState,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
   private updateMetrics(updates: Partial<StatusMetrics>): void {
     this.metrics = { ...this.metrics, ...updates };
-    
-    this.eventEmitter.emit('status:metricsUpdate', this.metrics);
+
+    this.eventEmitter.emit("status:metricsUpdate", this.metrics);
   }
 
   // Streaming management
   public startStreaming(): void {
-    this.setState('streaming');
+    this.setState("streaming");
     this.streamStartTime = Date.now();
     this.metrics.streamProgress = 0;
     this.metrics.charactersStreamed = 0;
@@ -210,17 +218,17 @@ export class StatusManager {
 
   public updateStreamProgress(current: number, total: number): void {
     const progress = this.calculateProgress(current, total);
-    
+
     this.updateMetrics({
       streamProgress: progress,
-      charactersStreamed: current
+      charactersStreamed: current,
     });
-    
-    this.eventEmitter.emit('status:progress', {
+
+    this.eventEmitter.emit("status:progress", {
       percentage: progress,
       current,
       total,
-      type: 'streaming'
+      type: "streaming",
     });
   }
 
@@ -230,75 +238,78 @@ export class StatusManager {
       this.recordResponseTime(responseTime);
       this.streamStartTime = null;
     }
-    
-    this.setState('idle');
+
+    this.setState("idle");
     this.updateMetrics({
       streamProgress: 100,
-      indeterminateProgress: false
+      indeterminateProgress: false,
     });
   }
 
   // Tool call management
   public startToolCall(tool: string, params?: any): void {
-    this.setState('processing');
+    this.setState("processing");
     this.toolCallStartTime = Date.now();
-    
+
     const toolCall: ToolCallRecord = {
       tool,
       startTime: this.toolCallStartTime,
-      params
+      params,
     };
-    
+
     this.updateMetrics({
-      activeToolCall: tool
+      activeToolCall: tool,
     });
-    
-    this.eventEmitter.emit('status:toolCall', {
+
+    this.eventEmitter.emit("status:toolCall", {
       tool,
-      status: 'start',
-      params
+      status: "start",
+      params,
     });
   }
 
-  public endToolCall(tool: string, result: { success: boolean; error?: string }): void {
+  public endToolCall(
+    tool: string,
+    result: { success: boolean; error?: string },
+  ): void {
     if (this.toolCallStartTime) {
       const endTime = Date.now();
       const duration = endTime - this.toolCallStartTime;
-      
+
       const toolCall: ToolCallRecord = {
         tool,
         startTime: this.toolCallStartTime,
         endTime,
         success: result.success,
-        error: result.error
+        error: result.error,
       };
-      
+
       this.metrics.toolCallHistory.push(toolCall);
       this.toolCallStartTime = null;
     }
-    
+
     this.updateMetrics({
-      activeToolCall: null
+      activeToolCall: null,
     });
-    
-    this.setState('idle');
-    
-    this.eventEmitter.emit('status:toolCall', {
+
+    this.setState("idle");
+
+    this.eventEmitter.emit("status:toolCall", {
       tool,
-      status: 'end',
-      ...result
+      status: "end",
+      ...result,
     });
   }
 
   // Token tracking
   public updateTokens(input: number, output: number): void {
     if (!this.config.collectMetrics) return;
-    
+
     this.updateMetrics({
       inputTokens: this.metrics.inputTokens + input,
       outputTokens: this.metrics.outputTokens + output,
       totalTokens: this.metrics.totalTokens + input + output,
-      sessionTokens: this.metrics.sessionTokens + input + output
+      sessionTokens: this.metrics.sessionTokens + input + output,
     });
   }
 
@@ -312,34 +323,35 @@ export class StatusManager {
     const usedMB = usage.heapUsed / (1024 * 1024);
     const totalMB = usage.heapTotal / (1024 * 1024);
     const percentage = (usage.heapUsed / usage.heapTotal) * 100;
-    
+
     this.updateMetrics({
       memoryUsageMB: Math.round(usedMB * 10) / 10,
-      memoryPercentage: Math.round(percentage)
+      memoryPercentage: Math.round(percentage),
     });
   }
 
   // Response time tracking
   public recordResponseTime(ms: number): void {
     this.responseTimes.push(ms);
-    
+
     // Keep only last 50 response times
     if (this.responseTimes.length > 50) {
       this.responseTimes.shift();
     }
-    
-    const average = this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length;
-    
+
+    const average =
+      this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length;
+
     this.updateMetrics({
       responseTime: ms,
-      averageResponseTime: Math.round(average)
+      averageResponseTime: Math.round(average),
     });
   }
 
   // Turn management
   public incrementTurn(): void {
     this.updateMetrics({
-      sessionTurns: this.metrics.sessionTurns + 1
+      sessionTurns: this.metrics.sessionTurns + 1,
     });
   }
 
@@ -355,7 +367,7 @@ export class StatusManager {
     provider?: string;
   }): void {
     if (!this.config.collectMetrics) return;
-    
+
     this.updateMetrics({
       currentCost: costData.currentCost ?? this.metrics.currentCost,
       sessionCost: costData.sessionCost ?? this.metrics.sessionCost,
@@ -364,39 +376,39 @@ export class StatusManager {
       projectedCost: costData.projectedCost ?? this.metrics.projectedCost,
       costThreshold: costData.costThreshold ?? this.metrics.costThreshold,
       model: costData.model ?? this.metrics.model,
-      provider: costData.provider ?? this.metrics.provider
+      provider: costData.provider ?? this.metrics.provider,
     });
   }
 
   public incrementCost(amount: number): void {
     if (!this.config.collectMetrics) return;
-    
+
     this.updateMetrics({
       currentCost: this.metrics.currentCost + amount,
       sessionCost: this.metrics.sessionCost + amount,
-      todayCost: this.metrics.todayCost + amount
+      todayCost: this.metrics.todayCost + amount,
     });
   }
 
-  public startTurn(role: 'user' | 'assistant', message: string): void {
-    if (role === 'user') {
+  public startTurn(role: "user" | "assistant", message: string): void {
+    if (role === "user") {
       this.currentTurn = {
         startTime: Date.now(),
-        userMessage: message
+        userMessage: message,
       };
       this.incrementTurn();
     }
   }
 
-  public endTurn(role: 'user' | 'assistant', message: string): void {
-    if (role === 'assistant' && this.currentTurn) {
+  public endTurn(role: "user" | "assistant", message: string): void {
+    if (role === "assistant" && this.currentTurn) {
       this.currentTurn.endTime = Date.now();
       this.currentTurn.assistantResponse = message;
       this.currentTurn.metrics = { ...this.metrics };
-      
+
       this.turnHistory.push(this.currentTurn);
       this.currentTurn = null;
-      
+
       // Prune history if too large
       if (this.turnHistory.length > this.config.maxHistorySize!) {
         this.turnHistory = this.turnHistory.slice(-this.config.maxHistorySize!);
@@ -415,12 +427,12 @@ export class StatusManager {
 
   // Error handling
   public setError(message: string): void {
-    this.setState('error');
+    this.setState("error");
     this.updateMetrics({ lastError: message });
-    
-    this.eventEmitter.emit('status:error', {
+
+    this.eventEmitter.emit("status:error", {
       message,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 
@@ -451,7 +463,7 @@ export class StatusManager {
       state: this.state,
       metrics: { ...this.metrics },
       history: [...this.turnHistory],
-      config: { ...this.config }
+      config: { ...this.config },
     };
   }
 
@@ -459,7 +471,7 @@ export class StatusManager {
     this.state = data.state;
     this.metrics = { ...data.metrics };
     this.turnHistory = [...data.history];
-    
+
     if (data.config) {
       this.configure(data.config);
     }

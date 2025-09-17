@@ -1,0 +1,50 @@
+{
+  "timestamp": "2025-09-12T21:35:23.351Z",
+  "environment": {
+    "nodeVersion": "v24.5.0",
+    "platform": "linux",
+    "arch": "x64",
+    "cpuCount": 24,
+    "totalMemory": 50126262272,
+    "freeMemory": 24130461696
+  },
+  "testResults": [
+    {
+      "testFilePath": "src/__tests__/performance.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 543150080,
+        "heapTotal": 424620032,
+        "heapUsed": 305085728,
+        "external": 6699437,
+        "arrayBuffers": 3122468
+      },
+      "timestamp": "2025-09-12T21:35:24.347Z"
+    }
+  ],
+  "summary": {
+    "totalTests": 0,
+    "passedTests": 0,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "totalDuration": 0,
+    "averageTestDuration": 0,
+    "slowTests": [],
+    "performanceMetrics": {
+      "benchmarkTests": 0,
+      "loadTests": 0,
+      "memoryTests": 0,
+      "stabilityTests": 0,
+      "memoryStats": {
+        "min": 305085728,
+        "max": 305085728,
+        "average": 305085728,
+        "growth": 0
+      }
+    }
+  }
+}

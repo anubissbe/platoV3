@@ -5,23 +5,27 @@ Welcome to the Plato project wiki! This is your comprehensive guide to understan
 ## 📚 Documentation
 
 ### Getting Started
+
 - [Installation Guide](Installation) - Set up Plato on your system
 - [Quick Start](Quick-Start) - Get up and running in minutes
 - [Configuration](Configuration) - Customize Plato to your needs
 
 ### User Guides
+
 - [Slash Commands](Slash-Commands) - Complete command reference
 - [Keyboard Shortcuts](Keyboard-Shortcuts) - Navigate efficiently
 - [Memory System](Memory-System) - Understanding conversation persistence
 - [MCP Servers](MCP-Servers) - Tool integration guide
 
 ### Developer Documentation
+
 - [Architecture Overview](Architecture) - System design and components
 - [API Reference](API-Reference) - Provider and tool interfaces
 - [Testing Guide](Testing) - Running and writing tests
 - [Contributing](Contributing) - How to contribute to Plato
 
 ### Features
+
 - [Enhanced TUI Experience](Enhanced-TUI) - Visual improvements and accessibility
 - [Advanced Context Management](Context-Management) - Intelligent file selection
 - [Patch System](Patch-System) - Code modification workflow
@@ -61,6 +65,7 @@ Welcome to the Plato project wiki! This is your comprehensive guide to understan
 ## 📞 Support
 
 For questions, issues, or feature requests:
+
 1. Check the [FAQ](FAQ) page
 2. Search existing [issues](https://git.euraika.net/Bert/plato/-/issues)
 3. Create a new issue if needed
@@ -68,6 +73,7 @@ For questions, issues, or feature requests:
 ## 🏗️ Recent Updates
 
 ### Enhanced TUI Experience (v1.0.0)
+
 - Multi-panel layout system
 - Advanced keyboard shortcuts
 - Visual components and theming
@@ -75,6 +81,7 @@ For questions, issues, or feature requests:
 - Performance optimizations
 
 ### Advanced Context Management
+
 - Semantic file indexing
 - Intelligent file selection
 - Session persistence
@@ -82,4 +89,4 @@ For questions, issues, or feature requests:
 
 ---
 
-*This wiki is continuously updated. Last modified: 2025*
+_This wiki is continuously updated. Last modified: 2025_

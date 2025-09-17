@@ -1,0 +1,26 @@
+# Helm Chart for Plato TUI Enterprise Deployment
+apiVersion: v2
+name: plato
+description: Enterprise-grade Plato TUI Terminal Assistant
+version: 1.0.0
+appVersion: "0.1.0"
+type: application
+
+keywords:
+  - terminal
+  - assistant
+  - ai
+  - cli
+  - tui
+
+home: https://git.euraika.net/Bert/plato
+sources:
+  - https://git.euraika.net/Bert/plato.git
+
+maintainers:
+  - name: Plato TUI Team
+    email: support@plato-tui.com
+
+annotations:
+  category: Development Tools
+  licenses: MIT

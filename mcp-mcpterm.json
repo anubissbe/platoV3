@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "mcpterm": {
+      "command": "/home/drwho/.local/bin/mcpterm",
+      "args": []
+    }
+  }
+}

@@ -3,11 +3,11 @@
  * Provides multi-level caching with LRU eviction and persistent storage
  */
 
-import { SemanticIndex } from './semantic-index.js';
-import { FileIndex, SymbolReference, RelevanceScore } from './types.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as crypto from 'crypto';
+import { SemanticIndex } from "./semantic-index.js";
+import { FileIndex, SymbolReference, RelevanceScore } from "./types.js";
+import * as fs from "fs/promises";
+import * as path from "path";
+import * as crypto from "crypto";
 
 export interface CacheEntry<T> {
   key: string;
@@ -47,7 +47,7 @@ export class LRUCache<T> {
     evictions: 0,
     totalSize: 0,
     entryCount: 0,
-    hitRate: 0
+    hitRate: 0,
   };
 
   constructor(private options: CacheOptions = {}) {
@@ -56,7 +56,7 @@ export class LRUCache<T> {
       maxEntries: 10000,
       ttl: 60 * 60 * 1000, // 1 hour default
       compressionEnabled: false,
-      ...options
+      ...options,
     };
   }
 
@@ -65,29 +65,29 @@ export class LRUCache<T> {
    */
   get(key: string): T | undefined {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.stats.misses++;
       return undefined;
     }
-    
+
     // Check TTL
     if (this.options.ttl && Date.now() - entry.timestamp > this.options.ttl) {
       this.delete(key);
       this.stats.misses++;
       return undefined;
     }
-    
+
     // Update access info
     entry.lastAccess = Date.now();
     entry.accessCount++;
-    
+
     // Move to front of access order
     this.moveToFront(key);
-    
+
     this.stats.hits++;
     this.updateHitRate();
-    
+
     return entry.value;
   }
 
@@ -97,7 +97,7 @@ export class LRUCache<T> {
   set(key: string, value: T): void {
     const size = this.calculateSize(value);
     const existing = this.cache.get(key);
-    
+
     if (existing) {
       // Update existing entry
       this.stats.totalSize -= existing.size;
@@ -116,18 +116,18 @@ export class LRUCache<T> {
         timestamp: Date.now(),
         accessCount: 1,
         lastAccess: Date.now(),
-        size
+        size,
       };
-      
+
       this.cache.set(key, entry);
       this.accessOrder.unshift(key);
       this.stats.totalSize += size;
       this.stats.entryCount++;
-      
+
       // Evict if necessary
       this.evictIfNecessary();
     }
-    
+
     this.updateHitRate();
   }
 
@@ -137,16 +137,16 @@ export class LRUCache<T> {
   delete(key: string): boolean {
     const entry = this.cache.get(key);
     if (!entry) return false;
-    
+
     this.cache.delete(key);
     this.stats.totalSize -= entry.size;
     this.stats.entryCount--;
-    
+
     const index = this.accessOrder.indexOf(key);
     if (index !== -1) {
       this.accessOrder.splice(index, 1);
     }
-    
+
     this.updateHitRate();
     return true;
   }
@@ -180,8 +180,11 @@ export class LRUCache<T> {
    * Check if key exists
    */
   has(key: string): boolean {
-    return this.cache.has(key) && 
-           (!this.options.ttl || Date.now() - this.cache.get(key)!.timestamp <= this.options.ttl);
+    return (
+      this.cache.has(key) &&
+      (!this.options.ttl ||
+        Date.now() - this.cache.get(key)!.timestamp <= this.options.ttl)
+    );
   }
 
   private moveToFront(key: string): void {
@@ -194,22 +197,28 @@ export class LRUCache<T> {
 
   private evictIfNecessary(): void {
     // Evict by size
-    while (this.options.maxSize && this.stats.totalSize > this.options.maxSize) {
+    while (
+      this.options.maxSize &&
+      this.stats.totalSize > this.options.maxSize
+    ) {
       this.evictLRU();
     }
-    
+
     // Evict by count
-    while (this.options.maxEntries && this.stats.entryCount > this.options.maxEntries) {
+    while (
+      this.options.maxEntries &&
+      this.stats.entryCount > this.options.maxEntries
+    ) {
       this.evictLRU();
     }
   }
 
   private evictLRU(): void {
     if (this.accessOrder.length === 0) return;
-    
+
     const lruKey = this.accessOrder.pop()!;
     const entry = this.cache.get(lruKey);
-    
+
     if (entry) {
       this.cache.delete(lruKey);
       this.stats.totalSize -= entry.size;
@@ -239,12 +248,16 @@ export class PersistentCache<T> {
   private memoryCache: LRUCache<T>;
   private cacheDir: string;
   private indexFile: string;
-  private index: Map<string, { file: string; timestamp: number; size: number }> = new Map();
+  private index: Map<
+    string,
+    { file: string; timestamp: number; size: number }
+  > = new Map();
 
   constructor(private options: CacheOptions = {}) {
     this.memoryCache = new LRUCache<T>(options);
-    this.cacheDir = options.persistentStorage || path.join(process.cwd(), '.plato', 'cache');
-    this.indexFile = path.join(this.cacheDir, 'cache-index.json');
+    this.cacheDir =
+      options.persistentStorage || path.join(process.cwd(), ".plato", "cache");
+    this.indexFile = path.join(this.cacheDir, "cache-index.json");
   }
 
   /**
@@ -255,7 +268,7 @@ export class PersistentCache<T> {
       await fs.mkdir(this.cacheDir, { recursive: true });
       await this.loadIndex();
     } catch (error) {
-      console.warn('Failed to initialize persistent cache:', error);
+      console.warn("Failed to initialize persistent cache:", error);
     }
   }
 
@@ -268,7 +281,7 @@ export class PersistentCache<T> {
     if (memoryValue !== undefined) {
       return memoryValue;
     }
-    
+
     // Try disk cache
     const diskValue = await this.getFromDisk(key);
     if (diskValue !== undefined) {
@@ -276,7 +289,7 @@ export class PersistentCache<T> {
       this.memoryCache.set(key, diskValue);
       return diskValue;
     }
-    
+
     return undefined;
   }
 
@@ -286,7 +299,7 @@ export class PersistentCache<T> {
   async set(key: string, value: T): Promise<void> {
     // Set in memory cache
     this.memoryCache.set(key, value);
-    
+
     // Set in disk cache
     await this.setToDisk(key, value);
   }
@@ -297,7 +310,7 @@ export class PersistentCache<T> {
   async delete(key: string): Promise<boolean> {
     const memoryDeleted = this.memoryCache.delete(key);
     const diskDeleted = await this.deleteFromDisk(key);
-    
+
     return memoryDeleted || diskDeleted;
   }
 
@@ -306,18 +319,20 @@ export class PersistentCache<T> {
    */
   async clear(): Promise<void> {
     this.memoryCache.clear();
-    
+
     try {
       // Remove all cache files
       const files = await fs.readdir(this.cacheDir);
       await Promise.all(
-        files.map(file => fs.unlink(path.join(this.cacheDir, file)).catch(() => {}))
+        files.map((file) =>
+          fs.unlink(path.join(this.cacheDir, file)).catch(() => {}),
+        ),
       );
-      
+
       this.index.clear();
       await this.saveIndex();
     } catch (error) {
-      console.warn('Error clearing persistent cache:', error);
+      console.warn("Error clearing persistent cache:", error);
     }
   }
 
@@ -328,7 +343,7 @@ export class PersistentCache<T> {
     const memoryStats = this.memoryCache.getStats();
     return {
       ...memoryStats,
-      diskEntries: this.index.size
+      diskEntries: this.index.size,
     };
   }
 
@@ -340,15 +355,15 @@ export class PersistentCache<T> {
     const ttl = this.options.ttl || 60 * 60 * 1000;
     let removed = 0;
     let sizeFreed = 0;
-    
+
     const expiredKeys: string[] = [];
-    
+
     for (const [key, meta] of this.index) {
       if (now - meta.timestamp > ttl) {
         expiredKeys.push(key);
       }
     }
-    
+
     for (const key of expiredKeys) {
       const meta = this.index.get(key);
       if (meta) {
@@ -362,19 +377,19 @@ export class PersistentCache<T> {
         }
       }
     }
-    
+
     if (removed > 0) {
       await this.saveIndex();
     }
-    
+
     return { removed, size: sizeFreed };
   }
 
   private async loadIndex(): Promise<void> {
     try {
-      const indexData = await fs.readFile(this.indexFile, 'utf-8');
+      const indexData = await fs.readFile(this.indexFile, "utf-8");
       const parsed = JSON.parse(indexData);
-      
+
       this.index = new Map(Object.entries(parsed));
     } catch (error) {
       // Index file doesn't exist or is corrupted, start fresh
@@ -387,23 +402,23 @@ export class PersistentCache<T> {
       const indexData = Object.fromEntries(this.index);
       await fs.writeFile(this.indexFile, JSON.stringify(indexData, null, 2));
     } catch (error) {
-      console.warn('Failed to save cache index:', error);
+      console.warn("Failed to save cache index:", error);
     }
   }
 
   private async getFromDisk(key: string): Promise<T | undefined> {
     const meta = this.index.get(key);
     if (!meta) return undefined;
-    
+
     // Check TTL
     if (this.options.ttl && Date.now() - meta.timestamp > this.options.ttl) {
       await this.deleteFromDisk(key);
       return undefined;
     }
-    
+
     try {
       const filePath = path.join(this.cacheDir, meta.file);
-      const data = await fs.readFile(filePath, 'utf-8');
+      const data = await fs.readFile(filePath, "utf-8");
       return JSON.parse(data);
     } catch (error) {
       // File corrupted or missing, remove from index
@@ -416,18 +431,18 @@ export class PersistentCache<T> {
   private async setToDisk(key: string, value: T): Promise<void> {
     try {
       const data = JSON.stringify(value);
-      const hash = crypto.createHash('sha256').update(key).digest('hex');
+      const hash = crypto.createHash("sha256").update(key).digest("hex");
       const fileName = `${hash.substring(0, 16)}.json`;
       const filePath = path.join(this.cacheDir, fileName);
-      
+
       await fs.writeFile(filePath, data);
-      
+
       this.index.set(key, {
         file: fileName,
         timestamp: Date.now(),
-        size: data.length
+        size: data.length,
       });
-      
+
       await this.saveIndex();
     } catch (error) {
       console.warn(`Failed to cache ${key} to disk:`, error);
@@ -437,7 +452,7 @@ export class PersistentCache<T> {
   private async deleteFromDisk(key: string): Promise<boolean> {
     const meta = this.index.get(key);
     if (!meta) return false;
-    
+
     try {
       const filePath = path.join(this.cacheDir, meta.file);
       await fs.unlink(filePath);
@@ -466,28 +481,31 @@ export class SemanticIndexCache {
     const baseOptions = {
       maxSize: 20 * 1024 * 1024, // 20MB per cache
       ttl: 4 * 60 * 60 * 1000, // 4 hours
-      ...options
+      ...options,
     };
 
     this.indexCache = new PersistentCache<string>({
       ...baseOptions,
-      persistentStorage: path.join(options.persistentStorage || '.plato/cache', 'index')
+      persistentStorage: path.join(
+        options.persistentStorage || ".plato/cache",
+        "index",
+      ),
     });
 
     this.fileCache = new LRUCache<FileIndex>({
       ...baseOptions,
-      maxSize: 10 * 1024 * 1024 // 10MB
+      maxSize: 10 * 1024 * 1024, // 10MB
     });
 
     this.scoreCache = new LRUCache<RelevanceScore[]>({
       ...baseOptions,
       maxSize: 5 * 1024 * 1024, // 5MB
-      ttl: 30 * 60 * 1000 // 30 minutes - scores may change more frequently
+      ttl: 30 * 60 * 1000, // 30 minutes - scores may change more frequently
     });
 
     this.symbolCache = new LRUCache<SymbolReference[]>({
       ...baseOptions,
-      maxSize: 10 * 1024 * 1024 // 10MB
+      maxSize: 10 * 1024 * 1024, // 10MB
     });
   }
 
@@ -512,7 +530,7 @@ export class SemanticIndexCache {
   async getCachedIndex(key: string): Promise<SemanticIndex | undefined> {
     const serialized = await this.indexCache.get(key);
     if (!serialized) return undefined;
-    
+
     try {
       return SemanticIndex.deserialize(serialized);
     } catch (error) {
@@ -567,9 +585,21 @@ export class SemanticIndexCache {
   /**
    * Generate cache key for relevance scoring
    */
-  generateScoreKey(currentFile: string, userQuery: string, fileSet: string[]): string {
-    const data = JSON.stringify({ currentFile, userQuery, files: fileSet.sort() });
-    return crypto.createHash('sha256').update(data).digest('hex').substring(0, 16);
+  generateScoreKey(
+    currentFile: string,
+    userQuery: string,
+    fileSet: string[],
+  ): string {
+    const data = JSON.stringify({
+      currentFile,
+      userQuery,
+      files: fileSet.sort(),
+    });
+    return crypto
+      .createHash("sha256")
+      .update(data)
+      .digest("hex")
+      .substring(0, 16);
   }
 
   /**
@@ -587,9 +617,9 @@ export class SemanticIndexCache {
    */
   async cleanup(): Promise<{ removed: number; size: number }> {
     const result = await this.indexCache.cleanup();
-    
+
     // Memory caches clean themselves automatically via TTL
-    
+
     return result;
   }
 
@@ -613,7 +643,8 @@ export class SemanticIndexCache {
       files: fileStats,
       scores: scoreStats,
       symbols: symbolStats,
-      totalMemorySize: fileStats.totalSize + scoreStats.totalSize + symbolStats.totalSize
+      totalMemorySize:
+        fileStats.totalSize + scoreStats.totalSize + symbolStats.totalSize,
     };
   }
 }
@@ -626,7 +657,7 @@ export class CachedSemanticIndex {
 
   constructor(
     private index: SemanticIndex,
-    cacheOptions: CacheOptions = {}
+    cacheOptions: CacheOptions = {},
   ) {
     this.cache = new SemanticIndexCache(cacheOptions);
   }
@@ -653,13 +684,13 @@ export class CachedSemanticIndex {
     // Try cache first
     const cached = this.cache.getCachedFile(filePath);
     if (cached) return cached;
-    
+
     // Get from index and cache
     const fileIndex = this.index.getFile(filePath);
     if (fileIndex) {
       this.cache.cacheFile(filePath, fileIndex);
     }
-    
+
     return fileIndex;
   }
 
@@ -670,28 +701,28 @@ export class CachedSemanticIndex {
     // Try cache first
     const cached = this.cache.getCachedSymbols(symbolName);
     if (cached) return cached;
-    
+
     // Get from index and cache
     const references = this.index.getSymbolReferences(symbolName);
     this.cache.cacheSymbols(symbolName, references);
-    
+
     return references;
   }
 
   /**
    * Save index to cache
    */
-  async saveToCache(key: string = 'default'): Promise<void> {
+  async saveToCache(key: string = "default"): Promise<void> {
     await this.cache.cacheIndex(key, this.index);
   }
 
   /**
    * Load index from cache
    */
-  async loadFromCache(key: string = 'default'): Promise<boolean> {
+  async loadFromCache(key: string = "default"): Promise<boolean> {
     const cached = await this.cache.getCachedIndex(key);
     if (!cached) return false;
-    
+
     // Replace internal index data
     this.index = cached;
     return true;

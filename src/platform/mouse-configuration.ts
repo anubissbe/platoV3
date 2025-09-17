@@ -3,9 +3,13 @@
  * Comprehensive mouse configuration with platform-aware defaults
  */
 
-import { MouseProtocolConfig, MouseEventProcessingOptions, PlatformMouseCapabilities } from '../tui/mouse-types.js';
-import { PlatformDetector, PlatformCapabilities } from './platform-detector.js';
-import { FallbackManager } from './fallback-manager.js';
+import {
+  MouseProtocolConfig,
+  MouseEventProcessingOptions,
+  PlatformMouseCapabilities,
+} from "../tui/mouse-types.js";
+import { PlatformDetector, PlatformCapabilities } from "./platform-detector.js";
+import { FallbackManager } from "./fallback-manager.js";
 
 export interface MouseConfiguration {
   /** Global mouse enable/disable */
@@ -100,7 +104,7 @@ export interface MouseDebugConfig {
   /** Log fallback decisions */
   logFallbacks: boolean;
   /** Debug output target */
-  outputTarget: 'console' | 'file' | 'memory';
+  outputTarget: "console" | "file" | "memory";
   /** Maximum debug entries */
   maxEntries: number;
 }
@@ -122,20 +126,20 @@ export interface MouseAccessibilityConfig {
   keyboardAlternatives: boolean;
 }
 
-export type MouseConfigurationProfile = 
-  | 'default'
-  | 'performance'
-  | 'accessibility' 
-  | 'minimal'
-  | 'developer'
-  | 'gaming'
-  | 'presentation';
+export type MouseConfigurationProfile =
+  | "default"
+  | "performance"
+  | "accessibility"
+  | "minimal"
+  | "developer"
+  | "gaming"
+  | "presentation";
 
 export interface ConfigurationContext {
   /** Platform capabilities */
   capabilities: PlatformCapabilities;
   /** Application type */
-  applicationType: 'cli' | 'tui' | 'interactive' | 'presentation';
+  applicationType: "cli" | "tui" | "interactive" | "presentation";
   /** User preferences */
   userPreferences?: Partial<MouseConfiguration>;
   /** Performance constraints */
@@ -160,7 +164,11 @@ export class MouseConfigurationManager {
   private platformDetector: PlatformDetector;
   private fallbackManager: FallbackManager;
   private currentConfig: MouseConfiguration | null = null;
-  private configHistory: Array<{ config: MouseConfiguration; timestamp: number; reason: string }> = [];
+  private configHistory: Array<{
+    config: MouseConfiguration;
+    timestamp: number;
+    reason: string;
+  }> = [];
 
   private constructor() {
     this.platformDetector = PlatformDetector.getInstance();
@@ -180,18 +188,31 @@ export class MouseConfigurationManager {
   /**
    * Generate optimal mouse configuration for current platform
    */
-  async generateOptimalConfiguration(context: ConfigurationContext): Promise<MouseConfiguration> {
-    const baseConfig = this.getProfileConfiguration(this.selectOptimalProfile(context));
-    const platformConfig = await this.applyPlatformOptimizations(baseConfig, context.capabilities);
-    const fallbackConfig = await this.applyFallbackStrategies(platformConfig, context);
-    const finalConfig = this.applyUserPreferences(fallbackConfig, context.userPreferences);
+  async generateOptimalConfiguration(
+    context: ConfigurationContext,
+  ): Promise<MouseConfiguration> {
+    const baseConfig = this.getProfileConfiguration(
+      this.selectOptimalProfile(context),
+    );
+    const platformConfig = await this.applyPlatformOptimizations(
+      baseConfig,
+      context.capabilities,
+    );
+    const fallbackConfig = await this.applyFallbackStrategies(
+      platformConfig,
+      context,
+    );
+    const finalConfig = this.applyUserPreferences(
+      fallbackConfig,
+      context.userPreferences,
+    );
 
     // Save configuration with context
     this.currentConfig = finalConfig;
     this.configHistory.push({
       config: finalConfig,
       timestamp: Date.now(),
-      reason: `Generated for ${context.applicationType} on ${context.capabilities.platform}`
+      reason: `Generated for ${context.applicationType} on ${context.capabilities.platform}`,
     });
 
     return finalConfig;
@@ -200,7 +221,9 @@ export class MouseConfigurationManager {
   /**
    * Get configuration for specific profile
    */
-  getProfileConfiguration(profile: MouseConfigurationProfile): MouseConfiguration {
+  getProfileConfiguration(
+    profile: MouseConfigurationProfile,
+  ): MouseConfiguration {
     const profiles: Record<MouseConfigurationProfile, MouseConfiguration> = {
       default: this.createDefaultConfiguration(),
       performance: this.createPerformanceConfiguration(),
@@ -208,7 +231,7 @@ export class MouseConfigurationManager {
       minimal: this.createMinimalConfiguration(),
       developer: this.createDeveloperConfiguration(),
       gaming: this.createGamingConfiguration(),
-      presentation: this.createPresentationConfiguration()
+      presentation: this.createPresentationConfiguration(),
     };
 
     return profiles[profile];
@@ -230,30 +253,31 @@ export class MouseConfigurationManager {
       // Validate configuration
       const validation = await this.validateConfiguration(config);
       warnings.push(...validation.warnings);
-      
+
       if (!validation.isValid) {
         errors.push(...validation.errors);
         return {
           success: false,
           appliedConfig: config,
           warnings,
-          errors
+          errors,
         };
       }
 
       // Apply platform-specific adjustments
       const adjustedConfig = await this.adjustConfigurationForPlatform(config);
-      
+
       // Test configuration
       const testResult = await this.testConfiguration(adjustedConfig);
       if (!testResult.success) {
-        warnings.push('Configuration test failed - applying fallbacks');
-        const fallbackConfig = await this.applyEmergencyFallbacks(adjustedConfig);
+        warnings.push("Configuration test failed - applying fallbacks");
+        const fallbackConfig =
+          await this.applyEmergencyFallbacks(adjustedConfig);
         return {
           success: true,
           appliedConfig: fallbackConfig,
-          warnings: [...warnings, 'Emergency fallbacks applied'],
-          errors
+          warnings: [...warnings, "Emergency fallbacks applied"],
+          errors,
         };
       }
 
@@ -262,15 +286,17 @@ export class MouseConfigurationManager {
         success: true,
         appliedConfig: adjustedConfig,
         warnings,
-        errors
+        errors,
       };
     } catch (error) {
-      errors.push(`Configuration application failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      errors.push(
+        `Configuration application failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       return {
         success: false,
         appliedConfig: config,
         warnings,
-        errors
+        errors,
       };
     }
   }
@@ -280,41 +306,41 @@ export class MouseConfigurationManager {
    */
   async updateConfiguration(
     updates: Partial<MouseConfiguration>,
-    reason: string = 'User update'
+    reason: string = "User update",
   ): Promise<{
     success: boolean;
     newConfig: MouseConfiguration;
     changes: string[];
   }> {
     if (!this.currentConfig) {
-      throw new Error('No current configuration to update');
+      throw new Error("No current configuration to update");
     }
 
     const changes: string[] = [];
     const newConfig: MouseConfiguration = {
       ...this.currentConfig,
-      ...updates
+      ...updates,
     };
 
     // Track what changed
-    Object.keys(updates).forEach(key => {
+    Object.keys(updates).forEach((key) => {
       changes.push(`Updated ${key}`);
     });
 
     const result = await this.applyConfiguration(newConfig);
-    
+
     if (result.success) {
       this.configHistory.push({
         config: newConfig,
         timestamp: Date.now(),
-        reason
+        reason,
       });
     }
 
     return {
       success: result.success,
       newConfig: result.appliedConfig,
-      changes
+      changes,
     };
   }
 
@@ -332,9 +358,9 @@ export class MouseConfigurationManager {
     const capabilities = await this.platformDetector.detectCapabilities();
     const context: ConfigurationContext = {
       capabilities,
-      applicationType: 'tui'
+      applicationType: "tui",
     };
-    
+
     return await this.generateOptimalConfiguration(context);
   }
 
@@ -351,17 +377,23 @@ export class MouseConfigurationManager {
     }>;
   }> {
     const capabilities = await this.platformDetector.detectCapabilities();
-    const context: ConfigurationContext = { capabilities, applicationType: 'tui' };
-    
+    const context: ConfigurationContext = {
+      capabilities,
+      applicationType: "tui",
+    };
+
     const optimalProfile = this.selectOptimalProfile(context);
     const reasons = this.getProfileReasons(optimalProfile, capabilities);
-    
-    const alternatives = this.getAlternativeProfiles(optimalProfile, capabilities);
+
+    const alternatives = this.getAlternativeProfiles(
+      optimalProfile,
+      capabilities,
+    );
 
     return {
       profile: optimalProfile,
       reasons,
-      alternatives
+      alternatives,
     };
   }
 
@@ -378,7 +410,7 @@ export class MouseConfigurationManager {
     };
   } {
     if (!this.currentConfig) {
-      throw new Error('No configuration to export');
+      throw new Error("No configuration to export");
     }
 
     return {
@@ -386,28 +418,30 @@ export class MouseConfigurationManager {
       metadata: {
         timestamp: Date.now(),
         platform: process.platform,
-        version: '1.0.0',
-        history: this.configHistory.length
-      }
+        version: "1.0.0",
+        history: this.configHistory.length,
+      },
     };
   }
 
   /**
    * Import configuration from backup
    */
-  async importConfiguration(exportData: ReturnType<MouseConfigurationManager['exportConfiguration']>): Promise<{
+  async importConfiguration(
+    exportData: ReturnType<MouseConfigurationManager["exportConfiguration"]>,
+  ): Promise<{
     success: boolean;
     warnings: string[];
     errors: string[];
   }> {
     try {
       const result = await this.applyConfiguration(exportData.config);
-      
+
       if (result.success) {
         this.configHistory.push({
           config: exportData.config,
           timestamp: Date.now(),
-          reason: `Imported from ${new Date(exportData.metadata.timestamp).toISOString()}`
+          reason: `Imported from ${new Date(exportData.metadata.timestamp).toISOString()}`,
         });
       }
 
@@ -416,7 +450,9 @@ export class MouseConfigurationManager {
       return {
         success: false,
         warnings: [],
-        errors: [`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`]
+        errors: [
+          `Import failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        ],
       };
     }
   }
@@ -424,43 +460,51 @@ export class MouseConfigurationManager {
   /**
    * Select optimal profile based on context
    */
-  private selectOptimalProfile(context: ConfigurationContext): MouseConfigurationProfile {
+  private selectOptimalProfile(
+    context: ConfigurationContext,
+  ): MouseConfigurationProfile {
     const { capabilities } = context;
 
     // CI environments
     if (capabilities.environment.isCI) {
-      return 'minimal';
+      return "minimal";
     }
 
     // Low performance systems
-    if (capabilities.performance.tier === 'low') {
-      return 'minimal';
+    if (capabilities.performance.tier === "low") {
+      return "minimal";
     }
 
     // Accessibility requirements
-    if (context.accessibilityRequirements?.reducedMotion || 
-        context.accessibilityRequirements?.screenReader) {
-      return 'accessibility';
+    if (
+      context.accessibilityRequirements?.reducedMotion ||
+      context.accessibilityRequirements?.screenReader
+    ) {
+      return "accessibility";
     }
 
     // Developer contexts
-    if (context.applicationType === 'cli' || 
-        capabilities.features.nativeBinaries.git) {
-      return 'developer';
+    if (
+      context.applicationType === "cli" ||
+      capabilities.features.nativeBinaries.git
+    ) {
+      return "developer";
     }
 
     // Performance contexts
-    if (capabilities.performance.tier === 'high' && 
-        capabilities.performance.memoryMB > 8192) {
-      return 'performance';
+    if (
+      capabilities.performance.tier === "high" &&
+      capabilities.performance.memoryMB > 8192
+    ) {
+      return "performance";
     }
 
     // Presentation contexts
-    if (context.applicationType === 'presentation') {
-      return 'presentation';
+    if (context.applicationType === "presentation") {
+      return "presentation";
     }
 
-    return 'default';
+    return "default";
   }
 
   /**
@@ -468,25 +512,38 @@ export class MouseConfigurationManager {
    */
   private async applyPlatformOptimizations(
     config: MouseConfiguration,
-    capabilities: PlatformCapabilities
+    capabilities: PlatformCapabilities,
   ): Promise<MouseConfiguration> {
     const optimizedConfig = { ...config };
 
     // Platform-specific overrides
-    const platformOverride = capabilities.platform !== 'unknown' && capabilities.platform in optimizedConfig.platformOverrides 
-      ? optimizedConfig.platformOverrides[capabilities.platform as keyof PlatformOverrides] 
-      : undefined;
+    const platformOverride =
+      capabilities.platform !== "unknown" &&
+      capabilities.platform in optimizedConfig.platformOverrides
+        ? optimizedConfig.platformOverrides[
+            capabilities.platform as keyof PlatformOverrides
+          ]
+        : undefined;
     if (platformOverride) {
       Object.assign(optimizedConfig, platformOverride);
     }
 
     // Environment-specific overrides
-    if (capabilities.environment.isWSL && optimizedConfig.platformOverrides.wsl) {
+    if (
+      capabilities.environment.isWSL &&
+      optimizedConfig.platformOverrides.wsl
+    ) {
       Object.assign(optimizedConfig, optimizedConfig.platformOverrides.wsl);
     }
 
-    if (capabilities.environment.isContainer && optimizedConfig.platformOverrides.container) {
-      Object.assign(optimizedConfig, optimizedConfig.platformOverrides.container);
+    if (
+      capabilities.environment.isContainer &&
+      optimizedConfig.platformOverrides.container
+    ) {
+      Object.assign(
+        optimizedConfig,
+        optimizedConfig.platformOverrides.container,
+      );
     }
 
     if (capabilities.environment.isCI && optimizedConfig.platformOverrides.ci) {
@@ -494,9 +551,15 @@ export class MouseConfigurationManager {
     }
 
     // Performance optimizations
-    if (capabilities.performance.tier === 'low') {
-      optimizedConfig.performance.throttleMs = Math.max(optimizedConfig.performance.throttleMs, 50);
-      optimizedConfig.performance.maxEventsPerSecond = Math.min(optimizedConfig.performance.maxEventsPerSecond, 20);
+    if (capabilities.performance.tier === "low") {
+      optimizedConfig.performance.throttleMs = Math.max(
+        optimizedConfig.performance.throttleMs,
+        50,
+      );
+      optimizedConfig.performance.maxEventsPerSecond = Math.min(
+        optimizedConfig.performance.maxEventsPerSecond,
+        20,
+      );
       optimizedConfig.features.motionTracking = false;
       optimizedConfig.features.hovering = false;
     }
@@ -505,9 +568,12 @@ export class MouseConfigurationManager {
     if (capabilities.performance.memoryMB < 2048) {
       optimizedConfig.performance.memoryLimits.maxEventHistory = Math.min(
         optimizedConfig.performance.memoryLimits.maxEventHistory,
-        50
+        50,
       );
-      optimizedConfig.processing.maxQueueSize = Math.min(optimizedConfig.processing.maxQueueSize, 25);
+      optimizedConfig.processing.maxQueueSize = Math.min(
+        optimizedConfig.processing.maxQueueSize,
+        25,
+      );
     }
 
     return optimizedConfig;
@@ -518,13 +584,13 @@ export class MouseConfigurationManager {
    */
   private async applyFallbackStrategies(
     config: MouseConfiguration,
-    context: ConfigurationContext
+    context: ConfigurationContext,
   ): Promise<MouseConfiguration> {
     const mouseConfig = await this.fallbackManager.getOptimalMouseConfig();
-    
+
     // Apply mouse protocol fallbacks
     config.protocol = mouseConfig.config;
-    
+
     if (mouseConfig.fallbackLevel > 0) {
       // Disable advanced features for fallback levels
       if (mouseConfig.fallbackLevel >= 2) {
@@ -532,13 +598,13 @@ export class MouseConfigurationManager {
         config.features.hovering = false;
         config.features.focusEvents = false;
       }
-      
+
       if (mouseConfig.fallbackLevel >= 3) {
         config.features.dragging = false;
         config.features.doubleClicks = false;
         config.features.contextMenu = false;
       }
-      
+
       if (mouseConfig.fallbackLevel >= 4) {
         config.enabled = false;
       }
@@ -552,7 +618,7 @@ export class MouseConfigurationManager {
    */
   private applyUserPreferences(
     config: MouseConfiguration,
-    userPreferences?: Partial<MouseConfiguration>
+    userPreferences?: Partial<MouseConfiguration>,
   ): MouseConfiguration {
     if (!userPreferences) {
       return config;
@@ -566,7 +632,10 @@ export class MouseConfigurationManager {
       performance: { ...config.performance, ...userPreferences.performance },
       processing: { ...config.processing, ...userPreferences.processing },
       debug: { ...config.debug, ...userPreferences.debug },
-      accessibility: { ...config.accessibility, ...userPreferences.accessibility }
+      accessibility: {
+        ...config.accessibility,
+        ...userPreferences.accessibility,
+      },
     };
   }
 
@@ -577,17 +646,17 @@ export class MouseConfigurationManager {
     return {
       enabled: true,
       protocol: {
-        mode: 'sgr',
+        mode: "sgr",
         enableTracking: true,
         enableButtons: true,
         enableMotion: false,
-        enableFocus: false
+        enableFocus: false,
       },
       processing: {
         throttleMs: 16,
         validateBounds: true,
         debug: false,
-        maxQueueSize: 100
+        maxQueueSize: 100,
       },
       platformOverrides: {},
       features: {
@@ -600,7 +669,7 @@ export class MouseConfigurationManager {
         middleClick: true,
         modifierKeys: true,
         motionTracking: false,
-        focusEvents: false
+        focusEvents: false,
       },
       performance: {
         throttleMs: 16,
@@ -612,8 +681,8 @@ export class MouseConfigurationManager {
         memoryLimits: {
           maxEventHistory: 100,
           maxDragStates: 10,
-          maxHoverStates: 10
-        }
+          maxHoverStates: 10,
+        },
       },
       debug: {
         enabled: false,
@@ -621,8 +690,8 @@ export class MouseConfigurationManager {
         logParsedEvents: false,
         logPerformance: false,
         logFallbacks: false,
-        outputTarget: 'console',
-        maxEntries: 1000
+        outputTarget: "console",
+        maxEntries: 1000,
       },
       accessibility: {
         largerClickTargets: false,
@@ -631,8 +700,8 @@ export class MouseConfigurationManager {
         visualFeedback: false,
         audioFeedback: false,
         highContrast: false,
-        keyboardAlternatives: true
-      }
+        keyboardAlternatives: true,
+      },
     };
   }
 
@@ -718,30 +787,30 @@ export class MouseConfigurationManager {
 
     // Basic validation
     if (config.performance.throttleMs < 1) {
-      errors.push('Throttle time must be at least 1ms');
+      errors.push("Throttle time must be at least 1ms");
     }
 
     if (config.performance.maxEventsPerSecond < 1) {
-      errors.push('Max events per second must be at least 1');
+      errors.push("Max events per second must be at least 1");
     }
 
     if (config.performance.queueSizeLimit < 1) {
-      errors.push('Queue size limit must be at least 1');
+      errors.push("Queue size limit must be at least 1");
     }
 
     // Performance warnings
     if (config.performance.throttleMs < 8) {
-      warnings.push('Very low throttle time may impact performance');
+      warnings.push("Very low throttle time may impact performance");
     }
 
     if (config.performance.maxEventsPerSecond > 120) {
-      warnings.push('High event rate may impact performance');
+      warnings.push("High event rate may impact performance");
     }
 
     return {
       isValid: errors.length === 0,
       warnings,
-      errors
+      errors,
     };
   }
 
@@ -753,79 +822,96 @@ export class MouseConfigurationManager {
     try {
       // Basic compatibility test
       const hasMouseSupport = process.stdout.isTTY;
-      
+
       // Performance test - simulate event processing
       const startTime = Date.now();
       for (let i = 0; i < 100; i++) {
         // Simulate processing delay based on throttle
-        await new Promise(resolve => setTimeout(resolve, Math.max(1, config.performance.throttleMs / 10)));
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.max(1, config.performance.throttleMs / 10)),
+        );
       }
       const endTime = Date.now();
-      
+
       const performanceScore = Math.max(0, 1 - (endTime - startTime) / 1000);
       const compatibilityScore = hasMouseSupport ? 1.0 : 0.5;
 
       return {
         success: true,
         performanceScore,
-        compatibilityScore
+        compatibilityScore,
       };
     } catch (error) {
       return {
         success: false,
         performanceScore: 0,
-        compatibilityScore: 0
+        compatibilityScore: 0,
       };
     }
   }
 
-  private async adjustConfigurationForPlatform(config: MouseConfiguration): Promise<MouseConfiguration> {
+  private async adjustConfigurationForPlatform(
+    config: MouseConfiguration,
+  ): Promise<MouseConfiguration> {
     const capabilities = await this.platformDetector.detectCapabilities();
-    
+
     // Platform-specific adjustments
-    if (capabilities.platform === 'windows') {
+    if (capabilities.platform === "windows") {
       // Windows Terminal specific adjustments
       if (process.env.WT_SESSION) {
-        config.protocol.mode = 'sgr';
+        config.protocol.mode = "sgr";
       }
     }
 
     if (capabilities.environment.isWSL) {
       // WSL adjustments
       config.features.motionTracking = false;
-      config.performance.throttleMs = Math.max(config.performance.throttleMs, 25);
+      config.performance.throttleMs = Math.max(
+        config.performance.throttleMs,
+        25,
+      );
     }
 
     return config;
   }
 
-  private async applyEmergencyFallbacks(config: MouseConfiguration): Promise<MouseConfiguration> {
+  private async applyEmergencyFallbacks(
+    config: MouseConfiguration,
+  ): Promise<MouseConfiguration> {
     const fallbackConfig = this.createMinimalConfiguration();
-    
+
     // Keep user preferences where possible
     fallbackConfig.debug = config.debug;
     fallbackConfig.accessibility = config.accessibility;
-    
+
     return fallbackConfig;
   }
 
-  private getProfileReasons(profile: MouseConfigurationProfile, capabilities: PlatformCapabilities): string[] {
+  private getProfileReasons(
+    profile: MouseConfigurationProfile,
+    capabilities: PlatformCapabilities,
+  ): string[] {
     const reasons: string[] = [];
 
     switch (profile) {
-      case 'minimal':
-        if (capabilities.environment.isCI) reasons.push('CI environment detected');
-        if (capabilities.performance.tier === 'low') reasons.push('Low performance system');
-        if (capabilities.mouse.supportLevel === 'minimal') reasons.push('Limited mouse support');
+      case "minimal":
+        if (capabilities.environment.isCI)
+          reasons.push("CI environment detected");
+        if (capabilities.performance.tier === "low")
+          reasons.push("Low performance system");
+        if (capabilities.mouse.supportLevel === "minimal")
+          reasons.push("Limited mouse support");
         break;
-      case 'accessibility':
-        reasons.push('Accessibility requirements detected');
+      case "accessibility":
+        reasons.push("Accessibility requirements detected");
         break;
-      case 'developer':
-        if (capabilities.features.nativeBinaries.git) reasons.push('Development tools detected');
+      case "developer":
+        if (capabilities.features.nativeBinaries.git)
+          reasons.push("Development tools detected");
         break;
-      case 'performance':
-        if (capabilities.performance.tier === 'high') reasons.push('High performance system');
+      case "performance":
+        if (capabilities.performance.tier === "high")
+          reasons.push("High performance system");
         break;
     }
 
@@ -834,31 +920,42 @@ export class MouseConfigurationManager {
 
   private getAlternativeProfiles(
     currentProfile: MouseConfigurationProfile,
-    capabilities: PlatformCapabilities
-  ): Array<{ profile: MouseConfigurationProfile; reason: string; tradeoffs: string[] }> {
-    const alternatives: Array<{ profile: MouseConfigurationProfile; reason: string; tradeoffs: string[] }> = [];
+    capabilities: PlatformCapabilities,
+  ): Array<{
+    profile: MouseConfigurationProfile;
+    reason: string;
+    tradeoffs: string[];
+  }> {
+    const alternatives: Array<{
+      profile: MouseConfigurationProfile;
+      reason: string;
+      tradeoffs: string[];
+    }> = [];
 
-    if (currentProfile !== 'minimal') {
+    if (currentProfile !== "minimal") {
       alternatives.push({
-        profile: 'minimal',
-        reason: 'Reduce resource usage',
-        tradeoffs: ['Fewer features', 'Basic interactions only']
+        profile: "minimal",
+        reason: "Reduce resource usage",
+        tradeoffs: ["Fewer features", "Basic interactions only"],
       });
     }
 
-    if (currentProfile !== 'accessibility') {
+    if (currentProfile !== "accessibility") {
       alternatives.push({
-        profile: 'accessibility',
-        reason: 'Better accessibility support',
-        tradeoffs: ['Slower interactions', 'Simpler interface']
+        profile: "accessibility",
+        reason: "Better accessibility support",
+        tradeoffs: ["Slower interactions", "Simpler interface"],
       });
     }
 
-    if (currentProfile !== 'performance' && capabilities.performance.tier === 'high') {
+    if (
+      currentProfile !== "performance" &&
+      capabilities.performance.tier === "high"
+    ) {
       alternatives.push({
-        profile: 'performance',
-        reason: 'Maximize responsiveness',
-        tradeoffs: ['Higher resource usage', 'More complex']
+        profile: "performance",
+        reason: "Maximize responsiveness",
+        tradeoffs: ["Higher resource usage", "More complex"],
       });
     }
 

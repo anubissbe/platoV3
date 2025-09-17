@@ -1,38 +1,44 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `src/`: Application code grouped by domain (e.g., `src/core/`, `src/api/`).
-- `tests/`: Mirrors `src/` layout; name tests to match targets.
-- `scripts/`: Developer utilities (setup, lint, format, release).
-- `assets/` or `public/`: Static files (images, schemas, samples).
-- `docs/`: Architecture notes, ADRs, and runbooks.
 
-Example: `src/<module>/` with `index` (entry), `models`, `services`, and `__init__`/`utils` as appropriate.
+- `src/`: TypeScript sources. Key areas: `commands/` (CLI actions), `core/`, `services/`, `tui/`, `util/`, `config.ts`, entry `cli.ts`.
+- `src/__tests__/`: Co-located unit tests near subjects.
+- `tests/` and `test/`: Organized and integration tests mirroring `src/` structure.
+- `scripts/`: Developer utilities (coverage, performance, helpers).
+- `docs/`: Architecture notes and runbooks. See `ARCHITECTURE.md`.
+
+Naming example: `src/services/session-service.ts`, test `src/__tests__/services/session-service.test.ts`.
 
 ## Build, Test, and Development Commands
-Prefer Makefile tasks when available; otherwise use the language’s native tools.
-- Build: `make build` or language-specific build (e.g., `npm run build`).
-- Dev run: `make dev` (hot reload) or `python -m <pkg>` / `npm run dev`.
-- Install deps: `make setup` or `python -m venv .venv && pip install -r requirements.txt` / `npm ci`.
-- Tests: `make test` or `pytest -q` / `npm test`.
-- Lint/format: `make lint fmt` or `ruff . && black .` / `eslint . && prettier -w .`.
+
+- Install deps: `npm ci` (Node 20+ recommended).
+- Dev run: `npm run dev` (tsx executes `src/cli.ts`).
+- Build: `npm run build` (emits JS to `dist/`). Start built CLI with `npm start`.
+- Test (Jest): `npm test` or `npm run test:watch`; coverage with `npm run test:coverage` or CI-friendly `npm run test:ci`.
+- Lint/format: `npm run lint` and `npm run fmt` (ESLint + Prettier).
+- Docker (optional): `npm run docker:build` then `npm run docker:run`.
 
 ## Coding Style & Naming Conventions
-- Indentation: 4 spaces (Python), 2 spaces (JS/TS). Keep lines ≤ 100 chars.
-- Names: `snake_case` for Python modules/functions; `camelCase` for variables; `PascalCase` for classes; kebab-case for file names where idiomatic.
-- Structure: small, cohesive modules; avoid cyclic deps; prefer dependency injection over globals.
-- Tooling: use linters/formatters (e.g., Ruff + Black, ESLint + Prettier). Configure via `pyproject.toml` or project configs.
+
+- Indentation: 2 spaces; line length ≤ 100 chars.
+- Names: `camelCase` vars/functions, `PascalCase` classes, kebab-case file names (`*.ts`/`*.tsx`).
+- Structure: small, focused modules; avoid cyclic deps; inject dependencies where practical.
+- Tools: ESLint + Prettier (run before commit/PR).
 
 ## Testing Guidelines
-- Frameworks: pytest for Python, Vitest/Jest for JS/TS.
-- Naming: mirror source path; use `_test.py` or `.test.ts`/`.test.js` suffixes.
-- Coverage: target ≥ 80% on changed code. Run with `pytest --cov=src` or `vitest run --coverage`.
-- Practices: unit tests near edges; integration tests for modules; use fixtures in `tests/fixtures/`.
+
+- Framework: Jest (+ jest-extended). Prefer colocated tests in `src/__tests__/`.
+- Naming: `*.test.ts` or `*.test.tsx`; mirror source path.
+- Coverage: target ≥ 80% on changed code. Check with `npm run test:coverage`.
+- Practices: mock external I/O; use integration tests under `tests/` for end-to-end flows.
 
 ## Commit & Pull Request Guidelines
-- Commits: Conventional Commits (e.g., `feat:`, `fix:`, `docs:`, `refactor:`). Imperative, concise subject; add context in body.
-- PRs: clear description, linked issues (`Closes #123`), screenshots or logs for behavior changes, and test notes. Keep PRs focused and small.
+
+- Commits: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`). Short imperative subject; add rationale in body.
+- PRs: clear description, linked issues (`Closes #123`), CLI screenshots/logs for behavior changes, and test notes. Keep scope small.
 
 ## Security & Configuration
-- Secrets: never commit `.env`; provide `.env.example` and document required vars. Rotate keys on exposure.
-- Dependencies: pin versions; run `pip-audit` / `npm audit` in CI. Validate all external inputs.
+
+- Never commit secrets. Use `.env` locally; reference keys in `.env.example` and docs.
+- Audit deps with `npm audit`; pin versions via `package-lock.json` in CI.

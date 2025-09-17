@@ -5,6 +5,7 @@ This guide details how to achieve and maintain exact behavioral parity between P
 ## Executive Summary
 
 Plato is designed to be an exact behavioral clone of Claude Code's CLI/TUI application. Every interaction, output format, and user experience element must match Claude Code precisely, with the only differences being:
+
 1. Uses "Plato" instead of "Claude Code" in user-facing text
 2. Uses GitHub Copilot instead of Anthropic's API
 3. Uses `.plato/` directory instead of `.claude/`
@@ -13,16 +14,16 @@ Plato is designed to be an exact behavioral clone of Claude Code's CLI/TUI appli
 
 ### ✅ Core Behaviors
 
-| Feature | Claude Code Behavior | Plato Implementation | Status |
-|---------|---------------------|---------------------|--------|
-| Welcome Message | "✻ Welcome to Claude Code!" | "✻ Welcome to Plato!" | ✅ |
-| Status Line | `claude code \| {provider} \| {model} \| {tokens} {branch}` | `plato \| {provider} \| {model} \| {tokens} {branch}` | ✅ |
-| File Writing | Immediate with `/apply-mode auto` | Immediate with `/apply-mode auto` | ✅ |
-| Patch Display | Unified diff format | Unified diff format | ✅ |
-| Tool Calls | Gray text output | Gray text output | ✅ |
-| Session Save | Auto-save after responses | Auto-save after responses | ✅ |
-| Error Format | Red text with ❌ | Red text with ❌ | ✅ |
-| Success Format | Green text with ✅ | Green text with ✅ | ✅ |
+| Feature         | Claude Code Behavior                                        | Plato Implementation                                  | Status |
+| --------------- | ----------------------------------------------------------- | ----------------------------------------------------- | ------ |
+| Welcome Message | "✻ Welcome to Claude Code!"                                 | "✻ Welcome to Plato!"                                 | ✅     |
+| Status Line     | `claude code \| {provider} \| {model} \| {tokens} {branch}` | `plato \| {provider} \| {model} \| {tokens} {branch}` | ✅     |
+| File Writing    | Immediate with `/apply-mode auto`                           | Immediate with `/apply-mode auto`                     | ✅     |
+| Patch Display   | Unified diff format                                         | Unified diff format                                   | ✅     |
+| Tool Calls      | Gray text output                                            | Gray text output                                      | ✅     |
+| Session Save    | Auto-save after responses                                   | Auto-save after responses                             | ✅     |
+| Error Format    | Red text with ❌                                            | Red text with ❌                                      | ✅     |
+| Success Format  | Green text with ✅                                          | Green text with ✅                                    | ✅     |
 
 ### ✅ Slash Commands Parity
 
@@ -31,7 +32,7 @@ All 35 slash commands must work identically:
 ```
 Essential Commands:
 ✅ /help - Exact command list
-✅ /status - Same format output  
+✅ /status - Same format output
 ✅ /login - Device code flow
 ✅ /logout - Clear credentials
 ✅ /doctor - System diagnostics
@@ -87,6 +88,7 @@ Information:
 ### 1. File Write Operations
 
 #### Claude Code Format (with auto-apply):
+
 ```
 📝 Writing hello.py...
   ✓ Wrote 2 lines to hello.py
@@ -95,17 +97,19 @@ Done! Created hello.py with a simple hello world program.
 ```
 
 #### Plato Must Match Exactly:
+
 ```typescript
 // When /apply-mode auto is enabled:
-setLines(prev => prev.concat('📝 Writing hello.py...'));
-await fs.writeFile('hello.py', content);
-const lineCount = content.split('\n').length;
-setLines(prev => prev.concat(`  ✓ Wrote ${lineCount} lines to hello.py`));
+setLines((prev) => prev.concat("📝 Writing hello.py..."));
+await fs.writeFile("hello.py", content);
+const lineCount = content.split("\n").length;
+setLines((prev) => prev.concat(`  ✓ Wrote ${lineCount} lines to hello.py`));
 ```
 
 ### 2. Tool Call Output
 
 #### Claude Code Format:
+
 ```
 🔧 Running tool: calculator...
 [gray text]
@@ -117,33 +121,37 @@ setLines(prev => prev.concat(`  ✓ Wrote ${lineCount} lines to hello.py`));
 ```
 
 #### Plato Implementation:
+
 ```typescript
 console.log(`🔧 Running tool: ${toolName}...`);
 // After execution:
-console.log('\x1b[90m' + JSON.stringify(result, null, 2) + '\x1b[0m');
+console.log("\x1b[90m" + JSON.stringify(result, null, 2) + "\x1b[0m");
 ```
 
 ### 3. Error Messages
 
 #### Claude Code Format:
+
 ```
 ❌ Error: Network request failed
 ```
 
 #### Plato Implementation:
+
 ```typescript
 const colors = {
-  error: '\x1b[31m',
-  reset: '\x1b[0m'
+  error: "\x1b[31m",
+  reset: "\x1b[0m",
 };
-setLines(prev => prev.concat(
-  colors.error + `❌ Error: ${message}` + colors.reset
-));
+setLines((prev) =>
+  prev.concat(colors.error + `❌ Error: ${message}` + colors.reset),
+);
 ```
 
 ### 4. Status Messages
 
 #### Claude Code Format:
+
 ```
 ✅ Operation completed successfully
 ⚠️ Warning: Git repository not found
@@ -151,6 +159,7 @@ setLines(prev => prev.concat(
 ```
 
 #### Plato Must Use Same Icons:
+
 - ✅ Success (green)
 - ❌ Error (red)
 - ⚠️ Warning (yellow)
@@ -164,37 +173,36 @@ setLines(prev => prev.concat(
 
 ### Required Key Bindings
 
-| Key Combination | Claude Code Behavior | Plato Implementation |
-|----------------|---------------------|---------------------|
-| Enter | Submit input | Submit input |
-| Shift+Enter | New line (multi-line) | New line (multi-line) |
-| Ctrl+C | Cancel operation | Cancel operation |
-| Ctrl+D | Exit with confirmation | Exit with confirmation |
-| Up Arrow | Previous history | Previous history |
-| Down Arrow | Next history | Next history |
-| Tab | Command completion | Command completion |
-| Backspace | Delete character | Delete character |
-| Ctrl+L | Clear screen | Clear screen |
+| Key Combination | Claude Code Behavior   | Plato Implementation   |
+| --------------- | ---------------------- | ---------------------- |
+| Enter           | Submit input           | Submit input           |
+| Shift+Enter     | New line (multi-line)  | New line (multi-line)  |
+| Ctrl+C          | Cancel operation       | Cancel operation       |
+| Ctrl+D          | Exit with confirmation | Exit with confirmation |
+| Up Arrow        | Previous history       | Previous history       |
+| Down Arrow      | Next history           | Next history           |
+| Tab             | Command completion     | Command completion     |
+| Backspace       | Delete character       | Delete character       |
+| Ctrl+L          | Clear screen           | Clear screen           |
 
 ### Implementation Example:
+
 ```typescript
 useInput((input, key) => {
-  if (key.ctrl && input === 'c') {
+  if (key.ctrl && input === "c") {
     // Cancel current operation
     orchestrator.cancelStream();
-    setInput('');
+    setInput("");
   }
-  if (key.ctrl && input === 'd') {
+  if (key.ctrl && input === "d") {
     setConfirm({
-      question: 'Exit? (y/n)',
-      proceed: async () => exit()
+      question: "Exit? (y/n)",
+      proceed: async () => exit(),
     });
   }
   if (key.tab) {
     // Show command completions
-    const matches = SLASH_COMMANDS.filter(c => 
-      c.name.startsWith(input)
-    );
+    const matches = SLASH_COMMANDS.filter((c) => c.name.startsWith(input));
     // Display popup
   }
 });
@@ -203,14 +211,15 @@ useInput((input, key) => {
 ## Session Format Compatibility
 
 ### Claude Code Session Structure:
+
 ```json
 {
   "version": "1.0",
   "timestamp": "2024-01-15T10:30:00Z",
   "messages": [
-    {"role": "user", "content": "..."},
-    {"role": "assistant", "content": "..."},
-    {"role": "tool", "content": "..."}
+    { "role": "user", "content": "..." },
+    { "role": "assistant", "content": "..." },
+    { "role": "tool", "content": "..." }
   ],
   "metrics": {
     "inputTokens": 1500,
@@ -220,13 +229,14 @@ useInput((input, key) => {
   },
   "context": ["src/main.js", "src/utils.js"],
   "config": {
-    "model": {"active": "gpt-4"},
-    "provider": {"active": "copilot"}
+    "model": { "active": "gpt-4" },
+    "provider": { "active": "copilot" }
   }
 }
 ```
 
 ### Plato Must Match Exactly:
+
 - Same JSON structure
 - Same field names
 - Same data types
@@ -237,20 +247,20 @@ useInput((input, key) => {
 
 ### Directory Structure
 
-| Claude Code | Plato |
-|------------|-------|
-| `.claude/` | `.plato/` |
-| `.claude/config.yaml` | `.plato/config.yaml` |
+| Claude Code            | Plato                 |
+| ---------------------- | --------------------- |
+| `.claude/`             | `.plato/`             |
+| `.claude/config.yaml`  | `.plato/config.yaml`  |
 | `.claude/session.json` | `.plato/session.json` |
-| `~/.config/claude/` | `~/.config/plato/` |
+| `~/.config/claude/`    | `~/.config/plato/`    |
 
 ### Environment Variables
 
-| Claude Code | Plato |
-|------------|-------|
-| `CLAUDE_CONFIG_DIR` | `PLATO_CONFIG_DIR` |
+| Claude Code          | Plato               |
+| -------------------- | ------------------- |
+| `CLAUDE_CONFIG_DIR`  | `PLATO_CONFIG_DIR`  |
 | `CLAUDE_PROJECT_DIR` | `PLATO_PROJECT_DIR` |
-| `CLAUDE_DEBUG` | `PLATO_DEBUG` |
+| `CLAUDE_DEBUG`       | `PLATO_DEBUG`       |
 
 ## Testing for Parity
 
@@ -263,7 +273,7 @@ useInput((input, key) => {
 
 Commands to test:
 - /help
-- /status  
+- /status
 - Create a file with auto-apply
 - Show a diff without auto-apply
 - Run a tool call
@@ -282,15 +292,15 @@ expect(output).toMatch(/❌ Error: .+/);
 
 // Test tool call format
 expect(output).toMatch(/🔧 Running tool: .+/);
-expect(output).toContain('\x1b[90m'); // Gray color
+expect(output).toContain("\x1b[90m"); // Gray color
 ```
 
 ### 3. Session Compatibility Tests
 
 ```typescript
 // Import Claude Code session into Plato
-const claudeSession = await fs.readFile('.claude/session.json');
-await fs.writeFile('.plato/session.json', claudeSession);
+const claudeSession = await fs.readFile(".claude/session.json");
+await fs.writeFile(".plato/session.json", claudeSession);
 // Should resume without errors
 
 // Export from Plato, import to Claude Code
@@ -301,15 +311,16 @@ const platoExport = await orchestrator.exportJSON();
 ### 4. Command Behavior Tests
 
 For each slash command:
+
 ```typescript
-test('/command behavior matches Claude Code', async () => {
-  const claudeOutput = getClaudeCodeOutput('/command');
-  const platoOutput = getPlatoOutput('/command');
-  
+test("/command behavior matches Claude Code", async () => {
+  const claudeOutput = getClaudeCodeOutput("/command");
+  const platoOutput = getPlatoOutput("/command");
+
   // Normalize provider-specific differences
-  const normalized1 = claudeOutput.replace('Claude Code', 'Plato');
+  const normalized1 = claudeOutput.replace("Claude Code", "Plato");
   const normalized2 = platoOutput;
-  
+
   expect(normalized1).toBe(normalized2);
 });
 ```
@@ -320,23 +331,25 @@ test('/command behavior matches Claude Code', async () => {
 
 **Problem**: Plato shows different formatting than Claude Code
 **Solution**: Use exact same strings and color codes:
+
 ```typescript
 // Wrong
-setLines(prev => prev.concat('File written successfully'));
+setLines((prev) => prev.concat("File written successfully"));
 
 // Correct (matches Claude Code)
-setLines(prev => prev.concat('📝 Writing filename...'));
-setLines(prev => prev.concat('  ✓ Wrote X lines to filename'));
+setLines((prev) => prev.concat("📝 Writing filename..."));
+setLines((prev) => prev.concat("  ✓ Wrote X lines to filename"));
 ```
 
 ### Issue 2: Missing Command Implementation
 
 **Problem**: Command exists in registry but not implemented
 **Solution**: Implement in `src/tui/app.tsx` handleSubmit():
+
 ```typescript
-if (text === '/commandname') {
+if (text === "/commandname") {
   // Match Claude Code's exact output
-  setLines(prev => prev.concat('Expected output here'));
+  setLines((prev) => prev.concat("Expected output here"));
   return;
 }
 ```
@@ -345,6 +358,7 @@ if (text === '/commandname') {
 
 **Problem**: Sessions save at wrong times
 **Solution**: Match Claude Code's timing:
+
 ```typescript
 // During streaming: debounce by 2s
 saveSessionDebounced();
@@ -353,7 +367,7 @@ saveSessionDebounced();
 await saveSessionDefault();
 
 // On exit: save before closing
-process.on('SIGINT', async () => {
+process.on("SIGINT", async () => {
   await saveSessionDefault();
   process.exit(0);
 });
@@ -363,11 +377,13 @@ process.on('SIGINT', async () => {
 
 **Problem**: Tool calls don't match Claude Code's format
 **Solution**: Use strict regex and exact output:
-```typescript
-const toolCallRegex = /```json\s*\n\s*\{\s*"tool_call"\s*:\s*\{[\s\S]*?\}\s*\}\s*\n\s*```/;
+
+````typescript
+const toolCallRegex =
+  /```json\s*\n\s*\{\s*"tool_call"\s*:\s*\{[\s\S]*?\}\s*\}\s*\n\s*```/;
 // Gray output
-console.log('\x1b[90m' + result + '\x1b[0m');
-```
+console.log("\x1b[90m" + result + "\x1b[0m");
+````
 
 ## Maintenance Guidelines
 
@@ -381,6 +397,7 @@ console.log('\x1b[90m' + result + '\x1b[0m');
 ### Version Updates
 
 When Claude Code updates:
+
 1. Review changelog for behavior changes
 2. Update Plato to match new behaviors
 3. Test all affected commands
@@ -389,6 +406,7 @@ When Claude Code updates:
 ### Testing Checklist
 
 Before each release:
+
 - [ ] All 35 slash commands tested
 - [ ] File operations match format
 - [ ] Tool calls show gray output
@@ -417,16 +435,16 @@ commands=(
 
 for cmd in "${commands[@]}"; do
   echo "Testing: $cmd"
-  
+
   # Run in Plato
   plato_output=$(echo "$cmd" | npm run dev 2>/dev/null)
-  
+
   # Normalize output
   normalized=$(echo "$plato_output" | sed 's/Plato/Claude Code/g')
-  
+
   # Compare with expected
   # (Would need Claude Code reference outputs)
-  
+
   echo "✓ $cmd matches"
 done
 
@@ -436,6 +454,7 @@ echo "✅ All parity tests passed"
 ## Conclusion
 
 Achieving Claude Code parity requires meticulous attention to:
+
 1. **Exact output formatting** - Every character, color, and icon must match
 2. **Identical command behavior** - Same flags, same results
 3. **Precise timing** - Session saves, debouncing, tool timeouts

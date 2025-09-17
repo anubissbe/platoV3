@@ -1,0 +1,19 @@
+node:internal/modules/cjs/loader:1413\r
+  throw err;\r
+  ^\r
+\r
+Error: Cannot find module '/opt/projects/platoV3/parity-HPYYwM/work/dist/cli.js'\r
+\u001b[90m    at Module._resolveFilename (node:internal/modules/cjs/loader:1410:15)\u001b[39m\r
+\u001b[90m    at defaultResolveImpl (node:internal/modules/cjs/loader:1051:19)\u001b[39m\r
+\u001b[90m    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1056:22)\u001b[39m\r
+\u001b[90m    at Module._load (node:internal/modules/cjs/loader:1219:37)\u001b[39m\r
+\u001b[90m    at TracingChannel.traceSync (node:diagnostics_channel:322:14)\u001b[39m\r
+\u001b[90m    at wrapModuleLoad (node:internal/modules/cjs/loader:238:24)\u001b[39m\r
+\u001b[90m    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\u001b[39m\r
+\u001b[90m    at node:internal/main/run_main_module:33:47\u001b[39m {\r
+  code: \u001b[32m'MODULE_NOT_FOUND'\u001b[39m,\r
+  requireStack: []\r
+}\r
+\r
+Node.js v24.5.0\r
+","timedOut":false}

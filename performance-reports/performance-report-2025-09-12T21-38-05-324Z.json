@@ -1,0 +1,82 @@
+{
+  "timestamp": "2025-09-12T21:38:04.232Z",
+  "environment": {
+    "nodeVersion": "v24.5.0",
+    "platform": "linux",
+    "arch": "x64",
+    "cpuCount": 24,
+    "totalMemory": 50126262272,
+    "freeMemory": 24012431360
+  },
+  "testResults": [
+    {
+      "testFilePath": "src/__tests__/performance/reliability-stability.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 543907840,
+        "heapTotal": 426110976,
+        "heapUsed": 311559312,
+        "external": 6680486,
+        "arrayBuffers": 3046445
+      },
+      "timestamp": "2025-09-12T21:38:05.167Z"
+    },
+    {
+      "testFilePath": "src/__tests__/performance/memory-leak-detection.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 546856960,
+        "heapTotal": 428310528,
+        "heapUsed": 355567368,
+        "external": 7718083,
+        "arrayBuffers": 4169068
+      },
+      "timestamp": "2025-09-12T21:38:05.246Z"
+    },
+    {
+      "testFilePath": "src/__tests__/performance/load-stress-testing.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 559550464,
+        "heapTotal": 441155584,
+        "heapUsed": 356487896,
+        "external": 7713141,
+        "arrayBuffers": 4164126
+      },
+      "timestamp": "2025-09-12T21:38:05.323Z"
+    }
+  ],
+  "summary": {
+    "totalTests": 0,
+    "passedTests": 0,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "totalDuration": 0,
+    "averageTestDuration": 0,
+    "slowTests": [],
+    "performanceMetrics": {
+      "benchmarkTests": 0,
+      "loadTests": 0,
+      "memoryTests": 0,
+      "stabilityTests": 0,
+      "memoryStats": {
+        "min": 311559312,
+        "max": 356487896,
+        "average": 341204858.6666667,
+        "growth": 44928584
+      }
+    }
+  }
+}

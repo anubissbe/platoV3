@@ -3,17 +3,17 @@
  * Integrates enhanced mouse support with existing keyboard handler system
  */
 
-import { MouseProtocolParser } from './mouse-parser.js';
-import { MouseEventProcessor } from './mouse-processor.js';
-import { MousePlatformDetector } from './mouse-platform.js';
+import { MouseProtocolParser } from "./mouse-parser.js";
+import { MouseEventProcessor } from "./mouse-processor.js";
+import { MousePlatformDetector } from "./mouse-platform.js";
 import {
   MouseEvent,
   MouseEventHandlers,
   MouseBounds,
   MouseEventProcessingOptions,
   MouseProtocolConfig,
-  PlatformMouseCapabilities
-} from './mouse-types.js';
+  PlatformMouseCapabilities,
+} from "./mouse-types.js";
 
 /**
  * Configuration for mouse integration
@@ -41,9 +41,9 @@ const DEFAULT_INTEGRATION_CONFIG: MouseIntegrationConfig = {
     throttleMs: 16,
     validateBounds: true,
     debug: false,
-    maxQueueSize: 100
+    maxQueueSize: 100,
   },
-  debug: false
+  debug: false,
 };
 
 /**
@@ -79,16 +79,21 @@ export class MouseIntegration {
       // Detect platform capabilities
       if (this.config.autoDetect) {
         this.capabilities = await this.platformDetector.detectCapabilities();
-        
+
         if (this.config.debug) {
-          console.debug('[MouseIntegration] Platform capabilities:', this.capabilities);
+          console.debug(
+            "[MouseIntegration] Platform capabilities:",
+            this.capabilities,
+          );
         }
 
         // Disable if no support detected
-        if (this.capabilities.supportLevel === 'none') {
+        if (this.capabilities.supportLevel === "none") {
           this.config.enabled = false;
           if (this.config.debug) {
-            console.debug('[MouseIntegration] Disabled due to no platform support');
+            console.debug(
+              "[MouseIntegration] Disabled due to no platform support",
+            );
           }
         }
       }
@@ -97,16 +102,18 @@ export class MouseIntegration {
       if (this.config.enabled) {
         const success = await this.platformDetector.configureMouseSupport();
         this.isEnabled = success;
-        
+
         if (this.config.debug) {
-          console.debug(`[MouseIntegration] Mouse support ${success ? 'enabled' : 'failed'}`);
+          console.debug(
+            `[MouseIntegration] Mouse support ${success ? "enabled" : "failed"}`,
+          );
         }
       }
 
       this.isInitialized = true;
       return this.isEnabled;
     } catch (error) {
-      console.error('[MouseIntegration] Initialization failed:', error);
+      console.error("[MouseIntegration] Initialization failed:", error);
       this.isInitialized = true;
       this.isEnabled = false;
       return false;
@@ -116,7 +123,10 @@ export class MouseIntegration {
   /**
    * Process raw input data that may contain mouse sequences
    */
-  processInput(data: string, bounds?: MouseBounds): {
+  processInput(
+    data: string,
+    bounds?: MouseBounds,
+  ): {
     mouseEvents: MouseEvent[];
     remainingData: string;
   } {
@@ -127,7 +137,7 @@ export class MouseIntegration {
     try {
       // Extract mouse events from input data
       const mouseEvents = this.parser.extractMultipleEvents(data);
-      
+
       // Process events through the processor
       const processedEvents: MouseEvent[] = [];
       for (const event of mouseEvents) {
@@ -141,7 +151,7 @@ export class MouseIntegration {
       let remainingData = data;
       for (const event of mouseEvents) {
         if (event.rawSequence) {
-          remainingData = remainingData.replace(event.rawSequence, '');
+          remainingData = remainingData.replace(event.rawSequence, "");
         }
       }
 
@@ -150,13 +160,15 @@ export class MouseIntegration {
       processedEvents.push(...queuedEvents);
 
       if (this.config.debug && processedEvents.length > 0) {
-        console.debug(`[MouseIntegration] Processed ${processedEvents.length} mouse events`);
+        console.debug(
+          `[MouseIntegration] Processed ${processedEvents.length} mouse events`,
+        );
       }
 
       return { mouseEvents: processedEvents, remainingData };
     } catch (error) {
       if (this.config.debug) {
-        console.error('[MouseIntegration] Error processing input:', error);
+        console.error("[MouseIntegration] Error processing input:", error);
       }
       return { mouseEvents: [], remainingData: data };
     }
@@ -175,42 +187,42 @@ export class MouseIntegration {
   async dispatchEvent(event: MouseEvent): Promise<void> {
     try {
       switch (event.type) {
-        case 'click':
+        case "click":
           if (this.eventHandlers.onClick) {
             await this.eventHandlers.onClick(event);
           }
           break;
-        case 'drag_start':
+        case "drag_start":
           if (this.eventHandlers.onDragStart) {
             await this.eventHandlers.onDragStart(event);
           }
           break;
-        case 'drag':
+        case "drag":
           if (this.eventHandlers.onDrag) {
             await this.eventHandlers.onDrag(event);
           }
           break;
-        case 'drag_end':
+        case "drag_end":
           if (this.eventHandlers.onDragEnd) {
             await this.eventHandlers.onDragEnd(event);
           }
           break;
-        case 'scroll':
+        case "scroll":
           if (this.eventHandlers.onScroll) {
             await this.eventHandlers.onScroll(event);
           }
           break;
-        case 'move':
+        case "move":
           if (this.eventHandlers.onMove) {
             await this.eventHandlers.onMove(event);
           }
           break;
-        case 'hover':
+        case "hover":
           if (this.eventHandlers.onHover) {
             await this.eventHandlers.onHover(event);
           }
           break;
-        case 'leave':
+        case "leave":
           if (this.eventHandlers.onLeave) {
             await this.eventHandlers.onLeave(event);
           }
@@ -218,7 +230,10 @@ export class MouseIntegration {
       }
     } catch (error) {
       if (this.config.debug) {
-        console.error(`[MouseIntegration] Error dispatching ${event.type} event:`, error);
+        console.error(
+          `[MouseIntegration] Error dispatching ${event.type} event:`,
+          error,
+        );
       }
     }
   }
@@ -236,14 +251,19 @@ export class MouseIntegration {
     try {
       const success = await this.platformDetector.configureMouseSupport();
       this.isEnabled = success;
-      
+
       if (this.config.debug) {
-        console.debug(`[MouseIntegration] Mouse support ${success ? 'enabled' : 'failed to enable'}`);
+        console.debug(
+          `[MouseIntegration] Mouse support ${success ? "enabled" : "failed to enable"}`,
+        );
       }
-      
+
       return success;
     } catch (error) {
-      console.error('[MouseIntegration] Failed to enable mouse support:', error);
+      console.error(
+        "[MouseIntegration] Failed to enable mouse support:",
+        error,
+      );
       return false;
     }
   }
@@ -257,12 +277,15 @@ export class MouseIntegration {
     try {
       await this.platformDetector.disableMouseSupport();
       this.isEnabled = false;
-      
+
       if (this.config.debug) {
-        console.debug('[MouseIntegration] Mouse support disabled');
+        console.debug("[MouseIntegration] Mouse support disabled");
       }
     } catch (error) {
-      console.error('[MouseIntegration] Failed to disable mouse support:', error);
+      console.error(
+        "[MouseIntegration] Failed to disable mouse support:",
+        error,
+      );
     }
   }
 
@@ -335,12 +358,12 @@ export class MouseIntegration {
    */
   updateConfig(config: Partial<MouseIntegrationConfig>): void {
     this.config = { ...this.config, ...config };
-    
+
     // Update processor options if changed
     if (config.processing) {
       this.processor.updateOptions(config.processing);
     }
-    
+
     // Update parser debug mode if changed
     if (config.debug !== undefined) {
       this.parser = new MouseProtocolParser(config.debug);
@@ -366,7 +389,7 @@ export class MouseIntegration {
       config: this.config,
       mouseState: this.processor.getMouseState(),
       queueStatus: this.processor.getQueueStatus(),
-      processorBounds: this.processor.getBounds()
+      processorBounds: this.processor.getBounds(),
     };
   }
 

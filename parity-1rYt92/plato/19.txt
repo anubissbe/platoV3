@@ -1,0 +1,25 @@
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│ Do you trust the files in this folder?                                       │
+│                                                                              │
+│ /opt/projects/platoV3/.plato/parity-work                                     │
+│                                                                              │
+│ Claude Code may read, write, or execute files contained in this directory.   │
+│ This can pose security risks, so only use files from trusted sources.        │
+│                                                                              │
+│ Learn more ( https://docs.anthropic.com/s/claude-code-security )             │
+│                                                                              │
+│ ❯ 1. Yes, proceed                                                            │
+│   2. No, exit                                                                │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+   Enter to confirm · Esc to exit
+
+
+
+
+
+
+
+
+

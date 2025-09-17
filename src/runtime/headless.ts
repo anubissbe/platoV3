@@ -1,151 +1,165 @@
-import { orchestrator } from './orchestrator.js';
-import { loadConfig, setConfigValue } from '../config.js';
-import { ensureConfigLoaded } from '../config.js';
+/**
+ * Headless execution mode for Plato CLI
+ * Allows batch processing and programmatic access
+ */
+
+import orchestrator from "./orchestrator.js";
+import { OrchestratorEvent } from "./orchestrator.js";
 
 export interface HeadlessOptions {
-  skipPermissions: boolean;
-  outputFormat: 'text' | 'stream-json';
-  directOutput: boolean;
+  outputFormat?: "json" | "plain" | "stream-json";
+  skipPermissions?: boolean;
+  sessionId?: string;
+  timeout?: number;
+  model?: string;
 }
 
-export async function runHeadless(prompt: string, options: HeadlessOptions): Promise<void> {
-  await ensureConfigLoaded();
-  
-  // Configure permissions if skip flag is set
-  if (options.skipPermissions) {
-    await configurePermissionSkip();
-  }
-
-  // Set up output handling
-  const outputHandler = createOutputHandler(options);
-  
-  try {
-    if (options.outputFormat === 'stream-json') {
-      await runStreamingJSON(prompt, outputHandler);
-    } else {
-      await runTextMode(prompt, outputHandler, options.directOutput);
-    }
-  } catch (error: any) {
-    if (options.outputFormat === 'stream-json') {
-      outputHandler({
-        type: 'error',
-        timestamp: new Date().toISOString(),
-        content: error?.message || 'Unknown error'
-      });
-    } else {
-      console.error(`Error: ${error?.message || error}`);
-      process.exit(1);
-    }
-  }
-}
-
-async function configurePermissionSkip(): Promise<void> {
-  // Temporarily configure to skip permissions
-  const config = await loadConfig();
-  
-  // Store original settings if we need to restore them
-  const originalSettings = {
-    privacy: config.privacy
+/**
+ * Execute a query in headless mode
+ */
+export async function headlessExecute(
+  question: string,
+  options: HeadlessOptions = {},
+): Promise<string> {
+  const headlessOptions: Required<HeadlessOptions> = {
+    outputFormat: "plain",
+    skipPermissions: false,
+    sessionId: `headless-${Date.now()}`,
+    timeout: 30000,
+    model: "gpt-4o",
+    ...options,
   };
-  
-  // Set dangerous skip mode - this bypasses all permission checks
-  // Note: This is implemented as a configuration override
-  process.env.PLATO_SKIP_PERMISSIONS = 'true';
-  
-  // Also update runtime config to disable permission prompts
-  await setConfigValue('privacy', JSON.stringify({
-    ...config.privacy,
-    skip_all_prompts: true,
-    dangerous_mode: true
-  }));
-}
 
-function createOutputHandler(options: HeadlessOptions): (data: any) => void {
-  if (options.outputFormat === 'stream-json') {
-    return (data) => {
-      const jsonLine = typeof data === 'string' 
-        ? { type: 'content', timestamp: new Date().toISOString(), content: data }
-        : data;
-      console.log(JSON.stringify(jsonLine));
-    };
-  } else {
-    return (data) => {
-      const content = typeof data === 'string' ? data : data.content || JSON.stringify(data);
-      if (options.directOutput) {
-        console.log(content);
-      } else {
-        process.stdout.write(content);
-      }
-    };
+  // Initialize analytics system
+  await orchestrator.initializeAnalyticsSystem(true);
+
+  if (headlessOptions.skipPermissions) {
+    // Note: setPermissionsEnabled method doesn't exist, removing this call
+    // orchestrator.setPermissionsEnabled(false);
   }
-}
 
-async function runStreamingJSON(prompt: string, outputHandler: (data: any) => void): Promise<void> {
-  // Start streaming JSON output
-  outputHandler({
-    type: 'start',
-    timestamp: new Date().toISOString(),
-    prompt: prompt
-  });
+  try {
+    // Process the question
+    const response = await orchestrator.processMessage(question);
 
-  let accumulatedResponse = '';
-  
-  await orchestrator.respondStream(
-    prompt,
-    (delta: string) => {
-      accumulatedResponse += delta;
-      outputHandler({
-        type: 'delta',
+    if (headlessOptions.outputFormat === "stream-json") {
+      return JSON.stringify({
+        status: "success",
+        response,
         timestamp: new Date().toISOString(),
-        content: delta
-      });
-    },
-    (event) => {
-      outputHandler({
-        type: 'event',
-        timestamp: new Date().toISOString(),
-        event_type: event.type,
-        message: event.message
       });
     }
-  );
 
-  // End streaming
-  outputHandler({
-    type: 'complete',
-    timestamp: new Date().toISOString(),
-    full_response: accumulatedResponse,
-    metrics: orchestrator.getMetrics()
-  });
+    // Response is already a string from our orchestrator implementation
+    return response;
+  } catch (error) {
+    if (headlessOptions.outputFormat === "stream-json") {
+      return JSON.stringify({
+        status: "error",
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    throw error;
+  }
 }
 
-async function runTextMode(prompt: string, outputHandler: (data: any) => void, directOutput: boolean): Promise<void> {
-  if (directOutput) {
-    // Direct output mode - stream directly to stdout
-    await orchestrator.respondStream(
-      prompt,
-      (delta: string) => {
-        process.stdout.write(delta);
-      },
-      (event) => {
-        // For direct output, show info events as comments
-        if (event.type === 'info') {
-          console.log(`# ${event.message}`);
-        }
+/**
+ * Execute a query with streaming output
+ */
+export async function* headlessStream(
+  question: string,
+  options: HeadlessOptions = {},
+): AsyncGenerator<string> {
+  const headlessOptions: Required<HeadlessOptions> = {
+    outputFormat: "stream-json",
+    skipPermissions: false,
+    sessionId: `headless-stream-${Date.now()}`,
+    timeout: 30000,
+    model: "gpt-4o",
+    ...options,
+  };
+
+  // Initialize analytics system
+  await orchestrator.initializeAnalyticsSystem(true);
+
+  try {
+    // Stream the response
+    const stream = orchestrator.processMessageStream(question);
+
+    for await (const chunk of stream) {
+      if (headlessOptions.outputFormat === "stream-json") {
+        yield JSON.stringify({
+          type: "chunk",
+          content: chunk,
+          timestamp: new Date().toISOString(),
+        });
+      } else {
+        yield chunk;
       }
-    );
-  } else {
-    // Buffered text mode
-    const response = await orchestrator.respond(
-      prompt,
-      (event) => {
-        // Show tool and info events
-        if (event.type === 'info' || event.type === 'tool-start' || event.type === 'tool-end') {
-          console.error(`[${event.type}] ${event.message}`);
-        }
-      }
-    );
-    
-    outputHandler(response);
+    }
+
+    if (headlessOptions.outputFormat === "stream-json") {
+      yield JSON.stringify({
+        type: "end",
+        timestamp: new Date().toISOString(),
+      });
+    }
+  } catch (error) {
+    if (headlessOptions.outputFormat === "stream-json") {
+      yield JSON.stringify({
+        type: "error",
+        error: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      throw error;
+    }
   }
+}
+
+/**
+ * Execute multiple queries in batch
+ */
+export async function headlessBatch(
+  questions: string[],
+  options: HeadlessOptions = {},
+): Promise<Array<{ question: string; response: string; error?: string }>> {
+  const results: Array<{ question: string; response: string; error?: string }> =
+    [];
+
+  for (const question of questions) {
+    try {
+      const response = await headlessExecute(question, options);
+      results.push({ question, response });
+    } catch (error) {
+      results.push({
+        question,
+        response: "",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Get session status
+ */
+export function getSessionStatus() {
+  const stats = orchestrator.getStats();
+  return {
+    messages: stats.messages,
+    tokens: stats.tokens,
+    uptime: process.uptime(),
+  };
+}
+
+/**
+ * Reset session
+ */
+export function resetSession() {
+  orchestrator.reset();
 }

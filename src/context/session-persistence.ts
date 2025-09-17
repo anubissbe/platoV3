@@ -3,13 +3,13 @@
  * Integrates with Plato's existing session and memory systems for robust state management
  */
 
-import { SemanticIndex } from './semantic-index.js';
-import { FileRelevanceScorer } from './relevance-scorer.js';
-import { ContentSampler } from './content-sampler.js';
-import { MemoryManager } from '../memory/manager.js';
-import { MemoryEntry } from '../memory/types.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+import { SemanticIndex } from "./semantic-index.js";
+import { FileRelevanceScorer } from "./relevance-scorer.js";
+import { ContentSampler } from "./content-sampler.js";
+import { MemoryManager } from "../memory/manager.js";
+import { MemoryEntry } from "../memory/types.js";
+import * as fs from "fs/promises";
+import * as path from "path";
 
 export interface ContextState {
   index: SemanticIndex;
@@ -49,19 +49,6 @@ export interface ContextConfiguration {
   sessionSettings?: Record<string, any>;
 }
 
-export interface ExportData {
-  version: string;
-  exportedAt: string;
-  configuration: ContextConfiguration;
-}
-
-export interface HistoryEntry {
-  id: string;
-  timestamp: Date;
-  reason: string;
-  description?: string;
-}
-
 export interface PersistenceOptions {
   sessionPath?: string;
   memoryPath?: string;
@@ -70,10 +57,31 @@ export interface PersistenceOptions {
   maxHistoryEntries?: number;
 }
 
-export interface ResumeOptions {
-  preferSaved?: boolean;
-  mergeFiles?: boolean;
-  validateState?: boolean;
+export interface StatisticsSnapshot {
+  totalEntriesStored: number;
+  contextStateSize: number;
+  lastPersistenceTime: string;
+  autoSaveEnabled: boolean;
+  hitRate?: number;
+  avgSerializationTime: number;
+  totalDiskUsage: number;
+}
+
+export interface CostAnalytics {
+  totalCost: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  interactionCount: number;
+  sessionId: string;
+  avgCostPerQuery: number;
+  lastCostUpdate: string;
+}
+
+export interface ErrorContext {
+  operation: string;
+  error: string;
+  timestamp: string;
+  path?: string;
 }
 
 /**
@@ -83,56 +91,91 @@ export class ContextPersistenceManager {
   private memoryManager: MemoryManager;
   private sessionPath: string;
   private options: PersistenceOptions;
-  private autoSaveTimer?: NodeJS.Timeout;
+  private autoSaveTimer?: any;
 
   constructor(options: PersistenceOptions = {}) {
+    // Disable autosave in test mode to prevent memory leaks
+    const isTestMode =
+      process.env.NODE_ENV === "test" || process.env.PLATO_TEST_MODE === "true";
+
     this.options = {
-      sessionPath: '.plato/session.json',
-      memoryPath: '.plato/memory',
-      autoSave: true,
+      sessionPath: ".plato/session.json",
+      memoryPath: ".plato/memory",
+      autoSave: isTestMode ? false : true, // Disable autosave in tests
       autoSaveInterval: 30000, // 30 seconds
       maxHistoryEntries: 50,
-      ...options
+      ...options,
     };
 
-    this.sessionPath = this.options.sessionPath!;
+    // Handle test directory path resolution
+    if (this.options.sessionPath!.startsWith("/")) {
+      // Absolute path provided
+      this.sessionPath = this.options.sessionPath!;
+    } else {
+      // Relative path - resolve against project directory
+      const testDir = process.env.PLATO_PROJECT_DIR || process.cwd();
+      this.sessionPath = path.join(testDir, this.options.sessionPath!);
+    }
+
     this.memoryManager = new MemoryManager({
-      memoryDir: this.options.memoryPath!
+      memoryDir: this.options.memoryPath!,
     });
-    
-    if (this.options.autoSave) {
+
+    if (this.options.autoSave && !isTestMode) {
       this.startAutoSave();
     }
   }
 
   /**
+   * Cleanup resources and stop timers - essential for tests
+   */
+  destroy(): void {
+    this.stopAutoSave();
+    // Additional cleanup if needed - remove MemoryManager destroy call since it doesn't exist
+  }
+
+  /**
+   * Shutdown method for test compatibility (alias for destroy)
+   */
+  async shutdown(): Promise<void> {
+    this.destroy();
+  }
+
+  /**
    * Serialize context state for storage
    */
-  async serializeContextState(state: ContextState): Promise<SerializedContextState> {
+  async serializeContextState(
+    state: ContextState,
+  ): Promise<SerializedContextState> {
     return {
-      version: '1.0.0',
+      version: "1.0.0",
       timestamp: new Date().toISOString(),
       index: state.index.serialize(),
       currentFiles: [...state.currentFiles],
       userPreferences: { ...state.userPreferences },
-      sessionMetadata: { ...state.sessionMetadata }
+      sessionMetadata: { ...state.sessionMetadata },
     };
   }
 
   /**
    * Deserialize context state from storage
    */
-  async deserializeContextState(serialized: Partial<SerializedContextState>): Promise<ContextState> {
+  async deserializeContextState(
+    serialized: Partial<SerializedContextState>,
+  ): Promise<ContextState> {
     let index: SemanticIndex;
-    
+
     try {
-      if (serialized.index && typeof serialized.index === 'string') {
+      if (serialized.index && typeof serialized.index === "string") {
         index = SemanticIndex.deserialize(serialized.index);
       } else {
         index = new SemanticIndex();
       }
     } catch (error) {
-      console.warn('Failed to deserialize semantic index, creating new one:', error);
+      console.warn(
+        "Failed to deserialize semantic index, creating new one:",
+        error,
+      );
       index = new SemanticIndex();
     }
 
@@ -143,45 +186,89 @@ export class ContextPersistenceManager {
       index,
       scorer,
       sampler,
-      currentFiles: Array.isArray(serialized.currentFiles) ? serialized.currentFiles : [],
+      currentFiles: Array.isArray(serialized.currentFiles)
+        ? serialized.currentFiles
+        : [],
       userPreferences: serialized.userPreferences || {},
       sessionMetadata: {
         startTime: new Date().toISOString(),
         lastActivity: new Date().toISOString(),
         totalQueries: 0,
-        ...serialized.sessionMetadata
-      }
+        ...serialized.sessionMetadata,
+      },
     };
   }
 
   /**
-   * Save context state to session.json
+   * Save context state to session.json with retry mechanism
    */
-  async saveToSession(state: ContextState): Promise<void> {
-    try {
-      const serialized = await this.serializeContextState(state);
-      
-      // Ensure directory exists
-      const sessionDir = path.dirname(this.sessionPath);
-      await fs.mkdir(sessionDir, { recursive: true });
-      
-      // Write to session.json
-      await fs.writeFile(this.sessionPath, JSON.stringify(serialized, null, 2), 'utf-8');
-      
-    } catch (error) {
-      console.error('Failed to save to session.json:', error);
-      
-      // Fallback: save to memory system
+  async saveToSession(state: ContextState, retryCount = 3): Promise<boolean> {
+    let lastError: Error | undefined;
+
+    for (let attempt = 1; attempt <= retryCount; attempt++) {
       try {
-        await this.saveToMemory(state, 'fallback-context-state');
-      } catch (memoryError) {
-        console.error('Fallback to memory also failed:', memoryError);
-        throw error;
+        const serialized = await this.serializeContextState(state);
+
+        // Ensure directory exists
+        const sessionDir = path.dirname(this.sessionPath);
+        await fs.mkdir(sessionDir, { recursive: true });
+
+        // Write to file
+        await fs.writeFile(
+          this.sessionPath,
+          JSON.stringify(serialized, null, 2),
+          "utf-8",
+        );
+        return true;
+      } catch (error: any) {
+        lastError = error;
+
+        // Log error with context
+        const errorType = this.classifyError(error);
+        console.error(
+          `Failed to save to session.json (attempt ${attempt}/${retryCount}):`,
+          {
+            error: error.message,
+            type: errorType,
+            code: error.code,
+            path: this.sessionPath,
+          },
+        );
+
+        // Wait before retry (except on last attempt)
+        if (attempt < retryCount) {
+          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        }
       }
-      
-      // Re-throw the original error if fallback succeeded but we still want to indicate failure
-      throw error;
     }
+
+    // Memory fallback attempt using proper MemoryManager API
+    try {
+      await this.memoryManager.addMemory({
+        id: "fallback-context-state",
+        type: "context",
+        content: JSON.stringify(await this.serializeContextState(state)),
+        timestamp: new Date().toISOString(),
+        tags: ["context", "session", "persistent"],
+        metadata: {
+          priority: "high",
+        },
+      });
+
+      console.warn(
+        "Session saved to memory fallback due to file write failure",
+      );
+      return true;
+    } catch (memoryError) {
+      console.error("Both session.json and memory fallback failed:", {
+        originalError: lastError?.message,
+        memoryError: (memoryError as Error).message,
+      });
+      // Re-throw the original error since fallback also failed
+      throw lastError;
+    }
+
+    return false;
   }
 
   /**
@@ -189,297 +276,446 @@ export class ContextPersistenceManager {
    */
   async loadFromSession(): Promise<ContextState | null> {
     try {
-      const data = await fs.readFile(this.sessionPath, 'utf-8');
-      const parsed = JSON.parse(data);
-      return await this.deserializeContextState(parsed);
+      const content = await fs.readFile(this.sessionPath, "utf-8");
+      const serialized = JSON.parse(content) as SerializedContextState;
+
+      // Validate the loaded data
+      if (!serialized.version || !serialized.timestamp) {
+        console.warn("Invalid session data structure, creating new context");
+        return null;
+      }
+
+      return await this.deserializeContextState(serialized);
     } catch (error: any) {
-      if (error.code === 'ENOENT') {
-        return null; // File doesn't exist
+      if (error.code === "ENOENT") {
+        // File doesn't exist, return null to create new context
+        return null;
       }
-      console.warn('Failed to load from session.json:', error);
+
+      console.error("Error loading session:", {
+        error: error.message,
+        code: error.code,
+        path: this.sessionPath,
+      });
+
+      // Try memory fallback using proper MemoryManager API
+      try {
+        const memories = await this.memoryManager.getAllMemories();
+        const fallbackMemory = memories.find(
+          (m) => m.id === "fallback-context-state",
+        );
+
+        if (fallbackMemory) {
+          console.info("Restored session from memory fallback");
+          const serialized = JSON.parse(fallbackMemory.content);
+          return await this.deserializeContextState(serialized);
+        }
+      } catch (memoryError) {
+        console.warn(
+          "Memory fallback also failed:",
+          (memoryError as Error).message,
+        );
+      }
+
       return null;
     }
   }
 
   /**
-   * Update cost analytics data in session metadata
+   * Store context entry in memory
    */
-  async updateSessionCostAnalytics(
-    sessionId: string,
-    costData: {
-      totalCost: number;
-      totalInputTokens: number;
-      totalOutputTokens: number;
-      interactionCount: number;
-    }
-  ): Promise<void> {
+  async storeContextEntry(key: string, entry: MemoryEntry): Promise<void> {
     try {
-      // Load current session state
-      const currentState = await this.loadFromSession();
-      
-      if (currentState) {
-        // Calculate average cost per query
-        const avgCostPerQuery = costData.interactionCount > 0 ? costData.totalCost / costData.interactionCount : 0;
-        
-        // Update cost analytics in session metadata
-        currentState.sessionMetadata.costAnalytics = {
-          ...costData,
-          sessionId,
-          avgCostPerQuery,
-          lastCostUpdate: new Date().toISOString()
-        };
-        
-        // Update last activity
-        currentState.sessionMetadata.lastActivity = new Date().toISOString();
-        
-        // Save updated state
-        await this.saveToSession(currentState);
-      }
+      await this.memoryManager.addMemory({
+        ...entry,
+        id: key,
+      });
     } catch (error) {
-      console.warn('Failed to update session cost analytics:', error);
+      console.error(`Failed to store context entry '${key}':`, error);
+      throw error;
     }
   }
 
   /**
-   * Get cost analytics data from session
+   * Retrieve context entries from memory
    */
-  async getSessionCostAnalytics(): Promise<{
-    totalCost: number;
-    totalInputTokens: number;
-    totalOutputTokens: number;
-    interactionCount: number;
-    sessionId: string;
-    avgCostPerQuery: number;
-    lastCostUpdate: string;
-  } | null> {
+  async getContextHistory(query?: string): Promise<MemoryEntry[]> {
     try {
-      const sessionState = await this.loadFromSession();
-      return sessionState?.sessionMetadata.costAnalytics || null;
+      // Get all memories and filter for context history entries
+      const memories = await this.memoryManager.getAllMemories();
+      const historyEntries = memories.filter(
+        (m) => m.tags?.includes("context") && m.tags?.includes("history"),
+      );
+
+      // Sort by timestamp (newest first)
+      return historyEntries.sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
     } catch (error) {
-      console.warn('Failed to get session cost analytics:', error);
-      return null;
+      console.error("Failed to retrieve context history:", error);
+      return [];
     }
   }
 
   /**
-   * Initialize cost analytics for a new session
+   * Apply context configuration
+   */
+  async applyConfiguration(
+    config: ContextConfiguration,
+  ): Promise<ContextState> {
+    // Load existing state or create new
+    let state = await this.loadFromSession();
+
+    if (!state) {
+      state = await this.deserializeContextState({});
+    }
+
+    // Apply configuration updates
+    state.userPreferences = {
+      ...state.userPreferences,
+      ...config.userPreferences,
+    };
+    state.currentFiles = [...config.currentFiles];
+
+    if (config.sessionSettings) {
+      state.sessionMetadata = {
+        ...state.sessionMetadata,
+        ...config.sessionSettings,
+      };
+    }
+
+    // Save updated state
+    await this.saveToSession(state);
+
+    return state;
+  }
+
+  /**
+   * Get persistence statistics
+   */
+  async getStatistics(): Promise<StatisticsSnapshot> {
+    const stats: StatisticsSnapshot = {
+      totalEntriesStored: 0,
+      contextStateSize: 0,
+      lastPersistenceTime: "never",
+      autoSaveEnabled: this.options.autoSave || false,
+      avgSerializationTime: 0,
+      totalDiskUsage: 0,
+    };
+
+    try {
+      // Check if session file exists and get its size
+      const sessionStat = await fs.stat(this.sessionPath);
+      stats.contextStateSize = sessionStat.size;
+      stats.lastPersistenceTime = sessionStat.mtime.toISOString();
+      stats.totalDiskUsage += sessionStat.size;
+    } catch (error) {
+      // Session file doesn't exist
+    }
+
+    try {
+      // Get memory entries count
+      const memories = await this.getContextHistory();
+      stats.totalEntriesStored = memories.length;
+    } catch (error) {
+      console.warn("Failed to get memory statistics:", error);
+    }
+
+    return stats;
+  }
+
+  /**
+   * Initialize session cost analytics
    */
   async initializeSessionCostAnalytics(sessionId: string): Promise<void> {
-    const currentState = await this.loadFromSession();
-    
-    if (currentState && !currentState.sessionMetadata.costAnalytics) {
-      currentState.sessionMetadata.costAnalytics = {
-        totalCost: 0,
-        totalInputTokens: 0,
-        totalOutputTokens: 0,
-        interactionCount: 0,
+    try {
+      const state = await this.loadFromSession();
+
+      if (state) {
+        if (!state.sessionMetadata.costAnalytics) {
+          state.sessionMetadata.costAnalytics = {
+            totalCost: 0,
+            totalInputTokens: 0,
+            totalOutputTokens: 0,
+            interactionCount: 0,
+            sessionId,
+            avgCostPerQuery: 0,
+            lastCostUpdate: new Date().toISOString(),
+          };
+
+          await this.saveToSession(state);
+        }
+      } else {
+        console.warn(
+          "Cannot initialize cost analytics: no session state available",
+        );
+      }
+    } catch (error: any) {
+      console.error("Failed to initialize session cost analytics:", {
+        error: error.message,
         sessionId,
-        avgCostPerQuery: 0,
-        lastCostUpdate: new Date().toISOString()
-      };
-      
-      await this.saveToSession(currentState);
+      });
+    }
+  }
+
+  /**
+   * Update session cost analytics
+   */
+  async updateSessionCostAnalytics(
+    costDelta: Partial<CostAnalytics>,
+  ): Promise<void> {
+    try {
+      const state = await this.loadFromSession();
+
+      if (state && state.sessionMetadata.costAnalytics) {
+        const analytics = state.sessionMetadata.costAnalytics;
+
+        analytics.totalCost += costDelta.totalCost || 0;
+        analytics.totalInputTokens += costDelta.totalInputTokens || 0;
+        analytics.totalOutputTokens += costDelta.totalOutputTokens || 0;
+        analytics.interactionCount += costDelta.interactionCount || 0;
+        analytics.lastCostUpdate = new Date().toISOString();
+
+        if (analytics.interactionCount > 0) {
+          analytics.avgCostPerQuery =
+            analytics.totalCost / analytics.interactionCount;
+        }
+
+        await this.saveToSession(state);
+      } else {
+        console.warn(
+          "Cannot update cost analytics: no session state available",
+        );
+      }
+    } catch (error: any) {
+      console.error("Failed to update session cost analytics:", {
+        error: error.message,
+        costDelta,
+      });
+    }
+  }
+
+  /**
+   * Get current session cost analytics
+   */
+  async getSessionCostAnalytics(): Promise<CostAnalytics | null> {
+    try {
+      const state = await this.loadFromSession();
+      return state?.sessionMetadata.costAnalytics || null;
+    } catch (error) {
+      console.error("Failed to get session cost analytics:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Reset session cost analytics
+   */
+  async resetSessionCostAnalytics(sessionId: string): Promise<void> {
+    try {
+      const state = await this.loadFromSession();
+
+      if (state) {
+        state.sessionMetadata.costAnalytics = {
+          totalCost: 0,
+          totalInputTokens: 0,
+          totalOutputTokens: 0,
+          interactionCount: 0,
+          sessionId,
+          avgCostPerQuery: 0,
+          lastCostUpdate: new Date().toISOString(),
+        };
+
+        await this.saveToSession(state);
+      }
+    } catch (error: any) {
+      console.error("Failed to reset session cost analytics:", {
+        error: error.message,
+        sessionId,
+      });
+    }
+  }
+
+  /**
+   * Classify error types for better handling
+   */
+  private classifyError(error: any): string {
+    if (error.code === "ENOSPC") return "DISK_FULL";
+    if (error.code === "EACCES") return "PERMISSION_DENIED";
+    if (error.code === "ENOENT") return "PATH_NOT_FOUND";
+    if (error.code === "EMFILE") return "TOO_MANY_FILES";
+    if (error.name === "SyntaxError") return "JSON_PARSE_ERROR";
+    return "UNKNOWN_ERROR";
+  }
+
+  /**
+   * Start auto-save timer
+   */
+  private startAutoSave(): void {
+    if (this.autoSaveTimer) {
+      clearInterval(this.autoSaveTimer);
+    }
+
+    // Use testUtils.setInterval in test mode for proper cleanup
+    const globalTestUtils = (global as any).testUtils;
+    if (process.env.NODE_ENV === "test" && globalTestUtils) {
+      this.autoSaveTimer = globalTestUtils.setInterval(() => {
+        // Auto-save would be triggered by the context manager
+        // This is just the timer setup
+      }, this.options.autoSaveInterval!);
+    } else {
+      this.autoSaveTimer = setInterval(() => {
+        // Auto-save would be triggered by the context manager
+        // This is just the timer setup
+      }, this.options.autoSaveInterval!);
+    }
+  }
+
+  /**
+   * Stop auto-save timer
+   */
+  stopAutoSave(): void {
+    if (this.autoSaveTimer) {
+      clearInterval(this.autoSaveTimer);
+      this.autoSaveTimer = undefined;
     }
   }
 
   /**
    * Save context state to memory system
    */
-  async saveToMemory(state: ContextState, memoryId: string): Promise<void> {
+  async saveToMemory(state: ContextState, id: string): Promise<void> {
     try {
       const serialized = await this.serializeContextState(state);
-      
+
       await this.memoryManager.addMemory({
-        id: memoryId,
-        type: 'context',
+        id,
+        type: "context",
         content: JSON.stringify(serialized),
         timestamp: new Date().toISOString(),
-        tags: ['context', 'session', 'persistent'],
+        tags: ["context", "session", "persistent"],
         metadata: {
-          priority: 'high'
-        }
+          priority: "high",
+        },
       });
     } catch (error) {
-      console.warn('Failed to save context to memory system:', error);
-      // Don't throw - this is often used as a fallback
+      console.error("Failed to save context state to memory:", error);
     }
   }
 
   /**
    * Load context state from memory system
    */
-  async loadFromMemory(memoryId: string): Promise<ContextState | null> {
+  async loadFromMemory(id: string): Promise<ContextState | null> {
     try {
       const memories = await this.memoryManager.getAllMemories();
-      const entry = memories.find(m => m.id === memoryId && m.type === 'context');
-      
-      if (!entry) {
+      const memory = memories.find((m) => m.id === id);
+
+      if (!memory) {
         return null;
       }
-      
-      const parsed = JSON.parse(entry.content);
-      return await this.deserializeContextState(parsed);
+
+      const serialized = JSON.parse(memory.content);
+      return await this.deserializeContextState(serialized);
     } catch (error) {
-      console.warn('Failed to load context from memory system:', error);
+      console.error("Failed to load context state from memory:", error);
       return null;
     }
   }
 
   /**
-   * Create a context history snapshot
+   * Create a history snapshot of current context state
    */
   async createHistorySnapshot(
-    state: ContextState, 
-    reason: string, 
-    description?: string
+    state: ContextState,
+    reason: string,
+    description?: string,
   ): Promise<void> {
     try {
-      const timestamp = Date.now();
-      const historyId = `context-history-${timestamp}`;
+      const snapshotId = `context-history-${Date.now()}`;
       const serialized = await this.serializeContextState(state);
-      
+
       await this.memoryManager.addMemory({
-        id: historyId,
-        type: 'session',
+        id: snapshotId,
+        type: "session",
         content: JSON.stringify({
           snapshot: serialized,
           reason,
           description,
-          timestamp: new Date().toISOString()
         }),
         timestamp: new Date().toISOString(),
-        tags: ['context', 'history', 'snapshot'],
+        tags: ["context", "history", "snapshot"],
         metadata: {
-          priority: 'medium'
-        }
+          priority: "medium",
+        },
       });
-      
-      // Cleanup old history entries
-      await this.cleanupHistory();
     } catch (error) {
-      console.warn('Failed to create context history snapshot:', error);
+      console.error("Failed to create context history snapshot:", error);
     }
   }
 
   /**
-   * Get context history entries
+   * Merge with existing session data
    */
-  async getContextHistory(): Promise<HistoryEntry[]> {
-    try {
-      const memories = await this.memoryManager.getAllMemories();
-      const historyEntries = memories.filter(m => 
-        m.type === 'session' && 
-        m.tags?.includes('context') && 
-        m.tags?.includes('history')
-      );
-      
-      return historyEntries
-        .map(entry => {
-          try {
-            const parsed = JSON.parse(entry.content);
-            return {
-              id: entry.id,
-              timestamp: new Date(entry.timestamp),
-              reason: parsed.reason || 'unknown',
-              description: parsed.description
-            };
-          } catch {
-            return {
-              id: entry.id,
-              timestamp: new Date(entry.timestamp),
-              reason: 'unknown',
-              description: undefined
-            };
-          }
-        })
-        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-    } catch (error) {
-      console.warn('Failed to get context history:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Smart context resumption with intelligent merging
-   */
-  async smartResume(
-    savedState: Partial<ContextState>, 
-    currentState: Partial<ContextState>,
-    options: ResumeOptions = {}
-  ): Promise<ContextState> {
-    const opts = {
-      preferSaved: true,
-      mergeFiles: true,
-      validateState: true,
-      ...options
+  async mergeWithExistingSession(
+    contextState: ContextState,
+    existingSessionData: any,
+  ): Promise<any> {
+    const merged = {
+      ...existingSessionData,
+      contextManager: contextState,
     };
-
-    // Merge current files
-    const mergedFiles = opts.mergeFiles 
-      ? await this.resolveFileConflicts(
-          savedState.currentFiles || [],
-          currentState.currentFiles || [],
-          { preferSaved: opts.preferSaved }
-        )
-      : opts.preferSaved 
-        ? savedState.currentFiles || []
-        : currentState.currentFiles || [];
-
-    // Merge user preferences (saved takes precedence for existing keys)
-    const mergedPreferences = {
-      ...(currentState.userPreferences || {}),
-      ...(savedState.userPreferences || {})
-    };
-
-    // Merge session metadata
-    const totalQueries = (savedState.sessionMetadata?.totalQueries || 0) + (currentState.sessionMetadata?.totalQueries || 0);
-    const mergedMetadata = {
-      startTime: savedState.sessionMetadata?.startTime || new Date().toISOString(),
-      lastActivity: new Date().toISOString(),
-      ...(currentState.sessionMetadata || {}),
-      ...(savedState.sessionMetadata || {}),
-      totalQueries // Override with the calculated sum
-    };
-
-    // Create merged state
-    const merged: ContextState = {
-      index: savedState.index || currentState.index || new SemanticIndex(),
-      scorer: savedState.scorer || currentState.scorer || new FileRelevanceScorer(new SemanticIndex()),
-      sampler: savedState.sampler || currentState.sampler || new ContentSampler(new SemanticIndex()),
-      currentFiles: mergedFiles,
-      userPreferences: mergedPreferences,
-      sessionMetadata: mergedMetadata
-    };
-
-    // Validate if requested
-    if (opts.validateState && !(await this.validateContextState(merged))) {
-      throw new Error('Merged context state failed validation');
-    }
 
     return merged;
   }
 
   /**
-   * Resolve file conflicts during context merge
+   * Smart resume that intelligently merges saved and current state
+   */
+  async smartResume(
+    savedState: ContextState,
+    currentState: ContextState,
+  ): Promise<ContextState> {
+    // Merge files intelligently - avoid duplicates
+    const allFiles = [...savedState.currentFiles, ...currentState.currentFiles];
+    const uniqueFiles = [...new Set(allFiles)];
+
+    // Merge preferences - prefer saved values for existing keys, keep new ones
+    const mergedPreferences = {
+      ...currentState.userPreferences,
+      ...savedState.userPreferences,
+    };
+
+    // Sum session metrics where it makes sense
+    const totalQueries =
+      (savedState.sessionMetadata.totalQueries || 0) +
+      (currentState.sessionMetadata.totalQueries || 0);
+
+    return {
+      index: savedState.index, // Use saved index
+      scorer: savedState.scorer, // Use saved scorer
+      sampler: savedState.sampler, // Use saved sampler
+      currentFiles: uniqueFiles,
+      userPreferences: mergedPreferences,
+      sessionMetadata: {
+        ...savedState.sessionMetadata,
+        totalQueries,
+      },
+    };
+  }
+
+  /**
+   * Resolve file conflicts during resume
    */
   async resolveFileConflicts(
     savedFiles: string[],
     currentFiles: string[],
-    options: { preferSaved?: boolean } = {}
+    options: { preferSaved?: boolean } = {},
   ): Promise<string[]> {
-    const allFiles = new Set<string>();
-    
-    if (options.preferSaved) {
-      // Add saved files first, then current files
-      savedFiles.forEach(file => allFiles.add(file));
-      currentFiles.forEach(file => allFiles.add(file));
-    } else {
-      // Add current files first, then saved files  
-      currentFiles.forEach(file => allFiles.add(file));
-      savedFiles.forEach(file => allFiles.add(file));
-    }
-    
-    return Array.from(allFiles);
+    const combined = [...currentFiles, ...savedFiles];
+    const unique = [...new Set(combined)];
+    return unique;
   }
 
   /**
@@ -488,27 +724,20 @@ export class ContextPersistenceManager {
   async validateContextState(state: any): Promise<boolean> {
     try {
       // Check required properties
-      if (!state || typeof state !== 'object') {
+      if (!state.index || !state.scorer || !state.sampler) {
         return false;
       }
 
-      // Validate currentFiles
+      // Check that currentFiles is an array
       if (!Array.isArray(state.currentFiles)) {
         return false;
       }
 
-      // Validate userPreferences
-      if (state.userPreferences && typeof state.userPreferences !== 'object') {
-        return false;
-      }
-
-      // Validate sessionMetadata
-      if (state.sessionMetadata && typeof state.sessionMetadata !== 'object') {
-        return false;
-      }
-
-      // Validate components exist
-      if (!state.index || !state.scorer || !state.sampler) {
+      // Check that userPreferences is an object
+      if (
+        typeof state.userPreferences !== "object" ||
+        state.userPreferences === null
+      ) {
         return false;
       }
 
@@ -521,95 +750,48 @@ export class ContextPersistenceManager {
   /**
    * Export context configuration
    */
-  async exportConfiguration(state: ContextState): Promise<ExportData> {
+  async exportConfiguration(state: ContextState): Promise<{
+    version: string;
+    exportedAt: string;
+    configuration: ContextConfiguration;
+  }> {
     return {
-      version: '1.0.0',
+      version: "1.0.0",
       exportedAt: new Date().toISOString(),
       configuration: {
-        userPreferences: { ...state.userPreferences },
-        currentFiles: [...state.currentFiles],
-        sessionSettings: {
-          totalQueries: state.sessionMetadata.totalQueries,
-          startTime: state.sessionMetadata.startTime
-        }
-      }
+        userPreferences: state.userPreferences,
+        currentFiles: state.currentFiles,
+        sessionSettings: state.sessionMetadata,
+      },
     };
   }
 
   /**
    * Import context configuration
    */
-  async importConfiguration(data: ExportData): Promise<ContextState> {
-    // Validate import data
-    if (!data || !data.version || !data.configuration) {
-      throw new Error('Invalid import data format');
+  async importConfiguration(importData: any): Promise<ContextState> {
+    if (!importData || !importData.configuration) {
+      throw new Error("Invalid import data format");
     }
 
-    // Check version compatibility
-    if (data.version !== '1.0.0') {
-      console.warn(`Importing from version ${data.version}, compatibility not guaranteed`);
-    }
+    const config = importData.configuration;
 
-    const config = data.configuration;
-    const index = new SemanticIndex();
-    
-    return {
-      index,
-      scorer: new FileRelevanceScorer(index),
-      sampler: new ContentSampler(index),
-      currentFiles: Array.isArray(config.currentFiles) ? config.currentFiles : [],
+    return await this.deserializeContextState({
+      version: importData.version || "1.0.0",
+      timestamp: importData.exportedAt || new Date().toISOString(),
+      index: JSON.stringify({
+        files: new Map(),
+        symbols: new Map(),
+        imports: new Map(),
+      }),
+      currentFiles: config.currentFiles || [],
       userPreferences: config.userPreferences || {},
-      sessionMetadata: {
+      sessionMetadata: config.sessionSettings || {
         startTime: new Date().toISOString(),
         lastActivity: new Date().toISOString(),
-        totalQueries: config.sessionSettings?.totalQueries || 0,
-        importedAt: new Date().toISOString(),
-        importedFrom: data.exportedAt
-      }
-    };
-  }
-
-  /**
-   * Merge context state with existing orchestrator session data
-   */
-  async mergeWithExistingSession(
-    contextState: ContextState,
-    existingSessionData: any
-  ): Promise<any> {
-    return {
-      ...existingSessionData,
-      contextManager: {
-        version: '1.0.0',
-        timestamp: new Date().toISOString(),
-        currentFiles: contextState.currentFiles,
-        userPreferences: contextState.userPreferences,
-        sessionMetadata: contextState.sessionMetadata
-      }
-    };
-  }
-
-  /**
-   * Start auto-save timer
-   */
-  private startAutoSave(): void {
-    if (this.autoSaveTimer) {
-      clearInterval(this.autoSaveTimer);
-    }
-    
-    this.autoSaveTimer = setInterval(() => {
-      // Auto-save would be triggered by the context manager
-      // This is just the timer setup
-    }, this.options.autoSaveInterval);
-  }
-
-  /**
-   * Stop auto-save timer
-   */
-  stopAutoSave(): void {
-    if (this.autoSaveTimer) {
-      clearInterval(this.autoSaveTimer);
-      this.autoSaveTimer = undefined;
-    }
+        totalQueries: 0,
+      },
+    });
   }
 
   /**
@@ -625,14 +807,46 @@ export class ContextPersistenceManager {
       //   // Delete oldest entries
       // }
     } catch (error) {
-      console.warn('Failed to cleanup context history:', error);
+      console.warn("Failed to cleanup context history:", error);
     }
   }
+}
 
-  /**
-   * Shutdown persistence manager
-   */
-  async shutdown(): Promise<void> {
-    this.stopAutoSave();
+/**
+ * Global instance for session persistence
+ * Gets initialized when first needed to avoid early timer creation
+ */
+let globalPersistenceManager: ContextPersistenceManager | null = null;
+
+export function getPersistenceManager(
+  options?: PersistenceOptions,
+): ContextPersistenceManager {
+  if (!globalPersistenceManager) {
+    globalPersistenceManager = new ContextPersistenceManager(options);
+
+    // Clean up on process exit
+    process.on("exit", () => {
+      if (globalPersistenceManager) {
+        globalPersistenceManager.destroy();
+      }
+    });
+
+    process.on("SIGINT", () => {
+      if (globalPersistenceManager) {
+        globalPersistenceManager.destroy();
+      }
+      process.exit(0);
+    });
+  }
+  return globalPersistenceManager;
+}
+
+/**
+ * Reset global persistence manager - used for tests
+ */
+export function resetPersistenceManager(): void {
+  if (globalPersistenceManager) {
+    globalPersistenceManager.destroy();
+    globalPersistenceManager = null;
   }
 }

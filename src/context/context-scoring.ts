@@ -3,8 +3,8 @@
  * Multi-dimensional scoring algorithm for message prioritization
  */
 
-import { SemanticAnalyzer } from './semantic-analyzer.js';
-import type { Msg } from '../runtime/orchestrator.js';
+import { SemanticAnalyzer } from "./semantic-analyzer.js";
+import type { Msg } from "../runtime/orchestrator.js";
 
 export interface ScoringWeights {
   recency: number;
@@ -59,8 +59,8 @@ export class ContextScoringSystem {
   private defaultWeights: ScoringWeights = {
     recency: 0.25,
     relevance: 0.35,
-    interaction: 0.20,
-    complexity: 0.20
+    interaction: 0.2,
+    complexity: 0.2,
   };
 
   constructor(options: { recencyDecayRate?: number } = {}) {
@@ -75,10 +75,10 @@ export class ContextScoringSystem {
   calculateRecencyScores(messages: Msg[]): number[] {
     const scores: number[] = [];
     const now = Date.now();
-    
+
     for (const msg of messages) {
       const timestamp = (msg as MessageWithTimestamp).timestamp;
-      
+
       if (!timestamp) {
         // Assign position-based score if no timestamp
         const position = scores.length;
@@ -87,7 +87,7 @@ export class ContextScoringSystem {
       } else {
         // Calculate time difference in minutes
         const ageInMinutes = (now - timestamp) / 60000;
-        
+
         // Apply exponential decay
         let score: number;
         if (ageInMinutes < 5) {
@@ -101,13 +101,16 @@ export class ContextScoringSystem {
         } else {
           // Apply exponential decay for messages older than 1 hour
           const hoursOld = ageInMinutes / 60;
-          score = Math.max(0.1, 0.3 * Math.pow(this.recencyDecayRate, hoursOld - 1));
+          score = Math.max(
+            0.1,
+            0.3 * Math.pow(this.recencyDecayRate, hoursOld - 1),
+          );
         }
-        
+
         scores.push(score);
       }
     }
-    
+
     return scores;
   }
 
@@ -115,72 +118,81 @@ export class ContextScoringSystem {
    * Calculate relevance scores based on semantic similarity to context
    */
   calculateRelevanceScores(messages: Msg[], currentContext: string): number[] {
-    if (!currentContext || currentContext.trim() === '') {
+    if (!currentContext || currentContext.trim() === "") {
       // Return uniform mid-range scores if no context
       return messages.map(() => 0.5);
     }
-    
+
     const scores: number[] = [];
-    
+
     // Create a context message for comparison
-    const contextMsg: Msg = { role: 'user', content: currentContext };
-    
+    const contextMsg: Msg = { role: "user", content: currentContext };
+
     for (const msg of messages) {
-      const similarity = this.semanticAnalyzer.calculateSimilarity(msg, contextMsg);
-      
+      const similarity = this.semanticAnalyzer.calculateSimilarity(
+        msg,
+        contextMsg,
+      );
+
       // Boost score for direct keyword matches
       const contextKeywords = this.semanticAnalyzer.extractKeywords(contextMsg);
       const messageKeywords = this.semanticAnalyzer.extractKeywords(msg);
-      const keywordOverlap = contextKeywords.filter(k => 
-        messageKeywords.some(mk => mk.toLowerCase().includes(k.toLowerCase()) || 
-                                  k.toLowerCase().includes(mk.toLowerCase()))
+      const keywordOverlap = contextKeywords.filter((k) =>
+        messageKeywords.some(
+          (mk) =>
+            mk.toLowerCase().includes(k.toLowerCase()) ||
+            k.toLowerCase().includes(mk.toLowerCase()),
+        ),
       ).length;
-      
+
       // More generous scoring
       const keywordBoost = Math.min(0.5, keywordOverlap * 0.2);
       const baseSimilarity = similarity * 2; // Double the base similarity
       const finalScore = Math.min(1, baseSimilarity + keywordBoost);
-      
+
       scores.push(finalScore);
     }
-    
+
     return scores;
   }
 
   /**
    * Calculate interaction scores based on user engagement
    */
-  calculateInteractionScores(messages: Msg[], interactions: UserInteractions): number[] {
+  calculateInteractionScores(
+    messages: Msg[],
+    interactions: UserInteractions,
+  ): number[] {
     const scores: number[] = [];
     const baseScore = 0.2; // Minimum baseline score
-    
+
     // Weight factors for different interaction types
-    const editWeight = 0.5;  // Increased for higher scores
+    const editWeight = 0.5; // Increased for higher scores
     const referenceWeight = 0.35; // Increased for higher scores
     const followUpWeight = 0.25;
-    
+
     for (let i = 0; i < messages.length; i++) {
       let score = baseScore;
-      
+
       // Check if message was edited (highest importance)
       if (interactions.edits.includes(i)) {
         score += editWeight;
       }
-      
+
       // Check if message was referenced
       if (interactions.references.includes(i)) {
         score += referenceWeight;
       }
-      
+
       // Check if message had follow-ups
       if (interactions.followUps.includes(i)) {
         score += followUpWeight;
       }
-      
+
       // Normalize to ensure score doesn't exceed 1
       scores.push(Math.min(1, score));
     }
-    
+
     return scores;
   }
 
@@ -189,210 +201,242 @@ export class ContextScoringSystem {
    */
   calculateComplexityScores(messages: Msg[]): number[] {
     const scores: number[] = [];
-    
+
     for (const msg of messages) {
       let score = 0.3; // Increased base score
-      
+
       // Check for code blocks
       const codeBlockRegex = /```[\s\S]*?```/g;
       const codeBlocks = msg.content.match(codeBlockRegex);
       if (codeBlocks) {
         score += 0.3 * Math.min(2, codeBlocks.length); // Up to 0.6 for code
       }
-      
+
       // Check for error messages and debugging - more comprehensive patterns
-      const errorPatterns = /error|exception|bug|issue|problem|debug|trace|stack|TypeError|null|undefined|cannot|failed|crash/gi;
+      const errorPatterns =
+        /error|exception|bug|issue|problem|debug|trace|stack|TypeError|null|undefined|cannot|failed|crash/gi;
       const errorMatches = msg.content.match(errorPatterns);
       if (errorMatches) {
         score += 0.35; // Increased for problem-solving content
       }
-      
+
       // Check for technical terms - expanded list
-      const techTerms = /api|database|server|client|frontend|backend|algorithm|function|class|method|variable|deployment|architecture|microservice|docker|kubernetes|REST|GraphQL|SQL|NoSQL|HTTP|GET|POST|PUT|DELETE|microservices|independently|deployable/gi;
+      const techTerms =
+        /api|database|server|client|frontend|backend|algorithm|function|class|method|variable|deployment|architecture|microservice|docker|kubernetes|REST|GraphQL|SQL|NoSQL|HTTP|GET|POST|PUT|DELETE|microservices|independently|deployable/gi;
       const techMatches = msg.content.match(techTerms);
       if (techMatches) {
         score += Math.min(0.3, techMatches.length * 0.08);
       }
-      
+
       // Check for questions about implementation or how-to
-      if (msg.content.toLowerCase().includes('how') || 
-          msg.content.toLowerCase().includes('explain') ||
-          msg.content.toLowerCase().includes('what')) {
+      if (
+        msg.content.toLowerCase().includes("how") ||
+        msg.content.toLowerCase().includes("explain") ||
+        msg.content.toLowerCase().includes("what")
+      ) {
         score += 0.15; // Questions indicate learning/problem-solving
       }
-      
+
       // Check for solution-oriented language
-      if (msg.content.toLowerCase().includes('try') ||
-          msg.content.toLowerCase().includes('use') ||
-          msg.content.toLowerCase().includes('check') ||
-          msg.content.toLowerCase().includes('occurs')) {
+      if (
+        msg.content.toLowerCase().includes("try") ||
+        msg.content.toLowerCase().includes("use") ||
+        msg.content.toLowerCase().includes("check") ||
+        msg.content.toLowerCase().includes("occurs")
+      ) {
         score += 0.1;
       }
-      
+
       scores.push(Math.min(1, score));
     }
-    
+
     return scores;
   }
 
   /**
    * Calculate composite scores combining all dimensions
    */
-  calculateCompositeScores(messages: Msg[], options: ScoringOptions = {}): number[] {
+  calculateCompositeScores(
+    messages: Msg[],
+    options: ScoringOptions = {},
+  ): number[] {
     const weights = options.weights || this.defaultWeights;
-    
+
     // Validate weights sum to 1
     const weightSum = Object.values(weights).reduce((sum, w) => sum + w, 0);
     if (Math.abs(weightSum - 1) > 0.001) {
-      throw new Error('Weights must sum to 1');
+      throw new Error("Weights must sum to 1");
     }
-    
+
     // Check cache
-    const cacheKey = JSON.stringify({ messages: messages.map(m => m.content), options });
+    const cacheKey = JSON.stringify({
+      messages: messages.map((m) => m.content),
+      options,
+    });
     if (this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!;
     }
-    
+
     // Calculate individual dimension scores
     const recencyScores = this.calculateRecencyScores(messages);
-    const relevanceScores = this.calculateRelevanceScores(messages, options.currentContext || '');
-    const interactionScores = this.calculateInteractionScores(messages, options.interactions || {
-      edits: [],
-      references: [],
-      followUps: []
-    });
+    const relevanceScores = this.calculateRelevanceScores(
+      messages,
+      options.currentContext || "",
+    );
+    const interactionScores = this.calculateInteractionScores(
+      messages,
+      options.interactions || {
+        edits: [],
+        references: [],
+        followUps: [],
+      },
+    );
     const complexityScores = this.calculateComplexityScores(messages);
-    
+
     // Combine scores with weights
     const compositeScores: number[] = [];
     for (let i = 0; i < messages.length; i++) {
-      const composite = 
+      const composite =
         weights.recency * recencyScores[i] +
         weights.relevance * relevanceScores[i] +
         weights.interaction * interactionScores[i] +
         weights.complexity * complexityScores[i];
-      
+
       compositeScores.push(composite);
     }
-    
+
     // Normalize scores
     const maxScore = Math.max(...compositeScores);
-    const normalizedScores = maxScore > 0 
-      ? compositeScores.map(s => s / maxScore)
-      : compositeScores;
-    
+    const normalizedScores =
+      maxScore > 0 ? compositeScores.map((s) => s / maxScore) : compositeScores;
+
     // Cache results
     this.cache.set(cacheKey, normalizedScores);
-    
+
     return normalizedScores;
   }
 
   /**
    * Calculate composite scores in batches for efficiency
    */
-  calculateCompositeScoresInBatches(messages: Msg[], options: ScoringOptions = {}): number[] {
+  calculateCompositeScoresInBatches(
+    messages: Msg[],
+    options: ScoringOptions = {},
+  ): number[] {
     const batchSize = options.batchSize || 100;
     const allScores: number[] = [];
-    
+
     for (let i = 0; i < messages.length; i += batchSize) {
       const batch = messages.slice(i, i + batchSize);
       const batchScores = this.calculateCompositeScores(batch, options);
       allScores.push(...batchScores);
     }
-    
+
     return allScores;
   }
 
   /**
    * Get indices of prioritized messages
    */
-  getPrioritizedMessageIndices(messages: Msg[], options: PrioritizationOptions = {}): number[] {
+  getPrioritizedMessageIndices(
+    messages: Msg[],
+    options: PrioritizationOptions = {},
+  ): number[] {
     const scores = this.calculateCompositeScores(messages, {
-      currentContext: options.currentContext
+      currentContext: options.currentContext,
     });
-    
+
     // Create array of indices with scores
     const indexedScores = scores.map((score, idx) => ({ score, idx }));
-    
+
     // Sort by score descending
     indexedScores.sort((a, b) => b.score - a.score);
-    
+
     // Apply filters
     let filtered = indexedScores;
-    
+
     if (options.minScore !== undefined) {
       const minScore = options.minScore;
-      filtered = filtered.filter(item => item.score >= minScore);
+      filtered = filtered.filter((item) => item.score >= minScore);
     }
-    
+
     if (options.topK !== undefined) {
       filtered = filtered.slice(0, options.topK);
     }
-    
-    return filtered.map(item => item.idx);
+
+    return filtered.map((item) => item.idx);
   }
 
   /**
    * Get prioritized messages
    */
-  getPrioritizedMessages(messages: Msg[], options: PrioritizationOptions = {}): Msg[] {
+  getPrioritizedMessages(
+    messages: Msg[],
+    options: PrioritizationOptions = {},
+  ): Msg[] {
     const indices = this.getPrioritizedMessageIndices(messages, options);
-    
+
     if (options.maintainPairs) {
       // Ensure Q&A pairs are kept together
       const expandedIndices = new Set(indices);
-      
+
       for (const idx of indices) {
-        if (messages[idx].role === 'user' && idx + 1 < messages.length) {
+        if (messages[idx].role === "user" && idx + 1 < messages.length) {
           expandedIndices.add(idx + 1); // Include the response
-        } else if (messages[idx].role === 'assistant' && idx > 0) {
+        } else if (messages[idx].role === "assistant" && idx > 0) {
           expandedIndices.add(idx - 1); // Include the question
         }
       }
-      
+
       // Sort to maintain order
       const sortedIndices = Array.from(expandedIndices).sort((a, b) => a - b);
-      return sortedIndices.map(idx => messages[idx]);
+      return sortedIndices.map((idx) => messages[idx]);
     }
-    
+
     // Sort indices to maintain message order
     indices.sort((a, b) => a - b);
-    return indices.map(idx => messages[idx]);
+    return indices.map((idx) => messages[idx]);
   }
 
   /**
    * Get compaction recommendations
    */
-  getCompactionRecommendations(messages: Msg[], options: { targetReduction: number }): CompactionRecommendation {
-    const targetKeepCount = Math.floor(messages.length * (1 - options.targetReduction));
+  getCompactionRecommendations(
+    messages: Msg[],
+    options: { targetReduction: number },
+  ): CompactionRecommendation {
+    const targetKeepCount = Math.floor(
+      messages.length * (1 - options.targetReduction),
+    );
     const scores = this.calculateCompositeScores(messages);
-    
+
     // Create indexed scores
     const indexedScores = scores.map((score, idx) => ({ score, idx }));
     indexedScores.sort((a, b) => b.score - a.score);
-    
+
     // Select top messages to keep
     const keepIndices = indexedScores
       .slice(0, targetKeepCount)
-      .map(item => item.idx)
+      .map((item) => item.idx)
       .sort((a, b) => a - b);
-    
+
     const removeIndices = [];
     for (let i = 0; i < messages.length; i++) {
       if (!keepIndices.includes(i)) {
         removeIndices.push(i);
       }
     }
-    
+
     // Calculate preservation score
     const keptScoreSum = keepIndices.reduce((sum, idx) => sum + scores[idx], 0);
     const totalScoreSum = scores.reduce((sum, s) => sum + s, 0);
-    const preservationScore = totalScoreSum > 0 ? keptScoreSum / totalScoreSum : 0;
-    
+    const preservationScore =
+      totalScoreSum > 0 ? keptScoreSum / totalScoreSum : 0;
+
     return {
       keepIndices,
       removeIndices,
-      preservationScore
+      preservationScore,
     };
   }
 
@@ -401,17 +445,18 @@ export class ContextScoringSystem {
    */
   scoreThreads(threads: Thread[]): number[] {
     const scores: number[] = [];
-    
+
     for (const thread of threads) {
       // Calculate composite score for the thread's messages
       const threadScores = this.calculateCompositeScores(thread.messages);
-      const avgScore = threadScores.reduce((sum, s) => sum + s, 0) / threadScores.length;
-      
+      const avgScore =
+        threadScores.reduce((sum, s) => sum + s, 0) / threadScores.length;
+
       // Combine with thread's importance
       const combinedScore = avgScore * 0.7 + thread.importance * 0.3;
       scores.push(combinedScore);
     }
-    
+
     return scores;
   }
 
@@ -419,7 +464,9 @@ export class ContextScoringSystem {
    * Check if SemanticAnalyzer integration is available
    */
   hasSemanticAnalyzerIntegration(): boolean {
-    return this.semanticAnalyzer !== null && this.semanticAnalyzer !== undefined;
+    return (
+      this.semanticAnalyzer !== null && this.semanticAnalyzer !== undefined
+    );
   }
 
   /**

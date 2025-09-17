@@ -3,9 +3,9 @@
  * Integrates mouse settings with Plato's configuration system
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
-import { homedir } from 'os';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { join, dirname } from "path";
+import { homedir } from "os";
 
 /**
  * Mouse configuration settings
@@ -71,16 +71,16 @@ const DEFAULT_MOUSE_SETTINGS: MouseSettings = {
  * Environment variable mappings for mouse settings
  */
 const ENV_MAPPINGS: Record<string, keyof MouseSettings> = {
-  PLATO_MOUSE_ENABLED: 'enabled',
-  PLATO_MOUSE_CLICK_FOCUS: 'clickToFocus',
-  PLATO_MOUSE_DRAG_SELECT: 'dragToSelect',
-  PLATO_MOUSE_RIGHT_CLICK: 'rightClickMenu',
-  PLATO_MOUSE_SCROLL: 'scrollSupport',
-  PLATO_MOUSE_DOUBLE_CLICK_SPEED: 'doubleClickSpeed',
-  PLATO_MOUSE_DRAG_THRESHOLD: 'dragThreshold',
-  PLATO_MOUSE_HOVER_DELAY: 'hoverDelay',
-  PLATO_MOUSE_SHOW_CURSOR: 'showCursor',
-  PLATO_MOUSE_SENSITIVITY: 'sensitivity',
+  PLATO_MOUSE_ENABLED: "enabled",
+  PLATO_MOUSE_CLICK_FOCUS: "clickToFocus",
+  PLATO_MOUSE_DRAG_SELECT: "dragToSelect",
+  PLATO_MOUSE_RIGHT_CLICK: "rightClickMenu",
+  PLATO_MOUSE_SCROLL: "scrollSupport",
+  PLATO_MOUSE_DOUBLE_CLICK_SPEED: "doubleClickSpeed",
+  PLATO_MOUSE_DRAG_THRESHOLD: "dragThreshold",
+  PLATO_MOUSE_HOVER_DELAY: "hoverDelay",
+  PLATO_MOUSE_SHOW_CURSOR: "showCursor",
+  PLATO_MOUSE_SENSITIVITY: "sensitivity",
 };
 
 /**
@@ -93,10 +93,10 @@ export class MouseSettingsManager {
 
   constructor(configDir?: string) {
     this.configPath = join(
-      configDir || join(homedir(), '.config', 'plato'),
-      'mouse-settings.json'
+      configDir || join(homedir(), ".config", "plato"),
+      "mouse-settings.json",
     );
-    
+
     this.capabilities = this.detectCapabilities();
     this.settings = this.loadSettings();
   }
@@ -121,16 +121,16 @@ export class MouseSettingsManager {
   updateSettings(updates: Partial<MouseSettings>): void {
     // Validate updates
     this.validateSettings(updates);
-    
+
     // Apply capability constraints
     const constrainedUpdates = this.constrainToCapabilities(updates);
-    
+
     // Merge with existing settings
     this.settings = {
       ...this.settings,
       ...constrainedUpdates,
     };
-    
+
     // Persist changes
     this.saveSettings();
   }
@@ -147,7 +147,9 @@ export class MouseSettingsManager {
    * Check if a specific feature is enabled and supported
    */
   isFeatureEnabled(feature: keyof MouseSettings): boolean {
-    return this.settings[feature] as boolean && this.isFeatureSupported(feature);
+    return (
+      (this.settings[feature] as boolean) && this.isFeatureSupported(feature)
+    );
   }
 
   /**
@@ -155,12 +157,12 @@ export class MouseSettingsManager {
    */
   isFeatureSupported(feature: keyof MouseSettings): boolean {
     const featureCapabilityMap: Record<string, keyof MouseCapabilities> = {
-      rightClickMenu: 'rightClick',
-      scrollSupport: 'scrollWheel',
-      dragToSelect: 'dragAndDrop',
-      hoverDelay: 'hover',
+      rightClickMenu: "rightClick",
+      scrollSupport: "scrollWheel",
+      dragToSelect: "dragAndDrop",
+      hoverDelay: "hover",
     };
-    
+
     const capability = featureCapabilityMap[feature];
     return capability ? this.capabilities[capability] : true;
   }
@@ -170,7 +172,7 @@ export class MouseSettingsManager {
    */
   getOptimizedSettings(): MouseSettings {
     const optimized = { ...this.settings };
-    
+
     // Disable unsupported features
     if (!this.capabilities.rightClick) {
       optimized.rightClickMenu = false;
@@ -184,7 +186,7 @@ export class MouseSettingsManager {
     if (!this.capabilities.hover) {
       optimized.hoverDelay = 0;
     }
-    
+
     return optimized;
   }
 
@@ -193,49 +195,62 @@ export class MouseSettingsManager {
    */
   validateSettings(settings: Partial<MouseSettings>): void {
     if (settings.doubleClickSpeed !== undefined) {
-      if (typeof settings.doubleClickSpeed !== 'number' || settings.doubleClickSpeed <= 0) {
-        throw new Error('Double click speed must be positive');
+      if (
+        typeof settings.doubleClickSpeed !== "number" ||
+        settings.doubleClickSpeed <= 0
+      ) {
+        throw new Error("Double click speed must be positive");
       }
       if (settings.doubleClickSpeed > 2000) {
-        throw new Error('Double click speed too high (max 2000ms)');
+        throw new Error("Double click speed too high (max 2000ms)");
       }
     }
-    
+
     if (settings.dragThreshold !== undefined) {
-      if (typeof settings.dragThreshold !== 'number' || settings.dragThreshold < 0) {
-        throw new Error('Drag threshold must be non-negative');
+      if (
+        typeof settings.dragThreshold !== "number" ||
+        settings.dragThreshold < 0
+      ) {
+        throw new Error("Drag threshold must be non-negative");
       }
       if (settings.dragThreshold > 50) {
-        throw new Error('Drag threshold too high (max 50px)');
+        throw new Error("Drag threshold too high (max 50px)");
       }
     }
-    
+
     if (settings.hoverDelay !== undefined) {
-      if (typeof settings.hoverDelay !== 'number' || settings.hoverDelay < 0) {
-        throw new Error('Hover delay must be non-negative');
+      if (typeof settings.hoverDelay !== "number" || settings.hoverDelay < 0) {
+        throw new Error("Hover delay must be non-negative");
       }
       if (settings.hoverDelay > 5000) {
-        throw new Error('Hover delay too high (max 5000ms)');
+        throw new Error("Hover delay too high (max 5000ms)");
       }
     }
-    
+
     if (settings.sensitivity !== undefined) {
-      if (typeof settings.sensitivity !== 'number' || settings.sensitivity <= 0) {
-        throw new Error('Sensitivity must be positive');
+      if (
+        typeof settings.sensitivity !== "number" ||
+        settings.sensitivity <= 0
+      ) {
+        throw new Error("Sensitivity must be positive");
       }
       if (settings.sensitivity > 10) {
-        throw new Error('Sensitivity too high (max 10x)');
+        throw new Error("Sensitivity too high (max 10x)");
       }
     }
-    
+
     // Validate boolean settings
     const booleanSettings: (keyof MouseSettings)[] = [
-      'enabled', 'clickToFocus', 'dragToSelect', 'rightClickMenu', 
-      'scrollSupport', 'showCursor'
+      "enabled",
+      "clickToFocus",
+      "dragToSelect",
+      "rightClickMenu",
+      "scrollSupport",
+      "showCursor",
     ];
-    
+
     for (const key of booleanSettings) {
-      if (settings[key] !== undefined && typeof settings[key] !== 'boolean') {
+      if (settings[key] !== undefined && typeof settings[key] !== "boolean") {
         throw new Error(`${key} must be a boolean`);
       }
     }
@@ -246,27 +261,30 @@ export class MouseSettingsManager {
    */
   private loadSettings(): MouseSettings {
     let fileSettings: Partial<MouseSettings> = {};
-    
+
     // Load from file
     try {
       if (existsSync(this.configPath)) {
-        const content = readFileSync(this.configPath, 'utf-8');
+        const content = readFileSync(this.configPath, "utf-8");
         fileSettings = JSON.parse(content);
       }
     } catch (error) {
-      console.warn(`Failed to load mouse settings from ${this.configPath}:`, error);
+      console.warn(
+        `Failed to load mouse settings from ${this.configPath}:`,
+        error,
+      );
     }
-    
+
     // Apply environment variable overrides
     const envSettings = this.loadFromEnvironment();
-    
+
     // Merge: defaults < file < environment
     const mergedSettings: MouseSettings = {
       ...DEFAULT_MOUSE_SETTINGS,
       ...fileSettings,
       ...envSettings,
     };
-    
+
     // Apply platform constraints
     const constrained = this.constrainToCapabilities(mergedSettings);
     return { ...DEFAULT_MOUSE_SETTINGS, ...constrained };
@@ -277,14 +295,14 @@ export class MouseSettingsManager {
    */
   private loadFromEnvironment(): Partial<MouseSettings> {
     const envSettings: Partial<MouseSettings> = {};
-    
+
     for (const [envVar, settingKey] of Object.entries(ENV_MAPPINGS)) {
       const value = process.env[envVar];
       if (value !== undefined) {
         try {
-          if (typeof DEFAULT_MOUSE_SETTINGS[settingKey] === 'boolean') {
-            (envSettings as any)[settingKey] = value.toLowerCase() === 'true';
-          } else if (typeof DEFAULT_MOUSE_SETTINGS[settingKey] === 'number') {
+          if (typeof DEFAULT_MOUSE_SETTINGS[settingKey] === "boolean") {
+            (envSettings as any)[settingKey] = value.toLowerCase() === "true";
+          } else if (typeof DEFAULT_MOUSE_SETTINGS[settingKey] === "number") {
             const numValue = parseFloat(value);
             if (!isNaN(numValue)) {
               (envSettings as any)[settingKey] = numValue;
@@ -295,7 +313,7 @@ export class MouseSettingsManager {
         }
       }
     }
-    
+
     return envSettings;
   }
 
@@ -309,15 +327,18 @@ export class MouseSettingsManager {
       if (!existsSync(configDir)) {
         mkdirSync(configDir, { recursive: true });
       }
-      
+
       // Write settings file
       writeFileSync(
         this.configPath,
         JSON.stringify(this.settings, null, 2),
-        'utf-8'
+        "utf-8",
       );
     } catch (error) {
-      console.warn(`Failed to save mouse settings to ${this.configPath}:`, error);
+      console.warn(
+        `Failed to save mouse settings to ${this.configPath}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -325,9 +346,11 @@ export class MouseSettingsManager {
   /**
    * Constrain settings to platform capabilities
    */
-  private constrainToCapabilities(settings: Partial<MouseSettings>): Partial<MouseSettings> {
+  private constrainToCapabilities(
+    settings: Partial<MouseSettings>,
+  ): Partial<MouseSettings> {
     const constrained = { ...settings };
-    
+
     // Disable features not supported by platform
     if (!this.capabilities.supported) {
       constrained.enabled = false;
@@ -344,7 +367,7 @@ export class MouseSettingsManager {
     if (!this.capabilities.hover) {
       constrained.hoverDelay = 0;
     }
-    
+
     return constrained;
   }
 
@@ -353,11 +376,12 @@ export class MouseSettingsManager {
    */
   private detectCapabilities(): MouseCapabilities {
     const platform = process.platform;
-    const term = process.env.TERM || '';
-    const termProgram = process.env.TERM_PROGRAM || '';
+    const term = process.env.TERM || "";
+    const termProgram = process.env.TERM_PROGRAM || "";
     const isWSL = process.env.WSL_DISTRO_NAME !== undefined;
-    const isSSH = process.env.SSH_CLIENT !== undefined || process.env.SSH_TTY !== undefined;
-    
+    const isSSH =
+      process.env.SSH_CLIENT !== undefined || process.env.SSH_TTY !== undefined;
+
     // Basic capability detection
     const capabilities: MouseCapabilities = {
       supported: true,
@@ -367,34 +391,34 @@ export class MouseSettingsManager {
       hover: true,
       multiTouch: false,
     };
-    
+
     // Platform-specific adjustments
-    if (platform === 'win32' && !isWSL) {
+    if (platform === "win32" && !isWSL) {
       capabilities.multiTouch = true;
     }
-    
+
     // Terminal-specific adjustments
-    if (term.includes('xterm') || termProgram === 'iTerm.app') {
+    if (term.includes("xterm") || termProgram === "iTerm.app") {
       capabilities.hover = true;
       capabilities.scrollWheel = true;
     }
-    
+
     // Conservative defaults for SSH/remote connections
     if (isSSH) {
       capabilities.rightClick = false;
       capabilities.hover = false;
       capabilities.multiTouch = false;
     }
-    
+
     // Detect if we're in a limited environment
-    if (term === 'dumb' || process.env.CI) {
+    if (term === "dumb" || process.env.CI) {
       capabilities.supported = false;
       capabilities.rightClick = false;
       capabilities.scrollWheel = false;
       capabilities.dragAndDrop = false;
       capabilities.hover = false;
     }
-    
+
     return capabilities;
   }
 }
@@ -422,7 +446,7 @@ export function getMouseSettings(): MouseSettings {
 }
 
 export function isMouseEnabled(): boolean {
-  return getMouseSettingsManager().isFeatureEnabled('enabled');
+  return getMouseSettingsManager().isFeatureEnabled("enabled");
 }
 
 export function updateMouseSettings(updates: Partial<MouseSettings>): void {

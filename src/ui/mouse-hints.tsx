@@ -3,11 +3,11 @@
  * Interactive UI hints and tooltips for mouse functionality
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Text, useStdin } from 'ink';
-import type { MouseEvent, MouseCoordinates } from '../tui/mouse-types.js';
-import type { MouseSettings } from '../config/mouse-settings.js';
-import type { GuidanceMessage } from './mouse-guidance.js';
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Text, useStdin } from "ink";
+import type { MouseEvent, MouseCoordinates } from "../tui/mouse-types.js";
+import type { MouseSettings } from "../config/mouse-settings.js";
+import type { GuidanceMessage } from "./mouse-guidance.js";
 
 /**
  * Tooltip configuration
@@ -16,7 +16,7 @@ interface TooltipConfig {
   /** Tooltip content */
   content: string;
   /** Position relative to trigger element */
-  position: 'above' | 'below' | 'left' | 'right' | 'auto';
+  position: "above" | "below" | "left" | "right" | "auto";
   /** Show delay in milliseconds */
   delay: number;
   /** Auto-hide timeout in milliseconds (0 = no auto-hide) */
@@ -32,7 +32,7 @@ interface HintConfig {
   /** Hint text */
   text: string;
   /** Hint type affects styling */
-  type: 'info' | 'warning' | 'success' | 'error';
+  type: "info" | "warning" | "success" | "error";
   /** Hint position */
   position: MouseCoordinates;
   /** Duration to show hint (ms) */
@@ -87,8 +87,8 @@ interface TooltipState {
  * Default tooltip configuration
  */
 const DEFAULT_TOOLTIP_CONFIG: TooltipConfig = {
-  content: '',
-  position: 'auto',
+  content: "",
+  position: "auto",
   delay: 100,
   timeout: 0,
   maxWidth: 40,
@@ -106,19 +106,22 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
   onHintDismiss,
   onTooltipShow,
 }) => {
-  const [activeHints, setActiveHints] = useState<Map<string, ActiveHint>>(new Map());
+  const [activeHints, setActiveHints] = useState<Map<string, ActiveHint>>(
+    new Map(),
+  );
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [hoverTarget, setHoverTarget] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
-  
+
   const hintTimeouts = useRef<Map<string, NodeJS.Timeout>>(new Map());
   const tooltipTimeout = useRef<NodeJS.Timeout | null>(null);
-  
+
   const { stdin } = useStdin();
 
   // Handle mouse events for tooltips and hints
   useEffect(() => {
-    if (!settings.enabled || !showHints) return;
+    if (!settings.enabled || !showHints || process.env.PLATO_QUIET_TUI === "1")
+      return;
 
     const handleMouseMove = (data: Buffer) => {
       // This would be integrated with the actual mouse event system
@@ -129,9 +132,9 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
     };
 
     if (stdin) {
-      stdin.on('data', handleMouseMove);
+      stdin.on("data", handleMouseMove);
       return () => {
-        stdin.off('data', handleMouseMove);
+        stdin.off("data", handleMouseMove);
       };
     }
   }, [settings.enabled, showHints, mousePosition, stdin]);
@@ -142,15 +145,18 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
     const expiredHints: string[] = [];
 
     activeHints.forEach((hint, id) => {
-      if (hint.config.duration > 0 && now - hint.startTime > hint.config.duration) {
+      if (
+        hint.config.duration > 0 &&
+        now - hint.startTime > hint.config.duration
+      ) {
         expiredHints.push(id);
       }
     });
 
     if (expiredHints.length > 0) {
-      setActiveHints(prev => {
+      setActiveHints((prev) => {
         const newMap = new Map(prev);
-        expiredHints.forEach(id => {
+        expiredHints.forEach((id) => {
           newMap.delete(id);
           const timeout = hintTimeouts.current.get(id);
           if (timeout) {
@@ -167,7 +173,7 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
   useEffect(() => {
     if (!showHints || guidanceMessages.length === 0) return;
 
-    guidanceMessages.forEach(message => {
+    guidanceMessages.forEach((message) => {
       if (!activeHints.has(message.title)) {
         showHint({
           id: message.title,
@@ -175,7 +181,7 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
             text: `${message.title}: ${message.message}`,
             type: getHintTypeFromGuidance(message.type),
             position: getGuidancePosition(message, uiBounds),
-            duration: message.priority === 'critical' ? 0 : 5000, // Critical messages don't auto-hide
+            duration: message.priority === "critical" ? 0 : 5000, // Critical messages don't auto-hide
             dismissible: message.dismissible ?? true,
           },
         });
@@ -192,7 +198,7 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
       startTime: Date.now(),
     };
 
-    setActiveHints(prev => new Map(prev.set(hint.id, activeHint)));
+    setActiveHints((prev) => new Map(prev.set(hint.id, activeHint)));
 
     // Set auto-hide timeout if duration is specified
     if (hint.config.duration > 0) {
@@ -207,7 +213,7 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
    * Dismiss a hint
    */
   const dismissHint = (hintId: string) => {
-    setActiveHints(prev => {
+    setActiveHints((prev) => {
       const newMap = new Map(prev);
       newMap.delete(hintId);
       return newMap;
@@ -273,11 +279,11 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
    */
   const updateHoverTarget = (position: MouseCoordinates) => {
     const target = getUIElementAtPosition(position);
-    
+
     if (target !== hoverTarget) {
       hideTooltip();
       setHoverTarget(target);
-      
+
       if (target && settings.hoverDelay >= 0) {
         showTooltip(target, position);
       }
@@ -289,11 +295,11 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
    */
   const dismissWelcome = () => {
     setShowWelcome(false);
-    onHintDismiss?.('welcome');
+    onHintDismiss?.("welcome");
   };
 
   // Don't render anything if mouse is disabled or hints are disabled
-  if (!settings.enabled || !showHints) {
+  if (!settings.enabled || !showHints || process.env.PLATO_QUIET_TUI === "1") {
     return null;
   }
 
@@ -312,9 +318,7 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
             <Text color="blue" bold>
               🖱️ Mouse Enabled
             </Text>
-            <Text color="gray">
-              Click, drag, and scroll in the interface.
-            </Text>
+            <Text color="gray">Click, drag, and scroll in the interface.</Text>
             <Text color="gray" dimColor>
               Use /mouse help for options • Press Esc to dismiss
             </Text>
@@ -339,10 +343,7 @@ export const MouseHints: React.FC<MouseHintsProps> = ({
 
       {/* Tooltip */}
       {tooltip && tooltip.visible && (
-        <MouseTooltip
-          tooltip={tooltip}
-          onDismiss={hideTooltip}
-        />
+        <MouseTooltip tooltip={tooltip} onDismiss={hideTooltip} />
       )}
     </>
   );
@@ -359,23 +360,26 @@ interface MouseHintProps {
 
 const MouseHint: React.FC<MouseHintProps> = ({ hint, onDismiss, uiBounds }) => {
   const typeColors = {
-    info: 'blue',
-    warning: 'yellow',
-    success: 'green',
-    error: 'red',
+    info: "blue",
+    warning: "yellow",
+    success: "green",
+    error: "red",
   } as const;
 
   const typeIcons = {
-    info: 'ℹ️',
-    warning: '⚠️',
-    success: '✅',
-    error: '❌',
+    info: "ℹ️",
+    warning: "⚠️",
+    success: "✅",
+    error: "❌",
   } as const;
 
   const maxWidth = Math.min(60, uiBounds.width - 4);
   const position = {
     top: Math.max(0, Math.min(hint.config.position.y, uiBounds.height - 6)),
-    left: Math.max(0, Math.min(hint.config.position.x, uiBounds.width - maxWidth)),
+    left: Math.max(
+      0,
+      Math.min(hint.config.position.x, uiBounds.width - maxWidth),
+    ),
   };
 
   return (
@@ -390,14 +394,14 @@ const MouseHint: React.FC<MouseHintProps> = ({ hint, onDismiss, uiBounds }) => {
       <Box flexDirection="column">
         <Box>
           <Text color={typeColors[hint.config.type]}>
-            {typeIcons[hint.config.type]} 
+            {typeIcons[hint.config.type]}
           </Text>
           <Text color={typeColors[hint.config.type]} bold>
-            {hint.config.text.split(':')[0]}
+            {hint.config.text.split(":")[0]}
           </Text>
         </Box>
         <Text color="gray">
-          {hint.config.text.split(':').slice(1).join(':').trim()}
+          {hint.config.text.split(":").slice(1).join(":").trim()}
         </Text>
         {hint.config.dismissible && (
           <Box marginTop={1} justifyContent="flex-end">
@@ -429,9 +433,7 @@ const MouseTooltip: React.FC<MouseTooltipProps> = ({ tooltip, onDismiss }) => {
       borderColor="gray"
       backgroundColor="black"
     >
-      <Text color="white">
-        {tooltip.content}
-      </Text>
+      <Text color="white">{tooltip.content}</Text>
     </Box>
   );
 };
@@ -443,18 +445,18 @@ const MouseTooltip: React.FC<MouseTooltipProps> = ({ tooltip, onDismiss }) => {
 /**
  * Convert guidance message type to hint type
  */
-function getHintTypeFromGuidance(guidanceType: string): HintConfig['type'] {
-  const typeMap: Record<string, HintConfig['type']> = {
-    welcome: 'info',
-    capability_warning: 'warning',
-    feature_disabled: 'warning',
-    usage_tip: 'info',
-    troubleshooting: 'warning',
-    performance_warning: 'warning',
-    accessibility: 'info',
+function getHintTypeFromGuidance(guidanceType: string): HintConfig["type"] {
+  const typeMap: Record<string, HintConfig["type"]> = {
+    welcome: "info",
+    capability_warning: "warning",
+    feature_disabled: "warning",
+    usage_tip: "info",
+    troubleshooting: "warning",
+    performance_warning: "warning",
+    accessibility: "info",
   };
-  
-  return typeMap[guidanceType] || 'info';
+
+  return typeMap[guidanceType] || "info";
 }
 
 /**
@@ -462,7 +464,7 @@ function getHintTypeFromGuidance(guidanceType: string): HintConfig['type'] {
  */
 function getGuidancePosition(
   message: GuidanceMessage,
-  bounds: { width: number; height: number }
+  bounds: { width: number; height: number },
 ): MouseCoordinates {
   // Position based on message type
   const positions: Record<string, MouseCoordinates> = {
@@ -473,7 +475,7 @@ function getGuidancePosition(
     usage_tip: { x: Math.floor(bounds.width / 2) - 25, y: bounds.height - 6 },
     accessibility: { x: 2, y: bounds.height - 12 },
   };
-  
+
   return positions[message.type] || { x: 2, y: 2 };
 }
 
@@ -482,15 +484,15 @@ function getGuidancePosition(
  */
 function getTooltipContent(target: string): string {
   const tooltips: Record<string, string> = {
-    'chat-input': 'Type your message here. Press Enter to send.',
-    'chat-output': 'Chat response area. Scroll to see more.',
-    'status-bar': 'Current status and connection info.',
-    'menu-button': 'Click to open menu options.',
-    'scroll-area': 'Use mouse wheel to scroll content.',
-    'selection': 'Selected text. Right-click for options.',
+    "chat-input": "Type your message here. Press Enter to send.",
+    "chat-output": "Chat response area. Scroll to see more.",
+    "status-bar": "Current status and connection info.",
+    "menu-button": "Click to open menu options.",
+    "scroll-area": "Use mouse wheel to scroll content.",
+    selection: "Selected text. Right-click for options.",
   };
-  
-  return tooltips[target] || '';
+
+  return tooltips[target] || "";
 }
 
 /**
@@ -499,10 +501,10 @@ function getTooltipContent(target: string): string {
 function getUIElementAtPosition(position: MouseCoordinates): string | null {
   // This would integrate with actual UI layout detection
   // For now, return based on position heuristics
-  
-  if (position.y < 5) return 'status-bar';
-  if (position.y > 20) return 'chat-input';
-  return 'chat-output';
+
+  if (position.y < 5) return "status-bar";
+  if (position.y > 20) return "chat-input";
+  return "chat-output";
 }
 
 /**
@@ -511,26 +513,26 @@ function getUIElementAtPosition(position: MouseCoordinates): string | null {
 function adjustTooltipPosition(
   position: MouseCoordinates,
   config: TooltipConfig,
-  bounds: { width: number; height: number }
+  bounds: { width: number; height: number },
 ): MouseCoordinates {
   let { x, y } = position;
-  
+
   // Adjust for tooltip size
   const tooltipWidth = Math.min(config.maxWidth, 30);
   const tooltipHeight = 3; // Approximate height
-  
+
   // Keep within horizontal bounds
   if (x + tooltipWidth > bounds.width) {
     x = bounds.width - tooltipWidth - 2;
   }
   if (x < 0) x = 2;
-  
-  // Keep within vertical bounds  
+
+  // Keep within vertical bounds
   if (y + tooltipHeight > bounds.height) {
     y = Math.max(0, y - tooltipHeight - 2); // Show above cursor
   }
   if (y < 0) y = 2;
-  
+
   return { x, y };
 }
 

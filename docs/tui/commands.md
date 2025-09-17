@@ -30,7 +30,8 @@ Complete command list and semantics (see DESIGN.md for overview). Behavior mirro
 - `/resume`: Restore a paused session.
 - `/privacy-settings`: Show/update privacy options.
 - `/release-notes`: Show release notes.
-Example (Claude parity)
+  Example (Claude parity)
+
 ```
 > make a file called hello.py and insert hello world code in python into it
 

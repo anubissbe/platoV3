@@ -3,16 +3,16 @@
  * Provides efficient change detection and incremental updates to avoid full rebuilds
  */
 
-import { SemanticIndex, FileAnalyzer } from './semantic-index.js';
-import { FileIndex } from './types.js';
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import * as crypto from 'crypto';
-import { FSWatcher, watch } from 'fs';
+import { SemanticIndex, FileAnalyzer } from "./semantic-index.js";
+import { FileIndex } from "./types.js";
+import * as fs from "fs/promises";
+import * as path from "path";
+import * as crypto from "crypto";
+import { FSWatcher, watch } from "fs";
 
 export interface FileChangeInfo {
   path: string;
-  type: 'created' | 'modified' | 'deleted';
+  type: "created" | "modified" | "deleted";
   previousHash?: string;
   newHash?: string;
   timestamp: Date;
@@ -49,24 +49,35 @@ export class FileSystemWatcher {
    * Watch a directory for changes
    */
   async watchDirectory(
-    directory: string, 
-    patterns: string[] = ['**/*.ts', '**/*.js', '**/*.tsx', '**/*.jsx'],
-    ignorePatterns: string[] = ['**/node_modules/**', '**/dist/**', '**/.git/**']
+    directory: string,
+    patterns: string[] = ["**/*.ts", "**/*.js", "**/*.tsx", "**/*.jsx"],
+    ignorePatterns: string[] = [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/.git/**",
+    ],
   ): Promise<void> {
     try {
-      const watcher = watch(directory, { recursive: true }, (eventType, filename) => {
-        if (!filename) return;
-        
-        const fullPath = path.join(directory, filename);
-        
-        // Check if file matches patterns
-        if (!this.matchesPatterns(fullPath, patterns) || this.matchesPatterns(fullPath, ignorePatterns)) {
-          return;
-        }
-        
-        this.handleFileChange(fullPath, eventType);
-      });
-      
+      const watcher = watch(
+        directory,
+        { recursive: true },
+        (eventType, filename) => {
+          if (!filename) return;
+
+          const fullPath = path.join(directory, filename);
+
+          // Check if file matches patterns
+          if (
+            !this.matchesPatterns(fullPath, patterns) ||
+            this.matchesPatterns(fullPath, ignorePatterns)
+          ) {
+            return;
+          }
+
+          this.handleFileChange(fullPath, eventType);
+        },
+      );
+
       this.watchers.set(directory, watcher);
     } catch (error) {
       console.warn(`Failed to watch directory ${directory}:`, error);
@@ -92,7 +103,7 @@ export class FileSystemWatcher {
       watcher.close();
     }
     this.watchers.clear();
-    
+
     // Clear any pending timeouts
     for (const timeout of this.debounceTimeouts.values()) {
       clearTimeout(timeout);
@@ -106,47 +117,56 @@ export class FileSystemWatcher {
     if (existing) {
       clearTimeout(existing);
     }
-    
-    this.debounceTimeouts.set(filePath, setTimeout(async () => {
-      try {
-        const stats = await fs.stat(filePath).catch(() => null);
-        const changeType: FileChangeInfo['type'] = stats ? 
-          (this.changeBuffer.has(filePath) ? 'modified' : 'created') : 
-          'deleted';
-        
-        const change: FileChangeInfo = {
-          path: filePath,
-          type: changeType,
-          timestamp: new Date()
-        };
-        
-        if (stats && changeType !== 'deleted') {
-          const content = await fs.readFile(filePath, 'utf-8');
-          change.newHash = crypto.createHash('sha256').update(content).digest('hex').substring(0, 16);
+
+    this.debounceTimeouts.set(
+      filePath,
+      setTimeout(async () => {
+        try {
+          const stats = await fs.stat(filePath).catch(() => null);
+          const changeType: FileChangeInfo["type"] = stats
+            ? this.changeBuffer.has(filePath)
+              ? "modified"
+              : "created"
+            : "deleted";
+
+          const change: FileChangeInfo = {
+            path: filePath,
+            type: changeType,
+            timestamp: new Date(),
+          };
+
+          if (stats && changeType !== "deleted") {
+            const content = await fs.readFile(filePath, "utf-8");
+            change.newHash = crypto
+              .createHash("sha256")
+              .update(content)
+              .digest("hex")
+              .substring(0, 16);
+          }
+
+          this.changeBuffer.set(filePath, change);
+          this.debounceTimeouts.delete(filePath);
+
+          // Flush changes after brief delay to allow batching
+          setTimeout(() => this.flushChanges(), 50);
+        } catch (error) {
+          console.warn(`Error processing file change for ${filePath}:`, error);
+          this.debounceTimeouts.delete(filePath);
         }
-        
-        this.changeBuffer.set(filePath, change);
-        this.debounceTimeouts.delete(filePath);
-        
-        // Flush changes after brief delay to allow batching
-        setTimeout(() => this.flushChanges(), 50);
-      } catch (error) {
-        console.warn(`Error processing file change for ${filePath}:`, error);
-        this.debounceTimeouts.delete(filePath);
-      }
-    }, this.debounceMs));
+      }, this.debounceMs),
+    );
   }
 
   private flushChanges(): void {
     if (this.changeBuffer.size === 0) return;
-    
+
     const changes = Array.from(this.changeBuffer.values());
     this.changeBuffer.clear();
     this.onChanges(changes);
   }
 
   private matchesPatterns(filePath: string, patterns: string[]): boolean {
-    return patterns.some(pattern => {
+    return patterns.some((pattern) => {
       const regex = this.globToRegex(pattern);
       return regex.test(filePath);
     });
@@ -154,9 +174,9 @@ export class FileSystemWatcher {
 
   private globToRegex(pattern: string): RegExp {
     const escaped = pattern
-      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-      .replace(/\*\*/g, '.*')
-      .replace(/\*/g, '[^/]*');
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*\*/g, ".*")
+      .replace(/\*/g, "[^/]*");
     return new RegExp(escaped);
   }
 }
@@ -170,8 +190,12 @@ export class ChangeDetector {
    */
   static async calculateFileHash(filePath: string): Promise<string | null> {
     try {
-      const content = await fs.readFile(filePath, 'utf-8');
-      return crypto.createHash('sha256').update(content).digest('hex').substring(0, 16);
+      const content = await fs.readFile(filePath, "utf-8");
+      return crypto
+        .createHash("sha256")
+        .update(content)
+        .digest("hex")
+        .substring(0, 16);
     } catch (error) {
       return null;
     }
@@ -183,78 +207,89 @@ export class ChangeDetector {
   static async detectChanges(
     directory: string,
     currentIndex: SemanticIndex,
-    patterns: string[] = ['**/*.ts', '**/*.js', '**/*.tsx', '**/*.jsx']
+    patterns: string[] = ["**/*.ts", "**/*.js", "**/*.tsx", "**/*.jsx"],
   ): Promise<FileChangeInfo[]> {
     const changes: FileChangeInfo[] = [];
-    const existingFiles = new Set(currentIndex.getAllFiles().map(f => f.path));
-    
+    const existingFiles = new Set(
+      currentIndex.getAllFiles().map((f) => f.path),
+    );
+
     try {
       const files = await this.findFiles(directory, patterns);
-      
+
       for (const filePath of files) {
         const currentHash = await this.calculateFileHash(filePath);
         if (!currentHash) continue;
-        
+
         const existingFile = currentIndex.getFile(filePath);
-        
+
         if (!existingFile) {
           // New file
           changes.push({
             path: filePath,
-            type: 'created',
+            type: "created",
             newHash: currentHash,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         } else if (existingFile.hash !== currentHash) {
           // Modified file
           changes.push({
             path: filePath,
-            type: 'modified',
+            type: "modified",
             previousHash: existingFile.hash,
             newHash: currentHash,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
-        
+
         existingFiles.delete(filePath);
       }
-      
+
       // Deleted files
       for (const deletedPath of existingFiles) {
         changes.push({
           path: deletedPath,
-          type: 'deleted',
-          timestamp: new Date()
+          type: "deleted",
+          timestamp: new Date(),
         });
       }
     } catch (error) {
       console.warn(`Error detecting changes in ${directory}:`, error);
     }
-    
+
     return changes;
   }
 
-  public static async findFiles(directory: string, patterns: string[]): Promise<string[]> {
+  public static async findFiles(
+    directory: string,
+    patterns: string[],
+  ): Promise<string[]> {
     const files: string[] = [];
-    
+
     const scan = async (dir: string): Promise<void> => {
       try {
         const entries = await fs.readdir(dir, { withFileTypes: true });
-        
+
         for (const entry of entries) {
           const fullPath = path.join(dir, entry.name);
-          
+
           if (entry.isDirectory()) {
             // Skip common ignored directories
-            if (!['node_modules', '.git', 'dist', 'build'].includes(entry.name)) {
+            if (
+              !["node_modules", ".git", "dist", "build"].includes(entry.name)
+            ) {
               await scan(fullPath);
             }
           } else if (entry.isFile()) {
             // Check if file matches patterns
-            if (patterns.some(pattern => {
-              const regex = pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*');
-              return new RegExp(regex).test(fullPath);
-            })) {
+            if (
+              patterns.some((pattern) => {
+                const regex = pattern
+                  .replace(/\*\*/g, ".*")
+                  .replace(/\*/g, "[^/]*");
+                return new RegExp(regex).test(fullPath);
+              })
+            ) {
               files.push(fullPath);
             }
           }
@@ -263,7 +298,7 @@ export class ChangeDetector {
         // Skip directories we can't read
       }
     };
-    
+
     await scan(directory);
     return files;
   }
@@ -281,12 +316,14 @@ export class IncrementalIndexer {
 
   constructor(
     private index: SemanticIndex,
-    private options: IncrementalIndexOptions = {}
+    private options: IncrementalIndexOptions = {},
   ) {
     this.analyzer = new FileAnalyzer();
-    
+
     if (options.enableWatcher) {
-      this.watcher = new FileSystemWatcher((changes) => this.handleChanges(changes));
+      this.watcher = new FileSystemWatcher((changes) =>
+        this.handleChanges(changes),
+      );
     }
   }
 
@@ -295,12 +332,21 @@ export class IncrementalIndexer {
    */
   async startWatching(directories: string[]): Promise<void> {
     if (!this.watcher) return;
-    
+
     for (const directory of directories) {
       await this.watcher.watchDirectory(
         directory,
-        this.options.watchPatterns || ['**/*.ts', '**/*.js', '**/*.tsx', '**/*.jsx'],
-        this.options.ignorePatterns || ['**/node_modules/**', '**/dist/**', '**/.git/**']
+        this.options.watchPatterns || [
+          "**/*.ts",
+          "**/*.js",
+          "**/*.tsx",
+          "**/*.jsx",
+        ],
+        this.options.ignorePatterns || [
+          "**/node_modules/**",
+          "**/dist/**",
+          "**/.git/**",
+        ],
       );
     }
   }
@@ -315,7 +361,9 @@ export class IncrementalIndexer {
   /**
    * Perform incremental update based on detected changes
    */
-  async updateIndex(changes: FileChangeInfo[]): Promise<IncrementalUpdateResult> {
+  async updateIndex(
+    changes: FileChangeInfo[],
+  ): Promise<IncrementalUpdateResult> {
     return this.queueUpdate(async () => {
       const startTime = performance.now();
       const result: IncrementalUpdateResult = {
@@ -323,7 +371,7 @@ export class IncrementalIndexer {
         skipped: 0,
         errors: [],
         duration: 0,
-        changedFiles: changes
+        changedFiles: changes,
       };
 
       const batchSize = this.options.batchSize || 50;
@@ -347,9 +395,9 @@ export class IncrementalIndexer {
     const changes = await ChangeDetector.detectChanges(
       directory,
       this.index,
-      this.options.watchPatterns
+      this.options.watchPatterns,
     );
-    
+
     return this.updateIndex(changes);
   }
 
@@ -358,29 +406,37 @@ export class IncrementalIndexer {
    */
   async rebuildIndex(directories: string[]): Promise<IncrementalUpdateResult> {
     const changes: FileChangeInfo[] = [];
-    
+
     // Clear existing index
     const existingFiles = this.index.getAllFiles();
     for (const file of existingFiles) {
       this.index.removeFile(file.path);
     }
-    
+
     // Find all files and mark as created
     for (const directory of directories) {
-      const files = await ChangeDetector.findFiles(directory, this.options.watchPatterns || ['**/*.ts', '**/*.js', '**/*.tsx', '**/*.jsx']);
+      const files = await ChangeDetector.findFiles(
+        directory,
+        this.options.watchPatterns || [
+          "**/*.ts",
+          "**/*.js",
+          "**/*.tsx",
+          "**/*.jsx",
+        ],
+      );
       for (const filePath of files) {
         const hash = await ChangeDetector.calculateFileHash(filePath);
         if (hash) {
           changes.push({
             path: filePath,
-            type: 'created',
+            type: "created",
             newHash: hash,
-            timestamp: new Date()
+            timestamp: new Date(),
           });
         }
       }
     }
-    
+
     return this.updateIndex(changes);
   }
 
@@ -395,10 +451,16 @@ export class IncrementalIndexer {
   } {
     return {
       totalFiles: this.index.getAllFiles().length,
-      lastUpdated: this.index.getAllFiles().length > 0 ? 
-        Math.max(...this.index.getAllFiles().map(f => f.lastModified?.getTime() || 0)) as any : null,
+      lastUpdated:
+        this.index.getAllFiles().length > 0
+          ? (Math.max(
+              ...this.index
+                .getAllFiles()
+                .map((f) => f.lastModified?.getTime() || 0),
+            ) as any)
+          : null,
       pendingChanges: this.pendingChanges.size,
-      updateInProgress: this.updateInProgress
+      updateInProgress: this.updateInProgress,
     };
   }
 
@@ -412,17 +474,17 @@ export class IncrementalIndexer {
         this.updateInProgress = false;
       }
     });
-    
+
     // Update the queue to continue chaining (but ignore the result)
     this.updateQueue = resultPromise.then(() => {});
-    
+
     return resultPromise;
   }
 
   private async processBatch(
-    changes: FileChangeInfo[], 
-    result: IncrementalUpdateResult, 
-    maxConcurrent: number
+    changes: FileChangeInfo[],
+    result: IncrementalUpdateResult,
+    maxConcurrent: number,
   ): Promise<void> {
     const semaphore = new Array(maxConcurrent).fill(Promise.resolve());
     let semaphoreIndex = 0;
@@ -430,21 +492,26 @@ export class IncrementalIndexer {
     const processChange = async (change: FileChangeInfo): Promise<void> => {
       try {
         switch (change.type) {
-          case 'created':
-          case 'modified':
-            const content = await fs.readFile(change.path, 'utf-8');
-            const fileIndex = await this.analyzer.analyzeFile(change.path, content);
+          case "created":
+          case "modified":
+            const content = await fs.readFile(change.path, "utf-8");
+            const fileIndex = await this.analyzer.analyzeFile(
+              change.path,
+              content,
+            );
             await this.index.addFile(fileIndex);
             result.processed++;
             break;
-            
-          case 'deleted':
+
+          case "deleted":
             this.index.removeFile(change.path);
             result.processed++;
             break;
         }
       } catch (error) {
-        result.errors.push(`Error processing ${change.path}: ${error instanceof Error ? error.message : String(error)}`);
+        result.errors.push(
+          `Error processing ${change.path}: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     };
 
@@ -452,7 +519,7 @@ export class IncrementalIndexer {
     const promises = changes.map(async (change) => {
       const currentIndex = semaphoreIndex;
       semaphoreIndex = (semaphoreIndex + 1) % maxConcurrent;
-      
+
       await semaphore[currentIndex];
       const promise = processChange(change);
       semaphore[currentIndex] = promise.catch(() => {}); // Don't let errors break the semaphore
@@ -467,15 +534,15 @@ export class IncrementalIndexer {
     for (const change of changes) {
       this.pendingChanges.set(change.path, change);
     }
-    
+
     // Debounced update
     setTimeout(() => {
       if (this.pendingChanges.size > 0) {
         const changesToProcess = Array.from(this.pendingChanges.values());
         this.pendingChanges.clear();
-        
-        this.updateIndex(changesToProcess).catch(error => {
-          console.error('Error in incremental update:', error);
+
+        this.updateIndex(changesToProcess).catch((error) => {
+          console.error("Error in incremental update:", error);
         });
       }
     }, 1000); // 1 second debounce
@@ -487,10 +554,10 @@ export class IncrementalIndexer {
  */
 export class IndexManager {
   private indexer: IncrementalIndexer;
-  
+
   constructor(
     private index: SemanticIndex,
-    private options: IncrementalIndexOptions = {}
+    private options: IncrementalIndexOptions = {},
   ) {
     this.indexer = new IncrementalIndexer(index, options);
   }
@@ -504,19 +571,19 @@ export class IndexManager {
     if (existingFiles.length === 0) {
       return this.indexer.rebuildIndex(directories);
     }
-    
+
     // Sync existing index
     const results = await Promise.all(
-      directories.map(dir => this.indexer.syncDirectory(dir))
+      directories.map((dir) => this.indexer.syncDirectory(dir)),
     );
-    
+
     // Combine results
     return {
       processed: results.reduce((sum, r) => sum + r.processed, 0),
       skipped: results.reduce((sum, r) => sum + r.skipped, 0),
-      errors: results.flatMap(r => r.errors),
-      duration: Math.max(...results.map(r => r.duration)),
-      changedFiles: results.flatMap(r => r.changedFiles)
+      errors: results.flatMap((r) => r.errors),
+      duration: Math.max(...results.map((r) => r.duration)),
+      changedFiles: results.flatMap((r) => r.changedFiles),
     };
   }
 

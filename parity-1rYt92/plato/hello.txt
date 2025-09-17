@@ -1,0 +1,26 @@
+ plato | copilot ○ unknown                     0 msgs | 87m 7s | ○ disconnected
+ Tokens:--
+────────────────────────────────────────────────────────────────────────────────
+
+👤 You • just now
+   hello
+
+
+🤖 Assistant • just now • gpt-4o-mini • 8 tokens • 2.3s
+   Hello! How can I assist you today?
+
+
+
+
+
+
+
+
+
+🖱️  MOUSE | comprehensive-testing | new
+
+helloo
+
+
+
+

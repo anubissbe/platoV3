@@ -14,71 +14,71 @@ interface OutputStyle {
   description: string;
   theme: {
     // Text colors
-    primary: string;      // Main text
-    secondary: string;    // Subdued text  
-    success: string;      // Success messages
-    error: string;        // Error messages
-    warning: string;      // Warnings
-    info: string;         // Info messages
-    muted: string;        // Gray/dimmed text
-    
+    primary: string; // Main text
+    secondary: string; // Subdued text
+    success: string; // Success messages
+    error: string; // Error messages
+    warning: string; // Warnings
+    info: string; // Info messages
+    muted: string; // Gray/dimmed text
+
     // Backgrounds
-    bgPrimary?: string;   // Main background
+    bgPrimary?: string; // Main background
     bgSecondary?: string; // Alternate background
-    
+
     // Borders and UI
-    border: string;       // Box borders
-    spinner: string;      // Progress spinner
-    selection: string;    // Selected items
+    border: string; // Box borders
+    spinner: string; // Progress spinner
+    selection: string; // Selected items
   };
-  
+
   formatting: {
     // Text decorations
     bold: boolean;
     italic: boolean;
     underline: boolean;
-    
+
     // Layout
-    padding: number;      // Internal spacing
-    margin: number;       // External spacing
-    borderStyle: 'single' | 'double' | 'rounded' | 'none';
-    
+    padding: number; // Internal spacing
+    margin: number; // External spacing
+    borderStyle: "single" | "double" | "rounded" | "none";
+
     // Components
-    showIcons: boolean;   // Emoji indicators
+    showIcons: boolean; // Emoji indicators
     showTimestamps: boolean;
     showLineNumbers: boolean;
   };
-  
+
   components: {
     // Welcome message
     welcome: {
-      icon: string;       // ✻ or custom
-      text: string;       // Template with {name}
+      icon: string; // ✻ or custom
+      text: string; // Template with {name}
     };
-    
+
     // Status line
     statusLine: {
-      format: string;     // Template with placeholders
-      separator: string;  // | or custom
+      format: string; // Template with placeholders
+      separator: string; // | or custom
     };
-    
+
     // File operations
     fileWrite: {
-      icon: string;       // 📝 or custom
-      format: string;     // "Writing {file}..."
-      success: string;    // "✓ Wrote {lines} lines to {file}"
+      icon: string; // 📝 or custom
+      format: string; // "Writing {file}..."
+      success: string; // "✓ Wrote {lines} lines to {file}"
     };
-    
+
     // Errors
     error: {
-      icon: string;       // ❌ or custom
-      format: string;     // "Error: {message}"
+      icon: string; // ❌ or custom
+      format: string; // "Error: {message}"
     };
-    
+
     // Tool calls
     toolCall: {
-      icon: string;       // 🔧 or custom
-      format: string;     // "Running tool: {name}"
+      icon: string; // 🔧 or custom
+      format: string; // "Running tool: {name}"
     };
   };
 }
@@ -87,76 +87,79 @@ interface OutputStyle {
 ## Built-in Styles
 
 ### 1. Default (Claude Code Classic)
+
 ```typescript
 const defaultStyle: OutputStyle = {
-  name: 'default',
-  description: 'Claude Code classic appearance',
+  name: "default",
+  description: "Claude Code classic appearance",
   theme: {
-    primary: 'white',
-    secondary: 'gray',
-    success: 'green',
-    error: 'red',
-    warning: 'yellow',
-    info: 'blue',
-    muted: 'gray'
+    primary: "white",
+    secondary: "gray",
+    success: "green",
+    error: "red",
+    warning: "yellow",
+    info: "blue",
+    muted: "gray",
   },
   formatting: {
     bold: true,
     showIcons: true,
-    borderStyle: 'single'
+    borderStyle: "single",
   },
   components: {
     welcome: {
-      icon: '✻',
-      text: 'Welcome to {name}!'
+      icon: "✻",
+      text: "Welcome to {name}!",
     },
     fileWrite: {
-      icon: '📝',
-      format: 'Writing {file}...',
-      success: '✓ Wrote {lines} lines to {file}'
-    }
-  }
+      icon: "📝",
+      format: "Writing {file}...",
+      success: "✓ Wrote {lines} lines to {file}",
+    },
+  },
 };
 ```
 
 ### 2. Minimal
+
 ```typescript
 const minimalStyle: OutputStyle = {
-  name: 'minimal',
-  description: 'Clean, distraction-free output',
+  name: "minimal",
+  description: "Clean, distraction-free output",
   theme: {
-    primary: 'white',
-    secondary: 'gray',
-    success: 'green',
-    error: 'red'
+    primary: "white",
+    secondary: "gray",
+    success: "green",
+    error: "red",
   },
   formatting: {
     showIcons: false,
-    borderStyle: 'none'
+    borderStyle: "none",
   },
   components: {
     welcome: {
-      icon: '',
-      text: '{name} ready'
+      icon: "",
+      text: "{name} ready",
     },
     fileWrite: {
-      icon: '',
-      format: 'write: {file}',
-      success: 'done: {lines} lines'
-    }
-  }
+      icon: "",
+      format: "write: {file}",
+      success: "done: {lines} lines",
+    },
+  },
 };
 ```
 
 ### 3. Verbose
+
 ```typescript
 const verboseStyle: OutputStyle = {
-  name: 'verbose',
-  description: 'Detailed output with timestamps',
+  name: "verbose",
+  description: "Detailed output with timestamps",
   formatting: {
     showTimestamps: true,
-    showLineNumbers: true
-  }
+    showLineNumbers: true,
+  },
   // ... full details
 };
 ```
@@ -169,19 +172,19 @@ const verboseStyle: OutputStyle = {
 class StyleManager {
   private currentStyle: OutputStyle;
   private customStyles: Map<string, OutputStyle>;
-  
+
   // Load style by name
   setStyle(name: string): void;
-  
+
   // Get current style
   getStyle(): OutputStyle;
-  
+
   // Create custom style
   createCustomStyle(style: Partial<OutputStyle>): void;
-  
+
   // Apply style to text
-  formatText(text: string, type: keyof OutputStyle['theme']): string;
-  
+  formatText(text: string, type: keyof OutputStyle["theme"]): string;
+
   // Apply style to component
   formatComponent(component: string, data: any): string;
 }
@@ -215,7 +218,7 @@ const style = styleManager.getStyle();
 // Helper to apply current style
 function styled(component: string, props: any) {
   const style = styleManager.getStyle();
-  
+
   switch(component) {
     case 'Box':
       return {
@@ -223,13 +226,13 @@ function styled(component: string, props: any) {
         borderColor: style.theme.border,
         padding: style.formatting.padding
       };
-    
+
     case 'Text':
       return {
         color: style.theme[props.type] || style.theme.primary,
         bold: style.formatting.bold && props.bold
       };
-    
+
     case 'Spinner':
       return {
         color: style.theme.spinner,
@@ -288,6 +291,7 @@ function styled(component: string, props: any) {
 ## Persistence
 
 ### Storage Location
+
 ```yaml
 # .plato/config.yaml
 outputStyle:
@@ -300,6 +304,7 @@ outputStyle:
 ```
 
 ### Loading Priority
+
 1. User's custom style if selected
 2. Built-in style if selected
 3. Default style as fallback

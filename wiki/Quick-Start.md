@@ -27,6 +27,7 @@ npm run dev
 ### Step 3: Authenticate
 
 When Plato starts, run:
+
 ```
 /login
 ```
@@ -40,6 +41,7 @@ Simply type your message and press Enter. Plato will respond using AI.
 ## 💡 Essential Commands
 
 ### Basic Commands
+
 - `/help` - Show available commands
 - `/doctor` - Check system status
 - `/status` - Show authentication status
@@ -47,12 +49,14 @@ Simply type your message and press Enter. Plato will respond using AI.
 - `/exit` or `Ctrl+C` - Exit Plato
 
 ### Conversation Management
+
 - `/memory save` - Save current conversation
 - `/memory load` - Load saved conversation
 - `/compact` - Compress long conversations
 - `/resume` - Restore last session
 
 ### Tool Integration
+
 - `/mcp attach <name> <url>` - Add tool server
 - `/mcp tools` - List available tools
 - `/permissions` - Configure tool permissions
@@ -60,12 +64,14 @@ Simply type your message and press Enter. Plato will respond using AI.
 ## ⌨️ Keyboard Shortcuts
 
 ### Navigation
+
 - `↑/↓` - Scroll through conversation
 - `Ctrl+U` - Page up
 - `Ctrl+D` - Page down
 - `Ctrl+L` - Clear screen
 
 ### Panels (Enhanced TUI)
+
 - `Ctrl+1` - Focus main chat panel
 - `Ctrl+2` - Focus status panel
 - `Ctrl+3` - Focus input panel
@@ -74,6 +80,7 @@ Simply type your message and press Enter. Plato will respond using AI.
 - `F3` - Switch layout modes
 
 ### Input
+
 - `Enter` - Send message
 - `Shift+Enter` - New line
 - `Tab` - Auto-complete commands
@@ -82,26 +89,31 @@ Simply type your message and press Enter. Plato will respond using AI.
 ## 🎯 Common Use Cases
 
 ### 1. Code Analysis
+
 ```
 Analyze the architecture of my React application in src/
 ```
 
 ### 2. Bug Fixing
+
 ```
 Help me debug the authentication error in auth.js line 45
 ```
 
 ### 3. Code Generation
+
 ```
 Create a REST API endpoint for user management with TypeScript
 ```
 
 ### 4. Documentation
+
 ```
 Write comprehensive documentation for the utils module
 ```
 
 ### 5. Testing
+
 ```
 Generate unit tests for the MessageBubble component
 ```
@@ -109,23 +121,28 @@ Generate unit tests for the MessageBubble component
 ## 🔧 Configuration Tips
 
 ### Enable File Operations
+
 Allow Plato to directly modify files:
+
 ```
 /permissions default fs_patch allow
 /apply-mode auto
 ```
 
 ### Set Default Model
+
 ```
 /model set gpt-4
 ```
 
 ### Configure Memory Auto-Save
+
 ```
 /memory auto-save on
 ```
 
 ### Customize Output Style
+
 ```
 /output-style technical
 ```
@@ -133,17 +150,20 @@ Allow Plato to directly modify files:
 ## 🚦 Status Indicators
 
 ### Connection Status
+
 - 🟢 Connected to AI provider
 - 🟡 Authenticating
 - 🔴 Disconnected
 
 ### Message Status
+
 - 🔄 AI is thinking
 - ✅ Response complete
 - ⚠️ Warning or notice
 - ❌ Error occurred
 
 ### Memory Status
+
 - 💾 Auto-save enabled
 - 📝 Memory modified
 - 🔄 Syncing
@@ -158,24 +178,28 @@ Allow Plato to directly modify files:
 ## 🛠️ Troubleshooting Quick Fixes
 
 ### Can't authenticate?
+
 ```
 /logout
 /login
 ```
 
 ### Slow responses?
+
 ```
 /compact --aggressive
 /model set gpt-3.5-turbo
 ```
 
 ### TUI rendering issues?
+
 ```
 /mouse off
 # Restart Plato
 ```
 
 ### Lost your session?
+
 ```
 /resume
 ```

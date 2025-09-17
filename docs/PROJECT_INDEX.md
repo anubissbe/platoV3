@@ -31,14 +31,16 @@
 ## Core Systems
 
 ### 1. Runtime Orchestrator (`src/runtime/`)
+
 - **Purpose**: Central conversation and tool management
-- **Key Files**: 
+- **Key Files**:
   - `orchestrator.ts` - Main orchestrator class
   - `headless.ts` - Headless mode support
   - `status-events.ts` - Event system
 - **Capabilities**: Streaming responses, tool execution, memory management
 
 ### 2. Provider System (`src/providers/`)
+
 - **Purpose**: AI model integration
 - **Key Files**:
   - `copilot.ts` - GitHub Copilot integration
@@ -47,6 +49,7 @@
 - **Features**: OAuth authentication, streaming, model switching
 
 ### 3. Tool-Call Bridge (`src/integrations/`)
+
 - **Purpose**: MCP server integration
 - **Key Files**:
   - `mcp.ts` - MCP protocol implementation
@@ -54,6 +57,7 @@
 - **Features**: Tool discovery, permission enforcement, retry logic
 
 ### 4. Patch Engine (`src/tools/`)
+
 - **Purpose**: Git-based file modifications
 - **Key Files**:
   - `patch.ts` - Diff processing
@@ -62,6 +66,7 @@
 - **Features**: Unified diffs, rollback, journal tracking
 
 ### 5. Memory System (`src/memory/`)
+
 - **Purpose**: Persistent conversation storage
 - **Key Files**:
   - `manager.ts` - Memory lifecycle
@@ -69,6 +74,7 @@
 - **Features**: Auto-save, compaction, session recovery
 
 ### 6. Context Management (`src/context/`)
+
 - **Purpose**: Intelligent context handling
 - **Key Files**:
   - `semantic-analyzer.ts` - Semantic analysis
@@ -79,69 +85,77 @@
 ## Command Reference
 
 ### System Commands
-| Command | Description |
-|---------|-------------|
-| `/help` | Show command help |
-| `/version` | Display version |
-| `/doctor` | Diagnose setup |
-| `/status` | Show system status |
-| `/exit`, `/quit` | Exit application |
+
+| Command          | Description        |
+| ---------------- | ------------------ |
+| `/help`          | Show command help  |
+| `/version`       | Display version    |
+| `/doctor`        | Diagnose setup     |
+| `/status`        | Show system status |
+| `/exit`, `/quit` | Exit application   |
 
 ### Authentication
-| Command | Description |
-|---------|-------------|
-| `/login` | GitHub Copilot auth |
-| `/logout` | Clear credentials |
-| `/auth` | Check auth status |
+
+| Command   | Description         |
+| --------- | ------------------- |
+| `/login`  | GitHub Copilot auth |
+| `/logout` | Clear credentials   |
+| `/auth`   | Check auth status   |
 
 ### Model Management
-| Command | Description |
-|---------|-------------|
-| `/model` | List models |
-| `/model <name>` | Switch model |
-| `/models` | Available models |
+
+| Command         | Description      |
+| --------------- | ---------------- |
+| `/model`        | List models      |
+| `/model <name>` | Switch model     |
+| `/models`       | Available models |
 
 ### Session Management
-| Command | Description |
-|---------|-------------|
-| `/save` | Save session |
-| `/resume` | Restore session |
-| `/reset` | Clear session |
-| `/memory` | Memory management |
-| `/compact` | Compact history |
+
+| Command    | Description       |
+| ---------- | ----------------- |
+| `/save`    | Save session      |
+| `/resume`  | Restore session   |
+| `/reset`   | Clear session     |
+| `/memory`  | Memory management |
+| `/compact` | Compact history   |
 
 ### MCP Integration
-| Command | Description |
-|---------|-------------|
-| `/mcp attach <name> <url>` | Attach server |
-| `/mcp detach <name>` | Remove server |
-| `/mcp list` | List servers |
-| `/mcp tools` | Available tools |
+
+| Command                    | Description     |
+| -------------------------- | --------------- |
+| `/mcp attach <name> <url>` | Attach server   |
+| `/mcp detach <name>`       | Remove server   |
+| `/mcp list`                | List servers    |
+| `/mcp tools`               | Available tools |
 
 ### File Operations
-| Command | Description |
-|---------|-------------|
-| `/apply` | Apply patches |
-| `/revert` | Revert patches |
+
+| Command              | Description    |
+| -------------------- | -------------- |
+| `/apply`             | Apply patches  |
+| `/revert`            | Revert patches |
 | `/apply-mode <mode>` | Set apply mode |
-| `/patches` | Show patches |
+| `/patches`           | Show patches   |
 
 ### Development
-| Command | Description |
-|---------|-------------|
-| `/todos scan` | Find TODOs |
-| `/todos list` | List TODOs |
+
+| Command        | Description |
+| -------------- | ----------- |
+| `/todos scan`  | Find TODOs  |
+| `/todos list`  | List TODOs  |
 | `/proxy start` | Start proxy |
-| `/debug` | Debug mode |
+| `/debug`       | Debug mode  |
 
 ### UI Controls
-| Command | Description |
-|---------|-------------|
-| `/clear` | Clear screen |
-| `/theme <name>` | Change theme |
+
+| Command                 | Description   |
+| ----------------------- | ------------- |
+| `/clear`                | Clear screen  |
+| `/theme <name>`         | Change theme  |
 | `/output-style <style>` | Output format |
-| `/mouse [on\|off]` | Mouse mode |
-| `/paste [seconds]` | Paste mode |
+| `/mouse [on\|off]`      | Mouse mode    |
+| `/paste [seconds]`      | Paste mode    |
 
 ## API Documentation
 
@@ -152,19 +166,19 @@ interface Orchestrator {
   // Conversation
   respond(input: string): Promise<string>;
   respondStream(input: string, onDelta: (text: string) => void): Promise<void>;
-  
+
   // Messages
   addMessage(message: Message): void;
   getMessages(): Message[];
-  
+
   // Tools
   executeTool(call: ToolCall): Promise<ToolResult>;
-  
+
   // Memory
   saveMemory(): Promise<void>;
   loadMemory(): Promise<void>;
   compactMemory(options?: CompactionOptions): Promise<void>;
-  
+
   // Metrics
   getMetrics(): Metrics;
   updateTokenMetrics(input: number, output: number): void;
@@ -245,13 +259,13 @@ PLATO_MEMORY_INTERVAL=30          # Auto-save interval
 
 ### Configuration Files
 
-| File | Purpose |
-|------|---------|
+| File                               | Purpose          |
+| ---------------------------------- | ---------------- |
 | `~/.config/plato/credentials.json` | Auth credentials |
-| `.plato/session.json` | Session state |
-| `.plato/mcp-servers.json` | MCP servers |
-| `.plato/patch-journal.json` | Patch history |
-| `.plato/memory/` | Conversations |
+| `.plato/session.json`              | Session state    |
+| `.plato/mcp-servers.json`          | MCP servers      |
+| `.plato/patch-journal.json`        | Patch history    |
+| `.plato/memory/`                   | Conversations    |
 
 ### TypeScript Configuration
 
@@ -287,14 +301,14 @@ npm run lint
 
 ### Key Scripts
 
-| Script | Description |
-|--------|-------------|
-| `dev` | Development with tsx |
-| `build` | Compile TypeScript |
-| `test` | Run test suite |
-| `typecheck` | Type checking |
-| `lint` | ESLint checking |
-| `fmt` | Prettier formatting |
+| Script      | Description          |
+| ----------- | -------------------- |
+| `dev`       | Development with tsx |
+| `build`     | Compile TypeScript   |
+| `test`      | Run test suite       |
+| `typecheck` | Type checking        |
+| `lint`      | ESLint checking      |
+| `fmt`       | Prettier formatting  |
 
 ### Testing
 
@@ -340,17 +354,17 @@ graph TD
     Runtime --> MCP[MCP Bridge]
     Runtime --> Memory[Memory System]
     Runtime --> Context[Context Manager]
-    
+
     Provider --> Copilot[GitHub Copilot]
     MCP --> Tools[Tool System]
     Tools --> Patch[Patch Engine]
     Tools --> Git[Git Integration]
-    
+
     Runtime --> TUI[Terminal UI]
     TUI --> Keyboard[Keyboard Handler]
     TUI --> Mouse[Mouse Integration]
     TUI --> Accessibility[Accessibility]
-    
+
     Context --> Semantic[Semantic Analysis]
     Context --> Compaction[Smart Compaction]
     Memory --> Persistence[File System]
@@ -359,18 +373,21 @@ graph TD
 ## Cross-References
 
 ### Data Flow
+
 1. **User Input** → TUI → Keyboard Handler → Command Parser
 2. **Command** → Orchestrator → Provider/Tool → Response
 3. **Tool Call** → MCP Bridge → Permission Check → Execution
 4. **Memory** → Auto-save → File System → Session Recovery
 
 ### Integration Points
+
 - **GitHub Copilot**: OAuth device flow at `/login`
 - **MCP Servers**: JSON-RPC at configured URLs
 - **File System**: `.plato/` directory for all runtime data
 - **Git**: Repository operations for patch application
 
 ### Quality Metrics
+
 - **Build Status**: ✅ Passing (0 errors)
 - **Test Coverage**: 93% (668 passing, 54 failing)
 - **Performance**: <50ms latency, 60fps
@@ -378,7 +395,7 @@ graph TD
 
 ---
 
-*Last Updated: December 2024*  
-*Version: 0.1.0*  
-*Total Files: 194 TypeScript files*  
-*Architecture: React + Ink + GitHub Copilot + MCP*
+_Last Updated: December 2024_  
+_Version: 0.1.0_  
+_Total Files: 194 TypeScript files_  
+_Architecture: React + Ink + GitHub Copilot + MCP_

@@ -3,9 +3,9 @@
  * Displays context information, memory view, and tool output
  */
 
-import React from 'react';
-import { Box, Text } from 'ink';
-import { Panel } from './panel.js';
+import React from "react";
+import { Box, Text } from "ink";
+import { Panel } from "./panel.js";
 
 export interface InfoPanelProps {
   width: number;
@@ -38,7 +38,7 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({
   metrics,
   onCollapse,
   onExpand,
-  onFocus
+  onFocus,
 }) => {
   const renderContent = () => {
     return (
@@ -46,54 +46,71 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({
         {/* Context Files Section */}
         {contextFiles.length > 0 && (
           <Box flexDirection="column">
-            <Text color="cyan" bold>📁 Context Files</Text>
+            <Text color="cyan" bold>
+              📁 Context Files
+            </Text>
             {contextFiles.slice(0, 5).map((file, i) => (
-              <Text key={i} color="gray"> • {file}</Text>
+              <Text key={i} color="gray">
+                {" "}
+                • {file}
+              </Text>
             ))}
             {contextFiles.length > 5 && (
               <Text color="dim"> ... and {contextFiles.length - 5} more</Text>
             )}
           </Box>
         )}
-        
+
         {/* Memory Section */}
         {memoryEntries.length > 0 && (
           <Box flexDirection="column">
-            <Text color="green" bold>🧠 Memory</Text>
+            <Text color="green" bold>
+              🧠 Memory
+            </Text>
             {memoryEntries.slice(0, 3).map((entry, i) => (
               <Box key={i} flexDirection="column">
                 <Text color="yellow"> {entry.key}:</Text>
-                <Text color="gray">  {entry.value.substring(0, 50)}...</Text>
+                <Text color="gray"> {entry.value.substring(0, 50)}...</Text>
               </Box>
             ))}
           </Box>
         )}
-        
+
         {/* Tool Output Section */}
         {toolOutput && (
           <Box flexDirection="column">
-            <Text color="magenta" bold>🔧 Tool Output</Text>
+            <Text color="magenta" bold>
+              🔧 Tool Output
+            </Text>
             <Text color="gray">{toolOutput.substring(0, 200)}</Text>
           </Box>
         )}
-        
+
         {/* Metrics Section */}
         {metrics && (
           <Box flexDirection="column">
-            <Text color="blue" bold>📊 Metrics</Text>
-            {metrics.tokens && <Text color="gray"> Tokens: {metrics.tokens}</Text>}
-            {metrics.responseTime && <Text color="gray"> Response: {metrics.responseTime}ms</Text>}
-            {metrics.memoryUsage && <Text color="gray"> Memory: {metrics.memoryUsage}MB</Text>}
+            <Text color="blue" bold>
+              📊 Metrics
+            </Text>
+            {metrics.tokens && (
+              <Text color="gray"> Tokens: {metrics.tokens}</Text>
+            )}
+            {metrics.responseTime && (
+              <Text color="gray"> Response: {metrics.responseTime}ms</Text>
+            )}
+            {metrics.memoryUsage && (
+              <Text color="gray"> Memory: {metrics.memoryUsage}MB</Text>
+            )}
           </Box>
         )}
       </Box>
     );
   };
-  
-  const statusBar = metrics 
+
+  const statusBar = metrics
     ? `T:${metrics.tokens || 0} | ${metrics.responseTime || 0}ms`
     : undefined;
-  
+
   return (
     <Panel
       id="info"
@@ -109,8 +126,8 @@ export const InfoPanel: React.FC<InfoPanelProps> = ({
       scrollable={true}
       statusBar={statusBar}
       actions={[
-        { key: 'refresh', label: '⟳', handler: () => {} },
-        { key: 'clear', label: '✕', handler: () => {} }
+        { key: "refresh", label: "⟳", handler: () => {} },
+        { key: "clear", label: "✕", handler: () => {} },
       ]}
       onCollapse={onCollapse}
       onExpand={onExpand}

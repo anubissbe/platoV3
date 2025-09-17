@@ -37,14 +37,14 @@ export class FocusManager {
       trapFocus: false,
       restoreFocus: true,
       autoFocus: false,
-      ...options
+      ...options,
     };
 
     this.state = {
       currentFocus: null,
       previousFocus: null,
       focusHistory: [],
-      trapActive: false
+      trapActive: false,
     };
   }
 
@@ -53,7 +53,7 @@ export class FocusManager {
    */
   register(component: FocusableComponent): void {
     this.components.set(component.id, component);
-    
+
     if (this.options.autoFocus && this.state.currentFocus === null) {
       this.focus(component.id);
     }
@@ -89,9 +89,12 @@ export class FocusManager {
     // Update state
     this.state.previousFocus = this.state.currentFocus;
     this.state.currentFocus = componentId;
-    
+
     // Add to history
-    if (componentId !== this.state.focusHistory[this.state.focusHistory.length - 1]) {
+    if (
+      componentId !==
+      this.state.focusHistory[this.state.focusHistory.length - 1]
+    ) {
       this.state.focusHistory.push(componentId);
       // Limit history size
       if (this.state.focusHistory.length > 10) {
@@ -119,10 +122,10 @@ export class FocusManager {
       if (component) {
         component.blur();
       }
-      
+
       this.state.previousFocus = this.state.currentFocus;
       this.state.currentFocus = null;
-      
+
       if (this.onFocusChange) {
         this.onFocusChange(null);
       }
@@ -134,13 +137,13 @@ export class FocusManager {
    */
   focusNext(): boolean {
     const components = Array.from(this.components.values())
-      .filter(c => c.canFocus())
+      .filter((c) => c.canFocus())
       .sort((a, b) => a.priority - b.priority);
 
     if (components.length === 0) return false;
 
-    const currentIndex = this.state.currentFocus 
-      ? components.findIndex(c => c.id === this.state.currentFocus)
+    const currentIndex = this.state.currentFocus
+      ? components.findIndex((c) => c.id === this.state.currentFocus)
       : -1;
 
     const nextIndex = (currentIndex + 1) % components.length;
@@ -152,16 +155,17 @@ export class FocusManager {
    */
   focusPrevious(): boolean {
     const components = Array.from(this.components.values())
-      .filter(c => c.canFocus())
+      .filter((c) => c.canFocus())
       .sort((a, b) => a.priority - b.priority);
 
     if (components.length === 0) return false;
 
-    const currentIndex = this.state.currentFocus 
-      ? components.findIndex(c => c.id === this.state.currentFocus)
+    const currentIndex = this.state.currentFocus
+      ? components.findIndex((c) => c.id === this.state.currentFocus)
       : 0;
 
-    const prevIndex = currentIndex <= 0 ? components.length - 1 : currentIndex - 1;
+    const prevIndex =
+      currentIndex <= 0 ? components.length - 1 : currentIndex - 1;
     return this.focus(components[prevIndex].id);
   }
 

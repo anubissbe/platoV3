@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Text } from 'ink';
-import { StatusIndicators } from './VisualIndicators';
+import React, { useState, useEffect } from "react";
+import { Box, Text } from "ink";
+import { StatusIndicators } from "./VisualIndicators";
 
 export interface KeyboardShortcutFeedbackProps {
   shortcut: string | null;
   duration?: number;
 }
 
-export const KeyboardShortcutFeedback: React.FC<KeyboardShortcutFeedbackProps> = ({
-  shortcut,
-  duration = 1500,
-}) => {
+export const KeyboardShortcutFeedback: React.FC<
+  KeyboardShortcutFeedbackProps
+> = ({ shortcut, duration = 1500 }) => {
   const [visible, setVisible] = useState(false);
   const [currentShortcut, setCurrentShortcut] = useState<string | null>(null);
 
@@ -63,35 +62,35 @@ export const ModeChangeIndicator: React.FC<ModeChangeIndicatorProps> = ({
 
   const getModeColor = (modeName: string): string => {
     switch (modeName.toLowerCase()) {
-      case 'normal':
-        return 'green';
-      case 'insert':
-        return 'blue';
-      case 'command':
-        return 'yellow';
-      case 'visual':
-        return 'magenta';
-      case 'search':
-        return 'cyan';
+      case "normal":
+        return "green";
+      case "insert":
+        return "blue";
+      case "command":
+        return "yellow";
+      case "visual":
+        return "magenta";
+      case "search":
+        return "cyan";
       default:
-        return 'white';
+        return "white";
     }
   };
 
   const getModeIcon = (modeName: string): string => {
     switch (modeName.toLowerCase()) {
-      case 'normal':
-        return '📝';
-      case 'insert':
-        return '✏️';
-      case 'command':
-        return '⚡';
-      case 'visual':
-        return '👁️';
-      case 'search':
-        return '🔍';
+      case "normal":
+        return "📝";
+      case "insert":
+        return "✏️";
+      case "command":
+        return "⚡";
+      case "visual":
+        return "👁️";
+      case "search":
+        return "🔍";
       default:
-        return '📋';
+        return "📋";
     }
   };
 
@@ -113,44 +112,42 @@ export const ModeChangeIndicator: React.FC<ModeChangeIndicatorProps> = ({
 
 export interface CommandExecutionFeedbackProps {
   command: string | null;
-  status: 'pending' | 'executing' | 'success' | 'error' | null;
+  status: "pending" | "executing" | "success" | "error" | null;
   message?: string;
 }
 
-export const CommandExecutionFeedback: React.FC<CommandExecutionFeedbackProps> = ({
-  command,
-  status,
-  message,
-}) => {
+export const CommandExecutionFeedback: React.FC<
+  CommandExecutionFeedbackProps
+> = ({ command, status, message }) => {
   if (!command || !status) return null;
 
   const getStatusIcon = (): string => {
     switch (status) {
-      case 'pending':
-        return '⏳';
-      case 'executing':
-        return '⚡';
-      case 'success':
-        return '✅';
-      case 'error':
-        return '❌';
+      case "pending":
+        return "⏳";
+      case "executing":
+        return "⚡";
+      case "success":
+        return "✅";
+      case "error":
+        return "❌";
       default:
-        return '❓';
+        return "❓";
     }
   };
 
   const getStatusColor = (): string => {
     switch (status) {
-      case 'pending':
-        return 'gray';
-      case 'executing':
-        return 'yellow';
-      case 'success':
-        return 'green';
-      case 'error':
-        return 'red';
+      case "pending":
+        return "gray";
+      case "executing":
+        return "yellow";
+      case "success":
+        return "green";
+      case "error":
+        return "red";
       default:
-        return 'white';
+        return "white";
     }
   };
 
@@ -171,50 +168,48 @@ export const CommandExecutionFeedback: React.FC<CommandExecutionFeedbackProps> =
 };
 
 export interface ConnectionStatusIndicatorProps {
-  status: 'connected' | 'disconnected' | 'connecting';
-  quality?: 'excellent' | 'good' | 'fair' | 'poor' | 'critical';
+  status: "connected" | "disconnected" | "connecting";
+  quality?: "excellent" | "good" | "fair" | "poor" | "critical";
   showDetails?: boolean;
 }
 
-export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps> = ({
-  status,
-  quality,
-  showDetails = false,
-}) => {
+export const ConnectionStatusIndicator: React.FC<
+  ConnectionStatusIndicatorProps
+> = ({ status, quality, showDetails = false }) => {
   const statusIndicators = new StatusIndicators();
   statusIndicators.setConnectionStatus(status);
-  
+
   const getQualityBars = (): string => {
     switch (quality) {
-      case 'excellent':
-        return '████';
-      case 'good':
-        return '███░';
-      case 'fair':
-        return '██░░';
-      case 'poor':
-        return '█░░░';
-      case 'critical':
-        return '░░░░';
+      case "excellent":
+        return "████";
+      case "good":
+        return "███░";
+      case "fair":
+        return "██░░";
+      case "poor":
+        return "█░░░";
+      case "critical":
+        return "░░░░";
       default:
-        return '░░░░';
+        return "░░░░";
     }
   };
 
   const getQualityColor = (): string => {
     switch (quality) {
-      case 'excellent':
-        return 'green';
-      case 'good':
-        return 'greenBright';
-      case 'fair':
-        return 'yellow';
-      case 'poor':
-        return 'red';
-      case 'critical':
-        return 'redBright';
+      case "excellent":
+        return "green";
+      case "good":
+        return "greenBright";
+      case "fair":
+        return "yellow";
+      case "poor":
+        return "red";
+      case "critical":
+        return "redBright";
       default:
-        return 'gray';
+        return "gray";
     }
   };
 
@@ -225,9 +220,7 @@ export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps>
         <>
           <Text> {statusIndicators.getConnectionLabel()}</Text>
           {quality && (
-            <Text color={getQualityColor()}>
-              {' '}[{getQualityBars()}]
-            </Text>
+            <Text color={getQualityColor()}> [{getQualityBars()}]</Text>
           )}
         </>
       )}
@@ -237,28 +230,28 @@ export const ConnectionStatusIndicator: React.FC<ConnectionStatusIndicatorProps>
 
 export interface NotificationBadgeProps {
   count: number;
-  type?: 'info' | 'warning' | 'error' | 'success';
+  type?: "info" | "warning" | "error" | "success";
   max?: number;
 }
 
 export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   count,
-  type = 'info',
+  type = "info",
   max = 99,
 }) => {
   if (count === 0) return null;
 
   const getColor = (): string => {
     switch (type) {
-      case 'error':
-        return 'red';
-      case 'warning':
-        return 'yellow';
-      case 'success':
-        return 'green';
-      case 'info':
+      case "error":
+        return "red";
+      case "warning":
+        return "yellow";
+      case "success":
+        return "green";
+      case "info":
       default:
-        return 'blue';
+        return "blue";
     }
   };
 
@@ -267,7 +260,8 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
   return (
     <Box>
       <Text backgroundColor={getColor()} color="white" bold>
-        {' '}{displayCount}{' '}
+        {" "}
+        {displayCount}{" "}
       </Text>
     </Box>
   );
@@ -275,7 +269,7 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({
 
 export interface ToolStatusIndicatorProps {
   toolName: string;
-  status: 'idle' | 'running' | 'success' | 'error';
+  status: "idle" | "running" | "success" | "error";
   progress?: number;
   message?: string;
 }
@@ -288,40 +282,40 @@ export const ToolStatusIndicator: React.FC<ToolStatusIndicatorProps> = ({
 }) => {
   const getIcon = (): string => {
     const toolIcons: Record<string, string> = {
-      'search': '🔍',
-      'edit': '✏️',
-      'compile': '🔨',
-      'test': '🧪',
-      'deploy': '🚀',
-      'analyze': '📊',
-      'debug': '🐛',
+      search: "🔍",
+      edit: "✏️",
+      compile: "🔨",
+      test: "🧪",
+      deploy: "🚀",
+      analyze: "📊",
+      debug: "🐛",
     };
-    return toolIcons[toolName.toLowerCase()] || '⚙️';
+    return toolIcons[toolName.toLowerCase()] || "⚙️";
   };
 
   const getStatusIcon = (): string => {
     switch (status) {
-      case 'idle':
-        return '⏸️';
-      case 'running':
-        return '⚡';
-      case 'success':
-        return '✅';
-      case 'error':
-        return '❌';
+      case "idle":
+        return "⏸️";
+      case "running":
+        return "⚡";
+      case "success":
+        return "✅";
+      case "error":
+        return "❌";
     }
   };
 
   const getStatusColor = (): string => {
     switch (status) {
-      case 'idle':
-        return 'gray';
-      case 'running':
-        return 'yellow';
-      case 'success':
-        return 'green';
-      case 'error':
-        return 'red';
+      case "idle":
+        return "gray";
+      case "running":
+        return "yellow";
+      case "success":
+        return "green";
+      case "error":
+        return "red";
     }
   };
 
@@ -330,15 +324,18 @@ export const ToolStatusIndicator: React.FC<ToolStatusIndicatorProps> = ({
       <Box>
         <Text>{getIcon()}</Text>
         <Text color={getStatusColor()}>
-          {' '}{toolName} {getStatusIcon()}
+          {" "}
+          {toolName} {getStatusIcon()}
         </Text>
-        {progress !== undefined && status === 'running' && (
+        {progress !== undefined && status === "running" && (
           <Text dimColor> {Math.floor(progress)}%</Text>
         )}
       </Box>
       {message && (
         <Box marginLeft={2}>
-          <Text dimColor italic>{message}</Text>
+          <Text dimColor italic>
+            {message}
+          </Text>
         </Box>
       )}
     </Box>
@@ -358,16 +355,16 @@ export const InputModeFeedback: React.FC<InputModeFeedbackProps> = ({
 }) => {
   const getKeyBindings = (modeName: string): string[] => {
     switch (modeName.toLowerCase()) {
-      case 'normal':
-        return ['i: insert', 'v: visual', '/: search', ':: command'];
-      case 'insert':
-        return ['Esc: normal mode', 'Ctrl+W: delete word'];
-      case 'visual':
-        return ['Esc: normal mode', 'y: yank', 'd: delete'];
-      case 'search':
-        return ['Enter: search', 'Esc: cancel'];
-      case 'command':
-        return ['Enter: execute', 'Tab: complete', 'Esc: cancel'];
+      case "normal":
+        return ["i: insert", "v: visual", "/: search", ":: command"];
+      case "insert":
+        return ["Esc: normal mode", "Ctrl+W: delete word"];
+      case "visual":
+        return ["Esc: normal mode", "y: yank", "d: delete"];
+      case "search":
+        return ["Enter: search", "Esc: cancel"];
+      case "command":
+        return ["Enter: execute", "Tab: complete", "Esc: cancel"];
       default:
         return [];
     }
@@ -378,14 +375,14 @@ export const InputModeFeedback: React.FC<InputModeFeedbackProps> = ({
       <ModeChangeIndicator mode={mode} />
       {hint && (
         <Box marginTop={1}>
-          <Text dimColor italic>{hint}</Text>
+          <Text dimColor italic>
+            {hint}
+          </Text>
         </Box>
       )}
       {showKeyBindings && (
         <Box marginTop={1}>
-          <Text dimColor>
-            {getKeyBindings(mode).join(' | ')}
-          </Text>
+          <Text dimColor>{getKeyBindings(mode).join(" | ")}</Text>
         </Box>
       )}
     </Box>
@@ -394,14 +391,14 @@ export const InputModeFeedback: React.FC<InputModeFeedbackProps> = ({
 
 export interface ErrorFeedbackProps {
   error: string | null;
-  severity?: 'info' | 'warning' | 'error' | 'critical';
+  severity?: "info" | "warning" | "error" | "critical";
   dismissible?: boolean;
   onDismiss?: () => void;
 }
 
 export const ErrorFeedback: React.FC<ErrorFeedbackProps> = ({
   error,
-  severity = 'error',
+  severity = "error",
   dismissible = true,
   onDismiss,
 }) => {
@@ -415,27 +412,27 @@ export const ErrorFeedback: React.FC<ErrorFeedbackProps> = ({
 
   const getIcon = (): string => {
     switch (severity) {
-      case 'info':
-        return 'ℹ️';
-      case 'warning':
-        return '⚠️';
-      case 'error':
-        return '❌';
-      case 'critical':
-        return '🚨';
+      case "info":
+        return "ℹ️";
+      case "warning":
+        return "⚠️";
+      case "error":
+        return "❌";
+      case "critical":
+        return "🚨";
     }
   };
 
   const getColor = (): string => {
     switch (severity) {
-      case 'info':
-        return 'blue';
-      case 'warning':
-        return 'yellow';
-      case 'error':
-        return 'red';
-      case 'critical':
-        return 'redBright';
+      case "info":
+        return "blue";
+      case "warning":
+        return "yellow";
+      case "error":
+        return "red";
+      case "critical":
+        return "redBright";
     }
   };
 
@@ -445,7 +442,12 @@ export const ErrorFeedback: React.FC<ErrorFeedbackProps> = ({
   };
 
   return (
-    <Box borderStyle="round" borderColor={getColor()} paddingX={1} flexDirection="column">
+    <Box
+      borderStyle="round"
+      borderColor={getColor()}
+      paddingX={1}
+      flexDirection="column"
+    >
       <Box>
         <Text color={getColor()}>
           {getIcon()} {error}
@@ -453,7 +455,9 @@ export const ErrorFeedback: React.FC<ErrorFeedbackProps> = ({
       </Box>
       {dismissible && (
         <Box marginTop={1}>
-          <Text dimColor italic>Press ESC to dismiss</Text>
+          <Text dimColor italic>
+            Press ESC to dismiss
+          </Text>
         </Box>
       )}
     </Box>

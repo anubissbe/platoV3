@@ -1,6 +1,7 @@
 # Config Schemas
 
 ## Global Config `~/.config/plato/config.yaml`
+
 ```yaml
 provider:
   active: copilot
@@ -11,7 +12,7 @@ provider:
 model:
   active: gpt-4o
 editing:
-  autoApply: on   # Claude Code parity: immediate writes
+  autoApply: on # Claude Code parity: immediate writes
 permissions: {}
 hooks: {}
 statusline:
@@ -19,9 +20,11 @@ statusline:
 ```
 
 ## Project Config `.plato/config.yaml`
+
 - Overrides any global key; merged shallow by section.
 
 ## Agents `~/.config/plato/agents/*.yaml`
+
 ```yaml
 id: reviewer
 system: |
@@ -31,6 +34,7 @@ style:
 ```
 
 ## Output Styles `~/.config/plato/styles/*.yaml`
+
 ```yaml
 id: code-first
 rules:

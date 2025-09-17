@@ -3,9 +3,9 @@
  * Renders individual panels with borders, resize handles, and collapse controls
  */
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Text, useInput, useFocus } from 'ink';
-import type { PanelType } from './layout-manager.js';
+import React, { useState, useEffect, useRef } from "react";
+import { Box, Text, useInput, useFocus } from "ink";
+import type { PanelType } from "./layout-manager.js";
 
 export interface PanelAction {
   key: string;
@@ -37,37 +37,37 @@ export interface PanelProps {
 // Box-drawing characters for borders
 const BORDERS = {
   single: {
-    topLeft: '┌',
-    topRight: '┐',
-    bottomLeft: '└',
-    bottomRight: '┘',
-    horizontal: '─',
-    vertical: '│',
-    cross: '┼',
-    teeLeft: '├',
-    teeRight: '┤',
-    teeTop: '┬',
-    teeBottom: '┴'
+    topLeft: "┌",
+    topRight: "┐",
+    bottomLeft: "└",
+    bottomRight: "┘",
+    horizontal: "─",
+    vertical: "│",
+    cross: "┼",
+    teeLeft: "├",
+    teeRight: "┤",
+    teeTop: "┬",
+    teeBottom: "┴",
   },
   double: {
-    topLeft: '╔',
-    topRight: '╗',
-    bottomLeft: '╚',
-    bottomRight: '╝',
-    horizontal: '═',
-    vertical: '║',
-    cross: '╬',
-    teeLeft: '╠',
-    teeRight: '╣',
-    teeTop: '╦',
-    teeBottom: '╩'
-  }
+    topLeft: "╔",
+    topRight: "╗",
+    bottomLeft: "╚",
+    bottomRight: "╝",
+    horizontal: "═",
+    vertical: "║",
+    cross: "╬",
+    teeLeft: "╠",
+    teeRight: "╣",
+    teeTop: "╦",
+    teeBottom: "╩",
+  },
 };
 
 export const Panel: React.FC<PanelProps> = ({
   id,
   title,
-  type = 'conversation',
+  type = "conversation",
   width,
   height,
   visible,
@@ -82,63 +82,69 @@ export const Panel: React.FC<PanelProps> = ({
   onResize,
   onCollapse,
   onExpand,
-  onFocus
+  onFocus,
 }) => {
   const [scrollOffset, setScrollOffset] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
   const contentRef = useRef<{ height: number }>({ height: 0 });
-  
+
   // Use double borders for focused panels
   const border = focused ? BORDERS.double : BORDERS.single;
-  const borderColor = focused ? 'cyan' : 'gray';
-  
+  const borderColor = focused ? "cyan" : "gray";
+
   // Handle keyboard input for focused panel
-  useInput((input, key) => {
-    if (!focused) return;
-    
-    // Panel-specific keyboard shortcuts
-    if (key.ctrl) {
-      if (input === 'w' && collapsible) {
-        collapsed ? onExpand?.() : onCollapse?.();
+  useInput(
+    (input, key) => {
+      if (!focused) return;
+
+      // Panel-specific keyboard shortcuts
+      if (key.ctrl) {
+        if (input === "w" && collapsible) {
+          collapsed ? onExpand?.() : onCollapse?.();
+        }
       }
-    }
-    
-    // Scrolling
-    if (scrollable) {
-      if (key.upArrow) {
-        setScrollOffset(Math.max(0, scrollOffset - 1));
-      } else if (key.downArrow) {
-        const maxScroll = Math.max(0, contentHeight - (height || 20) + 2);
-        setScrollOffset(Math.min(maxScroll, scrollOffset + 1));
-      } else if (key.pageUp) {
-        setScrollOffset(Math.max(0, scrollOffset - 10));
-      } else if (key.pageDown) {
-        const maxScroll = Math.max(0, contentHeight - (height || 20) + 2);
-        setScrollOffset(Math.min(maxScroll, scrollOffset + 10));
+
+      // Scrolling
+      if (scrollable) {
+        if (key.upArrow) {
+          setScrollOffset(Math.max(0, scrollOffset - 1));
+        } else if (key.downArrow) {
+          const maxScroll = Math.max(0, contentHeight - (height || 20) + 2);
+          setScrollOffset(Math.min(maxScroll, scrollOffset + 1));
+        } else if (key.pageUp) {
+          setScrollOffset(Math.max(0, scrollOffset - 10));
+        } else if (key.pageDown) {
+          const maxScroll = Math.max(0, contentHeight - (height || 20) + 2);
+          setScrollOffset(Math.min(maxScroll, scrollOffset + 10));
+        }
       }
-    }
-  }, { isActive: focused });
-  
+    },
+    { isActive: focused },
+  );
+
   // Don't render if not visible
   if (!visible) {
     return null;
   }
-  
+
   // Calculate actual dimensions
   const actualWidth = Math.max(10, width);
   const actualHeight = height || 20;
   const innerWidth = actualWidth - 2;
   const innerHeight = collapsed ? 1 : actualHeight - 3; // Account for borders and status
-  
+
   // Build header with title and controls
   const renderHeader = () => {
-    const collapseIndicator = collapsible ? (collapsed ? '[▼]' : '[▽]') : '';
-    const titleText = `${collapseIndicator} ${title}`.substring(0, innerWidth - actions.length * 4 - 2);
-    const actionsText = actions.map(a => a.label).join(' ');
-    
+    const collapseIndicator = collapsible ? (collapsed ? "[▼]" : "[▽]") : "";
+    const titleText = `${collapseIndicator} ${title}`.substring(
+      0,
+      innerWidth - actions.length * 4 - 2,
+    );
+    const actionsText = actions.map((a) => a.label).join(" ");
+
     const padding = innerWidth - titleText.length - actionsText.length;
-    const paddingStr = padding > 0 ? ' '.repeat(padding) : '';
-    
+    const paddingStr = padding > 0 ? " ".repeat(padding) : "";
+
     return (
       <Box>
         <Text color={borderColor}>{border.topLeft}</Text>
@@ -151,18 +157,18 @@ export const Panel: React.FC<PanelProps> = ({
       </Box>
     );
   };
-  
+
   // Render panel content with borders
   const renderContent = () => {
     if (collapsed) {
       return null;
     }
-    
+
     const lines = React.Children.toArray(children)
-      .join('\n')
-      .split('\n')
+      .join("\n")
+      .split("\n")
       .slice(scrollOffset, scrollOffset + innerHeight);
-    
+
     return lines.map((line, index) => (
       <Box key={index}>
         <Text color={borderColor}>{border.vertical}</Text>
@@ -173,14 +179,14 @@ export const Panel: React.FC<PanelProps> = ({
       </Box>
     ));
   };
-  
+
   // Render scroll indicators
   const renderScrollIndicators = () => {
     if (!scrollable || collapsed) return null;
-    
+
     const hasScrollUp = scrollOffset > 0;
     const hasScrollDown = contentHeight > scrollOffset + innerHeight;
-    
+
     return (
       <Box position="absolute" marginLeft={actualWidth - 3}>
         {hasScrollUp && (
@@ -196,22 +202,24 @@ export const Panel: React.FC<PanelProps> = ({
       </Box>
     );
   };
-  
+
   // Render resize handle
   const renderResizeHandle = () => {
     if (!resizable || collapsed) return null;
-    
+
     return (
       <Box position="absolute" marginLeft={actualWidth - 1}>
-        {Array(innerHeight).fill(0).map((_, i) => (
-          <Box key={i} marginTop={i + 1}>
-            <Text color={focused ? 'cyan' : 'gray'}>║</Text>
-          </Box>
-        ))}
+        {Array(innerHeight)
+          .fill(0)
+          .map((_, i) => (
+            <Box key={i} marginTop={i + 1}>
+              <Text color={focused ? "cyan" : "gray"}>║</Text>
+            </Box>
+          ))}
       </Box>
     );
   };
-  
+
   // Render status bar
   const renderStatusBar = () => {
     if (!statusBar && !collapsed) {
@@ -219,17 +227,19 @@ export const Panel: React.FC<PanelProps> = ({
       return (
         <Box>
           <Text color={borderColor}>{border.bottomLeft}</Text>
-          <Text color={borderColor}>{border.horizontal.repeat(innerWidth)}</Text>
+          <Text color={borderColor}>
+            {border.horizontal.repeat(innerWidth)}
+          </Text>
           <Text color={borderColor}>{border.bottomRight}</Text>
         </Box>
       );
     }
-    
+
     if (statusBar && !collapsed) {
       const statusText = statusBar.substring(0, innerWidth - 2);
       const padding = innerWidth - statusText.length;
-      const paddingStr = padding > 0 ? border.horizontal.repeat(padding) : '';
-      
+      const paddingStr = padding > 0 ? border.horizontal.repeat(padding) : "";
+
       return (
         <Box>
           <Text color={borderColor}>{border.bottomLeft}</Text>
@@ -239,7 +249,7 @@ export const Panel: React.FC<PanelProps> = ({
         </Box>
       );
     }
-    
+
     // Collapsed - simple line
     return (
       <Box>
@@ -249,7 +259,7 @@ export const Panel: React.FC<PanelProps> = ({
       </Box>
     );
   };
-  
+
   return (
     <Box
       flexDirection="column"

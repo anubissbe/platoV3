@@ -3,21 +3,32 @@
  * Comprehensive mouse initialization system with proper cleanup
  */
 
-import { MouseConfiguration, MouseConfigurationManager, ConfigurationContext } from './mouse-configuration.js';
-import { PlatformDetector, PlatformCapabilities } from './platform-detector.js';
-import { FallbackManager } from './fallback-manager.js';
-import { ErrorHandler } from './error-handler.js';
-import { MouseProtocolConfig, MOUSE_SEQUENCES } from '../tui/mouse-types.js';
+import {
+  MouseConfiguration,
+  MouseConfigurationManager,
+  ConfigurationContext,
+} from "./mouse-configuration.js";
+import { PlatformDetector, PlatformCapabilities } from "./platform-detector.js";
+import { FallbackManager } from "./fallback-manager.js";
+import { ErrorHandler } from "./error-handler.js";
+import { MouseProtocolConfig, MOUSE_SEQUENCES } from "../tui/mouse-types.js";
 
 export interface MouseInitializationOptions {
   /** Force enable mouse even in unsupported environments */
   forceEnable?: boolean;
   /** Configuration profile to use */
-  profile?: 'default' | 'performance' | 'accessibility' | 'minimal' | 'developer' | 'gaming' | 'presentation';
+  profile?:
+    | "default"
+    | "performance"
+    | "accessibility"
+    | "minimal"
+    | "developer"
+    | "gaming"
+    | "presentation";
   /** Custom configuration overrides */
   configOverrides?: Partial<MouseConfiguration>;
   /** Application context for optimization */
-  applicationContext?: 'cli' | 'tui' | 'interactive' | 'presentation';
+  applicationContext?: "cli" | "tui" | "interactive" | "presentation";
   /** Performance constraints */
   performanceConstraints?: {
     maxMemoryMB?: number;
@@ -90,7 +101,7 @@ export class MouseInitializer {
   private configManager: MouseConfigurationManager;
   private fallbackManager: FallbackManager;
   private errorHandler: ErrorHandler;
-  
+
   private state: MouseState = {
     enabled: false,
     configuration: null,
@@ -98,7 +109,7 @@ export class MouseInitializer {
     initializationTime: null,
     activeSequences: [],
     errorHandler: null,
-    cleanupHandlers: []
+    cleanupHandlers: [],
   };
 
   private constructor() {
@@ -121,28 +132,36 @@ export class MouseInitializer {
   /**
    * Initialize mouse support with comprehensive setup
    */
-  async initialize(options: MouseInitializationOptions = {}): Promise<MouseInitializationResult> {
+  async initialize(
+    options: MouseInitializationOptions = {},
+  ): Promise<MouseInitializationResult> {
     const startTime = Date.now();
     const warnings: string[] = [];
     const errors: string[] = [];
-    
+
     try {
       // Set timeout if specified
       if (options.timeoutMs) {
         return await Promise.race([
           this.performInitialization(options, warnings, errors, startTime),
-          this.createTimeoutPromise(options.timeoutMs)
+          this.createTimeoutPromise(options.timeoutMs),
         ]);
       }
 
-      return await this.performInitialization(options, warnings, errors, startTime);
+      return await this.performInitialization(
+        options,
+        warnings,
+        errors,
+        startTime,
+      );
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       errors.push(`Initialization failed: ${errorMessage}`);
-      
+
       return {
         success: false,
-        configuration: this.configManager.getProfileConfiguration('minimal'),
+        configuration: this.configManager.getProfileConfiguration("minimal"),
         capabilities: await this.platformDetector.detectCapabilities(),
         fallbackLevel: 4,
         warnings,
@@ -150,9 +169,9 @@ export class MouseInitializer {
         metrics: {
           initializationTimeMs: Date.now() - startTime,
           memoryUsageMB: process.memoryUsage().heapUsed / 1024 / 1024,
-          compatibilityScore: 0
+          compatibilityScore: 0,
         },
-        cleanup: async () => {}
+        cleanup: async () => {},
       };
     }
   }
@@ -168,20 +187,25 @@ export class MouseInitializer {
   }> {
     try {
       const quickCheck = await this.platformDetector.quickPlatformCheck();
-      const recommendations = await this.configManager.getConfigurationRecommendations();
-      
+      const recommendations =
+        await this.configManager.getConfigurationRecommendations();
+
       return {
         success: true,
         canUseMouse: quickCheck.canRunMouse,
         recommendedProfile: recommendations.profile,
-        warnings: quickCheck.hasRestrictions ? ['Platform restrictions detected'] : []
+        warnings: quickCheck.hasRestrictions
+          ? ["Platform restrictions detected"]
+          : [],
       };
     } catch (error) {
       return {
         success: false,
         canUseMouse: false,
-        recommendedProfile: 'minimal',
-        warnings: [`Quick initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`]
+        recommendedProfile: "minimal",
+        warnings: [
+          `Quick initialization failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        ],
       };
     }
   }
@@ -189,10 +213,12 @@ export class MouseInitializer {
   /**
    * Re-initialize with new options
    */
-  async reinitialize(options: MouseInitializationOptions): Promise<MouseInitializationResult> {
+  async reinitialize(
+    options: MouseInitializationOptions,
+  ): Promise<MouseInitializationResult> {
     // Clean up existing initialization
     await this.cleanup();
-    
+
     // Re-initialize with new options
     return await this.initialize(options);
   }
@@ -209,32 +235,40 @@ export class MouseInitializer {
    */
   async updateConfiguration(
     updates: Partial<MouseConfiguration>,
-    reason: string = 'Runtime update'
+    reason: string = "Runtime update",
   ): Promise<{
     success: boolean;
     newConfiguration: MouseConfiguration;
     appliedChanges: string[];
   }> {
     if (!this.state.configuration) {
-      throw new Error('Mouse not initialized - cannot update configuration');
+      throw new Error("Mouse not initialized - cannot update configuration");
     }
 
     try {
-      const result = await this.configManager.updateConfiguration(updates, reason);
-      
+      const result = await this.configManager.updateConfiguration(
+        updates,
+        reason,
+      );
+
       if (result.success) {
         // Apply terminal sequence changes
-        await this.applyConfigurationChanges(this.state.configuration, result.newConfig);
+        await this.applyConfigurationChanges(
+          this.state.configuration,
+          result.newConfig,
+        );
         this.state.configuration = result.newConfig;
       }
 
       return {
         success: result.success,
         newConfiguration: result.newConfig,
-        appliedChanges: result.changes
+        appliedChanges: result.changes,
       };
     } catch (error) {
-      throw new Error(`Configuration update failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Configuration update failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -243,7 +277,7 @@ export class MouseInitializer {
    */
   async enable(): Promise<{ success: boolean; warnings: string[] }> {
     if (!this.state.configuration) {
-      throw new Error('Mouse not initialized - call initialize() first');
+      throw new Error("Mouse not initialized - call initialize() first");
     }
 
     const warnings: string[] = [];
@@ -251,10 +285,12 @@ export class MouseInitializer {
     try {
       await this.applyTerminalSequences(this.state.configuration.protocol);
       this.state.enabled = true;
-      
+
       return { success: true, warnings };
     } catch (error) {
-      warnings.push(`Enable failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      warnings.push(
+        `Enable failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       return { success: false, warnings };
     }
   }
@@ -268,10 +304,12 @@ export class MouseInitializer {
     try {
       await this.removeTerminalSequences();
       this.state.enabled = false;
-      
+
       return { success: true, warnings };
     } catch (error) {
-      warnings.push(`Disable failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      warnings.push(
+        `Disable failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       return { success: false, warnings };
     }
   }
@@ -281,7 +319,7 @@ export class MouseInitializer {
    */
   async testFunctionality(): Promise<{
     success: boolean;
-    supportLevel: 'full' | 'partial' | 'minimal' | 'none';
+    supportLevel: "full" | "partial" | "minimal" | "none";
     details: {
       terminalDetection: boolean;
       protocolSupport: boolean;
@@ -293,51 +331,57 @@ export class MouseInitializer {
       terminalDetection: false,
       protocolSupport: false,
       eventGeneration: false,
-      performanceTest: 0
+      performanceTest: 0,
     };
 
     try {
       // Terminal detection
       details.terminalDetection = process.stdout.isTTY;
-      
+
       // Protocol support
       if (this.state.capabilities) {
-        details.protocolSupport = this.state.capabilities.mouse.supportLevel !== 'none';
+        details.protocolSupport =
+          this.state.capabilities.mouse.supportLevel !== "none";
       }
-      
+
       // Performance test
       const startTime = Date.now();
       await this.simulateMouseEventProcessing();
       details.performanceTest = Date.now() - startTime;
-      
+
       // Event generation (simplified test)
-      details.eventGeneration = details.terminalDetection && details.protocolSupport;
-      
+      details.eventGeneration =
+        details.terminalDetection && details.protocolSupport;
+
       // Determine support level
-      let supportLevel: 'full' | 'partial' | 'minimal' | 'none' = 'none';
-      
-      if (details.terminalDetection && details.protocolSupport && details.eventGeneration) {
+      let supportLevel: "full" | "partial" | "minimal" | "none" = "none";
+
+      if (
+        details.terminalDetection &&
+        details.protocolSupport &&
+        details.eventGeneration
+      ) {
         if (details.performanceTest < 50) {
-          supportLevel = 'full';
+          supportLevel = "full";
         } else if (details.performanceTest < 100) {
-          supportLevel = 'partial';
+          supportLevel = "partial";
         } else {
-          supportLevel = 'minimal';
+          supportLevel = "minimal";
         }
       } else if (details.terminalDetection) {
-        supportLevel = 'minimal';
+        supportLevel = "minimal";
       }
 
       return {
-        success: supportLevel !== 'none',
+        success: supportLevel !== "none",
         supportLevel,
-        details
+        details,
       };
     } catch (error) {
       return {
         success: false,
-        supportLevel: 'none',
-        details
+        supportLevel: "none",
+        details,
       };
     }
   }
@@ -349,16 +393,16 @@ export class MouseInitializer {
     try {
       // Remove terminal sequences
       await this.removeTerminalSequences();
-      
+
       // Run cleanup handlers
       for (const handler of this.state.cleanupHandlers) {
         try {
           await handler();
         } catch (error) {
-          console.warn('Cleanup handler failed:', error);
+          console.warn("Cleanup handler failed:", error);
         }
       }
-      
+
       // Reset state
       this.state = {
         enabled: false,
@@ -367,10 +411,10 @@ export class MouseInitializer {
         initializationTime: null,
         activeSequences: [],
         errorHandler: null,
-        cleanupHandlers: []
+        cleanupHandlers: [],
       };
     } catch (error) {
-      console.warn('Cleanup failed:', error);
+      console.warn("Cleanup failed:", error);
     }
   }
 
@@ -381,18 +425,18 @@ export class MouseInitializer {
     options: MouseInitializationOptions,
     warnings: string[],
     errors: string[],
-    startTime: number
+    startTime: number,
   ): Promise<MouseInitializationResult> {
     // Step 1: Platform detection
     const capabilities = await this.platformDetector.detectCapabilities();
     this.state.capabilities = capabilities;
-    
+
     // Step 2: Create configuration context
     const context: ConfigurationContext = {
       capabilities,
-      applicationType: options.applicationContext || 'tui',
+      applicationType: options.applicationContext || "tui",
       performanceConstraints: options.performanceConstraints,
-      accessibilityRequirements: options.accessibilityRequirements
+      accessibilityRequirements: options.accessibilityRequirements,
     };
 
     if (options.configOverrides) {
@@ -402,38 +446,50 @@ export class MouseInitializer {
     // Step 3: Generate optimal configuration
     let configuration: MouseConfiguration;
     if (options.profile) {
-      configuration = this.configManager.getProfileConfiguration(options.profile);
+      configuration = this.configManager.getProfileConfiguration(
+        options.profile,
+      );
       // Apply platform optimizations
-      const optimizedConfig = await this.configManager.generateOptimalConfiguration(context);
+      const optimizedConfig =
+        await this.configManager.generateOptimalConfiguration(context);
       configuration = { ...configuration, ...optimizedConfig };
     } else {
-      configuration = await this.configManager.generateOptimalConfiguration(context);
+      configuration =
+        await this.configManager.generateOptimalConfiguration(context);
     }
 
     // Step 4: Apply configuration
-    const configResult = await this.configManager.applyConfiguration(configuration);
+    const configResult =
+      await this.configManager.applyConfiguration(configuration);
     if (!configResult.success) {
       errors.push(...configResult.errors);
       warnings.push(...configResult.warnings);
     }
-    
+
     configuration = configResult.appliedConfig;
     this.state.configuration = configuration;
 
     // Step 5: Calculate fallback level
-    const fallbackLevel = await this.calculateFallbackLevel(configuration, capabilities);
+    const fallbackLevel = await this.calculateFallbackLevel(
+      configuration,
+      capabilities,
+    );
 
     // Step 6: Initialize terminal sequences (if not in test mode)
     if (!options.testMode && configuration.enabled) {
-      if (!options.forceEnable && capabilities.mouse.supportLevel === 'none') {
-        warnings.push('Mouse support disabled - platform does not support mouse events');
+      if (!options.forceEnable && capabilities.mouse.supportLevel === "none") {
+        warnings.push(
+          "Mouse support disabled - platform does not support mouse events",
+        );
         configuration.enabled = false;
       } else {
         try {
           await this.applyTerminalSequences(configuration.protocol);
           this.state.enabled = true;
         } catch (error) {
-          errors.push(`Terminal setup failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          errors.push(
+            `Terminal setup failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+          );
           configuration.enabled = false;
         }
       }
@@ -451,7 +507,10 @@ export class MouseInitializer {
     const metrics = {
       initializationTimeMs: endTime - startTime,
       memoryUsageMB: process.memoryUsage().heapUsed / 1024 / 1024,
-      compatibilityScore: this.calculateCompatibilityScore(capabilities, configuration)
+      compatibilityScore: this.calculateCompatibilityScore(
+        capabilities,
+        configuration,
+      ),
     };
 
     // Step 10: Record initialization time
@@ -465,60 +524,69 @@ export class MouseInitializer {
       warnings,
       errors,
       metrics,
-      cleanup: () => this.cleanup()
+      cleanup: () => this.cleanup(),
     };
   }
 
   /**
    * Apply terminal sequences for mouse protocol
    */
-  private async applyTerminalSequences(protocol: MouseProtocolConfig): Promise<void> {
+  private async applyTerminalSequences(
+    protocol: MouseProtocolConfig,
+  ): Promise<void> {
+    if (process.env.PLATO_QUIET_TUI === "1") {
+      // Skip mouse tracking sequences to prevent extraneous terminal writes
+      this.state.activeSequences = [];
+      return;
+    }
     const sequences: string[] = [];
 
     try {
       // Enable mouse tracking
       if (protocol.enableTracking) {
         process.stdout.write(MOUSE_SEQUENCES.ENABLE_TRACKING);
-        sequences.push('tracking');
+        sequences.push("tracking");
       }
 
       // Enable button tracking
       if (protocol.enableButtons) {
         process.stdout.write(MOUSE_SEQUENCES.ENABLE_BUTTONS);
-        sequences.push('buttons');
+        sequences.push("buttons");
       }
 
       // Enable protocol mode
       switch (protocol.mode) {
-        case 'sgr':
+        case "sgr":
           process.stdout.write(MOUSE_SEQUENCES.ENABLE_SGR);
-          sequences.push('sgr');
+          sequences.push("sgr");
           break;
-        case 'utf8':
+        case "utf8":
           process.stdout.write(MOUSE_SEQUENCES.ENABLE_UTF8);
-          sequences.push('utf8');
+          sequences.push("utf8");
           break;
-        case 'urxvt':
+        case "urxvt":
           process.stdout.write(MOUSE_SEQUENCES.ENABLE_URXVT);
-          sequences.push('urxvt');
+          sequences.push("urxvt");
           break;
       }
 
       // Enable motion tracking
       if (protocol.enableMotion) {
         // Motion tracking is enabled by default with button tracking
-        sequences.push('motion');
+        sequences.push("motion");
       }
 
       // Enable focus events
       if (protocol.enableFocus) {
         process.stdout.write(MOUSE_SEQUENCES.ENABLE_FOCUS);
-        sequences.push('focus');
+        sequences.push("focus");
       }
 
       this.state.activeSequences = sequences;
     } catch (error) {
-      throw new Error(`Failed to apply terminal sequences: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to apply terminal sequences: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -526,6 +594,10 @@ export class MouseInitializer {
    * Remove terminal sequences
    */
   private async removeTerminalSequences(): Promise<void> {
+    if (process.env.PLATO_QUIET_TUI === "1") {
+      this.state.activeSequences = [];
+      return;
+    }
     try {
       // Disable all possible mouse sequences
       process.stdout.write(MOUSE_SEQUENCES.DISABLE_TRACKING);
@@ -534,10 +606,10 @@ export class MouseInitializer {
       process.stdout.write(MOUSE_SEQUENCES.DISABLE_UTF8);
       process.stdout.write(MOUSE_SEQUENCES.DISABLE_URXVT);
       process.stdout.write(MOUSE_SEQUENCES.DISABLE_FOCUS);
-      
+
       this.state.activeSequences = [];
     } catch (error) {
-      console.warn('Failed to remove terminal sequences:', error);
+      console.warn("Failed to remove terminal sequences:", error);
     }
   }
 
@@ -546,15 +618,16 @@ export class MouseInitializer {
    */
   private async applyConfigurationChanges(
     oldConfig: MouseConfiguration,
-    newConfig: MouseConfiguration
+    newConfig: MouseConfiguration,
   ): Promise<void> {
     // Check if protocol changed
-    if (oldConfig.protocol.mode !== newConfig.protocol.mode ||
-        oldConfig.protocol.enableTracking !== newConfig.protocol.enableTracking ||
-        oldConfig.protocol.enableButtons !== newConfig.protocol.enableButtons ||
-        oldConfig.protocol.enableMotion !== newConfig.protocol.enableMotion ||
-        oldConfig.protocol.enableFocus !== newConfig.protocol.enableFocus) {
-      
+    if (
+      oldConfig.protocol.mode !== newConfig.protocol.mode ||
+      oldConfig.protocol.enableTracking !== newConfig.protocol.enableTracking ||
+      oldConfig.protocol.enableButtons !== newConfig.protocol.enableButtons ||
+      oldConfig.protocol.enableMotion !== newConfig.protocol.enableMotion ||
+      oldConfig.protocol.enableFocus !== newConfig.protocol.enableFocus
+    ) {
       // Re-apply terminal sequences
       await this.removeTerminalSequences();
       if (newConfig.enabled) {
@@ -576,10 +649,10 @@ export class MouseInitializer {
       await this.cleanup();
     };
 
-    process.on('SIGINT', cleanupHandler);
-    process.on('SIGTERM', cleanupHandler);
-    process.on('uncaughtException', cleanupHandler);
-    process.on('unhandledRejection', cleanupHandler);
+    process.on("SIGINT", cleanupHandler);
+    process.on("SIGTERM", cleanupHandler);
+    process.on("uncaughtException", cleanupHandler);
+    process.on("unhandledRejection", cleanupHandler);
 
     this.state.cleanupHandlers.push(cleanupHandler);
   }
@@ -599,14 +672,18 @@ export class MouseInitializer {
    */
   private async calculateFallbackLevel(
     configuration: MouseConfiguration,
-    capabilities: PlatformCapabilities
+    capabilities: PlatformCapabilities,
   ): Promise<number> {
     let level = 0;
 
     if (!configuration.enabled) level = 4;
-    else if (capabilities.mouse.supportLevel === 'minimal') level = 3;
-    else if (capabilities.mouse.supportLevel === 'partial') level = 2;
-    else if (capabilities.environment.isWSL || capabilities.environment.isContainer) level = 1;
+    else if (capabilities.mouse.supportLevel === "minimal") level = 3;
+    else if (capabilities.mouse.supportLevel === "partial") level = 2;
+    else if (
+      capabilities.environment.isWSL ||
+      capabilities.environment.isContainer
+    )
+      level = 1;
 
     return level;
   }
@@ -616,14 +693,14 @@ export class MouseInitializer {
    */
   private calculateCompatibilityScore(
     capabilities: PlatformCapabilities,
-    configuration: MouseConfiguration
+    configuration: MouseConfiguration,
   ): number {
     let score = 1.0;
 
     // Reduce score for platform limitations
-    if (capabilities.mouse.supportLevel === 'none') score -= 0.5;
-    else if (capabilities.mouse.supportLevel === 'minimal') score -= 0.3;
-    else if (capabilities.mouse.supportLevel === 'partial') score -= 0.1;
+    if (capabilities.mouse.supportLevel === "none") score -= 0.5;
+    else if (capabilities.mouse.supportLevel === "minimal") score -= 0.3;
+    else if (capabilities.mouse.supportLevel === "partial") score -= 0.1;
 
     // Reduce score for environment constraints
     if (capabilities.environment.isCI) score -= 0.3;
@@ -641,13 +718,15 @@ export class MouseInitializer {
    */
   private async simulateMouseEventProcessing(): Promise<void> {
     // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 10));
   }
 
   /**
    * Create timeout promise
    */
-  private createTimeoutPromise(timeoutMs: number): Promise<MouseInitializationResult> {
+  private createTimeoutPromise(
+    timeoutMs: number,
+  ): Promise<MouseInitializationResult> {
     return new Promise((_, reject) => {
       setTimeout(() => {
         reject(new Error(`Initialization timed out after ${timeoutMs}ms`));

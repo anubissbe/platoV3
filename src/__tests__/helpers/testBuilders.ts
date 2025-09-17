@@ -4,10 +4,10 @@
 
 export class SessionBuilder {
   private session: any = {
-    id: 'test-session',
+    id: "test-session",
     messages: [],
-    model: 'gpt-4',
-    provider: 'copilot',
+    model: "gpt-4",
+    provider: "copilot",
     timestamp: Date.now(),
   };
 
@@ -38,8 +38,8 @@ export class SessionBuilder {
 
 export class CommandBuilder {
   private command: any = {
-    name: '/test',
-    summary: 'Test command',
+    name: "/test",
+    summary: "Test command",
     handler: jest.fn(),
   };
 
@@ -70,9 +70,9 @@ export class CommandBuilder {
 
 export class ConfigBuilder {
   private config: any = {
-    provider: 'copilot',
-    model: 'gpt-4',
-    applyMode: 'auto',
+    provider: "copilot",
+    model: "gpt-4",
+    applyMode: "auto",
   };
 
   withProvider(provider: string): this {
@@ -85,7 +85,7 @@ export class ConfigBuilder {
     return this;
   }
 
-  withApplyMode(mode: 'auto' | 'manual'): this {
+  withApplyMode(mode: "auto" | "manual"): this {
     this.config.applyMode = mode;
     return this;
   }
@@ -102,22 +102,22 @@ export class ConfigBuilder {
 
 export class MessageBuilder {
   private message: any = {
-    role: 'user',
-    content: '',
+    role: "user",
+    content: "",
   };
 
   asUser(): this {
-    this.message.role = 'user';
+    this.message.role = "user";
     return this;
   }
 
   asAssistant(): this {
-    this.message.role = 'assistant';
+    this.message.role = "assistant";
     return this;
   }
 
   asSystem(): this {
-    this.message.role = 'system';
+    this.message.role = "system";
     return this;
   }
 

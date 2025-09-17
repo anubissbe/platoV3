@@ -8,6 +8,7 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 ## Tasks
 
 ### 1. Semantic Indexing Foundation ✅
+
 Build the core semantic indexing engine for lightweight codebase analysis and relationship mapping.
 
 - [x] 1.1 Write tests for file analyzer and symbol extraction functions
@@ -20,6 +21,7 @@ Build the core semantic indexing engine for lightweight codebase analysis and re
 - [x] 1.8 Verify all tests pass for semantic indexing foundation
 
 ### 2. Intelligent File Selection System ✅ Completed
+
 Develop the algorithm for automatic file relevance scoring and smart context suggestions.
 
 - [x] 2.1 Write tests for relevance scoring and file selection algorithms
@@ -32,6 +34,7 @@ Develop the algorithm for automatic file relevance scoring and smart context sug
 - [x] 2.8 Verify all tests pass for intelligent selection features
 
 ### 3. Enhanced Context UI Integration ✅ Completed
+
 Integrate advanced context features into existing Plato commands with rich visualization.
 
 - [x] 3.1 Write tests for context UI components and interactions
@@ -44,6 +47,7 @@ Integrate advanced context features into existing Plato commands with rich visua
 - [x] 3.8 Verify all tests pass for UI integration
 
 ### 4. Performance and Optimization ✅ Completed
+
 Implement performance optimizations for fast indexing and efficient context operations.
 
 - [x] 4.1 Write performance benchmarks and tests
@@ -56,6 +60,7 @@ Implement performance optimizations for fast indexing and efficient context oper
 - [x] 4.8 Verify performance targets are met across scenarios
 
 ### 5. Session Persistence Integration ✅
+
 Connect advanced context management with Plato's existing session and memory systems.
 
 - [x] 5.1 Write tests for context persistence and restoration

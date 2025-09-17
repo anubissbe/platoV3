@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { Box, Text } from 'ink';
-import { AuditLogger } from '../AuditLogger';
+import React, { useEffect, useState } from "react";
+import { Box, Text } from "ink";
+import { AuditLogger } from "../AuditLogger";
 
 export interface PermissionStatistics {
   totalDecisions: number;
@@ -51,7 +51,12 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
     toolUsage: {},
     profileUsage: {},
     riskDistribution: { low: 0, medium: 0, high: 0, critical: 0 },
-    timeDistribution: { lastHour: 0, last24Hours: 0, last7Days: 0, last30Days: 0 },
+    timeDistribution: {
+      lastHour: 0,
+      last24Hours: 0,
+      last7Days: 0,
+      last30Days: 0,
+    },
   });
 
   useEffect(() => {
@@ -60,7 +65,7 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
 
       try {
         const rawStats = await auditLogger.getStatistics();
-        
+
         // Process raw statistics into display format
         const processedStats: PermissionStatistics = {
           totalDecisions: (rawStats as any).totalEntries || 0,
@@ -68,7 +73,7 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
           denied: (rawStats as any).actionCounts?.deny || 0,
           prompted: (rawStats as any).actionCounts?.confirm || 0,
           elevated: 0, // Not available in AuditStatistics
-          cacheHits: 0, // Not available in AuditStatistics  
+          cacheHits: 0, // Not available in AuditStatistics
           cacheMisses: 0, // Not available in AuditStatistics
           averageResponseTime: 0, // Not available in AuditStatistics
           toolUsage: (rawStats as any).toolCounts || {},
@@ -89,7 +94,7 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
 
         setStats(processedStats);
       } catch (error) {
-        console.error('Failed to load statistics:', error);
+        console.error("Failed to load statistics:", error);
       }
     };
 
@@ -104,17 +109,17 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
 
   const getCacheHitRate = () => {
     const total = stats.cacheHits + stats.cacheMisses;
-    if (total === 0) return '0%';
+    if (total === 0) return "0%";
     return `${Math.round((stats.cacheHits / total) * 100)}%`;
   };
 
   const getAllowRate = () => {
-    if (stats.totalDecisions === 0) return '0%';
+    if (stats.totalDecisions === 0) return "0%";
     return `${Math.round((stats.allowed / stats.totalDecisions) * 100)}%`;
   };
 
   const getDenyRate = () => {
-    if (stats.totalDecisions === 0) return '0%';
+    if (stats.totalDecisions === 0) return "0%";
     return `${Math.round((stats.denied / stats.totalDecisions) * 100)}%`;
   };
 
@@ -126,15 +131,21 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
 
   return (
     <Box flexDirection="column">
-      <Text bold color="yellow">📊 Permission Statistics</Text>
-      
+      <Text bold color="yellow">
+        📊 Permission Statistics
+      </Text>
+
       {/* Overview Stats */}
       <Box marginTop={1} flexDirection="column">
         <Text bold>Overview</Text>
         <Box marginLeft={2} flexDirection="column">
           <Text>Total Decisions: {stats.totalDecisions}</Text>
-          <Text color="green">Allowed: {stats.allowed} ({getAllowRate()})</Text>
-          <Text color="red">Denied: {stats.denied} ({getDenyRate()})</Text>
+          <Text color="green">
+            Allowed: {stats.allowed} ({getAllowRate()})
+          </Text>
+          <Text color="red">
+            Denied: {stats.denied} ({getDenyRate()})
+          </Text>
           <Text color="yellow">Prompted: {stats.prompted}</Text>
           <Text color="cyan">Elevated: {stats.elevated}</Text>
         </Box>
@@ -144,9 +155,13 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
       <Box marginTop={1} flexDirection="column">
         <Text bold>Performance</Text>
         <Box marginLeft={2} flexDirection="column">
-          <Text>Avg Response Time: {stats.averageResponseTime.toFixed(2)}ms</Text>
+          <Text>
+            Avg Response Time: {stats.averageResponseTime.toFixed(2)}ms
+          </Text>
           <Text>Cache Hit Rate: {getCacheHitRate()}</Text>
-          <Text dimColor>Cache Hits: {stats.cacheHits} | Misses: {stats.cacheMisses}</Text>
+          <Text dimColor>
+            Cache Hits: {stats.cacheHits} | Misses: {stats.cacheMisses}
+          </Text>
         </Box>
       </Box>
 
@@ -155,9 +170,13 @@ export const PermissionStatisticsView: React.FC<PermissionStatisticsProps> = ({
         <Text bold>Risk Distribution</Text>
         <Box marginLeft={2} flexDirection="column">
           <Text color="green">Low Risk: {stats.riskDistribution.low}</Text>
-          <Text color="yellow">Medium Risk: {stats.riskDistribution.medium}</Text>
+          <Text color="yellow">
+            Medium Risk: {stats.riskDistribution.medium}
+          </Text>
           <Text color="red">High Risk: {stats.riskDistribution.high}</Text>
-          <Text color="magenta">Critical Risk: {stats.riskDistribution.critical}</Text>
+          <Text color="magenta">
+            Critical Risk: {stats.riskDistribution.critical}
+          </Text>
         </Box>
       </Box>
 
@@ -221,6 +240,6 @@ function getCacheHitRate(stats: Partial<PermissionStatistics>): string {
   const hits = stats.cacheHits || 0;
   const misses = stats.cacheMisses || 0;
   const total = hits + misses;
-  if (total === 0) return '0%';
+  if (total === 0) return "0%";
   return `${Math.round((hits / total) * 100)}%`;
 }

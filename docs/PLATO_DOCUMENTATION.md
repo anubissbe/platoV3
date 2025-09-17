@@ -98,7 +98,7 @@ plato/
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - npm or yarn
 - Git (required for patch operations)
 - GitHub account (for Copilot authentication)
@@ -123,27 +123,34 @@ npm run dev
 ### Initial Setup
 
 1. **Launch Plato**:
+
    ```bash
    npm run dev
    ```
 
 2. **Run Doctor Check**:
+
    ```
    /doctor
    ```
+
    Verifies Git, ripgrep, and system requirements
 
 3. **Authenticate with Copilot**:
+
    ```
    /login
    ```
+
    Follow device code flow for GitHub authentication
 
 4. **Enable Claude Code Parity Mode**:
+
    ```
    /permissions default fs_patch allow
    /apply-mode auto
    ```
+
    This enables immediate file writing like Claude Code
 
 5. **Verify Setup**:
@@ -176,7 +183,7 @@ Plato bridges to MCP servers using Claude Code's exact JSON format:
   "tool_call": {
     "server": "local",
     "name": "sum",
-    "input": {"a": 2, "b": 3}
+    "input": { "a": 2, "b": 3 }
   }
 }
 ```
@@ -186,12 +193,14 @@ Tool results appear in gray text blocks, exactly like Claude Code.
 ### 3. Session Persistence
 
 Sessions auto-save to `.plato/session.json` with:
+
 - Complete conversation history
 - Token metrics
 - Context files
 - Configuration snapshot
 
 Resume with:
+
 ```
 /resume
 ```
@@ -199,6 +208,7 @@ Resume with:
 ### 4. Patch Engine
 
 For Git repositories, Plato can apply unified diffs:
+
 - Sanitized for security
 - Applied via `git apply`
 - Journaled for reverting
@@ -214,82 +224,82 @@ For Git repositories, Plato can apply unified diffs:
 
 ### Essential Commands
 
-| Command | Description | Claude Code Parity |
-|---------|-------------|-------------------|
-| `/help` | Show all commands | ✅ Exact match |
-| `/status` | Show current setup | ✅ Exact match |
-| `/login` | Authenticate with Copilot | ✅ Same flow |
-| `/logout` | Clear credentials | ✅ Exact match |
-| `/doctor` | Diagnose system | ✅ Same checks |
+| Command   | Description               | Claude Code Parity |
+| --------- | ------------------------- | ------------------ |
+| `/help`   | Show all commands         | ✅ Exact match     |
+| `/status` | Show current setup        | ✅ Exact match     |
+| `/login`  | Authenticate with Copilot | ✅ Same flow       |
+| `/logout` | Clear credentials         | ✅ Exact match     |
+| `/doctor` | Diagnose system           | ✅ Same checks     |
 
 ### File Operations
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/apply` | Apply pending patch | `/apply` |
-| `/revert` | Revert last patch | `/revert` |
-| `/apply-mode` | Toggle auto-apply | `/apply-mode auto` |
-| `/diff` | Show pending patch | `/diff` |
+| Command       | Description         | Example            |
+| ------------- | ------------------- | ------------------ |
+| `/apply`      | Apply pending patch | `/apply`           |
+| `/revert`     | Revert last patch   | `/revert`          |
+| `/apply-mode` | Toggle auto-apply   | `/apply-mode auto` |
+| `/diff`       | Show pending patch  | `/diff`            |
 
 ### Configuration
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/model` | Switch AI model | `/model set gpt-4` |
-| `/statusline` | Customize status | `/statusline set "plato \| {model}"` |
-| `/permissions` | Manage permissions | `/permissions default fs_patch allow` |
-| `/privacy-settings` | Privacy controls | `/privacy-settings telemetry off` |
+| Command             | Description        | Example                               |
+| ------------------- | ------------------ | ------------------------------------- |
+| `/model`            | Switch AI model    | `/model set gpt-4`                    |
+| `/statusline`       | Customize status   | `/statusline set "plato \| {model}"`  |
+| `/permissions`      | Manage permissions | `/permissions default fs_patch allow` |
+| `/privacy-settings` | Privacy controls   | `/privacy-settings telemetry off`     |
 
 ### Context Management
 
-| Command | Description | Example |
-|---------|-------------|---------|
+| Command    | Description         | Example             |
+| ---------- | ------------------- | ------------------- |
 | `/context` | Manage file context | `/context add *.js` |
-| `/add-dir` | Add directory | `/add-dir src/` |
-| `/init` | Generate PLATO.md | `/init` |
-| `/compact` | Compact history | `/compact` |
+| `/add-dir` | Add directory       | `/add-dir src/`     |
+| `/init`    | Generate PLATO.md   | `/init`             |
+| `/compact` | Compact history     | `/compact`          |
 
 ### Development Tools
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/todos` | Manage TODOs | `/todos scan` |
-| `/bashes` | Shell sessions | `/bashes new` |
-| `/hooks` | Manage hooks | `/hooks add pre-prompt "echo start"` |
-| `/security-review` | Security scan | `/security-review` |
+| Command            | Description    | Example                              |
+| ------------------ | -------------- | ------------------------------------ |
+| `/todos`           | Manage TODOs   | `/todos scan`                        |
+| `/bashes`          | Shell sessions | `/bashes new`                        |
+| `/hooks`           | Manage hooks   | `/hooks add pre-prompt "echo start"` |
+| `/security-review` | Security scan  | `/security-review`                   |
 
 ### MCP Integration
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/mcp` | Manage MCP servers | `/mcp attach local http://localhost:8719` |
-| `/proxy` | OpenAI proxy | `/proxy start --port 11434` |
-| `/run` | Execute command | `/run npm test` |
+| Command  | Description        | Example                                   |
+| -------- | ------------------ | ----------------------------------------- |
+| `/mcp`   | Manage MCP servers | `/mcp attach local http://localhost:8719` |
+| `/proxy` | OpenAI proxy       | `/proxy start --port 11434`               |
+| `/run`   | Execute command    | `/run npm test`                           |
 
 ### Session Management
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/resume` | Resume session | `/resume` |
+| Command   | Description         | Example                       |
+| --------- | ------------------- | ----------------------------- |
+| `/resume` | Resume session      | `/resume`                     |
 | `/export` | Export conversation | `/export --json session.json` |
-| `/cost` | Show token usage | `/cost` |
-| `/memory` | View memory | `/memory clear` |
+| `/cost`   | Show token usage    | `/cost`                       |
+| `/memory` | View memory         | `/memory clear`               |
 
 ### UI/UX Commands
 
-| Command | Description | Example |
-|---------|-------------|---------|
+| Command         | Description         | Example                 |
+| --------------- | ------------------- | ----------------------- |
 | `/output-style` | Change output style | `/output-style minimal` |
-| `/vim` | Toggle vim mode | `/vim` |
-| `/keydebug` | Debug key input | `/keydebug` |
+| `/vim`          | Toggle vim mode     | `/vim`                  |
+| `/keydebug`     | Debug key input     | `/keydebug`             |
 
 ### Information
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/upgrade` | Plan information | `/upgrade` |
-| `/release-notes` | Show changelog | `/release-notes` |
-| `/agents` | Agent management | `/agents` (placeholder) |
+| Command          | Description      | Example                 |
+| ---------------- | ---------------- | ----------------------- |
+| `/upgrade`       | Plan information | `/upgrade`              |
+| `/release-notes` | Show changelog   | `/release-notes`        |
+| `/agents`        | Agent management | `/agents` (placeholder) |
 
 ## API Reference
 
@@ -299,18 +309,21 @@ For Git repositories, Plato can apply unified diffs:
 interface Orchestrator {
   // Core conversation methods
   respond(input: string): Promise<string>;
-  respondStream(input: string, onDelta: (delta: string) => void): Promise<string>;
-  
+  respondStream(
+    input: string,
+    onDelta: (delta: string) => void,
+  ): Promise<string>;
+
   // Session management
   exportJSON(file?: string): Promise<void>;
   exportMarkdown(file?: string): Promise<void>;
   importJSON(file: string): Promise<void>;
-  
+
   // History management
   getHistory(): Message[];
   compactHistory(keep: number): void;
   clearMemory(): void;
-  
+
   // Metrics
   getMetrics(): {
     inputTokens: number;
@@ -318,7 +331,7 @@ interface Orchestrator {
     durationMs: number;
     turns: number;
   };
-  
+
   // Patch management
   getPendingPatch(): string | null;
   clearPendingPatch(): void;
@@ -346,15 +359,23 @@ async function detachServer(id: string): Promise<void>;
 async function listServers(): Promise<McpServer[]>;
 
 // Tool operations
-async function listTools(serverId?: string): Promise<{ server: string; tools: McpTool[] }[]>;
-async function callTool(serverId: string, toolName: string, input: any): Promise<any>;
+async function listTools(
+  serverId?: string,
+): Promise<{ server: string; tools: McpTool[] }[]>;
+async function callTool(
+  serverId: string,
+  toolName: string,
+  input: any,
+): Promise<any>;
 ```
 
 ### Patch Engine API
 
 ```typescript
 // Patch operations (requires Git repository)
-async function dryRunApply(diff: string): Promise<{ ok: boolean; conflicts: string[] }>;
+async function dryRunApply(
+  diff: string,
+): Promise<{ ok: boolean; conflicts: string[] }>;
 async function apply(diff: string): Promise<void>;
 async function revert(diff: string): Promise<void>;
 async function revertLast(): Promise<boolean>;
@@ -367,7 +388,7 @@ function sanitizeDiff(diff: string): string;
 
 ```typescript
 interface Permissions {
-  defaults?: Record<string, 'allow' | 'deny' | 'confirm'>;
+  defaults?: Record<string, "allow" | "deny" | "confirm">;
   rules?: Rule[];
 }
 
@@ -377,19 +398,20 @@ interface Rule {
     path?: string;
     command?: string;
   };
-  action: 'allow' | 'deny' | 'confirm';
+  action: "allow" | "deny" | "confirm";
 }
 
 async function checkPermission(request: {
   tool: string;
   path?: string;
   command?: string;
-}): Promise<'allow' | 'deny' | 'confirm'>;
+}): Promise<"allow" | "deny" | "confirm">;
 ```
 
 ## Configuration
 
 ### Global Configuration
+
 Location: `~/.config/plato/config.yaml`
 
 ```yaml
@@ -397,24 +419,24 @@ provider:
   active: copilot
   copilot:
     client_id: Iv1.b507a08c87ecfe98
-    
+
 model:
   active: gpt-4
   catalogs:
-    copilot: 
+    copilot:
       - id: gpt-4
       - id: gpt-3.5-turbo
-      
-outputStyle: markdown  # markdown | minimal | verbose
+
+outputStyle: markdown # markdown | minimal | verbose
 vimMode: false
 telemetry: true
 
 statusline:
   format: "plato | {provider} | {model} | {tokens} {branch}"
-  
+
 editing:
-  autoApply: off  # off | on
-  
+  autoApply: off # off | on
+
 toolCallPreset:
   enabled: true
   strictOnly: false
@@ -422,6 +444,7 @@ toolCallPreset:
 ```
 
 ### Project Configuration
+
 Location: `.plato/config.yaml`
 
 ```yaml
@@ -435,7 +458,7 @@ permissions:
         tool: exec
         command: "rm.*"
       action: deny
-      
+
 context:
   roots:
     - src/
@@ -466,17 +489,19 @@ npm run typecheck
 ### Adding New Slash Commands
 
 1. Register in `src/slash/commands.ts`:
+
 ```typescript
 export const SLASH_COMMANDS: SlashCommand[] = [
-  { name: '/mycommand', summary: 'My new command' },
+  { name: "/mycommand", summary: "My new command" },
   // ...
 ];
 ```
 
 2. Implement handler in `src/tui/app.tsx`:
+
 ```typescript
-if (text === '/mycommand') {
-  setLines(prev => prev.concat('Executing my command...'));
+if (text === "/mycommand") {
+  setLines((prev) => prev.concat("Executing my command..."));
   // Implementation
   return;
 }
@@ -488,32 +513,32 @@ MCP servers provide tool functionality. Example server:
 
 ```javascript
 // mock-mcp.js
-const http = require('http');
+const http = require("http");
 
 const tools = [
   {
-    id: 'echo',
-    name: 'echo',
-    description: 'Echo input back',
+    id: "echo",
+    name: "echo",
+    description: "Echo input back",
     input_schema: {
-      type: 'object',
+      type: "object",
       properties: {
-        message: { type: 'string' }
-      }
-    }
-  }
+        message: { type: "string" },
+      },
+    },
+  },
 ];
 
 const server = http.createServer((req, res) => {
-  if (req.url === '/tools' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+  if (req.url === "/tools" && req.method === "GET") {
+    res.writeHead(200, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ tools }));
-  } else if (req.url === '/tools/echo' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
+  } else if (req.url === "/tools/echo" && req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
       const { input } = JSON.parse(body);
-      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ output: input.message }));
     });
   }
@@ -562,12 +587,12 @@ Plato matches Claude Code exactly in:
 
 ### Differences from Claude Code
 
-| Feature | Claude Code | Plato |
-|---------|------------|-------|
-| Provider | Anthropic API | GitHub Copilot |
-| Name | Claude Code | Plato |
-| Config Dir | `.claude/` | `.plato/` |
-| Env Vars | `CLAUDE_*` | `PLATO_*` |
+| Feature       | Claude Code   | Plato          |
+| ------------- | ------------- | -------------- |
+| Provider      | Anthropic API | GitHub Copilot |
+| Name          | Claude Code   | Plato          |
+| Config Dir    | `.claude/`    | `.plato/`      |
+| Env Vars      | `CLAUDE_*`    | `PLATO_*`      |
 | Default Model | Claude models | Copilot models |
 
 ### Migration from Claude Code
@@ -583,12 +608,15 @@ Plato matches Claude Code exactly in:
 ### Common Issues
 
 **Git Not Found**
+
 ```
 ⚠️ Not a Git repository. Run 'git init' to enable patch operations.
 ```
+
 Solution: Initialize Git or install Git if missing
 
 **Copilot Authentication Failed**
+
 ```
 /login
 # Follow device code flow
@@ -596,11 +624,13 @@ Solution: Initialize Git or install Git if missing
 ```
 
 **Tool Call Not Working**
+
 - Ensure tool call preset is enabled: `/tool-call-preset on`
 - Check MCP server health: `/mcp health`
 - Verify JSON format matches exactly
 
 **Session Not Saving**
+
 - Check `.plato/` directory permissions
 - Verify disk space for session file
 - Session auto-rotates at 10MB
@@ -608,6 +638,7 @@ Solution: Initialize Git or install Git if missing
 ### Debug Mode
 
 Enable debug logging:
+
 ```bash
 PLATO_DEBUG=1 npm run dev
 ```
