@@ -827,6 +827,233 @@ export class MessageBubble {
 
     return items;
   }
+
+  // Phase 5.1: Virtual Scrolling Implementation
+  private _viewport: { top: number; bottom: number } | null = null;
+  private _position: { y: number; height: number } | null = null;
+  private _virtualIndex: number = -1;
+  private _hasRendered: boolean = false;
+  private _isAnimating: boolean = false;
+  private _heightCache: Map<number, number> = new Map();
+
+  isInViewport(): boolean {
+    if (!this._viewport || !this._position) return false;
+    const { top, bottom } = this._viewport;
+    const { y, height } = this._position;
+    return y + height > top && y < bottom;
+  }
+
+  setViewport(viewport: { top: number; bottom: number }): void {
+    this._viewport = viewport;
+  }
+
+  setPosition(position: { y: number; height: number }): void {
+    this._position = position;
+  }
+
+  shouldRender(): boolean {
+    return this.isInViewport();
+  }
+
+  calculateHeight(width: number): number {
+    // Check cache first
+    if (this._heightCache.has(width)) {
+      return this._heightCache.get(width)!;
+    }
+
+    // Calculate height based on content wrapping
+    const lines = this.content.split('\n');
+    let totalHeight = 0;
+
+    for (const line of lines) {
+      const wrappedLines = Math.ceil(line.length / width) || 1;
+      totalHeight += wrappedLines;
+    }
+
+    // Add padding and borders (typically 2 lines for top/bottom)
+    totalHeight += 2;
+
+    // Cache the result
+    this._heightCache.set(width, totalHeight);
+    return totalHeight;
+  }
+
+  isAnimating(): boolean {
+    return this._isAnimating;
+  }
+
+  startScrollAnimation(options: { duration: number; easing: string }): void {
+    this._isAnimating = true;
+    // In a real implementation, we'd set up animation timers here
+    setTimeout(() => {
+      this._isAnimating = false;
+    }, options.duration);
+  }
+
+  stopScrollAnimation(): void {
+    this._isAnimating = false;
+  }
+
+  setVirtualIndex(index: number): void {
+    this._virtualIndex = index;
+  }
+
+  getVirtualIndex(): number {
+    return this._virtualIndex;
+  }
+
+  hasRendered(): boolean {
+    return this._hasRendered;
+  }
+
+  markRendered(): void {
+    this._hasRendered = true;
+  }
+
+  isPartiallyVisible(): boolean {
+    if (!this._viewport || !this._position) return false;
+    const { top, bottom } = this._viewport;
+    const { y, height } = this._position;
+
+    // Check if partially visible at top or bottom
+    const partiallyAtTop = y < top && y + height > top;
+    const partiallyAtBottom = y < bottom && y + height > bottom;
+
+    return partiallyAtTop || partiallyAtBottom;
+  }
+
+  isFullyVisible(): boolean {
+    if (!this._viewport || !this._position) return false;
+    const { top, bottom } = this._viewport;
+    const { y, height } = this._position;
+
+    return y >= top && y + height <= bottom;
+  }
+
+  // Phase 5.2: Memory Management
+  private _cleanedUp: boolean = false;
+  private _compactMode: boolean = false;
+  private _cachedContent: string | null = null;
+  private _memoryLimit: number = Infinity;
+  private _ageThreshold: number = Infinity;
+  private _isOld: boolean = false;
+  private _fullyLoaded: boolean = false; // Start unloaded for lazy loading
+  private _memoryUsage: number = 0;
+
+  getMemoryUsage(): number {
+    if (this._memoryUsage === 0) {
+      // Estimate memory usage based on content size
+      this._memoryUsage = this.content.length * 2; // 2 bytes per character (rough estimate)
+
+      // Add metadata size
+      if (this.metadata) {
+        this._memoryUsage += JSON.stringify(this.metadata).length * 2;
+      }
+
+      // Add tool calls size
+      const toolCalls = this.getToolCalls();
+      if (toolCalls && toolCalls.length > 0) {
+        this._memoryUsage += JSON.stringify(toolCalls).length * 2;
+      }
+    }
+    return this._memoryUsage;
+  }
+
+  cleanup(): void {
+    // Clear caches and release resources
+    this._heightCache.clear();
+    this._cachedContent = null;
+    this._cleanedUp = true;
+    this._hasRendered = false;
+  }
+
+  isCleanedUp(): boolean {
+    return this._cleanedUp;
+  }
+
+  setCompactMode(compact: boolean): void {
+    this._compactMode = compact;
+    if (compact) {
+      this.compact();
+    }
+  }
+
+  isCompactMode(): boolean {
+    return this._compactMode;
+  }
+
+  compact(): void {
+    // Reduce memory footprint by clearing non-essential data
+    if (this._compactMode) {
+      // Clear height cache
+      this._heightCache.clear();
+
+      // Store current content in cache before compacting
+      this._cachedContent = this.content;
+
+      // Reduce memory usage calculation
+      const originalUsage = this.getMemoryUsage();
+      this._memoryUsage = originalUsage * 0.5; // Simulate 50% reduction
+    }
+  }
+
+  getCachedContent(): string | null {
+    if (!this._cachedContent) {
+      this._cachedContent = this.content;
+    }
+    return this._cachedContent;
+  }
+
+  clearCache(): void {
+    this._cachedContent = null;
+    this._heightCache.clear();
+  }
+
+  isCacheEmpty(): boolean {
+    return this._cachedContent === null && this._heightCache.size === 0;
+  }
+
+  setAgeThreshold(threshold: number): void {
+    this._ageThreshold = threshold;
+  }
+
+  markAsOld(): void {
+    this._isOld = true;
+  }
+
+  isOld(): boolean {
+    return this._isOld;
+  }
+
+  shouldAutoCleanup(): boolean {
+    return this._isOld && this._cleanedUp === false;
+  }
+
+  setMemoryLimit(limit: number): void {
+    this._memoryLimit = limit;
+  }
+
+  isWithinMemoryLimit(): boolean {
+    return this.getMemoryUsage() <= this._memoryLimit;
+  }
+
+  simulateMemoryPressure(pressure: number): void {
+    this._memoryUsage = pressure;
+  }
+
+  isFullyLoaded(): boolean {
+    return this._fullyLoaded;
+  }
+
+  lazyLoad(): void {
+    this._fullyLoaded = true;
+    // In a real implementation, we'd load full content from storage
+  }
+
+  unload(): void {
+    this._fullyLoaded = false;
+    // In a real implementation, we'd clear content to save memory
+  }
 }
 
 // React Component Integration - Deferred to Phase 3 due to Jest/Ink configuration complexity

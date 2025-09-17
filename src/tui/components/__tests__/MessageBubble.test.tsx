@@ -758,4 +758,176 @@ describe("Phase 4: Interactive Features", () => {
       expect(contextMenuItems).toContain("Select for Bulk Operation");
     });
   });
+
+  describe("Phase 5: Performance & Optimization", () => {
+    describe("Task 5.1: Virtual Scrolling Implementation", () => {
+      it("should support virtual scrolling with viewport detection", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Initially not in viewport
+        expect(bubble.isInViewport()).toBe(false);
+
+        // Set viewport bounds
+        bubble.setViewport({ top: 100, bottom: 500 });
+        bubble.setPosition({ y: 200, height: 50 });
+
+        // Now should be in viewport
+        expect(bubble.isInViewport()).toBe(true);
+      });
+
+      it("should handle large conversation rendering efficiently", () => {
+        const bubble = new MessageBubble(createMockMessage({
+          content: "A".repeat(10000) // Very long message
+        }));
+
+        // Should only render if in viewport
+        bubble.setViewport({ top: 0, bottom: 1000 });
+        bubble.setPosition({ y: 2000, height: 100 });
+
+        expect(bubble.shouldRender()).toBe(false);
+        expect(bubble.isInViewport()).toBe(false);
+      });
+
+      it("should calculate and cache message heights efficiently", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // First calculation
+        const height1 = bubble.calculateHeight(80); // Terminal width
+        expect(height1).toBeGreaterThan(0);
+
+        // Second call should use cache
+        const height2 = bubble.calculateHeight(80);
+        expect(height2).toBe(height1);
+
+        // Different width should recalculate
+        const height3 = bubble.calculateHeight(60);
+        expect(height3).toBeGreaterThanOrEqual(height1);
+      });
+
+      it("should support smooth scrolling animations", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        expect(bubble.isAnimating()).toBe(false);
+
+        // Start scroll animation
+        bubble.startScrollAnimation({ duration: 300, easing: 'ease-out' });
+        expect(bubble.isAnimating()).toBe(true);
+
+        // Stop animation
+        bubble.stopScrollAnimation();
+        expect(bubble.isAnimating()).toBe(false);
+      });
+
+      it("should optimize render performance for virtual list", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Set as virtual item
+        bubble.setVirtualIndex(42);
+        expect(bubble.getVirtualIndex()).toBe(42);
+
+        // Should track render state
+        expect(bubble.hasRendered()).toBe(false);
+        bubble.markRendered();
+        expect(bubble.hasRendered()).toBe(true);
+      });
+
+      it("should handle viewport edge cases correctly", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Partially visible at top
+        bubble.setViewport({ top: 100, bottom: 500 });
+        bubble.setPosition({ y: 80, height: 50 });
+        expect(bubble.isPartiallyVisible()).toBe(true);
+
+        // Partially visible at bottom
+        bubble.setPosition({ y: 480, height: 50 });
+        expect(bubble.isPartiallyVisible()).toBe(true);
+
+        // Fully visible
+        bubble.setPosition({ y: 200, height: 50 });
+        expect(bubble.isFullyVisible()).toBe(true);
+      });
+    });
+
+    describe("Task 5.2: Memory Management", () => {
+      it("should support message cleanup and garbage collection", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Track memory usage
+        expect(bubble.getMemoryUsage()).toBeGreaterThan(0);
+
+        // Cleanup resources
+        bubble.cleanup();
+        expect(bubble.isCleanedUp()).toBe(true);
+      });
+
+      it("should handle conversation compaction", () => {
+        const bubble = new MessageBubble(createMockMessage({
+          content: "A very long message that should be compacted"
+        }));
+
+        // Compact mode for memory savings
+        bubble.setCompactMode(true);
+        expect(bubble.isCompactMode()).toBe(true);
+
+        // Should reduce memory footprint
+        const normalMemory = bubble.getMemoryUsage();
+        bubble.compact();
+        expect(bubble.getMemoryUsage()).toBeLessThan(normalMemory);
+      });
+
+      it("should implement efficient message storage and retrieval", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Cache frequently accessed data
+        const cachedContent = bubble.getCachedContent();
+        expect(cachedContent).toBeDefined();
+
+        // Clear cache when needed
+        bubble.clearCache();
+        expect(bubble.isCacheEmpty()).toBe(true);
+      });
+
+      it("should support automatic cleanup of old conversation data", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Set age threshold
+        bubble.setAgeThreshold(3600000); // 1 hour in ms
+
+        // Mark as old
+        bubble.markAsOld();
+        expect(bubble.isOld()).toBe(true);
+        expect(bubble.shouldAutoCleanup()).toBe(true);
+      });
+
+      it("should enforce configurable conversation size limits", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Set memory limit
+        bubble.setMemoryLimit(1024 * 1024); // 1MB
+
+        // Check if within limits
+        expect(bubble.isWithinMemoryLimit()).toBe(true);
+
+        // Simulate exceeding limit
+        bubble.simulateMemoryPressure(2 * 1024 * 1024);
+        expect(bubble.isWithinMemoryLimit()).toBe(false);
+      });
+
+      it("should implement lazy loading for conversation history", () => {
+        const bubble = new MessageBubble(createMockMessage());
+
+        // Initially not loaded
+        expect(bubble.isFullyLoaded()).toBe(false);
+
+        // Lazy load on demand
+        bubble.lazyLoad();
+        expect(bubble.isFullyLoaded()).toBe(true);
+
+        // Can unload to save memory
+        bubble.unload();
+        expect(bubble.isFullyLoaded()).toBe(false);
+      });
+    });
+  });
 });

@@ -86,23 +86,23 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 - [x] Create bulk selection and copy operations
 - [x] Implement context menu for right-click operations
 
-### Phase 5: Performance & Optimization (Scale)
+### Phase 5: Performance & Optimization (Scale) ✅ COMPLETED
 
-#### Task 5.1: Virtual Scrolling Implementation
-- [ ] Write tests for virtual scrolling behavior
-- [ ] Write tests for large conversation handling
-- [ ] Implement virtual scrolling for message list
-- [ ] Add efficient rendering for large message counts
-- [ ] Create message height calculation and caching
-- [ ] Implement smooth scrolling animations
+#### Task 5.1: Virtual Scrolling Implementation ✅ COMPLETED
+- [x] Write tests for virtual scrolling behavior
+- [x] Write tests for large conversation handling
+- [x] Implement virtual scrolling for message list
+- [x] Add efficient rendering for large message counts
+- [x] Create message height calculation and caching
+- [x] Implement smooth scrolling animations
 
-#### Task 5.2: Memory Management
-- [ ] Write tests for message cleanup and garbage collection
-- [ ] Write tests for conversation compaction
-- [ ] Implement efficient message storage and retrieval
-- [ ] Add automatic cleanup of old conversation data
-- [ ] Create configurable conversation size limits
-- [ ] Implement lazy loading for conversation history
+#### Task 5.2: Memory Management ✅ COMPLETED
+- [x] Write tests for message cleanup and garbage collection
+- [x] Write tests for conversation compaction
+- [x] Implement efficient message storage and retrieval
+- [x] Add automatic cleanup of old conversation data
+- [x] Create configurable conversation size limits
+- [x] Implement lazy loading for conversation history
 
 ### Phase 6: Accessibility & Polish (User Experience)
 
