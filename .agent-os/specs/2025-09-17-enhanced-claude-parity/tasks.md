@@ -16,39 +16,39 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
   - [x] 1.1.4 Write unit tests for engine with various search patterns and scoring scenarios
   - **Acceptance Criteria**: Engine returns ranked results in <50ms with fuzzy matching and usage learning
 
-- [ ] 1.2 Build Autocomplete Data Providers
-  - [ ] 1.2.1 Create `src/autocomplete/provider.ts` with command and file data sources
-  - [ ] 1.2.2 Integrate with existing SLASH_COMMANDS array from `src/slash/commands.ts`
-  - [ ] 1.2.3 Add fast-glob integration for file system scanning with caching (5-minute TTL)
-  - [ ] 1.2.4 Implement pattern filtering for common file types (.ts, .tsx, .js, .jsx, .json, .md)
-  - [ ] 1.2.5 Write tests for provider caching and performance benchmarks
-  - **Acceptance Criteria**: Provider returns command and file suggestions with intelligent caching
+- [x] 1.2 Build Autocomplete Data Providers
+  - [x] 1.2.1 Create `src/autocomplete/provider.ts` with command and file data sources
+  - [x] 1.2.2 Integrate with existing SLASH_COMMANDS array from `src/slash/commands.ts`
+  - [x] 1.2.3 Add fast-glob integration for file system scanning with caching (5-minute TTL)
+  - [x] 1.2.4 Implement pattern filtering for common file types (.ts, .tsx, .js, .jsx, .json, .md)
+  - [x] 1.2.5 Write tests for provider caching and performance benchmarks
+  - **Acceptance Criteria**: ✅ Provider returns command and file suggestions with intelligent caching
 
-- [ ] 1.3 Create Autocomplete UI Component
-  - [ ] 1.3.1 Implement `src/tui/components/autocomplete-dropdown.tsx` using Ink React framework
-  - [ ] 1.3.2 Add keyboard navigation (arrow keys, Enter, Escape) and selection handling
-  - [ ] 1.3.3 Implement highlight matching characters using picocolors
-  - [ ] 1.3.4 Add scroll indicators for >10 items with maximum visible item limit
-  - [ ] 1.3.5 Write React component tests for keyboard interactions and rendering
-  - **Acceptance Criteria**: Dropdown shows ranked suggestions with keyboard navigation and visual highlights
+- [x] 1.3 Create Autocomplete UI Component
+  - [x] 1.3.1 Implement `src/tui/components/autocomplete-dropdown.tsx` using Ink React framework
+  - [x] 1.3.2 Add keyboard navigation (arrow keys, Enter, Escape) and selection handling
+  - [x] 1.3.3 Implement highlight matching characters using picocolors
+  - [x] 1.3.4 Add scroll indicators for >10 items with maximum visible item limit
+  - [x] 1.3.5 Write React component tests for keyboard interactions and rendering
+  - **Acceptance Criteria**: ✅ Dropdown shows ranked suggestions with keyboard navigation and visual highlights
 
-- [ ] 1.4 Integrate Autocomplete with TUI
-  - [ ] 1.4.1 Extend `src/tui/keyboard-handler.tsx` to detect autocomplete triggers ('/' and file paths)
-  - [ ] 1.4.2 Hook autocomplete into existing input processing pipeline
-  - [ ] 1.4.3 Add autocomplete state management to TUI application state
-  - [ ] 1.4.4 Ensure seamless integration with existing command execution flow
-  - [ ] 1.4.5 Write integration tests for autocomplete workflow in TUI mode
-  - **Acceptance Criteria**: Autocomplete triggers automatically and integrates with command execution
+- [x] 1.4 Integrate Autocomplete with TUI
+  - [x] 1.4.1 Extend `src/tui/keyboard-handler.tsx` to detect autocomplete triggers ('/' and file paths)
+  - [x] 1.4.2 Hook autocomplete into existing input processing pipeline
+  - [x] 1.4.3 Add autocomplete state management to TUI application state
+  - [x] 1.4.4 Ensure seamless integration with existing command execution flow
+  - [x] 1.4.5 Write integration tests for autocomplete workflow in TUI mode
+  - **Acceptance Criteria**: ✅ Autocomplete triggers automatically and integrates with command execution
 
 ### 2. Enhanced File Watcher (chokidar integration)
 
-- [ ] 2.1 Implement Enhanced File Watcher Core
-  - [ ] 2.1.1 Create `src/tools/enhanced-file-watcher.ts` replacing existing fs.watch implementation
-  - [ ] 2.1.2 Integrate chokidar with EnhancedWatcherOptions configuration
-  - [ ] 2.1.3 Add conflict detection system with ExternalChangeEvent interface
-  - [ ] 2.1.4 Implement file content hashing for change validation and conflict detection
-  - [ ] 2.1.5 Write unit tests for watcher configuration and conflict detection logic
-  - **Acceptance Criteria**: Chokidar-based watcher detects external changes with conflict metadata
+- [x] 2.1 Implement Enhanced File Watcher Core
+  - [x] 2.1.1 Create `src/tools/enhanced-file-watcher.ts` replacing existing fs.watch implementation
+  - [x] 2.1.2 Integrate chokidar with EnhancedWatcherOptions configuration
+  - [x] 2.1.3 Add conflict detection system with ExternalChangeEvent interface
+  - [x] 2.1.4 Implement file content hashing for change validation and conflict detection
+  - [x] 2.1.5 Write unit tests for watcher configuration and conflict detection logic
+  - **Acceptance Criteria**: ✅ Chokidar-based watcher detects external changes with conflict metadata
 
 - [ ] 2.2 Add Performance Optimizations
   - [ ] 2.2.1 Configure intelligent ignore patterns (node_modules, .git, dist, build directories)

@@ -27,6 +27,10 @@ import {
 import { initializeStyleManager, getStyleManager } from "../styles/manager.js";
 import { getAvailableModels } from "../providers/copilot.js";
 import { handleContextCommand as processContextCommand } from "./context-command.js";
+import type { AutocompleteResult } from "../autocomplete/types.js";
+import { AutocompleteProvider } from "../autocomplete/provider.js";
+import { createAutocompleteEngine } from "../autocomplete/engine.js";
+import { AutocompleteDropdown } from "./components/autocomplete-dropdown.js";
 
 // Keyboard state management
 interface KeyboardState {
@@ -45,6 +49,11 @@ interface KeyboardState {
   pasteBuffer: string; // Buffer for detecting paste operations
   pasteTimeout: NodeJS.Timeout | null;
   pasteMode: boolean; // When true, completely disables input for copy/paste
+  // Autocomplete state
+  isAutocompleteVisible: boolean;
+  autocompleteResults: AutocompleteResult[];
+  selectedAutocompleteIndex: number;
+  lastAutocompleteQuery: string;
 }
 
 // Enhanced App component with comprehensive keyboard handling
@@ -112,10 +121,19 @@ export function App() {
     pasteBuffer: "",
     pasteTimeout: null,
     pasteMode: false,
+    // Autocomplete state
+    isAutocompleteVisible: false,
+    autocompleteResults: [],
+    selectedAutocompleteIndex: 0,
+    lastAutocompleteQuery: "",
   });
 
   const keyboardStateRef = useRef(keyboardState);
   keyboardStateRef.current = keyboardState;
+
+  // Initialize autocomplete system
+  const autocompleteProvider = useRef(new AutocompleteProvider());
+  const autocompleteEngine = useRef(createAutocompleteEngine());
 
   // Initialize configuration, Git status, restore session, and styles
   useEffect(() => {
@@ -447,6 +465,33 @@ export function App() {
             return;
           }
 
+          // Arrow keys - Autocomplete navigation
+          if (key.upArrow || key.downArrow) {
+            if (keyboardState.isAutocompleteVisible) {
+              navigateAutocomplete(key.upArrow ? "up" : "down");
+              return;
+            }
+          }
+
+          // Enter - Select autocomplete item or submit
+          if (key.return) {
+            if (keyboardState.isAutocompleteVisible && keyboardState.autocompleteResults.length > 0) {
+              const selectedResult = keyboardState.autocompleteResults[keyboardState.selectedAutocompleteIndex];
+              selectAutocompleteItem(selectedResult);
+              return;
+            }
+            // Continue with normal Enter handling below
+          }
+
+          // Escape - Hide autocomplete
+          if (key.escape) {
+            if (keyboardState.isAutocompleteVisible) {
+              hideAutocomplete();
+              return;
+            }
+            // Continue with normal Escape handling below
+          }
+
           // Ctrl+A - Select all text
           if (key.ctrl && inputKey.toLowerCase() === "a") {
             // In a terminal, we can't truly select all, but we can move cursor to start
@@ -554,10 +599,16 @@ export function App() {
           if (inputKey && inputKey.length === 1) {
             const code = inputKey.charCodeAt(0);
             if (code >= 32 && code !== 127) {
+              const newInput = keyboardState.input + inputKey;
               setKeyboardState((prev) => ({
                 ...prev,
-                input: prev.input + inputKey,
+                input: newInput,
               }));
+
+              // Trigger autocomplete for certain patterns
+              if (newInput.startsWith("/") || newInput.length >= 2) {
+                triggerAutocomplete(newInput);
+              }
             }
           }
         }
@@ -700,12 +751,15 @@ export function App() {
 
   // Handle backspace
   const handleBackspace = () => {
+    let newInput = "";
     setKeyboardState((prev) => {
       if (prev.input.length > 0) {
-        return { ...prev, input: prev.input.slice(0, -1) };
+        newInput = prev.input.slice(0, -1);
+        return { ...prev, input: newInput };
       } else if (prev.multiLineInput.length > 0 && prev.isMultiLine) {
         // Move back to previous line
         const lastLine = prev.multiLineInput[prev.multiLineInput.length - 1];
+        newInput = lastLine;
         return {
           ...prev,
           input: lastLine,
@@ -715,51 +769,112 @@ export function App() {
       }
       return prev;
     });
+
+    // Update autocomplete after backspace
+    if (newInput.length === 0) {
+      hideAutocomplete();
+    } else if (newInput.startsWith("/") || newInput.length >= 2) {
+      triggerAutocomplete(newInput);
+    }
   };
 
-  // Handle Tab completion for commands
-  const handleTabCompletion = () => {
-    const currentInput = keyboardState.input;
-
-    // Only complete if input starts with /
-    if (!currentInput.startsWith("/")) {
+  // Enhanced autocomplete functionality
+  const triggerAutocomplete = async (query: string, force = false) => {
+    // Don't trigger if query is too short or unchanged (unless forced)
+    if (!force && (query.length < 1 || query === keyboardState.lastAutocompleteQuery)) {
       return;
     }
 
-    // Get all available slash commands
-    const availableCommands = Object.keys(SLASH_COMMANDS);
+    try {
+      // Get items from provider
+      const allItems = await autocompleteProvider.current.getAllItems();
 
-    // Find matching commands
-    const matches = availableCommands.filter((cmd) =>
-      cmd.startsWith(currentInput),
-    );
+      // Initialize autocomplete engine with current items
+      autocompleteEngine.current.updateItems(allItems);
 
-    if (matches.length === 1) {
-      // Single match - complete it
-      setKeyboardState((prev) => ({ ...prev, input: matches[0] + " " }));
-    } else if (matches.length > 1) {
-      // Multiple matches - show options
-      setLines((prev) =>
-        prev.concat(
-          "",
-          `Available completions for "${currentInput}":`,
-          ...matches.map((cmd) => `  ${cmd}`),
-        ),
-      );
+      // Determine search type based on query
+      const searchType = query.startsWith("/") ? "command" : "mixed";
 
-      // Find common prefix
-      const commonPrefix = matches.reduce((prefix, cmd) => {
-        let i = 0;
-        while (i < prefix.length && i < cmd.length && prefix[i] === cmd[i]) {
-          i++;
-        }
-        return prefix.slice(0, i);
-      });
+      // Perform search
+      const results = autocompleteEngine.current.search(query, searchType);
 
-      if (commonPrefix.length > currentInput.length) {
-        setKeyboardState((prev) => ({ ...prev, input: commonPrefix }));
-      }
+      setKeyboardState((prev) => ({
+        ...prev,
+        isAutocompleteVisible: results.length > 0,
+        autocompleteResults: results,
+        selectedAutocompleteIndex: 0,
+        lastAutocompleteQuery: query,
+      }));
+    } catch (error) {
+      console.error("Autocomplete error:", error);
+      // Hide autocomplete on error
+      setKeyboardState((prev) => ({
+        ...prev,
+        isAutocompleteVisible: false,
+        autocompleteResults: [],
+        selectedAutocompleteIndex: 0,
+      }));
     }
+  };
+
+  const hideAutocomplete = () => {
+    setKeyboardState((prev) => ({
+      ...prev,
+      isAutocompleteVisible: false,
+      autocompleteResults: [],
+      selectedAutocompleteIndex: 0,
+      lastAutocompleteQuery: "",
+    }));
+  };
+
+  const selectAutocompleteItem = (result: AutocompleteResult) => {
+    // Complete the input with selected item
+    setKeyboardState((prev) => ({
+      ...prev,
+      input: result.item + (result.type === "command" ? " " : ""),
+      isAutocompleteVisible: false,
+      autocompleteResults: [],
+      selectedAutocompleteIndex: 0,
+      lastAutocompleteQuery: "",
+    }));
+
+    // Track usage for learning
+    autocompleteEngine.current.updateUsageStats(result.item, result.type);
+  };
+
+  const navigateAutocomplete = (direction: "up" | "down") => {
+    if (!keyboardState.isAutocompleteVisible || keyboardState.autocompleteResults.length === 0) {
+      return;
+    }
+
+    const maxIndex = keyboardState.autocompleteResults.length - 1;
+    let newIndex = keyboardState.selectedAutocompleteIndex;
+
+    if (direction === "up") {
+      newIndex = newIndex > 0 ? newIndex - 1 : maxIndex;
+    } else {
+      newIndex = newIndex < maxIndex ? newIndex + 1 : 0;
+    }
+
+    setKeyboardState((prev) => ({
+      ...prev,
+      selectedAutocompleteIndex: newIndex,
+    }));
+  };
+
+  // Handle Tab completion for commands (now uses enhanced autocomplete)
+  const handleTabCompletion = async () => {
+    const currentInput = keyboardState.input;
+
+    // If autocomplete is visible, select current item
+    if (keyboardState.isAutocompleteVisible && keyboardState.autocompleteResults.length > 0) {
+      const selectedResult = keyboardState.autocompleteResults[keyboardState.selectedAutocompleteIndex];
+      selectAutocompleteItem(selectedResult);
+      return;
+    }
+
+    // Otherwise trigger autocomplete
+    await triggerAutocomplete(currentInput, true);
   };
 
   // Delete word backwards (Ctrl+W)
@@ -2674,6 +2789,49 @@ export function App() {
         height={keyboardState.isMultiLine ? 5 : 3}
         showSendButton={true}
         showModeIndicator={true}
+      />
+
+      {/* Autocomplete Dropdown */}
+      <AutocompleteDropdown
+        results={keyboardState.autocompleteResults}
+        isVisible={keyboardState.isAutocompleteVisible}
+        selectedIndex={keyboardState.selectedAutocompleteIndex}
+        maxVisibleItems={10}
+        onSelect={(result) => {
+          // When autocomplete item is selected
+          let newInput = "";
+          if (result.type === "command") {
+            newInput = result.item + " ";
+          } else {
+            // For file suggestions, replace from start or after space
+            const input = keyboardState.input;
+            const lastSpaceIndex = input.lastIndexOf(" ");
+            if (lastSpaceIndex === -1) {
+              newInput = result.item;
+            } else {
+              newInput = input.substring(0, lastSpaceIndex + 1) + result.item;
+            }
+          }
+
+          setKeyboardState((prev) => ({
+            ...prev,
+            input: newInput,
+            isAutocompleteVisible: false,
+            autocompleteResults: [],
+            selectedAutocompleteIndex: 0,
+          }));
+
+          // Update usage stats
+          autocompleteEngine.current.updateUsageStats(result.item, result.type);
+        }}
+        onCancel={() => {
+          setKeyboardState((prev) => ({
+            ...prev,
+            isAutocompleteVisible: false,
+            autocompleteResults: [],
+            selectedAutocompleteIndex: 0,
+          }));
+        }}
       />
 
       {/* Command Palette */}

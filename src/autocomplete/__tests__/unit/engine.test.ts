@@ -6,8 +6,8 @@
 import { jest } from "@jest/globals";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { createAutocompleteEngine } from "../../autocomplete/engine.js";
-import type { SearchableItem, AutocompleteConfig } from "../../autocomplete/types.js";
+import { createAutocompleteEngine } from "../../engine.js";
+import type { SearchableItem, AutocompleteConfig } from "../../types.js";
 
 // Mock file system operations
 jest.mock("node:fs/promises");

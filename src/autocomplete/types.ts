@@ -37,6 +37,12 @@ export interface AutocompleteEngine {
   search(query: string, type: "command" | "file" | "mixed"): AutocompleteResult[];
 
   /**
+   * Update the list of items available for search
+   * @param items - Array of searchable items
+   */
+  updateItems(items: SearchableItem[]): void;
+
+  /**
    * Update usage statistics for an item
    * @param item - The item that was used
    * @param type - Type of the item
