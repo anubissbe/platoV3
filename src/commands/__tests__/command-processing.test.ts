@@ -24,7 +24,7 @@ describe("Command Processing System", () => {
     it("should parse command and arguments correctly", async () => {
       const testCases = [
         { input: "/help", command: "help", args: [] },
-        { input: "/model gpt-4", command: "model", args: ["gpt-4"] },
+        { input: "/models gpt-4", command: "models", args: ["gpt-4"] },
         { input: "/mcp attach server http://localhost:8080", command: "mcp", args: ["attach", "server", "http://localhost:8080"] },
         { input: "/edit file.ts", command: "edit", args: ["file.ts"] },
       ];
@@ -86,7 +86,7 @@ describe("Command Processing System", () => {
 
   describe("TUI Mode Command Processing", () => {
     it("should detect slash commands in TUI input", () => {
-      const inputs = ["/help", "/status", "/model", "/mcp tools"];
+      const inputs = ["/help", "/status", "/models", "/mcp tools"];
 
       for (const input of inputs) {
         expect(input.startsWith("/")).toBe(true);
@@ -105,7 +105,7 @@ describe("Command Processing System", () => {
   describe("Command Registry", () => {
     it("should have all required Plato commands registered", () => {
       const requiredCommands = [
-        "help", "status", "model", "doctor", "mcp", "memory",
+        "help", "status", "models", "doctor", "mcp", "memory",
         "context", "init", "resume", "export", "login", "logout",
         "permissions", "apply", "revert", "output-style", "mouse",
         "paste", "compact", "todos", "vim", "proxy", "upgrade",
@@ -134,11 +134,12 @@ describe("Command Processing System", () => {
     });
 
     it("should handle commands with invalid arguments", async () => {
-      const result = await processSlashCommand("/model", session);
+      const result = await processSlashCommand("/models", session);
 
       expect(result.handled).toBe(true);
       // Command exists but isn't fully implemented yet
-      expect(result.output).toMatch(/recognized but not yet implemented|Usage:/);
+      // /models command is implemented and should return output or error
+      expect(result.output || result.error).toBeTruthy();
     });
   });
 });

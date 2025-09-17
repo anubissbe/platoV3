@@ -230,7 +230,7 @@ describe("Comprehensive Slash Commands Test Suite", () => {
 
       // Verify some key commands exist (based on actual implementation)
       const commandNames = SLASH_COMMANDS.map(cmd => cmd.name);
-      const expectedCommands = ["help", "status", "model"];
+      const expectedCommands = ["help", "status", "models"];
       expectedCommands.forEach(cmd => {
         expect(commandNames).toContain(cmd);
       });
@@ -277,7 +277,7 @@ describe("Comprehensive Slash Commands Test Suite", () => {
       const testCases = [
         { name: "help", args: [] },
         { name: "status", args: [] },
-        { name: "model", args: [] },
+        { name: "models", args: [] },
       ];
 
       for (const { name, args } of testCases) {
@@ -385,7 +385,7 @@ describe("Comprehensive Slash Commands Test Suite", () => {
   describe("Resource Management Integration", () => {
     test("commands should not leak resources during execution", async () => {
       // Execute multiple commands to test resource management
-      const commands = ["help", "status", "model"];
+      const commands = ["help", "status", "models"];
 
       for (const cmdName of commands) {
         const command = SLASH_COMMANDS.find(cmd => cmd.name === cmdName);
@@ -417,7 +417,7 @@ describe("Comprehensive Slash Commands Test Suite", () => {
     });
 
     test("commands should handle configuration access", async () => {
-      const modelCommand = SLASH_COMMANDS.find(cmd => cmd.name === "model");
+      const modelCommand = SLASH_COMMANDS.find(cmd => cmd.name === "models");
       if (modelCommand?.execute) {
         const result = await modelCommand.execute([], {});
         expect(result).toBeTruthy();
