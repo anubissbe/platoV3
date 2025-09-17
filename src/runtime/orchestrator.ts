@@ -11,6 +11,8 @@ import { PermissionManager } from "../permissions/PermissionManager.js";
 import { ProfileManager } from "../permissions/ProfileManager.js";
 import { AuditLogger } from "../permissions/AuditLogger.js";
 import { PermissionQuery } from "../permissions/types.js";
+import { FileSystemTool, fileSystem } from "../tools/filesystem.js";
+import { FileWatcher, fileWatcher } from "../tools/file-watcher.js";
 import {
   emitTurnStart,
   emitStreamStart,
@@ -84,6 +86,8 @@ class Orchestrator {
   private history: Msg[] = [];
   private permissionManager: PermissionManager | null = null;
   private memoryManager: MemoryManager | null = null;
+  private fileSystemTool: FileSystemTool | null = null;
+  private fileWatcher: FileWatcher | null = null;
   private tokenMetrics = {
     input: 0,
     output: 0,
@@ -604,6 +608,122 @@ class Orchestrator {
    */
   async getPermissionManager(): Promise<PermissionManager> {
     return await this.ensurePermissionManager();
+  }
+
+  /**
+   * Initialize filesystem tools
+   */
+  private async ensureFileSystemTool(): Promise<FileSystemTool> {
+    if (!this.fileSystemTool) {
+      this.fileSystemTool = fileSystem;
+    }
+    return this.fileSystemTool;
+  }
+
+  /**
+   * Initialize file watcher
+   */
+  private async ensureFileWatcher(): Promise<FileWatcher> {
+    if (!this.fileWatcher) {
+      this.fileWatcher = fileWatcher;
+    }
+    return this.fileWatcher;
+  }
+
+  /**
+   * Get file system tool
+   */
+  async getFileSystemTool(): Promise<FileSystemTool> {
+    return await this.ensureFileSystemTool();
+  }
+
+  /**
+   * Get file watcher
+   */
+  async getFileWatcher(): Promise<FileWatcher> {
+    return await this.ensureFileWatcher();
+  }
+
+  /**
+   * Direct file operations for Claude Code parity
+   */
+  async readFile(filePath: string, options?: any): Promise<string | Buffer> {
+    const fs = await this.ensureFileSystemTool();
+    return await fs.readFile(filePath, options);
+  }
+
+  async writeFile(filePath: string, content: string | Buffer, options?: any): Promise<void> {
+    const fs = await this.ensureFileSystemTool();
+    await fs.writeFile(filePath, content, options);
+  }
+
+  async createFile(filePath: string, content?: string, options?: any): Promise<void> {
+    const fs = await this.ensureFileSystemTool();
+    await fs.create(filePath, content, options);
+  }
+
+  async deleteFile(filePath: string, options?: any): Promise<void> {
+    const fs = await this.ensureFileSystemTool();
+    await fs.delete(filePath, options);
+  }
+
+  async moveFile(sourcePath: string, targetPath: string, options?: any): Promise<void> {
+    const fs = await this.ensureFileSystemTool();
+    await fs.move(sourcePath, targetPath, options);
+  }
+
+  async copyFile(sourcePath: string, targetPath: string, options?: any): Promise<void> {
+    const fs = await this.ensureFileSystemTool();
+    await fs.copy(sourcePath, targetPath, options);
+  }
+
+  async getFileInfo(filePath: string): Promise<any> {
+    const fs = await this.ensureFileSystemTool();
+    return await fs.getInfo(filePath);
+  }
+
+  async listDirectory(dirPath: string, options?: any): Promise<string[]> {
+    const fs = await this.ensureFileSystemTool();
+    return await fs.listDirectory(dirPath, options);
+  }
+
+  async fileExists(filePath: string): Promise<boolean> {
+    const fs = await this.ensureFileSystemTool();
+    return await fs.exists(filePath);
+  }
+
+  /**
+   * File watching operations
+   */
+  async watchFile(filePath: string, options?: any): Promise<void> {
+    const watcher = await this.ensureFileWatcher();
+    watcher.watch(filePath, options);
+  }
+
+  async unwatchFile(filePath: string): Promise<boolean> {
+    const watcher = await this.ensureFileWatcher();
+    return watcher.unwatch(filePath);
+  }
+
+  async getWatchedFiles(): Promise<any[]> {
+    const watcher = await this.ensureFileWatcher();
+    return watcher.getWatchers();
+  }
+
+  /**
+   * File operation history (Claude Code feature)
+   */
+  getFileOperations(): any[] {
+    if (this.fileSystemTool) {
+      return this.fileSystemTool.getOperations();
+    }
+    return [];
+  }
+
+  clearFileOperations(): void {
+    if (this.fileSystemTool) {
+      this.fileSystemTool.clearOperations();
+    }
   }
 
   /**
