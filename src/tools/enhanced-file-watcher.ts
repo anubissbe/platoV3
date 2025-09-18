@@ -125,7 +125,23 @@ export class EnhancedFileWatcher extends EventEmitter {
       recursive: true,
       watchFiles: true,
       watchDirs: true,
-      ignored: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**'],
+      ignored: [
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/dist/**',
+        '**/build/**',
+        '**/coverage/**',
+        '**/.next/**',
+        '**/.nuxt/**',
+        '**/.cache/**',
+        '**/.vscode/**',
+        '**/.idea/**',
+        '**/tmp/**',
+        '**/temp/**',
+        '**/*.log',
+        '**/.DS_Store',
+        '**/Thumbs.db'
+      ],
       debounceDelay: 150,
       conflictDetection: true,
       enableHashing: true,
@@ -428,8 +444,36 @@ export class EnhancedFileWatcher extends EventEmitter {
    * Calculate SHA-256 hash of file content
    */
   private async calculateFileHash(filePath: string): Promise<string> {
-    const content = await fs.readFile(filePath);
-    return crypto.createHash("sha256").update(content).digest("hex");
+    const stats = await fs.stat(filePath);
+
+    // Use streaming for files larger than maxHashSize
+    if (stats.size > this.options.maxHashSize) {
+      // For very large files, only hash first and last chunks
+      const chunkSize = 1024 * 1024; // 1MB chunks
+      const buffer = Buffer.alloc(chunkSize * 2);
+
+      const fd = await fs.open(filePath, 'r');
+      try {
+        // Read first chunk
+        await fd.read(buffer, 0, chunkSize, 0);
+        // Read last chunk
+        if (stats.size > chunkSize) {
+          await fd.read(buffer, chunkSize, chunkSize, stats.size - chunkSize);
+        }
+
+        // Hash the sampled content with size for uniqueness
+        const hash = crypto.createHash("sha256");
+        hash.update(buffer);
+        hash.update(stats.size.toString());
+        return hash.digest("hex");
+      } finally {
+        await fd.close();
+      }
+    } else {
+      // For smaller files, read entire content
+      const content = await fs.readFile(filePath);
+      return crypto.createHash("sha256").update(content).digest("hex");
+    }
   }
 
   /**

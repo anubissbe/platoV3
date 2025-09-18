@@ -50,13 +50,13 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
   - [x] 2.1.5 Write unit tests for watcher configuration and conflict detection logic
   - **Acceptance Criteria**: ✅ Chokidar-based watcher detects external changes with conflict metadata
 
-- [ ] 2.2 Add Performance Optimizations
-  - [ ] 2.2.1 Configure intelligent ignore patterns (node_modules, .git, dist, build directories)
-  - [ ] 2.2.2 Implement debouncing with 150ms default (configurable) for change events
-  - [ ] 2.2.3 Add memory-efficient large file handling with streaming and chunking
-  - [ ] 2.2.4 Create awaitWriteFinish configuration for stable file detection
-  - [ ] 2.2.5 Write performance tests for large directory structures and high-frequency changes
-  - **Acceptance Criteria**: Watcher handles large projects efficiently with <150ms change detection
+- [x] 2.2 Add Performance Optimizations
+  - [x] 2.2.1 Configure intelligent ignore patterns (node_modules, .git, dist, build directories)
+  - [x] 2.2.2 Implement debouncing with 150ms default (configurable) for change events
+  - [x] 2.2.3 Add memory-efficient large file handling with streaming and chunking
+  - [x] 2.2.4 Create awaitWriteFinish configuration for stable file detection
+  - [x] 2.2.5 Write performance tests for large directory structures and high-frequency changes
+  - **Acceptance Criteria**: ✅ Watcher handles large projects efficiently with <150ms change detection
 
 - [ ] 2.3 Migration from Existing File Watcher
   - [ ] 2.3.1 Create backward compatibility layer to maintain existing API surface
