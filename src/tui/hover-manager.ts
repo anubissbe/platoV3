@@ -3,13 +3,13 @@
  * Manages component hover states with visual feedback and transitions
  */
 
-import { MouseEvent } from './mouse-types.js';
-import { 
-  ClickableComponent, 
-  VisualFeedback, 
+import { MouseEvent } from "./mouse-types.js";
+import {
+  ClickableComponent,
+  VisualFeedback,
   ComponentState,
-  VisualFeedbackUtils 
-} from './interactive-components.js';
+  VisualFeedbackUtils,
+} from "./interactive-components.js";
 
 /**
  * Hover state information
@@ -42,7 +42,7 @@ export interface HoverTransition {
   /** Mouse position during transition */
   position: { x: number; y: number };
   /** Type of transition */
-  type: 'enter' | 'exit' | 'move' | 'timeout';
+  type: "enter" | "exit" | "move" | "timeout";
 }
 
 /**
@@ -68,14 +68,16 @@ const DEFAULT_HOVER_CONFIG: HoverConfig = {
   hoverDelay: 100,
   longHoverThreshold: 2000,
   enableTransitions: true,
-  defaultHoverFeedback: VisualFeedbackUtils.createHoverFeedback('subtle'),
-  debug: false
+  defaultHoverFeedback: VisualFeedbackUtils.createHoverFeedback("subtle"),
+  debug: false,
 };
 
 /**
  * Hover event callback types
  */
-export type HoverEventHandler = (transition: HoverTransition) => void | Promise<void>;
+export type HoverEventHandler = (
+  transition: HoverTransition,
+) => void | Promise<void>;
 
 export interface HoverEventHandlers {
   onHoverEnter?: HoverEventHandler;
@@ -108,14 +110,14 @@ export class HoverStateManager {
    */
   async processMouseEvent(
     event: MouseEvent,
-    component: ClickableComponent | null
+    component: ClickableComponent | null,
   ): Promise<HoverTransition | null> {
     const currentComponentId = component?.id || null;
     const previousComponentId = this.hoverState.componentId;
 
     // No change if same component
     if (currentComponentId === previousComponentId) {
-      if (currentComponentId && event.type === 'move') {
+      if (currentComponentId && event.type === "move") {
         await this.handleHoverMove(event, component!);
       }
       return null;
@@ -127,7 +129,7 @@ export class HoverStateManager {
       to: currentComponentId,
       timestamp: event.timestamp,
       position: event.coordinates,
-      type: currentComponentId ? 'enter' : 'exit'
+      type: currentComponentId ? "enter" : "exit",
     };
 
     // Handle hover exit
@@ -151,7 +153,7 @@ export class HoverStateManager {
    */
   private async handleHoverEnter(
     transition: HoverTransition,
-    component: ClickableComponent
+    component: ClickableComponent,
   ): Promise<void> {
     // Update hover state
     this.hoverState = {
@@ -160,7 +162,7 @@ export class HoverStateManager {
       isHovering: true,
       hoverStartTime: transition.timestamp,
       lastHoverPosition: transition.position,
-      previousComponentId: transition.from
+      previousComponentId: transition.from,
     };
 
     // Update component state
@@ -174,11 +176,11 @@ export class HoverStateManager {
     // Call component's mouse enter handler
     if (component.handlers.onMouseEnter) {
       const mouseEvent: MouseEvent = {
-        type: 'move',
+        type: "move",
         coordinates: transition.position,
-        button: 'left',
+        button: "left",
         modifiers: { shift: false, ctrl: false, alt: false, meta: false },
-        timestamp: transition.timestamp
+        timestamp: transition.timestamp,
       };
       await component.handlers.onMouseEnter(mouseEvent);
     }
@@ -192,7 +194,9 @@ export class HoverStateManager {
     }
 
     if (this.config.debug) {
-      console.debug(`[HoverManager] Enter: ${component.id} at (${transition.position.x}, ${transition.position.y})`);
+      console.debug(
+        `[HoverManager] Enter: ${component.id} at (${transition.position.x}, ${transition.position.y})`,
+      );
     }
   }
 
@@ -201,7 +205,7 @@ export class HoverStateManager {
    */
   private async handleHoverExit(transition: HoverTransition): Promise<void> {
     const componentId = transition.from!;
-    
+
     // Update component state
     const componentState = this.componentStates.get(componentId);
     if (componentState) {
@@ -221,7 +225,9 @@ export class HoverStateManager {
     }
 
     if (this.config.debug) {
-      console.debug(`[HoverManager] Exit: ${componentId} at (${transition.position.x}, ${transition.position.y})`);
+      console.debug(
+        `[HoverManager] Exit: ${componentId} at (${transition.position.x}, ${transition.position.y})`,
+      );
     }
   }
 
@@ -230,7 +236,7 @@ export class HoverStateManager {
    */
   private async handleHoverMove(
     event: MouseEvent,
-    component: ClickableComponent
+    component: ClickableComponent,
   ): Promise<void> {
     // Update hover position
     this.hoverState.lastHoverPosition = event.coordinates;
@@ -251,7 +257,7 @@ export class HoverStateManager {
         to: component.id,
         timestamp: event.timestamp,
         position: event.coordinates,
-        type: 'move'
+        type: "move",
       };
       await this.eventHandlers.onHoverMove(transition);
     }
@@ -260,10 +266,12 @@ export class HoverStateManager {
   /**
    * Apply visual feedback for hovered component
    */
-  private async applyHoverFeedback(component: ClickableComponent): Promise<void> {
+  private async applyHoverFeedback(
+    component: ClickableComponent,
+  ): Promise<void> {
     // Use component-specific feedback or default
     const feedback = this.getComponentHoverFeedback(component);
-    
+
     // Store feedback
     this.visualFeedbacks.set(component.id, feedback);
 
@@ -272,14 +280,18 @@ export class HoverStateManager {
     componentState.visualFeedback = feedback;
 
     if (this.config.debug) {
-      console.debug(`[HoverManager] Applied ${feedback.type} feedback to ${component.id}`);
+      console.debug(
+        `[HoverManager] Applied ${feedback.type} feedback to ${component.id}`,
+      );
     }
   }
 
   /**
    * Get hover feedback for component
    */
-  private getComponentHoverFeedback(component: ClickableComponent): VisualFeedback {
+  private getComponentHoverFeedback(
+    component: ClickableComponent,
+  ): VisualFeedback {
     // Check if component has custom hover feedback in data
     if (component.data?.hoverFeedback) {
       return component.data.hoverFeedback as VisualFeedback;
@@ -287,21 +299,21 @@ export class HoverStateManager {
 
     // Use type-specific defaults
     switch (component.type) {
-      case 'button':
-        return VisualFeedbackUtils.createHoverFeedback('normal');
-      case 'link':
+      case "button":
+        return VisualFeedbackUtils.createHoverFeedback("normal");
+      case "link":
         return {
-          type: 'color_change',
-          intensity: 'normal',
-          color: '#6AB7FF',
-          animation: 'none'
+          type: "color_change",
+          intensity: "normal",
+          color: "#6AB7FF",
+          animation: "none",
         };
-      case 'menu_item':
+      case "menu_item":
         return {
-          type: 'highlight',
-          intensity: 'subtle',
-          color: '#444',
-          animation: 'none'
+          type: "highlight",
+          intensity: "subtle",
+          color: "#444",
+          animation: "none",
         };
       default:
         return this.config.defaultHoverFeedback;
@@ -313,7 +325,7 @@ export class HoverStateManager {
    */
   private scheduleLongHoverCheck(component: ClickableComponent): void {
     this.clearLongHoverTimeout();
-    
+
     this.longHoverTimeout = setTimeout(async () => {
       if (this.hoverState.componentId === component.id) {
         await this.handleLongHover(component);
@@ -331,9 +343,9 @@ export class HoverStateManager {
         to: component.id,
         timestamp: Date.now(),
         position: this.hoverState.lastHoverPosition,
-        type: 'timeout'
+        type: "timeout",
       };
-      
+
       await this.eventHandlers.onLongHover(transition);
     }
 
@@ -352,7 +364,7 @@ export class HoverStateManager {
       isHovering: false,
       hoverStartTime: null,
       lastHoverPosition: position,
-      previousComponentId: this.hoverState.componentId
+      previousComponentId: this.hoverState.componentId,
     };
 
     this.clearHoverTimeouts();
@@ -366,7 +378,7 @@ export class HoverStateManager {
       clearTimeout(this.hoverTimeout);
       this.hoverTimeout = null;
     }
-    
+
     this.clearLongHoverTimeout();
   }
 
@@ -385,7 +397,7 @@ export class HoverStateManager {
    */
   private clearVisualFeedback(componentId: string): void {
     this.visualFeedbacks.delete(componentId);
-    
+
     const componentState = this.componentStates.get(componentId);
     if (componentState) {
       componentState.visualFeedback = null;
@@ -402,7 +414,7 @@ export class HoverStateManager {
         isFocused: false,
         isActive: false,
         visualFeedback: null,
-        lastInteraction: Date.now()
+        lastInteraction: Date.now(),
       });
     }
     return this.componentStates.get(componentId)!;
@@ -418,7 +430,7 @@ export class HoverStateManager {
       hoverStartTime: null,
       lastHoverPosition: null,
       previousComponentId: null,
-      longHoverThreshold: this.config.longHoverThreshold
+      longHoverThreshold: this.config.longHoverThreshold,
     };
   }
 
@@ -469,7 +481,9 @@ export class HoverStateManager {
    * Check if component is currently hovered
    */
   isComponentHovered(componentId: string): boolean {
-    return this.hoverState.componentId === componentId && this.hoverState.isHovering;
+    return (
+      this.hoverState.componentId === componentId && this.hoverState.isHovering
+    );
   }
 
   /**
@@ -487,16 +501,16 @@ export class HoverStateManager {
    */
   forceExit(): void {
     this.clearHoverTimeouts();
-    
+
     const currentPosition = this.hoverState.lastHoverPosition || { x: 0, y: 0 };
-    
+
     this.hoverState = {
       componentId: null,
       isHovering: false,
       hoverStartTime: null,
       lastHoverPosition: currentPosition,
       previousComponentId: this.hoverState.componentId,
-      longHoverThreshold: this.config.longHoverThreshold
+      longHoverThreshold: this.config.longHoverThreshold,
     };
 
     // Clear all component hover states
@@ -534,8 +548,8 @@ export class HoverStateManager {
       config: this.config,
       hasActiveTimeouts: {
         hover: this.hoverTimeout !== null,
-        longHover: this.longHoverTimeout !== null
-      }
+        longHover: this.longHoverTimeout !== null,
+      },
     };
   }
 

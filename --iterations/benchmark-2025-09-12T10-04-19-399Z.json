@@ -1,0 +1,270 @@
+{
+  "timestamp": "2025-09-12T10:04:19.399Z",
+  "metadata": {
+    "nodeVersion": "v24.5.0",
+    "platform": "linux",
+    "arch": "x64",
+    "totalBenchmarks": 8
+  },
+  "summary": {
+    "total": 8,
+    "statusCounts": {
+      "excellent": 1,
+      "good": 7,
+      "warning": 0,
+      "critical": 0
+    },
+    "overallHealth": "good"
+  },
+  "results": {
+    "cli_startup": {
+      "pathId": "cli_startup",
+      "measurements": [
+        251.15192900000005, 458.3972789999999, 344.3421759999999, 313.491313,
+        206.34231799999998
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:03:53.929Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      },
+      "stats": {
+        "count": 5,
+        "min": 206.34231799999998,
+        "max": 458.3972789999999,
+        "mean": 314.74500299999994,
+        "median": 313.491313,
+        "p90": 458.3972789999999,
+        "p95": 458.3972789999999,
+        "p99": 458.3972789999999,
+        "stdDev": 86.38143546407048
+      },
+      "performance": {
+        "status": "excellent",
+        "message": "Within target (500ms)"
+      }
+    },
+    "tui_initialization": {
+      "pathId": "tui_initialization",
+      "measurements": [
+        133.23394499999995, 290.29453699999976, 133.23884899999985,
+        219.32565999999997, 257.32409899999993
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:03:55.294Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      },
+      "stats": {
+        "count": 5,
+        "min": 133.23394499999995,
+        "max": 290.29453699999976,
+        "mean": 206.6834179999999,
+        "median": 219.32565999999997,
+        "p90": 290.29453699999976,
+        "p95": 290.29453699999976,
+        "p99": 290.29453699999976,
+        "stdDev": 64.03757315035595
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (400ms threshold)"
+      }
+    },
+    "chat_completion": {
+      "pathId": "chat_completion",
+      "measurements": [
+        90.14525099999992, 97.21088899999995, 67.16766300000018,
+        144.2523140000003, 143.24095000000034
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:03:55.987Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      },
+      "stats": {
+        "count": 5,
+        "min": 67.16766300000018,
+        "max": 144.2523140000003,
+        "mean": 108.40341340000013,
+        "median": 97.21088899999995,
+        "p90": 144.2523140000003,
+        "p95": 144.2523140000003,
+        "p99": 144.2523140000003,
+        "stdDev": 30.521526299664387
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (200ms threshold)"
+      }
+    },
+    "mcp_tool_call": {
+      "pathId": "mcp_tool_call",
+      "measurements": [
+        1350.4184679999998, 1123.1679839999997, 1435.4639129999996,
+        1452.3643510000002, 1269.3148660000006
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:04:05.067Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      },
+      "stats": {
+        "count": 5,
+        "min": 1123.1679839999997,
+        "max": 1452.3643510000002,
+        "mean": 1326.1459164,
+        "median": 1350.4184679999998,
+        "p90": 1452.3643510000002,
+        "p95": 1452.3643510000002,
+        "p99": 1452.3643510000002,
+        "stdDev": 120.7480713764266
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (2000ms threshold)"
+      }
+    },
+    "file_operations": {
+      "pathId": "file_operations",
+      "measurements": [
+        51.15390999999909, 42.14511299999867, 63.173391000000265,
+        47.141546999999264, 69.17225700000017
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:04:05.431Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      },
+      "stats": {
+        "count": 5,
+        "min": 42.14511299999867,
+        "max": 69.17225700000017,
+        "mean": 54.557243599999495,
+        "median": 51.15390999999909,
+        "p90": 69.17225700000017,
+        "p95": 69.17225700000017,
+        "p99": 69.17225700000017,
+        "stdDev": 10.084372408716002
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (100ms threshold)"
+      }
+    },
+    "session_persistence": {
+      "pathId": "session_persistence",
+      "measurements": [
+        110.22392899999977, 111.23034100000041, 132.22613700000147,
+        115.23574399999961, 105.22465399999965
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:04:06.241Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      },
+      "stats": {
+        "count": 5,
+        "min": 105.22465399999965,
+        "max": 132.22613700000147,
+        "mean": 114.82816100000018,
+        "median": 111.23034100000041,
+        "p90": 132.22613700000147,
+        "p95": 132.22613700000147,
+        "p99": 132.22613700000147,
+        "stdDev": 9.26527172359014
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (250ms threshold)"
+      }
+    },
+    "context_indexing": {
+      "pathId": "context_indexing",
+      "measurements": [
+        1281.3052429999989, 699.7279600000002, 2467.1791459999986,
+        1848.8637199999976, 682.683430000001
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:04:19.207Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      },
+      "stats": {
+        "count": 5,
+        "min": 682.683430000001,
+        "max": 2467.1791459999986,
+        "mean": 1395.9518997999992,
+        "median": 1281.3052429999989,
+        "p90": 2467.1791459999986,
+        "p95": 2467.1791459999986,
+        "p99": 2467.1791459999986,
+        "stdDev": 686.9178218906524
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (3000ms threshold)"
+      }
+    },
+    "memory_operations": {
+      "pathId": "memory_operations",
+      "measurements": [
+        24.132848000001104, 28.157796999999846, 39.118420000002516,
+        30.146929999998974, 26.144282000001112
+      ],
+      "metadata": {
+        "timestamp": "2025-09-12T10:04:19.398Z",
+        "nodeVersion": "v24.5.0",
+        "platform": "linux",
+        "arch": "x64",
+        "iterations": 5,
+        "warmupIterations": 2,
+        "successfulRuns": 5
+      },
+      "stats": {
+        "count": 5,
+        "min": 24.132848000001104,
+        "max": 39.118420000002516,
+        "mean": 29.54005540000071,
+        "median": 28.157796999999846,
+        "p90": 39.118420000002516,
+        "p95": 39.118420000002516,
+        "p99": 39.118420000002516,
+        "stdDev": 5.192170496542252
+      },
+      "performance": {
+        "status": "good",
+        "message": "Acceptable (50ms threshold)"
+      }
+    }
+  },
+  "recommendations": []
+}

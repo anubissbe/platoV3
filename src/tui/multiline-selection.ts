@@ -3,7 +3,7 @@
  * Handles complex multi-line text selection with proper line wrapping logic
  */
 
-import { TextPosition, TextRange } from './text-selection.js';
+import { TextPosition, TextRange } from "./text-selection.js";
 
 /**
  * Line wrapping configuration
@@ -110,7 +110,7 @@ const DEFAULT_WRAP_CONFIG: LineWrapConfig = {
   preserveIndentation: true,
   wrapIndent: 2,
   breakLongWords: true,
-  minWordBreakLength: 20
+  minWordBreakLength: 20,
 };
 
 /**
@@ -121,33 +121,39 @@ export class LineWrapEngine {
   /**
    * Wrap content lines according to configuration
    */
-  static wrapContent(content: string[], config: LineWrapConfig): LineWrapResult {
+  static wrapContent(
+    content: string[],
+    config: LineWrapConfig,
+  ): LineWrapResult {
     const wrappedLines: WrappedLine[] = [];
     const lineMapping = new Map<number, WrappedLine[]>();
-    const positionMapping = new Map<string, { wrappedLine: number; column: number }>();
-    
+    const positionMapping = new Map<
+      string,
+      { wrappedLine: number; column: number }
+    >();
+
     let currentWrappedLine = 0;
 
     for (let originalLine = 0; originalLine < content.length; originalLine++) {
       const line = content[originalLine];
       const segments = this.wrapLine(line, originalLine, config);
-      
+
       // Add segments to wrapped lines
       for (const segment of segments) {
         wrappedLines.push(segment);
-        
+
         // Update position mapping
         for (let col = segment.startColumn; col <= segment.endColumn; col++) {
           const key = `${originalLine},${col}`;
           positionMapping.set(key, {
             wrappedLine: currentWrappedLine,
-            column: col - segment.startColumn + segment.indentation.length
+            column: col - segment.startColumn + segment.indentation.length,
           });
         }
-        
+
         currentWrappedLine++;
       }
-      
+
       lineMapping.set(originalLine, segments);
     }
 
@@ -155,42 +161,55 @@ export class LineWrapEngine {
       wrappedLines,
       lineMapping,
       totalWrappedLines: currentWrappedLine,
-      positionMapping
+      positionMapping,
     };
   }
 
   /**
    * Wrap a single line into segments
    */
-  private static wrapLine(line: string, originalLine: number, config: LineWrapConfig): WrappedLine[] {
+  private static wrapLine(
+    line: string,
+    originalLine: number,
+    config: LineWrapConfig,
+  ): WrappedLine[] {
     if (line.length <= config.terminalWidth) {
       // Line fits in terminal width
-      return [{
-        originalLine,
-        segmentIndex: 0,
-        startColumn: 0,
-        endColumn: line.length,
-        content: line,
-        isLastSegment: true,
-        indentation: '',
-        totalSegments: 1
-      }];
+      return [
+        {
+          originalLine,
+          segmentIndex: 0,
+          startColumn: 0,
+          endColumn: line.length,
+          content: line,
+          isLastSegment: true,
+          indentation: "",
+          totalSegments: 1,
+        },
+      ];
     }
 
     const segments: WrappedLine[] = [];
     const indentation = this.extractIndentation(line);
-    const effectiveWidth = config.terminalWidth - (config.preserveIndentation ? config.wrapIndent : 0);
-    
+    const effectiveWidth =
+      config.terminalWidth -
+      (config.preserveIndentation ? config.wrapIndent : 0);
+
     let remainingLine = line;
     let startColumn = 0;
     let segmentIndex = 0;
 
     while (remainingLine.length > 0) {
       const isFirstSegment = segmentIndex === 0;
-      const currentWidth = isFirstSegment ? config.terminalWidth : effectiveWidth;
-      const currentIndent = (!isFirstSegment && config.preserveIndentation) ? 
-        ' '.repeat(config.wrapIndent) : 
-        (isFirstSegment ? indentation : '');
+      const currentWidth = isFirstSegment
+        ? config.terminalWidth
+        : effectiveWidth;
+      const currentIndent =
+        !isFirstSegment && config.preserveIndentation
+          ? " ".repeat(config.wrapIndent)
+          : isFirstSegment
+            ? indentation
+            : "";
 
       let segmentContent: string;
       let segmentLength: number;
@@ -199,15 +218,15 @@ export class LineWrapEngine {
         // Remaining content fits
         segmentContent = remainingLine;
         segmentLength = remainingLine.length;
-        remainingLine = '';
+        remainingLine = "";
       } else {
         // Need to wrap
         const result = this.findWrapPoint(
-          remainingLine, 
-          currentWidth - currentIndent.length, 
-          config
+          remainingLine,
+          currentWidth - currentIndent.length,
+          config,
         );
-        
+
         segmentContent = remainingLine.substring(0, result.breakPoint);
         segmentLength = result.breakPoint;
         remainingLine = remainingLine.substring(result.breakPoint);
@@ -221,7 +240,7 @@ export class LineWrapEngine {
         content: currentIndent + segmentContent,
         isLastSegment: remainingLine.length === 0,
         indentation: currentIndent,
-        totalSegments: 0 // Will be set after all segments are processed
+        totalSegments: 0, // Will be set after all segments are processed
       });
 
       startColumn += segmentLength;
@@ -229,7 +248,7 @@ export class LineWrapEngine {
     }
 
     // Set total segments for all segments
-    segments.forEach(segment => {
+    segments.forEach((segment) => {
       segment.totalSegments = segments.length;
     });
 
@@ -240,37 +259,41 @@ export class LineWrapEngine {
    * Find the best point to wrap a line
    */
   private static findWrapPoint(
-    line: string, 
-    maxWidth: number, 
-    config: LineWrapConfig
-  ): { breakPoint: number; type: 'word' | 'char' | 'hyphen' } {
+    line: string,
+    maxWidth: number,
+    config: LineWrapConfig,
+  ): { breakPoint: number; type: "word" | "char" | "hyphen" } {
     if (line.length <= maxWidth) {
-      return { breakPoint: line.length, type: 'word' };
+      return { breakPoint: line.length, type: "word" };
     }
 
     if (config.enableWordWrap) {
       // Try word wrapping first
       const wordBreak = this.findWordWrapPoint(line, maxWidth);
       if (wordBreak > 0) {
-        return { breakPoint: wordBreak, type: 'word' };
+        return { breakPoint: wordBreak, type: "word" };
       }
 
       // Try hyphenating long words
       if (config.breakLongWords) {
-        const hyphenBreak = this.findHyphenationPoint(line, maxWidth, config.minWordBreakLength);
+        const hyphenBreak = this.findHyphenationPoint(
+          line,
+          maxWidth,
+          config.minWordBreakLength,
+        );
         if (hyphenBreak > 0) {
-          return { breakPoint: hyphenBreak, type: 'hyphen' };
+          return { breakPoint: hyphenBreak, type: "hyphen" };
         }
       }
     }
 
     if (config.fallbackToCharWrap) {
       // Fallback to character wrapping
-      return { breakPoint: maxWidth, type: 'char' };
+      return { breakPoint: maxWidth, type: "char" };
     }
 
     // Force break at width
-    return { breakPoint: maxWidth, type: 'char' };
+    return { breakPoint: maxWidth, type: "char" };
   }
 
   /**
@@ -284,21 +307,25 @@ export class LineWrapEngine {
         return i + 1;
       }
     }
-    
+
     return 0; // No suitable word boundary found
   }
 
   /**
    * Find hyphenation point for long words
    */
-  private static findHyphenationPoint(line: string, maxWidth: number, minWordLength: number): number {
+  private static findHyphenationPoint(
+    line: string,
+    maxWidth: number,
+    minWordLength: number,
+  ): number {
     // Simple hyphenation: break at maxWidth - 1 and add hyphen
     const breakPoint = maxWidth - 1;
-    
+
     // Check if we're in the middle of a long word
     const beforeBreak = line.substring(0, breakPoint);
     const atBreak = line[breakPoint];
-    
+
     // Only hyphenate if we're breaking a word longer than minWordLength
     if (atBreak && /\w/.test(atBreak) && beforeBreak.length >= minWordLength) {
       // Check if this is part of a continuous word
@@ -307,7 +334,7 @@ export class LineWrapEngine {
         return breakPoint;
       }
     }
-    
+
     return 0; // No suitable hyphenation point
   }
 
@@ -316,15 +343,15 @@ export class LineWrapEngine {
    */
   private static extractIndentation(line: string): string {
     const match = line.match(/^(\s*)/);
-    return match ? match[1] : '';
+    return match ? match[1] : "";
   }
 
   /**
    * Convert original position to wrapped coordinates
    */
   static originalToWrapped(
-    position: TextPosition, 
-    wrapResult: LineWrapResult
+    position: TextPosition,
+    wrapResult: LineWrapResult,
   ): { wrappedLine: number; column: number } | null {
     const key = `${position.line},${position.column}`;
     return wrapResult.positionMapping.get(key) || null;
@@ -334,9 +361,9 @@ export class LineWrapEngine {
    * Convert wrapped position to original coordinates
    */
   static wrappedToOriginal(
-    wrappedLine: number, 
-    column: number, 
-    wrapResult: LineWrapResult
+    wrappedLine: number,
+    column: number,
+    wrapResult: LineWrapResult,
   ): TextPosition | null {
     if (wrappedLine >= wrapResult.wrappedLines.length) {
       return null;
@@ -344,14 +371,17 @@ export class LineWrapEngine {
 
     const segment = wrapResult.wrappedLines[wrappedLine];
     const adjustedColumn = column - segment.indentation.length;
-    
-    if (adjustedColumn < 0 || adjustedColumn > segment.endColumn - segment.startColumn) {
+
+    if (
+      adjustedColumn < 0 ||
+      adjustedColumn > segment.endColumn - segment.startColumn
+    ) {
       return null;
     }
 
     return {
       line: segment.originalLine,
-      column: segment.startColumn + adjustedColumn
+      column: segment.startColumn + adjustedColumn,
     };
   }
 }
@@ -383,37 +413,37 @@ export class MultilineSelectionHandler {
     // Update wrap result if needed
     if (!this.currentWrapResult) {
       this.currentWrapResult = LineWrapEngine.wrapContent(
-        context.originalContent, 
-        context.wrapConfig
+        context.originalContent,
+        context.wrapConfig,
       );
     }
 
     // Convert original selection to wrapped coordinates
     const wrappedStart = LineWrapEngine.originalToWrapped(
-      context.selection.start, 
-      this.currentWrapResult
+      context.selection.start,
+      this.currentWrapResult,
     );
-    
+
     const wrappedEnd = LineWrapEngine.originalToWrapped(
-      context.selection.end, 
-      this.currentWrapResult
+      context.selection.end,
+      this.currentWrapResult,
     );
 
     if (!wrappedStart || !wrappedEnd) {
-      throw new Error('Invalid selection range for wrapped content');
+      throw new Error("Invalid selection range for wrapped content");
     }
 
     // Find affected segments
     const affectedSegments = this.findAffectedSegments(
       wrappedStart.wrappedLine,
       wrappedEnd.wrappedLine,
-      this.currentWrapResult
+      this.currentWrapResult,
     );
 
     // Calculate character count
     const characterCount = this.calculateSelectionCharacterCount(
       context.selection,
-      context.originalContent
+      context.originalContent,
     );
 
     return {
@@ -423,7 +453,7 @@ export class MultilineSelectionHandler {
       originalEnd: context.selection.end,
       affectedSegments,
       characterCount,
-      wrappedLineCount: wrappedEnd.wrappedLine - wrappedStart.wrappedLine + 1
+      wrappedLineCount: wrappedEnd.wrappedLine - wrappedStart.wrappedLine + 1,
     };
   }
 
@@ -431,29 +461,36 @@ export class MultilineSelectionHandler {
    * Find segments affected by selection
    */
   private findAffectedSegments(
-    startWrappedLine: number, 
-    endWrappedLine: number, 
-    wrapResult: LineWrapResult
+    startWrappedLine: number,
+    endWrappedLine: number,
+    wrapResult: LineWrapResult,
   ): WrappedLine[] {
     const segments: WrappedLine[] = [];
-    
+
     for (let line = startWrappedLine; line <= endWrappedLine; line++) {
       if (line < wrapResult.wrappedLines.length) {
         segments.push(wrapResult.wrappedLines[line]);
       }
     }
-    
+
     return segments;
   }
 
   /**
    * Calculate character count for selection
    */
-  private calculateSelectionCharacterCount(selection: TextRange, content: string[]): number {
+  private calculateSelectionCharacterCount(
+    selection: TextRange,
+    content: string[],
+  ): number {
     const normalizedRange = this.normalizeRange(selection);
     let count = 0;
 
-    for (let line = normalizedRange.start.line; line <= normalizedRange.end.line; line++) {
+    for (
+      let line = normalizedRange.start.line;
+      line <= normalizedRange.end.line;
+      line++
+    ) {
       if (line >= content.length) break;
 
       const lineContent = content[line];
@@ -492,7 +529,11 @@ export class MultilineSelectionHandler {
     const normalizedRange = this.normalizeRange(context.selection);
     const lines: string[] = [];
 
-    for (let line = normalizedRange.start.line; line <= normalizedRange.end.line; line++) {
+    for (
+      let line = normalizedRange.start.line;
+      line <= normalizedRange.end.line;
+      line++
+    ) {
       if (line >= context.originalContent.length) break;
 
       const lineContent = context.originalContent[line];
@@ -520,7 +561,7 @@ export class MultilineSelectionHandler {
       lines.push(segmentText);
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -528,13 +569,19 @@ export class MultilineSelectionHandler {
    */
   getWrappedCoordinates(
     originalPosition: TextPosition,
-    content: string[]
+    content: string[],
   ): { wrappedLine: number; column: number } | null {
     if (!this.currentWrapResult) {
-      this.currentWrapResult = LineWrapEngine.wrapContent(content, this.wrapConfig);
+      this.currentWrapResult = LineWrapEngine.wrapContent(
+        content,
+        this.wrapConfig,
+      );
     }
 
-    return LineWrapEngine.originalToWrapped(originalPosition, this.currentWrapResult);
+    return LineWrapEngine.originalToWrapped(
+      originalPosition,
+      this.currentWrapResult,
+    );
   }
 
   /**
@@ -543,16 +590,19 @@ export class MultilineSelectionHandler {
   getOriginalCoordinates(
     wrappedLine: number,
     column: number,
-    content: string[]
+    content: string[],
   ): TextPosition | null {
     if (!this.currentWrapResult) {
-      this.currentWrapResult = LineWrapEngine.wrapContent(content, this.wrapConfig);
+      this.currentWrapResult = LineWrapEngine.wrapContent(
+        content,
+        this.wrapConfig,
+      );
     }
 
     return LineWrapEngine.wrappedToOriginal(
-      wrappedLine, 
-      column, 
-      this.currentWrapResult
+      wrappedLine,
+      column,
+      this.currentWrapResult,
     );
   }
 
@@ -563,7 +613,7 @@ export class MultilineSelectionHandler {
     const span = this.processMultilineSelection({
       originalContent: content,
       wrapConfig: this.wrapConfig,
-      selection
+      selection,
     });
 
     return span.wrappedLineCount > 1;
@@ -574,7 +624,7 @@ export class MultilineSelectionHandler {
    */
   getWrappedSelectionBounds(
     selection: TextRange,
-    content: string[]
+    content: string[],
   ): {
     startLine: number;
     endLine: number;
@@ -584,14 +634,14 @@ export class MultilineSelectionHandler {
     const span = this.processMultilineSelection({
       originalContent: content,
       wrapConfig: this.wrapConfig,
-      selection
+      selection,
     });
 
     return {
       startLine: span.wrappedStart.wrappedLine,
       endLine: span.wrappedEnd.wrappedLine,
       startColumn: span.wrappedStart.column,
-      endColumn: span.wrappedEnd.column
+      endColumn: span.wrappedEnd.column,
     };
   }
 
@@ -600,7 +650,7 @@ export class MultilineSelectionHandler {
    */
   getSelectionSegments(
     selection: TextRange,
-    content: string[]
+    content: string[],
   ): Array<{
     wrappedLine: number;
     startColumn: number;
@@ -611,20 +661,20 @@ export class MultilineSelectionHandler {
     const span = this.processMultilineSelection({
       originalContent: content,
       wrapConfig: this.wrapConfig,
-      selection
+      selection,
     });
 
     return span.affectedSegments.map((segment, index) => {
       const isFirst = index === 0;
       const isLast = index === span.affectedSegments.length - 1;
-      
+
       let startCol = 0;
       let endCol = segment.content.length;
-      
+
       if (isFirst) {
         startCol = span.wrappedStart.column;
       }
-      
+
       if (isLast) {
         endCol = span.wrappedEnd.column;
       }
@@ -634,7 +684,7 @@ export class MultilineSelectionHandler {
         startColumn: startCol,
         endColumn: endCol,
         originalLine: segment.originalLine,
-        content: segment.content.substring(startCol, endCol)
+        content: segment.content.substring(startCol, endCol),
       };
     });
   }
@@ -644,11 +694,14 @@ export class MultilineSelectionHandler {
    */
   private normalizeRange(range: TextRange): TextRange {
     const { start, end } = range;
-    
-    if (start.line > end.line || (start.line === end.line && start.column > end.column)) {
+
+    if (
+      start.line > end.line ||
+      (start.line === end.line && start.column > end.column)
+    ) {
       return { start: end, end: start };
     }
-    
+
     return range;
   }
 
@@ -681,7 +734,7 @@ export class MultilineSelectionHandler {
       wrapConfig: this.wrapConfig,
       hasWrapResult: this.currentWrapResult !== null,
       totalWrappedLines: this.currentWrapResult?.totalWrappedLines || 0,
-      lineMappingSize: this.currentWrapResult?.lineMapping.size || 0
+      lineMappingSize: this.currentWrapResult?.lineMapping.size || 0,
     };
   }
 }

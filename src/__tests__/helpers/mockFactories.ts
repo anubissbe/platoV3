@@ -4,30 +4,30 @@
 
 export const mockSession = {
   create: (overrides = {}) => ({
-    id: 'test-session-123',
+    id: "test-session-123",
     messages: [],
-    model: 'gpt-4',
-    provider: 'copilot',
+    model: "gpt-4",
+    provider: "copilot",
     timestamp: Date.now(),
     ...overrides,
   }),
-  
+
   withMessages: (messages: any[]) => ({
-    id: 'test-session-123',
+    id: "test-session-123",
     messages,
-    model: 'gpt-4',
-    provider: 'copilot',
+    model: "gpt-4",
+    provider: "copilot",
     timestamp: Date.now(),
   }),
 };
 
 export const mockConfig = {
   create: (overrides = {}) => ({
-    provider: 'copilot',
-    model: 'gpt-4',
-    applyMode: 'auto',
+    provider: "copilot",
+    model: "gpt-4",
+    applyMode: "auto",
     mouseMode: true,
-    outputStyle: 'default',
+    outputStyle: "default",
     ...overrides,
   }),
 };
@@ -43,11 +43,11 @@ export const mockCommand = {
 
 export const mockProvider = {
   createCopilot: () => ({
-    authenticate: jest.fn().mockResolvedValue({ token: 'mock-token' }),
-    getModels: jest.fn().mockResolvedValue(['gpt-4', 'gpt-3.5-turbo']),
+    authenticate: jest.fn().mockResolvedValue({ token: "mock-token" }),
+    getModels: jest.fn().mockResolvedValue(["gpt-4", "gpt-3.5-turbo"]),
     complete: jest.fn().mockResolvedValue({
-      content: 'Mock response',
-      model: 'gpt-4',
+      content: "Mock response",
+      model: "gpt-4",
     }),
   }),
 };
@@ -63,7 +63,7 @@ export const mockFileSystem = {
       isDirectory: () => false,
     },
   }),
-  
+
   createDirectory: (path: string) => ({
     path,
     stats: {
@@ -77,8 +77,8 @@ export const mockFileSystem = {
 
 export const mockGitStatus = {
   create: (overrides = {}) => ({
-    current: 'main',
-    tracking: 'origin/main',
+    current: "main",
+    tracking: "origin/main",
     ahead: 0,
     behind: 0,
     modified: [],

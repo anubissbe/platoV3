@@ -1,0 +1,94 @@
+{
+  "name": "plato-testing",
+  "description": "MCP server for testing Plato TUI",
+  "version": "1.0.0",
+  "server": {
+    "command": "docker",
+    "args": [
+      "run",
+      "--rm",
+      "-v",
+      "${PWD}:/workspace",
+      "-w",
+      "/workspace",
+      "--name",
+      "plato-mcp",
+      "plato-mcp:latest"
+    ]
+  },
+  "tools": [
+    {
+      "name": "shell_exec",
+      "description": "Execute whitelisted shell commands in Plato workspace",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "command": {
+            "type": "string",
+            "description": "Command to execute (git, node, npm, pnpm, jest, etc.)"
+          },
+          "cwd": {
+            "type": "string",
+            "description": "Working directory (default: /workspace)"
+          }
+        },
+        "required": ["command"]
+      }
+    },
+    {
+      "name": "run_plato_pty",
+      "description": "Run Plato TUI in a PTY and interact with it",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "string",
+            "description": "Input to send to Plato"
+          },
+          "timeout": {
+            "type": "number",
+            "description": "Timeout in seconds (default: 10)"
+          }
+        }
+      }
+    },
+    {
+      "name": "test_components",
+      "description": "Run Ink component tests with ink-testing-library",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "component": {
+            "type": "string",
+            "description": "Specific component to test (optional)"
+          }
+        }
+      }
+    },
+    {
+      "name": "run_e2e_test",
+      "description": "Run full E2E PTY test suite",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "debug": {
+            "type": "boolean",
+            "description": "Enable debug output"
+          }
+        }
+      }
+    }
+  ],
+  "prompts": [
+    {
+      "name": "test_plato",
+      "description": "Run complete Plato test suite",
+      "prompt": "Build Plato, run unit tests, component tests, and E2E PTY tests. Report on any failures."
+    },
+    {
+      "name": "debug_plato",
+      "description": "Debug Plato TUI interactively",
+      "prompt": "Start Plato in PTY, send test inputs, and capture output for debugging."
+    }
+  ]
+}

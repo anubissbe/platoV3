@@ -3,19 +3,19 @@
  * Handles saving and loading layout configurations
  */
 
-import fs from 'fs/promises';
-import path from 'path';
-import type { LayoutConfig } from './layout-manager.js';
+import fs from "fs/promises";
+import path from "path";
+import type { LayoutConfig } from "./layout-manager.js";
 
-const LAYOUT_CONFIG_PATH = '.plato/layout.json';
+const LAYOUT_CONFIG_PATH = ".plato/layout.json";
 
 export class LayoutPersistence {
   private configPath: string;
-  
+
   constructor(basePath: string = process.cwd()) {
     this.configPath = path.join(basePath, LAYOUT_CONFIG_PATH);
   }
-  
+
   /**
    * Save layout configuration to disk
    */
@@ -23,27 +23,27 @@ export class LayoutPersistence {
     try {
       const dir = path.dirname(this.configPath);
       await fs.mkdir(dir, { recursive: true });
-      
+
       const json = JSON.stringify(config, null, 2);
-      await fs.writeFile(this.configPath, json, 'utf8');
+      await fs.writeFile(this.configPath, json, "utf8");
     } catch (error) {
-      console.error('Failed to save layout configuration:', error);
+      console.error("Failed to save layout configuration:", error);
     }
   }
-  
+
   /**
    * Load layout configuration from disk
    */
   async load(): Promise<LayoutConfig | null> {
     try {
-      const json = await fs.readFile(this.configPath, 'utf8');
+      const json = await fs.readFile(this.configPath, "utf8");
       return JSON.parse(json) as LayoutConfig;
     } catch (error) {
       // File doesn't exist or is invalid
       return null;
     }
   }
-  
+
   /**
    * Delete saved layout configuration
    */
@@ -54,7 +54,7 @@ export class LayoutPersistence {
       // Ignore if file doesn't exist
     }
   }
-  
+
   /**
    * Check if layout configuration exists
    */

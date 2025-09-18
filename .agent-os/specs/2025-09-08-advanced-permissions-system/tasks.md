@@ -8,6 +8,7 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 ## Tasks
 
 ### 1. Core Permission Profile System ✅
+
 Build the foundation for profile-based permissions with automatic context detection and switching.
 
 - [x] 1.1 Write comprehensive unit tests for ProfileManager class with context detection
@@ -20,6 +21,7 @@ Build the foundation for profile-based permissions with automatic context detect
 - [x] 1.8 Verify all profile system tests pass with context switching scenarios
 
 ### 2. Advanced Rule Engine ✅
+
 Develop the enhanced rule processing system with priority-based evaluation and pattern matching.
 
 - [x] 2.1 Write tests for enhanced RuleEngine with priority and pattern matching
@@ -32,6 +34,7 @@ Develop the enhanced rule processing system with priority-based evaluation and p
 - [x] 2.8 Verify all rule engine tests pass with complex pattern scenarios
 
 ### 3. Audit Logging Infrastructure ✅
+
 Create comprehensive audit logging system with persistence and search capabilities.
 
 - [x] 3.1 Write tests for AuditLogger with rotation and search functionality
@@ -44,6 +47,7 @@ Create comprehensive audit logging system with persistence and search capabiliti
 - [x] 3.8 Verify all audit logging tests pass with rotation and search
 
 ### 4. Interactive Confirmation System ✅
+
 Build rich interactive prompts for sensitive operations with clear explanations.
 
 - [x] 4.1 Write tests for PermissionPrompt component with user interactions
@@ -56,6 +60,7 @@ Build rich interactive prompts for sensitive operations with clear explanations.
 - [x] 4.8 Verify all confirmation UI tests pass with various scenarios
 
 ### 5. Safety Features and Guards ✅
+
 Implement protective mechanisms to prevent dangerous operations and enable rollback.
 
 - [x] 5.1 Write tests for SafetyGuard with protected paths and validation
@@ -68,6 +73,7 @@ Implement protective mechanisms to prevent dangerous operations and enable rollb
 - [x] 5.8 Verify all safety feature tests pass with dangerous scenarios
 
 ### 6. UI Integration and Dashboard ✅
+
 Integrate permissions into the TUI with status indicators and management dashboard.
 
 - [x] 6.1 Write tests for permission UI components and integration
@@ -80,6 +86,7 @@ Integrate permissions into the TUI with status indicators and management dashboa
 - [x] 6.8 Verify all UI integration tests pass with user interactions
 
 ### 7. System Integration ✅
+
 Integrate the advanced permission system with existing Plato components.
 
 - [x] 7.1 Write integration tests for orchestrator and MCP permissions

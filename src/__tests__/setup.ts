@@ -1,9 +1,9 @@
 // Global test setup
-import '@testing-library/jest-dom';
+import "@testing-library/jest-dom";
 
 // Mock process.stdout to prevent test output interference
-Object.defineProperty(process.stdout, 'columns', { value: 80, writable: true });
-Object.defineProperty(process.stdout, 'rows', { value: 24, writable: true });
+Object.defineProperty(process.stdout, "columns", { value: 80, writable: true });
+Object.defineProperty(process.stdout, "rows", { value: 24, writable: true });
 
 // Disable console output during tests unless debugging
 const originalConsole = console;

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "test-server": {
+      "command": "npx",
+      "args": ["tsx", "scripts/mock-mcp.ts"],
+      "env": {
+        "PORT": "8720"
+      }
+    }
+  }
+}

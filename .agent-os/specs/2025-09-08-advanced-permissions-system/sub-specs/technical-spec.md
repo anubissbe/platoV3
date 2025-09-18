@@ -77,8 +77,8 @@ src/tui/components/
 
 ```yaml
 permissions:
-  version: 2  # New schema version
-  
+  version: 2 # New schema version
+
   profiles:
     development:
       description: "Relaxed permissions for local development"
@@ -89,7 +89,7 @@ permissions:
         fs_write: allow
         exec: confirm
       rules: [...]
-    
+
     production:
       description: "Strict permissions for production"
       activation:
@@ -99,7 +99,7 @@ permissions:
         fs_write: deny
         exec: deny
       rules: [...]
-  
+
   global_rules:
     - match:
         tool: fs_*
@@ -107,17 +107,17 @@ permissions:
       action: deny
       priority: 100
       reason: "Environment files are always protected"
-  
+
   protected_paths:
     - "~/.ssh/**"
     - "**/node_modules/**"
     - "**/.git/**"
-  
+
   audit:
     enabled: true
     retention_days: 90
     log_level: info
-    
+
   rate_limits:
     fs_write: 10/minute
     exec: 5/minute

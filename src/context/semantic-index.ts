@@ -3,7 +3,7 @@
  * Provides lightweight semantic understanding of codebase structure and relationships
  */
 
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 import {
   FileIndex,
   SymbolInfo,
@@ -11,8 +11,8 @@ import {
   SymbolReference,
   ImportGraph,
   SemanticIndexData,
-  FileAnalyzerOptions
-} from './types';
+  FileAnalyzerOptions,
+} from "./types.js";
 
 /**
  * Symbol extraction from source code
@@ -23,15 +23,15 @@ export class SymbolExtractor {
    */
   extractSymbols(content: string, language: string): SymbolInfo[] {
     switch (language.toLowerCase()) {
-      case 'typescript':
-      case 'tsx':
+      case "typescript":
+      case "tsx":
         return this.extractTypeScriptSymbols(content);
-      case 'javascript':
-      case 'jsx':
+      case "javascript":
+      case "jsx":
         return this.extractJavaScriptSymbols(content);
-      case 'python':
+      case "python":
         return this.extractPythonSymbols(content);
-      case 'go':
+      case "go":
         return this.extractGoSymbols(content);
       default:
         return [];
@@ -42,32 +42,32 @@ export class SymbolExtractor {
    * Detect language from file extension
    */
   detectLanguage(filePath: string): string {
-    const ext = filePath.split('.').pop()?.toLowerCase();
+    const ext = filePath.split(".").pop()?.toLowerCase();
     switch (ext) {
-      case 'ts':
-      case 'tsx':
-        return 'typescript';
-      case 'js':
-      case 'jsx':
-      case 'mjs':
-      case 'cjs':
-        return 'javascript';
-      case 'py':
-        return 'python';
-      case 'go':
-        return 'go';
-      case 'rs':
-        return 'rust';
-      case 'java':
-        return 'java';
+      case "ts":
+      case "tsx":
+        return "typescript";
+      case "js":
+      case "jsx":
+      case "mjs":
+      case "cjs":
+        return "javascript";
+      case "py":
+        return "python";
+      case "go":
+        return "go";
+      case "rs":
+        return "rust";
+      case "java":
+        return "java";
       default:
-        return 'unknown';
+        return "unknown";
     }
   }
 
   private extractTypeScriptSymbols(content: string): SymbolInfo[] {
     const symbols: SymbolInfo[] = [];
-    const lines = content.split('\n');
+    const lines = content.split("\n");
 
     // Regular expressions for TypeScript/JavaScript symbols
     const patterns = {
@@ -76,16 +76,17 @@ export class SymbolExtractor {
       type: /(?:export\s+)?type\s+(\w+)/,
       enum: /(?:export\s+)?enum\s+(\w+)/,
       function: /(?:export\s+)?(?:async\s+)?function\s+(\w+)/,
-      arrowFunc: /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/,
+      arrowFunc:
+        /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/,
       variable: /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=/,
       namespace: /(?:export\s+)?namespace\s+(\w+)/,
     };
 
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
-      
+
       // Skip comments
-      if (trimmedLine.startsWith('//') || trimmedLine.startsWith('/*')) {
+      if (trimmedLine.startsWith("//") || trimmedLine.startsWith("/*")) {
         return;
       }
 
@@ -96,8 +97,8 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Class,
           line: index + 1,
-          exported: line.includes('export'),
-          members: this.extractClassMembers(content, index)
+          exported: line.includes("export"),
+          members: this.extractClassMembers(content, index),
         });
         return;
       }
@@ -109,7 +110,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Interface,
           line: index + 1,
-          exported: line.includes('export')
+          exported: line.includes("export"),
         });
         return;
       }
@@ -121,7 +122,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Type,
           line: index + 1,
-          exported: line.includes('export')
+          exported: line.includes("export"),
         });
         return;
       }
@@ -133,7 +134,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Enum,
           line: index + 1,
-          exported: line.includes('export')
+          exported: line.includes("export"),
         });
         return;
       }
@@ -145,7 +146,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Function,
           line: index + 1,
-          exported: line.includes('export')
+          exported: line.includes("export"),
         });
         return;
       }
@@ -157,7 +158,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Function,
           line: index + 1,
-          exported: line.includes('export')
+          exported: line.includes("export"),
         });
         return;
       }
@@ -170,7 +171,7 @@ export class SymbolExtractor {
             name: match[1],
             type: SymbolType.Variable,
             line: index + 1,
-            exported: line.includes('export')
+            exported: line.includes("export"),
           });
           return;
         }
@@ -183,7 +184,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Namespace,
           line: index + 1,
-          exported: line.includes('export')
+          exported: line.includes("export"),
         });
       }
     });
@@ -194,19 +195,20 @@ export class SymbolExtractor {
   private extractJavaScriptSymbols(content: string): SymbolInfo[] {
     // Similar to TypeScript but without type-specific constructs
     const symbols: SymbolInfo[] = [];
-    const lines = content.split('\n');
+    const lines = content.split("\n");
 
     const patterns = {
       class: /(?:export\s+)?class\s+(\w+)/,
       function: /(?:export\s+)?(?:async\s+)?function\s+(\w+)/,
-      arrowFunc: /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/,
+      arrowFunc:
+        /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\([^)]*\)\s*=>/,
       variable: /(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=/,
     };
 
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
-      
-      if (trimmedLine.startsWith('//') || trimmedLine.startsWith('/*')) {
+
+      if (trimmedLine.startsWith("//") || trimmedLine.startsWith("/*")) {
         return;
       }
 
@@ -214,15 +216,19 @@ export class SymbolExtractor {
       for (const [type, pattern] of Object.entries(patterns)) {
         const match = pattern.exec(line);
         if (match) {
-          const symbolType = type === 'class' ? SymbolType.Class :
-                            type === 'function' || type === 'arrowFunc' ? SymbolType.Function :
-                            SymbolType.Variable;
-          
+          const symbolType =
+            type === "class"
+              ? SymbolType.Class
+              : type === "function" || type === "arrowFunc"
+                ? SymbolType.Function
+                : SymbolType.Variable;
+
           symbols.push({
             name: match[1],
             type: symbolType,
             line: index + 1,
-            exported: line.includes('export') || line.includes('module.exports')
+            exported:
+              line.includes("export") || line.includes("module.exports"),
           });
           break;
         }
@@ -234,18 +240,18 @@ export class SymbolExtractor {
 
   private extractPythonSymbols(content: string): SymbolInfo[] {
     const symbols: SymbolInfo[] = [];
-    const lines = content.split('\n');
+    const lines = content.split("\n");
 
     const patterns = {
       class: /^class\s+(\w+)/,
       function: /^(?:async\s+)?def\s+(\w+)/,
-      variable: /^([A-Z_][A-Z0-9_]*)\s*=/,  // Only match uppercase constants
+      variable: /^([A-Z_][A-Z0-9_]*)\s*=/, // Only match uppercase constants
     };
 
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
-      
-      if (!trimmedLine || trimmedLine.startsWith('#')) {
+
+      if (!trimmedLine || trimmedLine.startsWith("#")) {
         return;
       }
 
@@ -256,7 +262,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Class,
           line: index + 1,
-          exported: true // Python doesn't have explicit exports
+          exported: true, // Python doesn't have explicit exports
         });
         return;
       }
@@ -268,7 +274,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Function,
           line: index + 1,
-          exported: !match[1].startsWith('_') // Convention: _ prefix means private
+          exported: !match[1].startsWith("_"), // Convention: _ prefix means private
         });
         return;
       }
@@ -280,7 +286,7 @@ export class SymbolExtractor {
           name: match[1],
           type: SymbolType.Variable,
           line: index + 1,
-          exported: true
+          exported: true,
         });
       }
     });
@@ -290,7 +296,7 @@ export class SymbolExtractor {
 
   private extractGoSymbols(content: string): SymbolInfo[] {
     const symbols: SymbolInfo[] = [];
-    const lines = content.split('\n');
+    const lines = content.split("\n");
 
     const patterns = {
       type: /^type\s+(\w+)/,
@@ -300,26 +306,29 @@ export class SymbolExtractor {
 
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
-      
-      if (trimmedLine.startsWith('//')) {
+
+      if (trimmedLine.startsWith("//")) {
         return;
       }
 
       for (const [type, pattern] of Object.entries(patterns)) {
         const match = pattern.exec(trimmedLine);
         if (match) {
-          const symbolType = type === 'type' ? SymbolType.Type :
-                            type === 'function' ? SymbolType.Function :
-                            SymbolType.Variable;
-          
+          const symbolType =
+            type === "type"
+              ? SymbolType.Type
+              : type === "function"
+                ? SymbolType.Function
+                : SymbolType.Variable;
+
           // In Go, exported symbols start with uppercase
           const isExported = match[1][0] === match[1][0].toUpperCase();
-          
+
           symbols.push({
             name: match[1],
             type: symbolType,
             line: index + 1,
-            exported: isExported
+            exported: isExported,
           });
           break;
         }
@@ -329,22 +338,25 @@ export class SymbolExtractor {
     return symbols;
   }
 
-  private extractClassMembers(content: string, classStartLine: number): SymbolInfo[] {
+  private extractClassMembers(
+    content: string,
+    classStartLine: number,
+  ): SymbolInfo[] {
     const members: SymbolInfo[] = [];
-    const lines = content.split('\n');
-    
+    const lines = content.split("\n");
+
     let braceCount = 0;
     let inClass = false;
 
     for (let i = classStartLine; i < lines.length; i++) {
       const line = lines[i];
-      
+
       // Track braces to know when class ends
       for (const char of line) {
-        if (char === '{') {
+        if (char === "{") {
           braceCount++;
           inClass = true;
-        } else if (char === '}') {
+        } else if (char === "}") {
           braceCount--;
           if (braceCount === 0 && inClass) {
             return members;
@@ -355,23 +367,29 @@ export class SymbolExtractor {
       if (!inClass) continue;
 
       // Look for class members
-      const propertyMatch = /^\s+((?:private|public|protected|readonly)\s+)?(\w+)(?:\?)?:/?.exec(line);
+      const propertyMatch =
+        /^\s+((?:private|public|protected|readonly)\s+)?(\w+)(?:\?)?:/?.exec(
+          line,
+        );
       if (propertyMatch) {
         members.push({
           name: propertyMatch[2],
           type: SymbolType.Property,
           line: i + 1,
-          exported: false
+          exported: false,
         });
       }
 
-      const methodMatch = /^\s+((?:private|public|protected|async)\s+)?(\w+)\s*\([^)]*\)/.exec(line);
-      if (methodMatch && methodMatch[2] !== 'constructor') {
+      const methodMatch =
+        /^\s+((?:private|public|protected|async)\s+)?(\w+)\s*\([^)]*\)/.exec(
+          line,
+        );
+      if (methodMatch && methodMatch[2] !== "constructor") {
         members.push({
           name: methodMatch[2],
           type: SymbolType.Method,
           line: i + 1,
-          exported: false
+          exported: false,
         });
       }
     }
@@ -393,7 +411,11 @@ export class FileAnalyzer {
   /**
    * Analyze a file and extract semantic information
    */
-  async analyzeFile(filePath: string, content: string, options?: FileAnalyzerOptions): Promise<FileIndex> {
+  async analyzeFile(
+    filePath: string,
+    content: string,
+    options?: FileAnalyzerOptions,
+  ): Promise<FileIndex> {
     const language = this.symbolExtractor.detectLanguage(filePath);
     const symbols = this.symbolExtractor.extractSymbols(content, language);
     const imports = this.extractImports(content, language);
@@ -407,16 +429,17 @@ export class FileAnalyzer {
       exports,
       hash,
       size: content.length,
-      lastModified: new Date()
+      lastModified: new Date(),
     };
   }
 
   private extractImports(content: string, language: string): string[] {
     const imports: string[] = [];
 
-    if (language === 'typescript' || language === 'javascript') {
+    if (language === "typescript" || language === "javascript") {
       // ES6 imports - including type imports
-      const importRegex = /import\s+(?:type\s+)?(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
+      const importRegex =
+        /import\s+(?:type\s+)?(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+)?['"]([^'"]+)['"]/g;
       let match;
       while ((match = importRegex.exec(content)) !== null) {
         imports.push(match[1]);
@@ -427,14 +450,14 @@ export class FileAnalyzer {
       while ((match = requireRegex.exec(content)) !== null) {
         imports.push(match[1]);
       }
-    } else if (language === 'python') {
+    } else if (language === "python") {
       // Python imports
       const importRegex = /(?:from\s+(\S+)\s+import|import\s+(\S+))/g;
       let match;
       while ((match = importRegex.exec(content)) !== null) {
         imports.push(match[1] || match[2]);
       }
-    } else if (language === 'go') {
+    } else if (language === "go") {
       // Go imports
       const importRegex = /import\s+(?:\(\s*([\s\S]*?)\s*\)|"([^"]+)")/g;
       let match;
@@ -443,7 +466,7 @@ export class FileAnalyzer {
           // Multiple imports
           const multiImports = match[1].match(/"[^"]+"/g);
           if (multiImports) {
-            multiImports.forEach(imp => imports.push(imp.replace(/"/g, '')));
+            multiImports.forEach((imp) => imports.push(imp.replace(/"/g, "")));
           }
         } else if (match[2]) {
           // Single import
@@ -455,12 +478,16 @@ export class FileAnalyzer {
     return [...new Set(imports)]; // Remove duplicates
   }
 
-  private extractExports(content: string, language: string, symbols: SymbolInfo[]): string[] {
+  private extractExports(
+    content: string,
+    language: string,
+    symbols: SymbolInfo[],
+  ): string[] {
     const exports: string[] = [];
 
-    if (language === 'typescript' || language === 'javascript') {
+    if (language === "typescript" || language === "javascript") {
       // Named exports from symbols
-      symbols.forEach(symbol => {
+      symbols.forEach((symbol) => {
         if (symbol.exported) {
           exports.push(symbol.name);
         }
@@ -470,7 +497,7 @@ export class FileAnalyzer {
       const reExportRegex = /export\s+\{([^}]+)\}\s+from/g;
       let match;
       while ((match = reExportRegex.exec(content)) !== null) {
-        const items = match[1].split(',').map(item => {
+        const items = match[1].split(",").map((item) => {
           const parts = item.trim().split(/\s+as\s+/);
           return parts[parts.length - 1]; // Use alias if present
         });
@@ -479,12 +506,12 @@ export class FileAnalyzer {
 
       // Default export
       if (/export\s+default/.test(content)) {
-        exports.push('default');
+        exports.push("default");
       }
 
       // Export all
       if (/export\s+\*\s+from/.test(content)) {
-        exports.push('*');
+        exports.push("*");
       }
     }
 
@@ -492,7 +519,11 @@ export class FileAnalyzer {
   }
 
   private calculateHash(content: string): string {
-    return crypto.createHash('sha256').update(content).digest('hex').substring(0, 16);
+    return crypto
+      .createHash("sha256")
+      .update(content)
+      .digest("hex")
+      .substring(0, 16);
   }
 }
 
@@ -525,7 +556,7 @@ export class SemanticIndex {
     this.files.set(fileIndex.path, fileIndex);
 
     // Update symbol references
-    fileIndex.symbols.forEach(symbol => {
+    fileIndex.symbols.forEach((symbol) => {
       if (!this.symbols.has(symbol.name)) {
         this.symbols.set(symbol.name, []);
       }
@@ -533,13 +564,13 @@ export class SemanticIndex {
         file: fileIndex.path,
         line: symbol.line,
         type: symbol.type,
-        exported: symbol.exported
+        exported: symbol.exported,
       });
     });
 
     // Update import graph
     this.updateImportGraph(fileIndex);
-    
+
     this.lastUpdated = new Date();
   }
 
@@ -554,9 +585,9 @@ export class SemanticIndex {
     this.removeFileSymbols(filePath);
     this.files.delete(filePath);
     this.imports.delete(filePath);
-    
+
     // Remove from importedBy in other files
-    this.imports.forEach(graph => {
+    this.imports.forEach((graph) => {
       const index = graph.importedBy.indexOf(filePath);
       if (index !== -1) {
         graph.importedBy.splice(index, 1);
@@ -604,13 +635,13 @@ export class SemanticIndex {
     this.files.forEach((fileIndex, filePath) => {
       graph.set(filePath, {
         imports: fileIndex.imports,
-        importedBy: []
+        importedBy: [],
       });
     });
 
     // Build importedBy relationships
     this.files.forEach((fileIndex, filePath) => {
-      fileIndex.imports.forEach(importPath => {
+      fileIndex.imports.forEach((importPath) => {
         // Resolve relative imports
         const resolvedPath = this.resolveImportPath(filePath, importPath);
         if (graph.has(resolvedPath)) {
@@ -630,7 +661,7 @@ export class SemanticIndex {
       files: this.files,
       symbols: this.symbols,
       imports: this.imports,
-      lastUpdated: this.lastUpdated
+      lastUpdated: this.lastUpdated,
     };
 
     return JSON.stringify(data, (key, value) => {
@@ -646,7 +677,12 @@ export class SemanticIndex {
    */
   static deserialize(data: string): SemanticIndex {
     const parsed = JSON.parse(data, (key, value) => {
-      if (Array.isArray(value) && value.length > 0 && Array.isArray(value[0]) && value[0].length === 2) {
+      if (
+        Array.isArray(value) &&
+        value.length > 0 &&
+        Array.isArray(value[0]) &&
+        value[0].length === 2
+      ) {
         return new Map(value);
       }
       return value;
@@ -666,10 +702,10 @@ export class SemanticIndex {
     if (!fileIndex) return;
 
     // Remove symbol references for this file
-    fileIndex.symbols.forEach(symbol => {
+    fileIndex.symbols.forEach((symbol) => {
       const references = this.symbols.get(symbol.name);
       if (references) {
-        const filtered = references.filter(ref => ref.file !== filePath);
+        const filtered = references.filter((ref) => ref.file !== filePath);
         if (filtered.length > 0) {
           this.symbols.set(symbol.name, filtered);
         } else {
@@ -682,11 +718,11 @@ export class SemanticIndex {
   private updateImportGraph(fileIndex: FileIndex): void {
     this.imports.set(fileIndex.path, {
       imports: fileIndex.imports,
-      importedBy: []
+      importedBy: [],
     });
 
     // Update importedBy for imported files
-    fileIndex.imports.forEach(importPath => {
+    fileIndex.imports.forEach((importPath) => {
       const resolvedPath = this.resolveImportPath(fileIndex.path, importPath);
       const importGraph = this.imports.get(resolvedPath);
       if (importGraph && !importGraph.importedBy.includes(fileIndex.path)) {
@@ -697,35 +733,35 @@ export class SemanticIndex {
 
   private resolveImportPath(fromFile: string, importPath: string): string {
     // Simple resolution - in real implementation would need proper module resolution
-    if (importPath.startsWith('./') || importPath.startsWith('../')) {
+    if (importPath.startsWith("./") || importPath.startsWith("../")) {
       // Relative import
-      const parts = fromFile.split('/');
+      const parts = fromFile.split("/");
       parts.pop(); // Remove filename
-      const importParts = importPath.split('/');
-      
-      importParts.forEach(part => {
-        if (part === '..') {
+      const importParts = importPath.split("/");
+
+      importParts.forEach((part) => {
+        if (part === "..") {
           parts.pop();
-        } else if (part !== '.') {
+        } else if (part !== ".") {
           parts.push(part);
         }
       });
 
       // Add common extensions if not present
-      const resolvedPath = parts.join('/');
+      const resolvedPath = parts.join("/");
       if (!resolvedPath.match(/\.\w+$/)) {
         // Try common extensions
-        for (const ext of ['.ts', '.js', '.tsx', '.jsx']) {
+        for (const ext of [".ts", ".js", ".tsx", ".jsx"]) {
           const withExt = resolvedPath + ext;
           if (this.files.has(withExt)) {
             return withExt;
           }
         }
       }
-      
+
       return resolvedPath;
     }
-    
+
     // Node module or absolute import
     return importPath;
   }

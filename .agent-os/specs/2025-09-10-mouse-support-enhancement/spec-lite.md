@@ -1,0 +1,3 @@
+# Mouse Support Enhancement - Lite Summary
+
+Enhance PlatoV3's mouse support with lightweight interactions focused on scrolling long outputs, clickable UI elements, and improved text selection while maintaining seamless keyboard workflow compatibility. This feature addresses user frustrations with navigating lengthy conversation histories and provides intuitive click-based interactions without compromising terminal performance.

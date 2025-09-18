@@ -1,44 +1,44 @@
-import fs from 'fs/promises';
-import path from 'path';
-import { glob } from 'glob';
-import ignore from 'ignore';
+import fs from "fs/promises";
+import path from "path";
+import { glob } from "glob";
+import ignore from "ignore";
 
 export async function generateProjectDoc(): Promise<void> {
   const projectRoot = process.cwd();
-  const docPath = path.join(projectRoot, 'PLATO.md');
-  
+  const docPath = path.join(projectRoot, "PLATO.md");
+
   // Check for .gitignore
   let ig = ignore();
   try {
-    const gitignoreContent = await fs.readFile('.gitignore', 'utf8');
+    const gitignoreContent = await fs.readFile(".gitignore", "utf8");
     ig = ignore().add(gitignoreContent);
   } catch {
     // No .gitignore, use defaults
-    ig.add(['node_modules/', '.git/', '*.log', 'dist/', 'build/']);
+    ig.add(["node_modules/", ".git/", "*.log", "dist/", "build/"]);
   }
-  
+
   // Analyze project structure
-  const files = await glob('**/*', { 
+  const files = await glob("**/*", {
     dot: true,
     nodir: true,
-    ignore: ['node_modules/**', '.git/**', '*.log', 'dist/**', 'build/**']
+    ignore: ["node_modules/**", ".git/**", "*.log", "dist/**", "build/**"],
   });
-  
+
   // Filter with gitignore
-  const relevantFiles = files.filter(f => !ig.ignores(f));
-  
+  const relevantFiles = files.filter((f) => !ig.ignores(f));
+
   // Categorize files
   const categories = {
     source: [] as string[],
     tests: [] as string[],
     config: [] as string[],
     docs: [] as string[],
-    other: [] as string[]
+    other: [] as string[],
   };
-  
+
   for (const file of relevantFiles) {
     if (file.match(/\.(ts|tsx|js|jsx|py|go|rs|cpp|c|java)$/)) {
-      if (file.includes('test') || file.includes('spec')) {
+      if (file.includes("test") || file.includes("spec")) {
         categories.tests.push(file);
       } else {
         categories.source.push(file);
@@ -51,39 +51,46 @@ export async function generateProjectDoc(): Promise<void> {
       categories.other.push(file);
     }
   }
-  
+
   // Detect project type
-  let projectType = 'Unknown';
-  let mainLanguage = 'Unknown';
+  let projectType = "Unknown";
+  let mainLanguage = "Unknown";
   let dependencies: string[] = [];
-  
+
   try {
-    const pkgJson = await fs.readFile('package.json', 'utf8');
+    const pkgJson = await fs.readFile("package.json", "utf8");
     const pkg = JSON.parse(pkgJson);
-    projectType = 'Node.js/JavaScript';
-    mainLanguage = categories.source.some(f => f.endsWith('.ts') || f.endsWith('.tsx')) ? 'TypeScript' : 'JavaScript';
+    projectType = "Node.js/JavaScript";
+    mainLanguage = categories.source.some(
+      (f) => f.endsWith(".ts") || f.endsWith(".tsx"),
+    )
+      ? "TypeScript"
+      : "JavaScript";
     dependencies = [
       ...Object.keys(pkg.dependencies || {}),
-      ...Object.keys(pkg.devDependencies || {})
+      ...Object.keys(pkg.devDependencies || {}),
     ].slice(0, 10); // First 10 deps
   } catch {
     // Not a Node project
-    if (await fileExists('requirements.txt')) {
-      projectType = 'Python';
-      mainLanguage = 'Python';
+    if (await fileExists("requirements.txt")) {
+      projectType = "Python";
+      mainLanguage = "Python";
       try {
-        const reqs = await fs.readFile('requirements.txt', 'utf8');
-        dependencies = reqs.split('\n').filter(l => l && !l.startsWith('#')).slice(0, 10);
+        const reqs = await fs.readFile("requirements.txt", "utf8");
+        dependencies = reqs
+          .split("\n")
+          .filter((l) => l && !l.startsWith("#"))
+          .slice(0, 10);
       } catch {}
-    } else if (await fileExists('Cargo.toml')) {
-      projectType = 'Rust';
-      mainLanguage = 'Rust';
-    } else if (await fileExists('go.mod')) {
-      projectType = 'Go';
-      mainLanguage = 'Go';
+    } else if (await fileExists("Cargo.toml")) {
+      projectType = "Rust";
+      mainLanguage = "Rust";
+    } else if (await fileExists("go.mod")) {
+      projectType = "Go";
+      mainLanguage = "Go";
     }
   }
-  
+
   // Generate document content
   const content = `# PLATO.md
 
@@ -97,21 +104,27 @@ export async function generateProjectDoc(): Promise<void> {
 ## Project Structure
 
 ### Source Files (${categories.source.length})
-${categories.source.slice(0, 20).map(f => `- ${f}`).join('\n')}
-${categories.source.length > 20 ? `... and ${categories.source.length - 20} more` : ''}
+${categories.source
+  .slice(0, 20)
+  .map((f) => `- ${f}`)
+  .join("\n")}
+${categories.source.length > 20 ? `... and ${categories.source.length - 20} more` : ""}
 
 ### Test Files (${categories.tests.length})
-${categories.tests.slice(0, 10).map(f => `- ${f}`).join('\n')}
-${categories.tests.length > 10 ? `... and ${categories.tests.length - 10} more` : ''}
+${categories.tests
+  .slice(0, 10)
+  .map((f) => `- ${f}`)
+  .join("\n")}
+${categories.tests.length > 10 ? `... and ${categories.tests.length - 10} more` : ""}
 
 ### Configuration Files (${categories.config.length})
-${categories.config.map(f => `- ${f}`).join('\n')}
+${categories.config.map((f) => `- ${f}`).join("\n")}
 
 ### Documentation Files (${categories.docs.length})
-${categories.docs.map(f => `- ${f}`).join('\n')}
+${categories.docs.map((f) => `- ${f}`).join("\n")}
 
 ## Key Dependencies
-${dependencies.length > 0 ? dependencies.map(d => `- ${d}`).join('\n') : 'No dependencies detected'}
+${dependencies.length > 0 ? dependencies.map((d) => `- ${d}`).join("\n") : "No dependencies detected"}
 
 ## Project Statistics
 - Total files analyzed: ${relevantFiles.length}
@@ -129,17 +142,25 @@ git clone <repository-url>
 # Navigate to project
 cd ${path.basename(projectRoot)}
 
-${projectType === 'Node.js/JavaScript' ? `# Install dependencies
+${
+  projectType === "Node.js/JavaScript"
+    ? `# Install dependencies
 npm install
 
 # Run the project
-npm start` : ''}
-${projectType === 'Python' ? `# Create virtual environment
+npm start`
+    : ""
+}
+${
+  projectType === "Python"
+    ? `# Create virtual environment
 python -m venv venv
 source venv/bin/activate
 
 # Install dependencies
-pip install -r requirements.txt` : ''}
+pip install -r requirements.txt`
+    : ""
+}
 \`\`\`
 
 ## Notes for AI Assistants
@@ -154,8 +175,8 @@ This project uses ${mainLanguage} as its primary language. When working with thi
 ---
 *This file was automatically generated by Plato and provides a high-level overview of the project structure.*
 `;
-  
-  await fs.writeFile(docPath, content, 'utf8');
+
+  await fs.writeFile(docPath, content, "utf8");
 }
 
 async function fileExists(filepath: string): Promise<boolean> {
@@ -166,4 +187,3 @@ async function fileExists(filepath: string): Promise<boolean> {
     return false;
   }
 }
-

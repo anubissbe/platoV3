@@ -1,0 +1,5 @@
+/mcp attach test-server http://localhost:8720
+/mcp tools
+{"tool_call": {"server": "test-server", "name": "echo", "input": {"text": "Hello from binary test!"}}}
+/status
+exit

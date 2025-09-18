@@ -3,9 +3,9 @@
  * Comprehensive testing of text selection precision and edge cases
  */
 
-import { TextSelection } from '../tui/text-selection';
-import { MultilineSelectionHandler } from '../tui/multiline-selection';
-import { SelectionRenderer } from '../tui/selection-renderer';
+import { TextSelection } from "../tui/text-selection";
+import { MultilineSelectionHandler } from "../tui/multiline-selection";
+import { SelectionRenderer } from "../tui/selection-renderer";
 
 interface AccuracyTestCase {
   name: string;
@@ -53,27 +53,29 @@ export class SelectionAccuracyValidator {
     const testCases = this.generateTestCases();
     const results: ValidationMetrics[] = [];
 
-    console.log('🎯 Starting selection accuracy validation...\n');
+    console.log("🎯 Starting selection accuracy validation...\n");
 
     for (const testCase of testCases) {
       console.log(`Testing: ${testCase.name}`);
-      
+
       for (let i = 0; i < testCase.selections.length; i++) {
         const selection = testCase.selections[i];
         const metrics = await this.validateSingleSelection(
-          testCase, 
-          selection, 
-          i
+          testCase,
+          selection,
+          i,
         );
         results.push(metrics);
-        
+
         if (metrics.passed) {
           console.log(`  ✅ Selection ${i + 1}: PASS`);
         } else {
-          console.log(`  ❌ Selection ${i + 1}: FAIL - ${metrics.errors.join(', ')}`);
+          console.log(
+            `  ❌ Selection ${i + 1}: FAIL - ${metrics.errors.join(", ")}`,
+          );
         }
       }
-      console.log('');
+      console.log("");
     }
 
     return results;
@@ -85,154 +87,219 @@ export class SelectionAccuracyValidator {
   private generateTestCases(): AccuracyTestCase[] {
     return [
       {
-        name: 'Basic single-line selections',
-        content: ['Hello World Test'],
+        name: "Basic single-line selections",
+        content: ["Hello World Test"],
         selections: [
           {
             start: { line: 0, column: 0 },
             end: { line: 0, column: 5 },
-            expected: { text: 'Hello', characterCount: 5, wordCount: 1, lineCount: 1 }
+            expected: {
+              text: "Hello",
+              characterCount: 5,
+              wordCount: 1,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 0, column: 6 },
             end: { line: 0, column: 11 },
-            expected: { text: 'World', characterCount: 5, wordCount: 1, lineCount: 1 }
+            expected: {
+              text: "World",
+              characterCount: 5,
+              wordCount: 1,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 0, column: 0 },
             end: { line: 0, column: 17 },
-            expected: { text: 'Hello World Test', characterCount: 16, wordCount: 3, lineCount: 1 }
-          }
-        ]
+            expected: {
+              text: "Hello World Test",
+              characterCount: 16,
+              wordCount: 3,
+              lineCount: 1,
+            },
+          },
+        ],
       },
       {
-        name: 'Multi-line selections',
+        name: "Multi-line selections",
         content: [
-          'First line of text',
-          'Second line here',
-          'Third and final line'
+          "First line of text",
+          "Second line here",
+          "Third and final line",
         ],
         selections: [
           {
             start: { line: 0, column: 6 },
             end: { line: 1, column: 6 },
-            expected: { 
-              text: 'line of text\nSecond', 
-              characterCount: 19, 
-              wordCount: 4, 
-              lineCount: 2 
-            }
+            expected: {
+              text: "line of text\nSecond",
+              characterCount: 19,
+              wordCount: 4,
+              lineCount: 2,
+            },
           },
           {
             start: { line: 0, column: 0 },
             end: { line: 2, column: 20 },
-            expected: { 
-              text: 'First line of text\nSecond line here\nThird and final line', 
-              characterCount: 54, 
-              wordCount: 10, 
-              lineCount: 3 
-            }
-          }
-        ]
+            expected: {
+              text: "First line of text\nSecond line here\nThird and final line",
+              characterCount: 54,
+              wordCount: 10,
+              lineCount: 3,
+            },
+          },
+        ],
       },
       {
-        name: 'Edge case selections',
+        name: "Edge case selections",
         content: [
-          '',
-          'Single',
-          '  Indented line  ',
-          'Line with    multiple    spaces'
+          "",
+          "Single",
+          "  Indented line  ",
+          "Line with    multiple    spaces",
         ],
         selections: [
           {
             start: { line: 0, column: 0 },
             end: { line: 0, column: 0 },
-            expected: { text: '', characterCount: 0, wordCount: 0, lineCount: 1 }
+            expected: {
+              text: "",
+              characterCount: 0,
+              wordCount: 0,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 2, column: 2 },
             end: { line: 2, column: 15 },
-            expected: { text: 'Indented line', characterCount: 13, wordCount: 2, lineCount: 1 }
+            expected: {
+              text: "Indented line",
+              characterCount: 13,
+              wordCount: 2,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 3, column: 9 },
             end: { line: 3, column: 21 },
-            expected: { text: '    multiple', characterCount: 12, wordCount: 1, lineCount: 1 }
-          }
-        ]
+            expected: {
+              text: "    multiple",
+              characterCount: 12,
+              wordCount: 1,
+              lineCount: 1,
+            },
+          },
+        ],
       },
       {
-        name: 'Code content selections',
+        name: "Code content selections",
         content: [
-          'function calculateSum(a: number, b: number): number {',
-          '  const result = a + b;',
-          '  return result;',
-          '}'
+          "function calculateSum(a: number, b: number): number {",
+          "  const result = a + b;",
+          "  return result;",
+          "}",
         ],
         selections: [
           {
             start: { line: 0, column: 0 },
             end: { line: 0, column: 8 },
-            expected: { text: 'function', characterCount: 8, wordCount: 1, lineCount: 1 }
+            expected: {
+              text: "function",
+              characterCount: 8,
+              wordCount: 1,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 1, column: 2 },
             end: { line: 2, column: 8 },
-            expected: { 
-              text: 'const result = a + b;\n  return', 
-              characterCount: 31, 
-              wordCount: 6, 
-              lineCount: 2 
-            }
-          }
-        ]
+            expected: {
+              text: "const result = a + b;\n  return",
+              characterCount: 31,
+              wordCount: 6,
+              lineCount: 2,
+            },
+          },
+        ],
       },
       {
-        name: 'Unicode and special characters',
+        name: "Unicode and special characters",
         content: [
-          'Hello 👋 World 🌍',
-          'Café résumé naïve',
-          '中文 العربية русский'
+          "Hello 👋 World 🌍",
+          "Café résumé naïve",
+          "中文 العربية русский",
         ],
         selections: [
           {
             start: { line: 0, column: 6 },
             end: { line: 0, column: 7 },
-            expected: { text: '👋', characterCount: 1, wordCount: 1, lineCount: 1 }
+            expected: {
+              text: "👋",
+              characterCount: 1,
+              wordCount: 1,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 1, column: 0 },
             end: { line: 1, column: 4 },
-            expected: { text: 'Café', characterCount: 4, wordCount: 1, lineCount: 1 }
+            expected: {
+              text: "Café",
+              characterCount: 4,
+              wordCount: 1,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 2, column: 0 },
             end: { line: 2, column: 2 },
-            expected: { text: '中文', characterCount: 2, wordCount: 1, lineCount: 1 }
-          }
-        ]
+            expected: {
+              text: "中文",
+              characterCount: 2,
+              wordCount: 1,
+              lineCount: 1,
+            },
+          },
+        ],
       },
       {
-        name: 'Boundary conditions',
-        content: ['Short', 'Much longer line with many words'],
+        name: "Boundary conditions",
+        content: ["Short", "Much longer line with many words"],
         selections: [
           {
             start: { line: 0, column: 0 },
             end: { line: 0, column: 100 },
-            expected: { text: 'Short', characterCount: 5, wordCount: 1, lineCount: 1 }
+            expected: {
+              text: "Short",
+              characterCount: 5,
+              wordCount: 1,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 10, column: 0 },
             end: { line: 15, column: 10 },
-            expected: { text: '', characterCount: 0, wordCount: 0, lineCount: 1 }
+            expected: {
+              text: "",
+              characterCount: 0,
+              wordCount: 0,
+              lineCount: 1,
+            },
           },
           {
             start: { line: 1, column: 5 },
             end: { line: 1, column: 5 },
-            expected: { text: '', characterCount: 0, wordCount: 0, lineCount: 1 }
-          }
-        ]
-      }
+            expected: {
+              text: "",
+              characterCount: 0,
+              wordCount: 0,
+              lineCount: 1,
+            },
+          },
+        ],
+      },
     ];
   }
 
@@ -242,7 +309,7 @@ export class SelectionAccuracyValidator {
   private async validateSingleSelection(
     testCase: AccuracyTestCase,
     selection: any,
-    index: number
+    index: number,
   ): Promise<ValidationMetrics> {
     const startTime = performance.now();
     const errors: string[] = [];
@@ -258,19 +325,19 @@ export class SelectionAccuracyValidator {
           testName: testCase.name,
           selectionIndex: index,
           passed: false,
-          actualText: '',
+          actualText: "",
           expectedText: selection.expected.text,
           characterCountMatch: false,
           wordCountMatch: false,
           lineCountMatch: false,
           executionTime: performance.now() - startTime,
-          errors: ['Selection returned null']
+          errors: ["Selection returned null"],
         };
       }
 
       // Extract actual text
       const actualText = this.extractTextFromContent(testCase.content, result);
-      
+
       // Calculate metrics
       const actualCharCount = actualText.length;
       const actualWordCount = this.countWords(actualText);
@@ -278,21 +345,30 @@ export class SelectionAccuracyValidator {
 
       // Validate results
       const textMatch = actualText === selection.expected.text;
-      const charCountMatch = actualCharCount === selection.expected.characterCount;
+      const charCountMatch =
+        actualCharCount === selection.expected.characterCount;
       const wordCountMatch = actualWordCount === selection.expected.wordCount;
       const lineCountMatch = actualLineCount === selection.expected.lineCount;
 
       if (!textMatch) {
-        errors.push(`Text mismatch: expected "${selection.expected.text}", got "${actualText}"`);
+        errors.push(
+          `Text mismatch: expected "${selection.expected.text}", got "${actualText}"`,
+        );
       }
       if (!charCountMatch) {
-        errors.push(`Character count mismatch: expected ${selection.expected.characterCount}, got ${actualCharCount}`);
+        errors.push(
+          `Character count mismatch: expected ${selection.expected.characterCount}, got ${actualCharCount}`,
+        );
       }
       if (!wordCountMatch) {
-        errors.push(`Word count mismatch: expected ${selection.expected.wordCount}, got ${actualWordCount}`);
+        errors.push(
+          `Word count mismatch: expected ${selection.expected.wordCount}, got ${actualWordCount}`,
+        );
       }
       if (!lineCountMatch) {
-        errors.push(`Line count mismatch: expected ${selection.expected.lineCount}, got ${actualLineCount}`);
+        errors.push(
+          `Line count mismatch: expected ${selection.expected.lineCount}, got ${actualLineCount}`,
+        );
       }
 
       return {
@@ -305,21 +381,20 @@ export class SelectionAccuracyValidator {
         wordCountMatch: wordCountMatch,
         lineCountMatch: lineCountMatch,
         executionTime: performance.now() - startTime,
-        errors
+        errors,
       };
-
     } catch (error) {
       return {
         testName: testCase.name,
         selectionIndex: index,
         passed: false,
-        actualText: '',
+        actualText: "",
         expectedText: selection.expected.text,
         characterCountMatch: false,
         wordCountMatch: false,
         lineCountMatch: false,
         executionTime: performance.now() - startTime,
-        errors: [error instanceof Error ? error.message : 'Unknown error']
+        errors: [error instanceof Error ? error.message : "Unknown error"],
       };
     }
   }
@@ -328,26 +403,33 @@ export class SelectionAccuracyValidator {
    * Extract text from content based on selection result
    */
   private extractTextFromContent(
-    content: string[], 
-    selection: { start: { line: number; column: number }; end: { line: number; column: number } }
+    content: string[],
+    selection: {
+      start: { line: number; column: number };
+      end: { line: number; column: number };
+    },
   ): string {
     const { start, end } = selection;
-    
+
     // Handle out-of-bounds
-    if (start.line >= content.length) return '';
-    
+    if (start.line >= content.length) return "";
+
     if (start.line === end.line) {
       // Single line selection
-      const line = content[start.line] || '';
+      const line = content[start.line] || "";
       return line.slice(start.column, Math.min(end.column, line.length));
     }
 
     // Multi-line selection
     const lines: string[] = [];
-    
-    for (let lineIndex = start.line; lineIndex <= end.line && lineIndex < content.length; lineIndex++) {
-      const line = content[lineIndex] || '';
-      
+
+    for (
+      let lineIndex = start.line;
+      lineIndex <= end.line && lineIndex < content.length;
+      lineIndex++
+    ) {
+      const line = content[lineIndex] || "";
+
       if (lineIndex === start.line) {
         lines.push(line.slice(start.column));
       } else if (lineIndex === end.line) {
@@ -356,8 +438,8 @@ export class SelectionAccuracyValidator {
         lines.push(line);
       }
     }
-    
-    return lines.join('\n');
+
+    return lines.join("\n");
   }
 
   /**
@@ -372,8 +454,8 @@ export class SelectionAccuracyValidator {
    * Count lines in text
    */
   private countLines(text: string): number {
-    if (text === '') return 0;
-    return text.split('\n').length;
+    if (text === "") return 0;
+    return text.split("\n").length;
   }
 
   /**
@@ -381,7 +463,7 @@ export class SelectionAccuracyValidator {
    */
   generateReport(results: ValidationMetrics[]): string {
     const totalTests = results.length;
-    const passedTests = results.filter(r => r.passed).length;
+    const passedTests = results.filter((r) => r.passed).length;
     const failedTests = totalTests - passedTests;
     const passRate = ((passedTests / totalTests) * 100).toFixed(1);
 
@@ -401,7 +483,7 @@ export class SelectionAccuracyValidator {
 
     // Group results by test name
     const groupedResults: { [key: string]: ValidationMetrics[] } = {};
-    results.forEach(result => {
+    results.forEach((result) => {
       if (!groupedResults[result.testName]) {
         groupedResults[result.testName] = [];
       }
@@ -409,47 +491,48 @@ export class SelectionAccuracyValidator {
     });
 
     Object.entries(groupedResults).forEach(([testName, testResults]) => {
-      const categoryPassed = testResults.filter(r => r.passed).length;
+      const categoryPassed = testResults.filter((r) => r.passed).length;
       const categoryTotal = testResults.length;
       const categoryRate = ((categoryPassed / categoryTotal) * 100).toFixed(1);
-      
+
       report += `### ${testName} (${categoryRate}% pass rate)\n\n`;
-      
+
       testResults.forEach((result, index) => {
-        const status = result.passed ? '✅' : '❌';
+        const status = result.passed ? "✅" : "❌";
         report += `- Selection ${index + 1} ${status}\n`;
-        
+
         if (!result.passed) {
-          report += `  - **Errors**: ${result.errors.join('; ')}\n`;
+          report += `  - **Errors**: ${result.errors.join("; ")}\n`;
           report += `  - **Expected**: "${result.expectedText}"\n`;
           report += `  - **Actual**: "${result.actualText}"\n`;
         }
-        
+
         report += `  - **Execution Time**: ${result.executionTime.toFixed(2)}ms\n`;
       });
-      
-      report += '\n';
+
+      report += "\n";
     });
 
     report += `
 ## Performance Analysis
 
-- **Fastest Test**: ${Math.min(...results.map(r => r.executionTime)).toFixed(2)}ms
-- **Slowest Test**: ${Math.max(...results.map(r => r.executionTime)).toFixed(2)}ms
+- **Fastest Test**: ${Math.min(...results.map((r) => r.executionTime)).toFixed(2)}ms
+- **Slowest Test**: ${Math.max(...results.map((r) => r.executionTime)).toFixed(2)}ms
 
 ## Accuracy Metrics
 
-- **Text Accuracy**: ${results.filter(r => r.actualText === r.expectedText).length}/${totalTests} (${((results.filter(r => r.actualText === r.expectedText).length / totalTests) * 100).toFixed(1)}%)
-- **Character Count Accuracy**: ${results.filter(r => r.characterCountMatch).length}/${totalTests}
-- **Word Count Accuracy**: ${results.filter(r => r.wordCountMatch).length}/${totalTests}
-- **Line Count Accuracy**: ${results.filter(r => r.lineCountMatch).length}/${totalTests}
+- **Text Accuracy**: ${results.filter((r) => r.actualText === r.expectedText).length}/${totalTests} (${((results.filter((r) => r.actualText === r.expectedText).length / totalTests) * 100).toFixed(1)}%)
+- **Character Count Accuracy**: ${results.filter((r) => r.characterCountMatch).length}/${totalTests}
+- **Word Count Accuracy**: ${results.filter((r) => r.wordCountMatch).length}/${totalTests}
+- **Line Count Accuracy**: ${results.filter((r) => r.lineCountMatch).length}/${totalTests}
 
 `;
 
-    if (passRate === '100.0') {
-      report += '## ✅ All tests passed! Selection accuracy is validated.\n';
+    if (passRate === "100.0") {
+      report += "## ✅ All tests passed! Selection accuracy is validated.\n";
     } else {
-      report += '## ⚠️ Some tests failed. Review the failures above and adjust implementation.\n';
+      report +=
+        "## ⚠️ Some tests failed. Review the failures above and adjust implementation.\n";
     }
 
     return report;
@@ -460,21 +543,20 @@ export class SelectionAccuracyValidator {
 if (require.main === module) {
   async function main() {
     const validator = new SelectionAccuracyValidator();
-    
+
     try {
       const results = await validator.runValidation();
       const report = validator.generateReport(results);
-      
-      console.log('\n' + report);
-      
-      const allPassed = results.every(r => r.passed);
+
+      console.log("\n" + report);
+
+      const allPassed = results.every((r) => r.passed);
       process.exit(allPassed ? 0 : 1);
-      
     } catch (error) {
-      console.error('❌ Accuracy validation failed:', error);
+      console.error("❌ Accuracy validation failed:", error);
       process.exit(1);
     }
   }
-  
+
   main();
 }

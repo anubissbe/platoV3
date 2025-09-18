@@ -1,0 +1,146 @@
+{
+  "timestamp": "2025-09-12T21:42:47.086Z",
+  "environment": {
+    "nodeVersion": "v24.5.0",
+    "platform": "linux",
+    "arch": "x64",
+    "cpuCount": 24,
+    "totalMemory": 50126262272,
+    "freeMemory": 23996006400
+  },
+  "testResults": [
+    {
+      "testFilePath": "src/context/__tests__/performance.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 1272459264,
+        "heapTotal": 285224960,
+        "heapUsed": 281596512,
+        "external": 3574240,
+        "arrayBuffers": 27557
+      },
+      "timestamp": "2025-09-12T21:42:52.261Z"
+    },
+    {
+      "testFilePath": "src/__tests__/performance/performance-benchmarks.test.tsx",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 1330655232,
+        "heapTotal": 337231872,
+        "heapUsed": 305996344,
+        "external": 4681905,
+        "arrayBuffers": 1135222
+      },
+      "timestamp": "2025-09-12T21:42:52.563Z"
+    },
+    {
+      "testFilePath": "src/__tests__/performance.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 1238745088,
+        "heapTotal": 389058560,
+        "heapUsed": 318484872,
+        "external": 5779805,
+        "arrayBuffers": 2233122
+      },
+      "timestamp": "2025-09-12T21:42:52.833Z"
+    },
+    {
+      "testFilePath": "src/tui/components/__tests__/ConversationArea.performance.test.tsx",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 1282342912,
+        "heapTotal": 464461824,
+        "heapUsed": 359108280,
+        "external": 5807970,
+        "arrayBuffers": 2261287
+      },
+      "timestamp": "2025-09-12T21:42:53.078Z"
+    },
+    {
+      "testFilePath": "src/__tests__/performance/reliability-stability.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 1326186496,
+        "heapTotal": 475979776,
+        "heapUsed": 363374072,
+        "external": 6914063,
+        "arrayBuffers": 3367380
+      },
+      "timestamp": "2025-09-12T21:42:53.258Z"
+    },
+    {
+      "testFilePath": "src/__tests__/performance/memory-leak-detection.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 1360199680,
+        "heapTotal": 477822976,
+        "heapUsed": 406334784,
+        "external": 8015667,
+        "arrayBuffers": 4468984
+      },
+      "timestamp": "2025-09-12T21:42:53.335Z"
+    },
+    {
+      "testFilePath": "src/__tests__/performance/load-stress-testing.test.ts",
+      "duration": 0,
+      "numPassingTests": 0,
+      "numFailingTests": 0,
+      "numPendingTests": 0,
+      "tests": [],
+      "memoryUsage": {
+        "rss": 1378783232,
+        "heapTotal": 493473792,
+        "heapUsed": 408939528,
+        "external": 6915295,
+        "arrayBuffers": 3368612
+      },
+      "timestamp": "2025-09-12T21:42:53.501Z"
+    }
+  ],
+  "summary": {
+    "totalTests": 0,
+    "passedTests": 0,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "totalDuration": 0,
+    "averageTestDuration": 0,
+    "slowTests": [],
+    "performanceMetrics": {
+      "benchmarkTests": 0,
+      "loadTests": 0,
+      "memoryTests": 0,
+      "stabilityTests": 0,
+      "memoryStats": {
+        "min": 281596512,
+        "max": 408939528,
+        "average": 349119198.85714287,
+        "growth": 127343016
+      }
+    }
+  }
+}

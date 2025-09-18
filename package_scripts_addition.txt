@@ -1,0 +1,7 @@
+Add these test scripts to package.json scripts section (after line 86, before the closing of scripts):
+
+    "test:e2e-commands": "jest --testMatch='**/__tests__/e2e-commands.test.ts'",
+    "test:integration-commands": "jest --testMatch='**/__tests__/integration-commands.test.ts'",
+    "benchmark:commands": "tsx scripts/benchmark-commands.ts",
+    "validate:comprehensive": "tsx scripts/generate-test-report.ts",
+    "validate:quick": "npm run test:reliable && npm run benchmark:commands",

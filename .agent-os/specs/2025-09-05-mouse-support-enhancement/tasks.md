@@ -8,6 +8,7 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 ## Tasks
 
 ### 1. Mouse Event Capture System ✅
+
 Build the core mouse event capture infrastructure with precise coordinate mapping and event type detection.
 
 - [x] 1.1 Write unit tests for mouse event parsing and coordinate conversion functions
@@ -20,6 +21,7 @@ Build the core mouse event capture infrastructure with precise coordinate mappin
 - [x] 1.8 Run integration tests to verify accurate event capture across scenarios
 
 ### 2. Interactive UI Components ✅
+
 Develop clickable UI elements with visual feedback and hover states for enhanced user interaction.
 
 - [x] 2.1 Write tests for clickable component detection and interaction handling
@@ -32,6 +34,7 @@ Develop clickable UI elements with visual feedback and hover states for enhanced
 - [x] 2.8 Test interactive components with mouse and keyboard navigation
 
 ### 3. Text Selection Engine ✅
+
 Create character-level precision text selection with copy functionality and visual selection indicators.
 
 - [x] 3.1 Write tests for text selection algorithms and range calculations
@@ -44,6 +47,7 @@ Create character-level precision text selection with copy functionality and visu
 - [x] 3.8 Validate selection accuracy and clipboard integration across platforms
 
 ### 4. Cross-Platform Integration ✅
+
 Ensure seamless mouse support across Windows, macOS, Linux, and containerized environments.
 
 - [x] 4.1 Write platform-specific tests for mouse event compatibility
@@ -56,6 +60,7 @@ Ensure seamless mouse support across Windows, macOS, Linux, and containerized en
 - [x] 4.8 Test mouse functionality in WSL, Docker, SSH, and native environments
 
 ### 5. User Experience Integration ✅
+
 Integrate mouse support into existing Plato workflows with configuration options and user guidance.
 
 - [x] 5.1 Write tests for configuration management and user preference handling

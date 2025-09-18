@@ -1,8 +1,11 @@
-import { CustomCommandLoader } from './loader.js';
-import { CustomCommand, SlashCommand } from './types.js';
-import { executeCustomCommand, executeCustomCommandStreaming } from './executor.js';
-import path from 'path';
-import fs from 'fs/promises';
+import { CustomCommandLoader } from "./loader.js";
+import { CustomCommand, SlashCommand } from "./types.js";
+import {
+  executeCustomCommand,
+  executeCustomCommandStreaming,
+} from "./executor.js";
+import path from "path";
+import fs from "fs/promises";
 
 /**
  * Global custom command loader instance
@@ -15,8 +18,10 @@ const CACHE_DURATION = 60000; // 1 minute cache
 /**
  * Initialize the custom command system
  */
-export async function initializeCustomCommands(baseDir?: string): Promise<void> {
-  const dir = baseDir || path.join(process.cwd(), '.plato/commands');
+export async function initializeCustomCommands(
+  baseDir?: string,
+): Promise<void> {
+  const dir = baseDir || path.join(process.cwd(), ".plato/commands");
   commandLoader = new CustomCommandLoader(dir);
   await commandLoader.initialize();
   await reloadCustomCommands();
@@ -38,7 +43,9 @@ export async function reloadCustomCommands(): Promise<void> {
 /**
  * Get all custom commands, with caching
  */
-export async function getCustomCommands(forceReload: boolean = false): Promise<CustomCommand[]> {
+export async function getCustomCommands(
+  forceReload: boolean = false,
+): Promise<CustomCommand[]> {
   if (!commandLoader) {
     await initializeCustomCommands();
   }
@@ -56,7 +63,7 @@ export async function getCustomCommands(forceReload: boolean = false): Promise<C
  */
 export async function getCustomSlashCommands(): Promise<SlashCommand[]> {
   const commands = await getCustomCommands();
-  return commands.map(cmd => ({
+  return commands.map((cmd) => ({
     name: `/${cmd.name}`,
     summary: cmd.description,
   }));
@@ -65,23 +72,25 @@ export async function getCustomSlashCommands(): Promise<SlashCommand[]> {
 /**
  * Find a custom command by name (with namespace support)
  */
-export async function findCustomCommand(name: string): Promise<CustomCommand | null> {
+export async function findCustomCommand(
+  name: string,
+): Promise<CustomCommand | null> {
   const commands = await getCustomCommands();
-  
+
   // Remove leading slash if present
-  const commandName = name.startsWith('/') ? name.slice(1) : name;
-  
+  const commandName = name.startsWith("/") ? name.slice(1) : name;
+
   // Exact match
-  const exact = commands.find(c => c.name === commandName);
+  const exact = commands.find((c) => c.name === commandName);
   if (exact) return exact;
-  
+
   // Check aliases
   for (const cmd of commands) {
     if (cmd.aliases?.includes(commandName)) {
       return cmd;
     }
   }
-  
+
   return null;
 }
 
@@ -90,12 +99,12 @@ export async function findCustomCommand(name: string): Promise<CustomCommand | n
  */
 export async function runCustomCommand(
   commandName: string,
-  args: string = '',
+  args: string = "",
   streaming: boolean = false,
-  onOutput?: (chunk: string) => void
+  onOutput?: (chunk: string) => void,
 ): Promise<{ success: boolean; output?: string; error?: string }> {
   const command = await findCustomCommand(commandName);
-  
+
   if (!command) {
     return {
       success: false,
@@ -105,7 +114,11 @@ export async function runCustomCommand(
 
   try {
     if (streaming && onOutput) {
-      const result = await executeCustomCommandStreaming(command, args, onOutput);
+      const result = await executeCustomCommandStreaming(
+        command,
+        args,
+        onOutput,
+      );
       return {
         success: result.success,
         output: result.output,
@@ -132,16 +145,16 @@ export async function runCustomCommand(
  */
 export async function getCommandSuggestions(prefix: string): Promise<string[]> {
   const commands = await getCustomCommands();
-  const normalizedPrefix = prefix.startsWith('/') ? prefix.slice(1) : prefix;
-  
+  const normalizedPrefix = prefix.startsWith("/") ? prefix.slice(1) : prefix;
+
   const suggestions: string[] = [];
-  
+
   for (const cmd of commands) {
     // Check main name
     if (cmd.name.startsWith(normalizedPrefix)) {
       suggestions.push(`/${cmd.name}`);
     }
-    
+
     // Check aliases
     if (cmd.aliases) {
       for (const alias of cmd.aliases) {
@@ -151,32 +164,34 @@ export async function getCommandSuggestions(prefix: string): Promise<string[]> {
       }
     }
   }
-  
+
   return suggestions.sort();
 }
 
 /**
  * Get all commands grouped by namespace (for help display)
  */
-export async function getCommandsByNamespace(): Promise<Map<string, CustomCommand[]>> {
+export async function getCommandsByNamespace(): Promise<
+  Map<string, CustomCommand[]>
+> {
   const commands = await getCustomCommands();
   const grouped = new Map<string, CustomCommand[]>();
-  
+
   // Root commands (no namespace)
-  grouped.set('', []);
-  
+  grouped.set("", []);
+
   for (const cmd of commands) {
     if (cmd.namespace) {
-      const topNamespace = cmd.namespace.split(':')[0];
+      const topNamespace = cmd.namespace.split(":")[0];
       if (!grouped.has(topNamespace)) {
         grouped.set(topNamespace, []);
       }
       grouped.get(topNamespace)!.push(cmd);
     } else {
-      grouped.get('')!.push(cmd);
+      grouped.get("")!.push(cmd);
     }
   }
-  
+
   return grouped;
 }
 
@@ -187,14 +202,14 @@ export async function createCustomCommand(
   name: string,
   description: string,
   script: string,
-  namespace?: string
+  namespace?: string,
 ): Promise<void> {
-  const baseDir = path.join(process.cwd(), '.plato/commands');
-  
+  const baseDir = path.join(process.cwd(), ".plato/commands");
+
   // Determine file path based on namespace
   let filePath: string;
   if (namespace) {
-    const namespacePath = namespace.split(':').join(path.sep);
+    const namespacePath = namespace.split(":").join(path.sep);
     const dir = path.join(baseDir, namespacePath);
     await fs.mkdir(dir, { recursive: true });
     filePath = path.join(dir, `${name}.md`);
@@ -202,7 +217,7 @@ export async function createCustomCommand(
     await fs.mkdir(baseDir, { recursive: true });
     filePath = path.join(baseDir, `${name}.md`);
   }
-  
+
   // Generate markdown content
   const content = `# ${name}
 
@@ -213,9 +228,9 @@ ${description}
 ${script}
 \`\`\`
 `;
-  
-  await fs.writeFile(filePath, content, 'utf8');
-  
+
+  await fs.writeFile(filePath, content, "utf8");
+
   // Reload commands to include the new one
   await reloadCustomCommands();
 }
@@ -224,20 +239,20 @@ ${script}
  * List all custom command files
  */
 export async function listCustomCommandFiles(): Promise<string[]> {
-  const baseDir = path.join(process.cwd(), '.plato/commands');
+  const baseDir = path.join(process.cwd(), ".plato/commands");
   const files: string[] = [];
-  
-  async function scanDir(dir: string, prefix: string = ''): Promise<void> {
+
+  async function scanDir(dir: string, prefix: string = ""): Promise<void> {
     try {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
-        
+
         if (entry.isDirectory()) {
           await scanDir(fullPath, relativePath);
-        } else if (entry.name.endsWith('.md')) {
+        } else if (entry.name.endsWith(".md")) {
           files.push(relativePath);
         }
       }
@@ -245,7 +260,7 @@ export async function listCustomCommandFiles(): Promise<string[]> {
       // Directory doesn't exist yet
     }
   }
-  
+
   await scanDir(baseDir);
   return files.sort();
 }
@@ -261,9 +276,6 @@ export async function hasCustomCommands(): Promise<boolean> {
 /**
  * Export all custom commands and integration functions
  */
-export type {
-  CustomCommand,
-  SlashCommand,
-} from './types.js';
+export type { CustomCommand, SlashCommand } from "./types.js";
 
-export { CustomCommandLoader } from './loader.js';
+export { CustomCommandLoader } from "./loader.js";

@@ -64,19 +64,19 @@ export interface ErrorMetrics {
   mostCommonErrors: Array<{ error: string; count: number }>;
 }
 
-export type ErrorCategory = 
-  | 'platform-detection'
-  | 'terminal-setup'
-  | 'mouse-initialization'
-  | 'configuration'
-  | 'protocol-negotiation'
-  | 'sequence-application'
-  | 'permission-denied'
-  | 'resource-exhaustion'
-  | 'timeout'
-  | 'unknown';
+export type ErrorCategory =
+  | "platform-detection"
+  | "terminal-setup"
+  | "mouse-initialization"
+  | "configuration"
+  | "protocol-negotiation"
+  | "sequence-application"
+  | "permission-denied"
+  | "resource-exhaustion"
+  | "timeout"
+  | "unknown";
 
-export type ErrorSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+export type ErrorSeverity = "critical" | "high" | "medium" | "low" | "info";
 
 export interface ErrorRecord {
   /** Unique error ID */
@@ -126,16 +126,16 @@ export class ErrorHandler {
     errorsByCategory: new Map(),
     recoverySuccessRate: 0,
     averageRecoveryTimeMs: 0,
-    mostCommonErrors: []
+    mostCommonErrors: [],
   };
-  
+
   private config: ErrorHandlerConfiguration = {
     maxRetries: 3,
     retryMultiplier: 2,
     maxErrorHistory: 100,
     debugMode: false,
     silentMode: false,
-    customStrategies: []
+    customStrategies: [],
   };
 
   private debugMode: boolean = false;
@@ -161,7 +161,7 @@ export class ErrorHandler {
   async handleError(
     error: Error,
     context: ErrorContext,
-    maxRetries: number = this.config.maxRetries
+    maxRetries: number = this.config.maxRetries,
   ): Promise<ErrorRecoveryResult> {
     const errorId = this.generateErrorId();
     const category = this.categorizeError(error, context);
@@ -174,14 +174,16 @@ export class ErrorHandler {
       category,
       severity,
       recoveryAttempts: [],
-      resolved: false
+      resolved: false,
     };
 
     this.errorHistory.push(errorRecord);
     this.updateMetrics(errorRecord);
 
     if (this.debugMode || !this.config.silentMode) {
-      console.error(`[ErrorHandler] ${severity.toUpperCase()}: ${error.message}`);
+      console.error(
+        `[ErrorHandler] ${severity.toUpperCase()}: ${error.message}`,
+      );
       if (this.debugMode) {
         console.error(`[ErrorHandler] Context:`, context);
       }
@@ -189,7 +191,7 @@ export class ErrorHandler {
 
     // Try recovery strategies
     const recoveryResult = await this.attemptRecovery(errorRecord, maxRetries);
-    
+
     if (recoveryResult.success) {
       errorRecord.resolved = true;
       errorRecord.resolvedAt = Date.now();
@@ -206,20 +208,22 @@ export class ErrorHandler {
    */
   async handleCriticalError(
     error: Error,
-    context: ErrorContext
+    context: ErrorContext,
   ): Promise<ErrorRecoveryResult> {
     const criticalContext = {
       ...context,
-      operation: `CRITICAL: ${context.operation}`
+      operation: `CRITICAL: ${context.operation}`,
     };
 
     // Log critical error immediately
     console.error(`[CRITICAL ERROR] ${error.message}`);
-    console.error(`[CRITICAL ERROR] Component: ${context.component}, Operation: ${context.operation}`);
+    console.error(
+      `[CRITICAL ERROR] Component: ${context.component}, Operation: ${context.operation}`,
+    );
 
     // Attempt emergency recovery
     const result = await this.handleError(error, criticalContext, 1);
-    
+
     if (!result.success) {
       // If recovery fails, try to safely degrade
       return await this.performEmergencyShutdown(error, context);
@@ -233,7 +237,7 @@ export class ErrorHandler {
    */
   registerStrategy(strategy: ErrorHandlingStrategy): void {
     this.strategies.set(strategy.name, strategy);
-    
+
     if (this.debugMode) {
       console.log(`[ErrorHandler] Registered strategy: ${strategy.name}`);
     }
@@ -299,15 +303,19 @@ export class ErrorHandler {
         platform: process.platform,
         arch: process.arch,
         nodeVersion: process.version,
-        terminal: process.env.TERM || 'unknown'
-      }
+        terminal: process.env.TERM || "unknown",
+      },
     };
   }
 
   /**
    * Create platform-specific error context
    */
-  createErrorContext(component: string, operation: string, additionalContext?: Record<string, unknown>): ErrorContext {
+  createErrorContext(
+    component: string,
+    operation: string,
+    additionalContext?: Record<string, unknown>,
+  ): ErrorContext {
     return {
       component,
       operation,
@@ -316,9 +324,9 @@ export class ErrorHandler {
         os: process.platform,
         arch: process.arch,
         node: process.version,
-        terminal: process.env.TERM || 'unknown'
+        terminal: process.env.TERM || "unknown",
       },
-      context: additionalContext
+      context: additionalContext,
     };
   }
 
@@ -327,13 +335,13 @@ export class ErrorHandler {
    */
   isRecoverable(error: Error, context: ErrorContext): boolean {
     const category = this.categorizeError(error, context);
-    
+
     // Some errors are always unrecoverable
     const unrecoverableCategories: ErrorCategory[] = [
-      'permission-denied',
-      'resource-exhaustion'
+      "permission-denied",
+      "resource-exhaustion",
     ];
-    
+
     if (unrecoverableCategories.includes(category)) {
       return false;
     }
@@ -344,10 +352,12 @@ export class ErrorHandler {
       /permission denied/i,
       /access denied/i,
       /out of memory/i,
-      /maximum call stack/i
+      /maximum call stack/i,
     ];
 
-    return !unrecoverablePatterns.some(pattern => pattern.test(error.message));
+    return !unrecoverablePatterns.some((pattern) =>
+      pattern.test(error.message),
+    );
   }
 
   /**
@@ -356,123 +366,133 @@ export class ErrorHandler {
   private setupDefaultStrategies(): void {
     // Platform detection errors
     this.registerStrategy({
-      name: 'platform-detection-retry',
-      description: 'Retry platform detection with fallbacks',
-      errorTypes: ['platform-detection'],
+      name: "platform-detection-retry",
+      description: "Retry platform detection with fallbacks",
+      errorTypes: ["platform-detection"],
       priority: 100,
-      canHandle: (error, context) => context.component === 'platform-detector',
+      canHandle: (error, context) => context.component === "platform-detector",
       handle: async (error, context) => {
         return {
           success: true,
-          action: 'Fallback to minimal platform detection',
-          messages: ['Using basic platform detection due to detection failure'],
+          action: "Fallback to minimal platform detection",
+          messages: ["Using basic platform detection due to detection failure"],
           shouldRetry: true,
-          retryDelay: 1000
+          retryDelay: 1000,
         };
-      }
+      },
     });
 
     // Terminal setup errors
     this.registerStrategy({
-      name: 'terminal-setup-fallback',
-      description: 'Apply terminal setup fallbacks',
-      errorTypes: ['terminal-setup'],
+      name: "terminal-setup-fallback",
+      description: "Apply terminal setup fallbacks",
+      errorTypes: ["terminal-setup"],
       priority: 90,
-      canHandle: (error, context) => context.component === 'mouse-initializer' && context.operation.includes('terminal'),
+      canHandle: (error, context) =>
+        context.component === "mouse-initializer" &&
+        context.operation.includes("terminal"),
       handle: async (error, context) => {
         return {
           success: true,
-          action: 'Applied terminal compatibility mode',
-          messages: ['Terminal setup failed, using compatibility mode'],
-          shouldRetry: false
+          action: "Applied terminal compatibility mode",
+          messages: ["Terminal setup failed, using compatibility mode"],
+          shouldRetry: false,
         };
-      }
+      },
     });
 
     // Mouse initialization errors
     this.registerStrategy({
-      name: 'mouse-init-fallback',
-      description: 'Fallback to keyboard-only mode',
-      errorTypes: ['mouse-initialization'],
+      name: "mouse-init-fallback",
+      description: "Fallback to keyboard-only mode",
+      errorTypes: ["mouse-initialization"],
       priority: 80,
-      canHandle: (error, context) => context.component === 'mouse-initializer',
+      canHandle: (error, context) => context.component === "mouse-initializer",
       handle: async (error, context) => {
         return {
           success: true,
-          action: 'Disabled mouse support, using keyboard navigation',
-          messages: ['Mouse initialization failed, keyboard navigation enabled'],
-          shouldRetry: false
+          action: "Disabled mouse support, using keyboard navigation",
+          messages: [
+            "Mouse initialization failed, keyboard navigation enabled",
+          ],
+          shouldRetry: false,
         };
-      }
+      },
     });
 
     // Configuration errors
     this.registerStrategy({
-      name: 'config-reset',
-      description: 'Reset to minimal configuration',
-      errorTypes: ['configuration'],
+      name: "config-reset",
+      description: "Reset to minimal configuration",
+      errorTypes: ["configuration"],
       priority: 70,
-      canHandle: (error, context) => context.component === 'configuration-manager',
+      canHandle: (error, context) =>
+        context.component === "configuration-manager",
       handle: async (error, context) => {
         return {
           success: true,
-          action: 'Reset to minimal configuration',
-          messages: ['Configuration error, reset to minimal settings'],
-          shouldRetry: true
+          action: "Reset to minimal configuration",
+          messages: ["Configuration error, reset to minimal settings"],
+          shouldRetry: true,
         };
-      }
+      },
     });
 
     // Protocol negotiation errors
     this.registerStrategy({
-      name: 'protocol-downgrade',
-      description: 'Downgrade to simpler mouse protocol',
-      errorTypes: ['protocol-negotiation'],
+      name: "protocol-downgrade",
+      description: "Downgrade to simpler mouse protocol",
+      errorTypes: ["protocol-negotiation"],
       priority: 60,
-      canHandle: (error, context) => context.operation.includes('protocol'),
+      canHandle: (error, context) => context.operation.includes("protocol"),
       handle: async (error, context) => {
         return {
           success: true,
-          action: 'Downgraded to basic mouse protocol',
-          messages: ['Advanced mouse protocol failed, using basic mode'],
-          shouldRetry: true
+          action: "Downgraded to basic mouse protocol",
+          messages: ["Advanced mouse protocol failed, using basic mode"],
+          shouldRetry: true,
         };
-      }
+      },
     });
 
     // Timeout errors
     this.registerStrategy({
-      name: 'timeout-retry',
-      description: 'Retry with increased timeout',
-      errorTypes: ['timeout'],
+      name: "timeout-retry",
+      description: "Retry with increased timeout",
+      errorTypes: ["timeout"],
       priority: 50,
-      canHandle: (error, context) => error.message.includes('timeout') || error.message.includes('timed out'),
+      canHandle: (error, context) =>
+        error.message.includes("timeout") ||
+        error.message.includes("timed out"),
       handle: async (error, context) => {
         return {
           success: true,
-          action: 'Retrying with increased timeout',
-          messages: ['Operation timed out, retrying with longer timeout'],
+          action: "Retrying with increased timeout",
+          messages: ["Operation timed out, retrying with longer timeout"],
           shouldRetry: true,
-          retryDelay: 2000
+          retryDelay: 2000,
         };
-      }
+      },
     });
 
     // Generic fallback strategy
     this.registerStrategy({
-      name: 'generic-fallback',
-      description: 'Generic error recovery',
-      errorTypes: ['unknown'],
+      name: "generic-fallback",
+      description: "Generic error recovery",
+      errorTypes: ["unknown"],
       priority: 10,
       canHandle: () => true, // Handles any error as last resort
       handle: async (error, context) => {
         return {
           success: true,
-          action: 'Applied generic fallback',
-          messages: [`Error in ${context.component}: ${error.message}`, 'Continuing with reduced functionality'],
-          shouldRetry: false
+          action: "Applied generic fallback",
+          messages: [
+            `Error in ${context.component}: ${error.message}`,
+            "Continuing with reduced functionality",
+          ],
+          shouldRetry: false,
         };
-      }
+      },
     });
   }
 
@@ -481,21 +501,28 @@ export class ErrorHandler {
    */
   private setupGlobalErrorHandlers(): void {
     // Handle uncaught exceptions
-    process.on('uncaughtException', (error) => {
-      const context = this.createErrorContext('global', 'uncaughtException');
+    process.on("uncaughtException", (error) => {
+      const context = this.createErrorContext("global", "uncaughtException");
       this.handleCriticalError(error, context).catch((recoveryError) => {
-        console.error('[ErrorHandler] Recovery failed for uncaught exception:', recoveryError);
+        console.error(
+          "[ErrorHandler] Recovery failed for uncaught exception:",
+          recoveryError,
+        );
         process.exit(1);
       });
     });
 
     // Handle unhandled promise rejections
-    process.on('unhandledRejection', (reason) => {
-      const error = reason instanceof Error ? reason : new Error(String(reason));
-      const context = this.createErrorContext('global', 'unhandledRejection');
-      
+    process.on("unhandledRejection", (reason) => {
+      const error =
+        reason instanceof Error ? reason : new Error(String(reason));
+      const context = this.createErrorContext("global", "unhandledRejection");
+
       this.handleCriticalError(error, context).catch((recoveryError) => {
-        console.error('[ErrorHandler] Recovery failed for unhandled rejection:', recoveryError);
+        console.error(
+          "[ErrorHandler] Recovery failed for unhandled rejection:",
+          recoveryError,
+        );
         process.exit(1);
       });
     });
@@ -504,20 +531,23 @@ export class ErrorHandler {
   /**
    * Attempt recovery using registered strategies
    */
-  private async attemptRecovery(errorRecord: ErrorRecord, maxRetries: number): Promise<ErrorRecoveryResult> {
+  private async attemptRecovery(
+    errorRecord: ErrorRecord,
+    maxRetries: number,
+  ): Promise<ErrorRecoveryResult> {
     const { error, context, category } = errorRecord;
-    
+
     // Find applicable strategies
     const strategies = Array.from(this.strategies.values())
-      .filter(strategy => strategy.canHandle(error, context))
+      .filter((strategy) => strategy.canHandle(error, context))
       .sort((a, b) => b.priority - a.priority);
 
     if (strategies.length === 0) {
       return {
         success: false,
-        action: 'No recovery strategy available',
+        action: "No recovery strategy available",
         messages: [`No recovery strategy found for ${category} error`],
-        shouldRetry: false
+        shouldRetry: false,
       };
     }
 
@@ -530,63 +560,77 @@ export class ErrorHandler {
 
         errorRecord.recoveryAttempts.push({
           ...result,
-          action: `${strategy.name}: ${result.action}`
+          action: `${strategy.name}: ${result.action}`,
         });
 
         if (this.debugMode) {
-          console.log(`[ErrorHandler] Recovery strategy '${strategy.name}' ${result.success ? 'succeeded' : 'failed'} (${recoveryTime}ms)`);
+          console.log(
+            `[ErrorHandler] Recovery strategy '${strategy.name}' ${result.success ? "succeeded" : "failed"} (${recoveryTime}ms)`,
+          );
         }
 
         if (result.success) {
-          this.metrics.averageRecoveryTimeMs = (this.metrics.averageRecoveryTimeMs + recoveryTime) / 2;
+          this.metrics.averageRecoveryTimeMs =
+            (this.metrics.averageRecoveryTimeMs + recoveryTime) / 2;
           return result;
         }
       } catch (recoveryError) {
         if (this.debugMode) {
-          console.error(`[ErrorHandler] Recovery strategy '${strategy.name}' threw error:`, recoveryError);
+          console.error(
+            `[ErrorHandler] Recovery strategy '${strategy.name}' threw error:`,
+            recoveryError,
+          );
         }
       }
     }
 
     return {
       success: false,
-      action: 'All recovery strategies failed',
-      messages: ['All recovery attempts failed', 'System may operate with reduced functionality'],
-      shouldRetry: false
+      action: "All recovery strategies failed",
+      messages: [
+        "All recovery attempts failed",
+        "System may operate with reduced functionality",
+      ],
+      shouldRetry: false,
     };
   }
 
   /**
    * Perform emergency shutdown
    */
-  private async performEmergencyShutdown(error: Error, context: ErrorContext): Promise<ErrorRecoveryResult> {
-    console.error('[ErrorHandler] Performing emergency shutdown...');
-    
+  private async performEmergencyShutdown(
+    error: Error,
+    context: ErrorContext,
+  ): Promise<ErrorRecoveryResult> {
+    console.error("[ErrorHandler] Performing emergency shutdown...");
+
     try {
       // Try to clean up resources
       if (process.stdout.write) {
         // Disable mouse sequences
-        process.stdout.write('\x1b[?1000l\x1b[?1002l\x1b[?1006l\x1b[?1005l\x1b[?1015l\x1b[?1004l');
+        process.stdout.write(
+          "\x1b[?1000l\x1b[?1002l\x1b[?1006l\x1b[?1005l\x1b[?1015l\x1b[?1004l",
+        );
       }
-      
+
       return {
         success: true,
-        action: 'Emergency shutdown completed',
+        action: "Emergency shutdown completed",
         messages: [
-          'Critical error occurred, emergency shutdown performed',
-          'Mouse support disabled for safety'
+          "Critical error occurred, emergency shutdown performed",
+          "Mouse support disabled for safety",
         ],
-        shouldRetry: false
+        shouldRetry: false,
       };
     } catch (shutdownError) {
       return {
         success: false,
-        action: 'Emergency shutdown failed',
+        action: "Emergency shutdown failed",
         messages: [
-          'Critical error and emergency shutdown both failed',
-          'System may be in unstable state'
+          "Critical error and emergency shutdown both failed",
+          "System may be in unstable state",
         ],
-        shouldRetry: false
+        shouldRetry: false,
       };
     }
   }
@@ -600,67 +644,77 @@ export class ErrorHandler {
     const operation = context.operation.toLowerCase();
 
     // Check specific patterns
-    if (message.includes('permission denied') || message.includes('eacces')) {
-      return 'permission-denied';
+    if (message.includes("permission denied") || message.includes("eacces")) {
+      return "permission-denied";
     }
-    
-    if (message.includes('timeout') || message.includes('timed out')) {
-      return 'timeout';
+
+    if (message.includes("timeout") || message.includes("timed out")) {
+      return "timeout";
     }
-    
-    if (message.includes('out of memory') || message.includes('maximum call stack')) {
-      return 'resource-exhaustion';
+
+    if (
+      message.includes("out of memory") ||
+      message.includes("maximum call stack")
+    ) {
+      return "resource-exhaustion";
     }
 
     // Check by component
-    if (component.includes('platform') || component.includes('detector')) {
-      return 'platform-detection';
-    }
-    
-    if (component.includes('mouse') && operation.includes('init')) {
-      return 'mouse-initialization';
-    }
-    
-    if (component.includes('config')) {
-      return 'configuration';
-    }
-    
-    if (operation.includes('terminal') || operation.includes('sequence')) {
-      return 'terminal-setup';
-    }
-    
-    if (operation.includes('protocol')) {
-      return 'protocol-negotiation';
+    if (component.includes("platform") || component.includes("detector")) {
+      return "platform-detection";
     }
 
-    return 'unknown';
+    if (component.includes("mouse") && operation.includes("init")) {
+      return "mouse-initialization";
+    }
+
+    if (component.includes("config")) {
+      return "configuration";
+    }
+
+    if (operation.includes("terminal") || operation.includes("sequence")) {
+      return "terminal-setup";
+    }
+
+    if (operation.includes("protocol")) {
+      return "protocol-negotiation";
+    }
+
+    return "unknown";
   }
 
   /**
    * Determine error severity
    */
-  private determineSeverity(error: Error, context: ErrorContext, category: ErrorCategory): ErrorSeverity {
+  private determineSeverity(
+    error: Error,
+    context: ErrorContext,
+    category: ErrorCategory,
+  ): ErrorSeverity {
     // Critical errors
-    if (category === 'resource-exhaustion' || context.operation.includes('CRITICAL')) {
-      return 'critical';
+    if (
+      category === "resource-exhaustion" ||
+      context.operation.includes("CRITICAL")
+    ) {
+      return "critical";
     }
 
     // High severity
-    if (category === 'permission-denied' || category === 'platform-detection') {
-      return 'high';
+    if (category === "permission-denied" || category === "platform-detection") {
+      return "high";
     }
 
     // Medium severity
-    if (category === 'mouse-initialization' || category === 'configuration') {
-      return 'medium';
+    if (category === "mouse-initialization" || category === "configuration") {
+      return "medium";
     }
 
     // Low severity
-    if (category === 'terminal-setup' || category === 'protocol-negotiation') {
-      return 'low';
+    if (category === "terminal-setup" || category === "protocol-negotiation") {
+      return "low";
     }
 
-    return 'medium';
+    return "medium";
   }
 
   /**
@@ -668,16 +722,20 @@ export class ErrorHandler {
    */
   private updateMetrics(errorRecord: ErrorRecord): void {
     this.metrics.totalErrors++;
-    
-    const categoryCount = this.metrics.errorsByCategory.get(errorRecord.category) || 0;
+
+    const categoryCount =
+      this.metrics.errorsByCategory.get(errorRecord.category) || 0;
     this.metrics.errorsByCategory.set(errorRecord.category, categoryCount + 1);
 
     // Update most common errors
     this.updateMostCommonErrors();
-    
+
     // Calculate recovery success rate
-    const resolvedErrors = this.errorHistory.filter(record => record.resolved).length;
-    this.metrics.recoverySuccessRate = resolvedErrors / this.metrics.totalErrors;
+    const resolvedErrors = this.errorHistory.filter(
+      (record) => record.resolved,
+    ).length;
+    this.metrics.recoverySuccessRate =
+      resolvedErrors / this.metrics.totalErrors;
   }
 
   /**
@@ -685,8 +743,8 @@ export class ErrorHandler {
    */
   private updateMostCommonErrors(): void {
     const errorCounts: Record<string, number> = {};
-    
-    this.errorHistory.forEach(record => {
+
+    this.errorHistory.forEach((record) => {
       const key = `${record.category}:${record.error.message}`;
       errorCounts[key] = (errorCounts[key] || 0) + 1;
     });
@@ -706,7 +764,7 @@ export class ErrorHandler {
       errorsByCategory: new Map(),
       recoverySuccessRate: 0,
       averageRecoveryTimeMs: 0,
-      mostCommonErrors: []
+      mostCommonErrors: [],
     };
   }
 

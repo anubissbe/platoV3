@@ -15,4 +15,3 @@ export interface ChatChunk {
   data?: string;
   error?: string;
 }
-

@@ -8,8 +8,8 @@ This is the API specification for the spec detailed in @.agent-os/specs/2025-09-
 
 ```typescript
 interface ToolCall {
-  id: string;                    // Unique execution ID
-  name: string;                   // Tool name (e.g., 'Read', 'Bash')
+  id: string; // Unique execution ID
+  name: string; // Tool name (e.g., 'Read', 'Bash')
   arguments: Record<string, any>; // Tool-specific arguments
   metadata?: {
     timestamp: number;
@@ -19,12 +19,12 @@ interface ToolCall {
 }
 
 interface ToolResponse {
-  id: string;                    // Matches request ID
+  id: string; // Matches request ID
   success: boolean;
-  result?: any;                  // Tool-specific result
+  result?: any; // Tool-specific result
   error?: ToolError;
   metadata: {
-    duration: number;            // Milliseconds
+    duration: number; // Milliseconds
     timestamp: number;
     tool: string;
   };
@@ -349,18 +349,18 @@ For tools that support streaming (Bash, Search), a WebSocket connection can be e
 
 ```typescript
 // WebSocket URL
-ws://localhost:<port>/tools/stream/<execution-id>
+//localhost:<port>/tools/stream/<execution-id>
 
 // Message Types
-interface StreamMessage {
-  type: 'start' | 'data' | 'error' | 'complete';
+ws: interface StreamMessage {
+  type: "start" | "data" | "error" | "complete";
   execution_id: string;
   sequence: number;
   timestamp: number;
   data?: {
-    stream?: 'stdout' | 'stderr';
+    stream?: "stdout" | "stderr";
     content?: string;
-    progress?: number;          // 0-100
+    progress?: number; // 0-100
     metadata?: any;
   };
   error?: ToolError;
@@ -368,7 +368,7 @@ interface StreamMessage {
 
 // Client Control Messages
 interface ControlMessage {
-  type: 'pause' | 'resume' | 'cancel';
+  type: "pause" | "resume" | "cancel";
   execution_id: string;
 }
 ```
@@ -376,9 +376,11 @@ interface ControlMessage {
 ## HTTP REST Endpoints (For Testing/Debug)
 
 ### POST /tools/execute
+
 Execute a tool synchronously
 
 **Request:**
+
 ```json
 {
   "tool": "Read",
@@ -389,6 +391,7 @@ Execute a tool synchronously
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -407,9 +410,11 @@ Execute a tool synchronously
 ```
 
 ### GET /tools/capabilities
+
 List available tools and their schemas
 
 **Response:**
+
 ```json
 {
   "tools": [
@@ -417,22 +422,28 @@ List available tools and their schemas
       "name": "Read",
       "description": "Read file contents",
       "streaming": false,
-      "schema": { /* JSON Schema */ }
+      "schema": {
+        /* JSON Schema */
+      }
     },
     {
       "name": "Bash",
       "description": "Execute shell commands",
       "streaming": true,
-      "schema": { /* JSON Schema */ }
+      "schema": {
+        /* JSON Schema */
+      }
     }
   ]
 }
 ```
 
 ### DELETE /tools/cancel/:execution_id
+
 Cancel a running tool execution
 
 **Response:**
+
 ```json
 {
   "cancelled": true,

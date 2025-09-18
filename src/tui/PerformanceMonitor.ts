@@ -30,10 +30,13 @@ export interface ThresholdAlert {
 export class PerformanceMonitor {
   private measurements: Map<string, number[]> = new Map();
   private activeMeasures: Map<string, number> = new Map();
-  private thresholds: Map<string, { limit: number; callback: (alert: ThresholdAlert) => void }> = new Map();
+  private thresholds: Map<
+    string,
+    { limit: number; callback: (alert: ThresholdAlert) => void }
+  > = new Map();
   private performanceBudget: PerformanceBudget = {};
   private budgetViolations: ThresholdAlert[] = [];
-  
+
   // FPS monitoring
   private fpsMonitoring: boolean = false;
   private frameCount: number = 0;
@@ -51,11 +54,11 @@ export class PerformanceMonitor {
     if (startTime === undefined) return;
 
     const duration = performance.now() - startTime;
-    
+
     if (!this.measurements.has(name)) {
       this.measurements.set(name, []);
     }
-    
+
     this.measurements.get(name)!.push(duration);
     this.activeMeasures.delete(name);
 
@@ -72,7 +75,10 @@ export class PerformanceMonitor {
     }
 
     // Check budget
-    if (this.performanceBudget[name] && duration > this.performanceBudget[name]!) {
+    if (
+      this.performanceBudget[name] &&
+      duration > this.performanceBudget[name]!
+    ) {
       this.budgetViolations.push({
         metric: name,
         duration,
@@ -105,7 +111,7 @@ export class PerformanceMonitor {
   }
 
   getMemoryUsage(): MemoryUsage {
-    if (typeof process !== 'undefined' && process.memoryUsage) {
+    if (typeof process !== "undefined" && process.memoryUsage) {
       const usage = process.memoryUsage();
       return {
         heapUsed: usage.heapUsed,
@@ -114,7 +120,7 @@ export class PerformanceMonitor {
         rss: usage.rss,
       };
     }
-    
+
     // Fallback for browser environment
     return {
       heapUsed: (performance as any).memory?.usedJSHeapSize || 0,
@@ -126,14 +132,14 @@ export class PerformanceMonitor {
 
   getBottlenecks(threshold: number): string[] {
     const bottlenecks: string[] = [];
-    
+
     for (const [name, measurements] of this.measurements.entries()) {
       const avg = measurements.reduce((a, b) => a + b, 0) / measurements.length;
       if (avg > threshold) {
         bottlenecks.push(name);
       }
     }
-    
+
     return bottlenecks;
   }
 
@@ -155,21 +161,21 @@ export class PerformanceMonitor {
 
     const now = performance.now();
     const delta = now - this.lastFrameTime;
-    
+
     // Check for frame drops (>16.67ms for 60 FPS)
     if (delta > 16.67) {
       this.frameDrops++;
     }
-    
+
     this.frameCount++;
-    
+
     // Calculate FPS every second
     if (this.frameCount % 60 === 0) {
       const elapsed = now - (this.lastFrameTime - delta * 59);
       this.fps = 60000 / elapsed;
       this.fpsHistory.push(this.fps);
     }
-    
+
     this.lastFrameTime = now;
   }
 
@@ -182,7 +188,11 @@ export class PerformanceMonitor {
   }
 
   // Thresholds and Alerts
-  setThreshold(metric: string, limit: number, callback: (alert: ThresholdAlert) => void): void {
+  setThreshold(
+    metric: string,
+    limit: number,
+    callback: (alert: ThresholdAlert) => void,
+  ): void {
     this.thresholds.set(metric, { limit, callback });
   }
 
@@ -204,11 +214,15 @@ export class RenderOptimizer {
   private batchedUpdates: Map<string, () => void> = new Map();
   private animationFrame: number | null = null;
   private memoCache: Map<string, { args: any; result: any }> = new Map();
-  private scheduledTasks: Array<{ id: string; task: () => void; priority: string }> = [];
+  private scheduledTasks: Array<{
+    id: string;
+    task: () => void;
+    priority: string;
+  }> = [];
 
   batchUpdate(id: string, update: () => void): void {
     this.batchedUpdates.set(id, update);
-    
+
     if (!this.animationFrame) {
       this.animationFrame = requestAnimationFrame(() => {
         this.flushBatchedUpdates();
@@ -226,13 +240,13 @@ export class RenderOptimizer {
 
   debounce<T extends (...args: any[]) => any>(
     func: T,
-    delay: number
+    delay: number,
   ): (...args: Parameters<T>) => void {
     let timeoutId: NodeJS.Timeout | null = null;
-    
+
     return (...args: Parameters<T>) => {
       if (timeoutId) clearTimeout(timeoutId);
-      
+
       timeoutId = setTimeout(() => {
         func(...args);
         timeoutId = null;
@@ -242,16 +256,16 @@ export class RenderOptimizer {
 
   throttle<T extends (...args: any[]) => any>(
     func: T,
-    limit: number
+    limit: number,
   ): (...args: Parameters<T>) => void {
     let inThrottle = false;
     let lastArgs: Parameters<T> | null = null;
-    
+
     return (...args: Parameters<T>) => {
       if (!inThrottle) {
         func(...args);
         inThrottle = true;
-        
+
         setTimeout(() => {
           inThrottle = false;
           if (lastArgs) {
@@ -265,13 +279,21 @@ export class RenderOptimizer {
     };
   }
 
-  scheduleUpdate(id: string, task: () => void, priority: 'high' | 'normal' | 'low' = 'normal'): void {
+  scheduleUpdate(
+    id: string,
+    task: () => void,
+    priority: "high" | "normal" | "low" = "normal",
+  ): void {
     this.scheduledTasks.push({ id, task, priority });
-    
+
     // Sort by priority
     const priorityOrder = { high: 0, normal: 1, low: 2 };
-    this.scheduledTasks.sort((a, b) => priorityOrder[a.priority as keyof typeof priorityOrder] - priorityOrder[b.priority as keyof typeof priorityOrder]);
-    
+    this.scheduledTasks.sort(
+      (a, b) =>
+        priorityOrder[a.priority as keyof typeof priorityOrder] -
+        priorityOrder[b.priority as keyof typeof priorityOrder],
+    );
+
     // Execute in next tick
     Promise.resolve().then(() => {
       const task = this.scheduledTasks.shift();
@@ -282,7 +304,7 @@ export class RenderOptimizer {
   }
 
   scheduleIdleTask(task: () => void): void {
-    if (typeof requestIdleCallback !== 'undefined') {
+    if (typeof requestIdleCallback !== "undefined") {
       requestIdleCallback(task);
     } else {
       setTimeout(task, 0);
@@ -291,17 +313,17 @@ export class RenderOptimizer {
 
   memoize<T extends (...args: any[]) => any>(func: T): T {
     const cacheKey = func.toString();
-    
+
     return ((...args: Parameters<T>) => {
       const cached = this.memoCache.get(cacheKey);
-      
+
       if (cached && JSON.stringify(cached.args) === JSON.stringify(args)) {
         return cached.result;
       }
-      
+
       const result = func(...args);
       this.memoCache.set(cacheKey, { args, result });
-      
+
       return result;
     }) as T;
   }
@@ -332,11 +354,11 @@ export class MemoryManager {
 
   getStats(): { trackedObjects: number; totalSize: number } {
     let totalSize = 0;
-    
+
     for (const obj of this.trackedObjects.values()) {
       totalSize += this.estimateSize(obj);
     }
-    
+
     return {
       trackedObjects: this.trackedObjects.size,
       totalSize,
@@ -345,18 +367,22 @@ export class MemoryManager {
 
   private estimateSize(obj: any): number {
     // Simplified size estimation
-    if (typeof obj === 'string') return obj.length * 2;
-    if (typeof obj === 'number') return 8;
-    if (typeof obj === 'boolean') return 4;
-    if (obj instanceof Array) return obj.length * 8 + obj.reduce((sum, item) => sum + this.estimateSize(item), 0);
+    if (typeof obj === "string") return obj.length * 2;
+    if (typeof obj === "number") return 8;
+    if (typeof obj === "boolean") return 4;
+    if (obj instanceof Array)
+      return (
+        obj.length * 8 +
+        obj.reduce((sum, item) => sum + this.estimateSize(item), 0)
+      );
     if (obj instanceof ArrayBuffer) return obj.byteLength;
-    if (typeof obj === 'object') return JSON.stringify(obj).length * 2;
+    if (typeof obj === "object") return JSON.stringify(obj).length * 2;
     return 0;
   }
 
   detectLeaks(): { potentialLeaks: string[] } {
     const potentialLeaks: string[] = [];
-    
+
     for (const [id, obj] of this.trackedObjects.entries()) {
       // Simple leak detection - objects that are large and old
       const size = this.estimateSize(obj);
@@ -364,11 +390,15 @@ export class MemoryManager {
         potentialLeaks.push(id);
       }
     }
-    
+
     return { potentialLeaks };
   }
 
-  createPool(name: string, factory: () => any, options?: { maxSize?: number }): ObjectPool {
+  createPool(
+    name: string,
+    factory: () => any,
+    options?: { maxSize?: number },
+  ): ObjectPool {
     const pool = new ObjectPool(factory, options?.maxSize);
     this.objectPools.set(name, pool);
     return pool;
@@ -399,18 +429,18 @@ export class MemoryManager {
 
   private checkMemoryPressure(): void {
     const stats = this.getStats();
-    
+
     if (stats.totalSize > this.memoryLimit) {
-      throw new Error('Memory limit exceeded');
+      throw new Error("Memory limit exceeded");
     }
-    
+
     if (stats.totalSize > this.memoryLimit * 0.8) {
       const info = {
         usage: stats.totalSize,
         limit: this.memoryLimit,
         percentage: (stats.totalSize / this.memoryLimit) * 100,
       };
-      
+
       for (const callback of this.memoryPressureCallbacks) {
         callback(info);
       }
@@ -470,11 +500,12 @@ export class VirtualScroller {
   }
 
   getVisibleItems(): { startIndex: number; endIndex: number; count: number } {
-    const itemHeight = typeof this.itemHeight === 'function' ? 50 : this.itemHeight; // Estimate for variable heights
+    const itemHeight =
+      typeof this.itemHeight === "function" ? 50 : this.itemHeight; // Estimate for variable heights
     const startIndex = Math.floor(this.scrollPosition / itemHeight);
     const visibleCount = Math.ceil(this.containerHeight / itemHeight);
     const endIndex = Math.min(startIndex + visibleCount, this.totalItems);
-    
+
     return {
       startIndex,
       endIndex,
@@ -482,9 +513,13 @@ export class VirtualScroller {
     };
   }
 
-  getVisibleItemsWithBuffer(): { startIndex: number; endIndex: number; count: number } {
+  getVisibleItemsWithBuffer(): {
+    startIndex: number;
+    endIndex: number;
+    count: number;
+  } {
     const visible = this.getVisibleItems();
-    
+
     return {
       startIndex: Math.max(0, visible.startIndex - this.buffer),
       endIndex: Math.min(this.totalItems, visible.endIndex + this.buffer),
@@ -493,7 +528,10 @@ export class VirtualScroller {
   }
 
   scrollTo(position: number): void {
-    this.scrollPosition = Math.max(0, Math.min(position, this.getTotalHeight() - this.containerHeight));
+    this.scrollPosition = Math.max(
+      0,
+      Math.min(position, this.getTotalHeight() - this.containerHeight),
+    );
   }
 
   setBuffer(items: number): void {
@@ -504,23 +542,23 @@ export class VirtualScroller {
     if (this.positionCache.has(index)) {
       return this.positionCache.get(index)!;
     }
-    
+
     let position = 0;
-    
-    if (typeof this.itemHeight === 'function') {
+
+    if (typeof this.itemHeight === "function") {
       for (let i = 0; i < index; i++) {
         position += this.itemHeight(i);
       }
     } else {
       position = index * this.itemHeight;
     }
-    
+
     this.positionCache.set(index, position);
     return position;
   }
 
   private getTotalHeight(): number {
-    if (typeof this.itemHeight === 'function') {
+    if (typeof this.itemHeight === "function") {
       let total = 0;
       for (let i = 0; i < this.totalItems; i++) {
         total += this.itemHeight(i);
@@ -537,11 +575,11 @@ export class VirtualScroller {
   getVisibleElements(): any[] {
     const visible = this.getVisibleItems();
     const elements = [];
-    
+
     for (let i = visible.startIndex; i < visible.endIndex; i++) {
       elements.push(this.elementPool.acquire());
     }
-    
+
     return elements;
   }
 
@@ -549,28 +587,32 @@ export class VirtualScroller {
     return this.scrollPosition;
   }
 
-  smoothScrollTo(position: number, options?: { duration?: number; easing?: string }): void {
+  smoothScrollTo(
+    position: number,
+    options?: { duration?: number; easing?: string },
+  ): void {
     const duration = options?.duration || 300;
     const startPosition = this.scrollPosition;
     const distance = position - startPosition;
     const startTime = performance.now();
-    
+
     const animate = (currentTime: number) => {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      
+
       // Simple easing
-      const eased = progress < 0.5
-        ? 2 * progress * progress
-        : -1 + (4 - 2 * progress) * progress;
-      
+      const eased =
+        progress < 0.5
+          ? 2 * progress * progress
+          : -1 + (4 - 2 * progress) * progress;
+
       this.scrollPosition = startPosition + distance * eased;
-      
+
       if (progress < 1) {
         requestAnimationFrame(animate);
       }
     };
-    
+
     requestAnimationFrame(animate);
   }
 
@@ -584,17 +626,23 @@ export class VirtualScroller {
       this.momentum = 0;
       return;
     }
-    
+
     const now = performance.now();
     const delta = now - this.lastScrollTime;
-    
+
     // Apply friction
     this.momentum *= Math.pow(0.95, delta / 16);
-    
+
     // Update position
     this.scrollPosition += this.momentum * (delta / 16);
-    this.scrollPosition = Math.max(0, Math.min(this.scrollPosition, this.getTotalHeight() - this.containerHeight));
-    
+    this.scrollPosition = Math.max(
+      0,
+      Math.min(
+        this.scrollPosition,
+        this.getTotalHeight() - this.containerHeight,
+      ),
+    );
+
     this.lastScrollTime = now;
   }
 

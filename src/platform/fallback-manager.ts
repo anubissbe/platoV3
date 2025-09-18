@@ -3,8 +3,12 @@
  * Comprehensive fallback system for mouse and terminal features
  */
 
-import { PlatformCapabilities, PlatformDetector } from './platform-detector.js';
-import { MouseProtocolConfig, PlatformMouseCapabilities, MouseEventProcessingOptions } from '../tui/mouse-types.js';
+import { PlatformCapabilities, PlatformDetector } from "./platform-detector.js";
+import {
+  MouseProtocolConfig,
+  PlatformMouseCapabilities,
+  MouseEventProcessingOptions,
+} from "../tui/mouse-types.js";
 
 export interface FallbackStrategy {
   /** Strategy name */
@@ -72,67 +76,67 @@ export interface PerformanceFallbackConfig {
   ioFallbacks: IOFallbackStrategy[];
 }
 
-export type MouseFallbackStrategy = 
-  | 'protocol-downgrade'
-  | 'feature-disable'
-  | 'polling-mode'
-  | 'keyboard-only'
-  | 'no-mouse';
+export type MouseFallbackStrategy =
+  | "protocol-downgrade"
+  | "feature-disable"
+  | "polling-mode"
+  | "keyboard-only"
+  | "no-mouse";
 
-export type ColorFallbackStrategy = 
-  | 'truecolor'
-  | '256color'
-  | '16color'
-  | '8color'
-  | 'monochrome';
+export type ColorFallbackStrategy =
+  | "truecolor"
+  | "256color"
+  | "16color"
+  | "8color"
+  | "monochrome";
 
-export type UnicodeFallbackStrategy = 
-  | 'full-unicode'
-  | 'basic-unicode'
-  | 'ascii-fallback'
-  | 'safe-ascii';
+export type UnicodeFallbackStrategy =
+  | "full-unicode"
+  | "basic-unicode"
+  | "ascii-fallback"
+  | "safe-ascii";
 
-export type DimensionFallbackStrategy = 
-  | 'auto-detect'
-  | 'standard-80x24'
-  | 'minimal-40x12'
-  | 'single-line';
+export type DimensionFallbackStrategy =
+  | "auto-detect"
+  | "standard-80x24"
+  | "minimal-40x12"
+  | "single-line";
 
-export type KeyboardFallbackStrategy = 
-  | 'raw-mode'
-  | 'line-mode'
-  | 'simple-input'
-  | 'no-input';
+export type KeyboardFallbackStrategy =
+  | "raw-mode"
+  | "line-mode"
+  | "simple-input"
+  | "no-input";
 
-export type RawModeFallbackStrategy = 
-  | 'native-raw'
-  | 'tty-raw'
-  | 'cbreak-mode'
-  | 'cooked-mode';
+export type RawModeFallbackStrategy =
+  | "native-raw"
+  | "tty-raw"
+  | "cbreak-mode"
+  | "cooked-mode";
 
-export type SignalFallbackStrategy = 
-  | 'native-signals'
-  | 'process-signals'
-  | 'polling-signals'
-  | 'no-signals';
+export type SignalFallbackStrategy =
+  | "native-signals"
+  | "process-signals"
+  | "polling-signals"
+  | "no-signals";
 
-export type MemoryFallbackStrategy = 
-  | 'full-caching'
-  | 'limited-caching'
-  | 'minimal-caching'
-  | 'no-caching';
+export type MemoryFallbackStrategy =
+  | "full-caching"
+  | "limited-caching"
+  | "minimal-caching"
+  | "no-caching";
 
-export type ProcessingFallbackStrategy = 
-  | 'async-processing'
-  | 'sync-processing'
-  | 'batch-processing'
-  | 'minimal-processing';
+export type ProcessingFallbackStrategy =
+  | "async-processing"
+  | "sync-processing"
+  | "batch-processing"
+  | "minimal-processing";
 
-export type IOFallbackStrategy = 
-  | 'buffered-io'
-  | 'direct-io'
-  | 'minimal-io'
-  | 'polling-io';
+export type IOFallbackStrategy =
+  | "buffered-io"
+  | "direct-io"
+  | "minimal-io"
+  | "polling-io";
 
 /**
  * Comprehensive fallback management system
@@ -142,7 +146,11 @@ export class FallbackManager {
   private platformDetector: PlatformDetector;
   private capabilities: PlatformCapabilities | null = null;
   private activeFallbacks: Map<string, FallbackStrategy> = new Map();
-  private fallbackHistory: Array<{ strategy: string; timestamp: number; success: boolean }> = [];
+  private fallbackHistory: Array<{
+    strategy: string;
+    timestamp: number;
+    success: boolean;
+  }> = [];
 
   private constructor() {
     this.platformDetector = PlatformDetector.getInstance();
@@ -183,26 +191,26 @@ export class FallbackManager {
 
     // Start with ideal configuration
     let config: MouseProtocolConfig = {
-      mode: 'sgr',
+      mode: "sgr",
       enableTracking: true,
       enableButtons: true,
       enableMotion: true,
-      enableFocus: true
+      enableFocus: true,
     };
 
     const mouseCapabilities = this.capabilities!.mouse;
 
     // Apply fallbacks based on platform limitations
-    if (mouseCapabilities.supportLevel === 'none') {
-      return await this.applyMouseFallback('no-mouse', config, warnings);
+    if (mouseCapabilities.supportLevel === "none") {
+      return await this.applyMouseFallback("no-mouse", config, warnings);
     }
 
-    if (mouseCapabilities.supportLevel === 'minimal') {
+    if (mouseCapabilities.supportLevel === "minimal") {
       fallbackLevel = 1;
       config = await this.applyMinimalMouseFallback(config, warnings);
     }
 
-    if (mouseCapabilities.supportLevel === 'partial') {
+    if (mouseCapabilities.supportLevel === "partial") {
       fallbackLevel = 2;
       config = await this.applyPartialMouseFallback(config, warnings);
     }
@@ -219,12 +227,15 @@ export class FallbackManager {
     }
 
     if (this.capabilities!.environment.isCI) {
-      return await this.applyMouseFallback('keyboard-only', config, warnings);
+      return await this.applyMouseFallback("keyboard-only", config, warnings);
     }
 
     // Protocol-specific fallbacks
     if (!mouseCapabilities.supportedProtocols.includes(config.mode)) {
-      const { newConfig, level } = await this.applyProtocolFallback(config, mouseCapabilities);
+      const { newConfig, level } = await this.applyProtocolFallback(
+        config,
+        mouseCapabilities,
+      );
       config = newConfig;
       fallbackLevel = Math.max(fallbackLevel, level);
     }
@@ -255,33 +266,34 @@ export class FallbackManager {
     let dimensions = terminal.dimensions;
 
     // Color fallbacks
-    if (colorDepth > 8 && this.capabilities!.performance.tier === 'low') {
+    if (colorDepth > 8 && this.capabilities!.performance.tier === "low") {
       colorDepth = 8;
       fallbackLevel = 1;
-      warnings.push('Reduced color depth for performance');
+      warnings.push("Reduced color depth for performance");
     }
 
     if (this.capabilities!.environment.isCI && colorDepth > 4) {
       colorDepth = 1;
       fallbackLevel = 2;
-      warnings.push('Disabled colors for CI environment');
+      warnings.push("Disabled colors for CI environment");
     }
 
     // Unicode fallbacks
-    if (useUnicode && (
-      this.capabilities!.environment.isContainer ||
-      this.capabilities!.platform === 'windows'
-    )) {
+    if (
+      useUnicode &&
+      (this.capabilities!.environment.isContainer ||
+        this.capabilities!.platform === "windows")
+    ) {
       useUnicode = false;
       fallbackLevel = Math.max(fallbackLevel, 1);
-      warnings.push('Disabled Unicode for compatibility');
+      warnings.push("Disabled Unicode for compatibility");
     }
 
     // Dimension fallbacks
     if (dimensions.width < 40 || dimensions.height < 10) {
       dimensions = { width: 80, height: 24 };
       fallbackLevel = Math.max(fallbackLevel, 1);
-      warnings.push('Applied standard terminal dimensions');
+      warnings.push("Applied standard terminal dimensions");
     }
 
     return {
@@ -289,7 +301,7 @@ export class FallbackManager {
       useUnicode,
       dimensions,
       fallbackLevel,
-      warnings
+      warnings,
     };
   }
 
@@ -309,34 +321,34 @@ export class FallbackManager {
 
     const performance = this.capabilities!.performance;
     let fallbackLevel = 0;
-    
+
     // Memory fallbacks
-    let caching: MemoryFallbackStrategy = 'full-caching';
+    let caching: MemoryFallbackStrategy = "full-caching";
     if (performance.memoryMB < 1024) {
-      caching = 'minimal-caching';
+      caching = "minimal-caching";
       fallbackLevel = 2;
     } else if (performance.memoryMB < 4096) {
-      caching = 'limited-caching';
+      caching = "limited-caching";
       fallbackLevel = 1;
     }
 
     // Processing fallbacks
-    let processing: ProcessingFallbackStrategy = 'async-processing';
-    if (performance.tier === 'low') {
-      processing = 'minimal-processing';
+    let processing: ProcessingFallbackStrategy = "async-processing";
+    if (performance.tier === "low") {
+      processing = "minimal-processing";
       fallbackLevel = Math.max(fallbackLevel, 2);
     } else if (this.capabilities!.environment.isContainer) {
-      processing = 'batch-processing';
+      processing = "batch-processing";
       fallbackLevel = Math.max(fallbackLevel, 1);
     }
 
     // I/O fallbacks
-    let io: IOFallbackStrategy = 'buffered-io';
+    let io: IOFallbackStrategy = "buffered-io";
     if (performance.io.throughputMBps < 50) {
-      io = 'minimal-io';
+      io = "minimal-io";
       fallbackLevel = Math.max(fallbackLevel, 2);
     } else if (this.capabilities!.environment.isWSL) {
-      io = 'direct-io';
+      io = "direct-io";
       fallbackLevel = Math.max(fallbackLevel, 1);
     }
 
@@ -351,7 +363,7 @@ export class FallbackManager {
       processing,
       io,
       maxConcurrency,
-      fallbackLevel
+      fallbackLevel,
     };
   }
 
@@ -367,16 +379,16 @@ export class FallbackManager {
     try {
       const strategy = await this.createFallbackStrategy(strategyName);
       const startTime = Date.now();
-      
+
       const success = await strategy.implement();
       const endTime = Date.now();
-      
+
       const performance = Math.max(0, 1 - (endTime - startTime) / 1000); // Normalize to 0-1
-      
+
       this.fallbackHistory.push({
         strategy: strategyName,
         timestamp: Date.now(),
-        success
+        success,
       });
 
       if (strategy.rollback) {
@@ -386,14 +398,14 @@ export class FallbackManager {
       return {
         success,
         performance,
-        compatibility: strategy.compatibility
+        compatibility: strategy.compatibility,
       };
     } catch (error) {
       return {
         success: false,
         performance: 0,
         compatibility: 0,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : "Unknown error",
       };
     }
   }
@@ -415,55 +427,73 @@ export class FallbackManager {
       mouse: [] as string[],
       terminal: [] as string[],
       performance: [] as string[],
-      general: [] as string[]
+      general: [] as string[],
     };
 
     const caps = this.capabilities!;
 
     // Mouse recommendations
-    if (caps.mouse.supportLevel === 'none') {
-      recommendations.mouse.push('Mouse support not available - use keyboard navigation');
-    } else if (caps.mouse.supportLevel === 'minimal') {
-      recommendations.mouse.push('Limited mouse support - basic clicks only');
+    if (caps.mouse.supportLevel === "none") {
+      recommendations.mouse.push(
+        "Mouse support not available - use keyboard navigation",
+      );
+    } else if (caps.mouse.supportLevel === "minimal") {
+      recommendations.mouse.push("Limited mouse support - basic clicks only");
     }
 
     if (caps.environment.isWSL) {
-      recommendations.mouse.push('WSL detected - use Windows Terminal for better mouse support');
+      recommendations.mouse.push(
+        "WSL detected - use Windows Terminal for better mouse support",
+      );
     }
 
     // Terminal recommendations
     if (caps.terminal.colorDepth < 8) {
-      recommendations.terminal.push('Limited color support - consider upgrading terminal');
+      recommendations.terminal.push(
+        "Limited color support - consider upgrading terminal",
+      );
     }
 
     if (!caps.terminal.supportsUnicode) {
-      recommendations.terminal.push('Unicode not supported - some symbols may not display');
+      recommendations.terminal.push(
+        "Unicode not supported - some symbols may not display",
+      );
     }
 
     if (caps.terminal.dimensions.width < 80) {
-      recommendations.terminal.push('Narrow terminal - some features may be limited');
+      recommendations.terminal.push(
+        "Narrow terminal - some features may be limited",
+      );
     }
 
     // Performance recommendations
-    if (caps.performance.tier === 'low') {
-      recommendations.performance.push('Low performance detected - reduced features enabled');
+    if (caps.performance.tier === "low") {
+      recommendations.performance.push(
+        "Low performance detected - reduced features enabled",
+      );
     }
 
     if (caps.performance.memoryMB < 2048) {
-      recommendations.performance.push('Limited memory - caching reduced');
+      recommendations.performance.push("Limited memory - caching reduced");
     }
 
     if (caps.environment.isContainer) {
-      recommendations.performance.push('Container environment - some features limited');
+      recommendations.performance.push(
+        "Container environment - some features limited",
+      );
     }
 
     // General recommendations
     if (caps.environment.isCI) {
-      recommendations.general.push('CI environment detected - interactive features disabled');
+      recommendations.general.push(
+        "CI environment detected - interactive features disabled",
+      );
     }
 
     if (caps.features.security.restricted) {
-      recommendations.general.push('Restricted environment - some operations may fail');
+      recommendations.general.push(
+        "Restricted environment - some operations may fail",
+      );
     }
 
     return recommendations;
@@ -474,31 +504,48 @@ export class FallbackManager {
    */
   private async setupDefaultFallbacks(): Promise<void> {
     // Register common fallback strategies
-    await this.registerFallbackStrategy('mouse-minimal', await this.createMinimalMouseStrategy());
-    await this.registerFallbackStrategy('mouse-keyboard-only', await this.createKeyboardOnlyStrategy());
-    await this.registerFallbackStrategy('terminal-basic', await this.createBasicTerminalStrategy());
-    await this.registerFallbackStrategy('performance-low', await this.createLowPerformanceStrategy());
+    await this.registerFallbackStrategy(
+      "mouse-minimal",
+      await this.createMinimalMouseStrategy(),
+    );
+    await this.registerFallbackStrategy(
+      "mouse-keyboard-only",
+      await this.createKeyboardOnlyStrategy(),
+    );
+    await this.registerFallbackStrategy(
+      "terminal-basic",
+      await this.createBasicTerminalStrategy(),
+    );
+    await this.registerFallbackStrategy(
+      "performance-low",
+      await this.createLowPerformanceStrategy(),
+    );
   }
 
   /**
    * Register fallback strategy
    */
-  private async registerFallbackStrategy(name: string, strategy: FallbackStrategy): Promise<void> {
+  private async registerFallbackStrategy(
+    name: string,
+    strategy: FallbackStrategy,
+  ): Promise<void> {
     this.activeFallbacks.set(name, strategy);
   }
 
   /**
    * Create fallback strategy by name
    */
-  private async createFallbackStrategy(name: string): Promise<FallbackStrategy> {
+  private async createFallbackStrategy(
+    name: string,
+  ): Promise<FallbackStrategy> {
     switch (name) {
-      case 'mouse-minimal':
+      case "mouse-minimal":
         return await this.createMinimalMouseStrategy();
-      case 'mouse-keyboard-only':
+      case "mouse-keyboard-only":
         return await this.createKeyboardOnlyStrategy();
-      case 'terminal-basic':
+      case "terminal-basic":
         return await this.createBasicTerminalStrategy();
-      case 'performance-low':
+      case "performance-low":
         return await this.createLowPerformanceStrategy();
       default:
         throw new Error(`Unknown fallback strategy: ${name}`);
@@ -511,54 +558,58 @@ export class FallbackManager {
   private async applyMouseFallback(
     strategy: MouseFallbackStrategy,
     config: MouseProtocolConfig,
-    warnings: string[]
-  ): Promise<{ config: MouseProtocolConfig; fallbackLevel: number; warnings: string[] }> {
+    warnings: string[],
+  ): Promise<{
+    config: MouseProtocolConfig;
+    fallbackLevel: number;
+    warnings: string[];
+  }> {
     let fallbackLevel = 3;
 
     switch (strategy) {
-      case 'no-mouse':
+      case "no-mouse":
         config = {
-          mode: 'urxvt',
+          mode: "urxvt",
           enableTracking: false,
           enableButtons: false,
           enableMotion: false,
-          enableFocus: false
+          enableFocus: false,
         };
-        warnings.push('Mouse support disabled - no platform support');
+        warnings.push("Mouse support disabled - no platform support");
         fallbackLevel = 4;
         break;
 
-      case 'keyboard-only':
+      case "keyboard-only":
         config = {
-          mode: 'urxvt',
+          mode: "urxvt",
           enableTracking: false,
           enableButtons: false,
           enableMotion: false,
-          enableFocus: false
+          enableFocus: false,
         };
-        warnings.push('Mouse support disabled - keyboard navigation only');
+        warnings.push("Mouse support disabled - keyboard navigation only");
         fallbackLevel = 4;
         break;
 
-      case 'polling-mode':
+      case "polling-mode":
         config.enableMotion = false;
         config.enableFocus = false;
-        warnings.push('Mouse motion tracking disabled');
+        warnings.push("Mouse motion tracking disabled");
         fallbackLevel = 2;
         break;
 
-      case 'feature-disable':
+      case "feature-disable":
         config.enableMotion = false;
         config.enableFocus = false;
-        warnings.push('Advanced mouse features disabled');
+        warnings.push("Advanced mouse features disabled");
         fallbackLevel = 2;
         break;
 
-      case 'protocol-downgrade':
-        if (config.mode === 'sgr') {
-          config.mode = 'utf8';
-        } else if (config.mode === 'utf8') {
-          config.mode = 'urxvt';
+      case "protocol-downgrade":
+        if (config.mode === "sgr") {
+          config.mode = "utf8";
+        } else if (config.mode === "utf8") {
+          config.mode = "urxvt";
         }
         warnings.push(`Mouse protocol downgraded to ${config.mode}`);
         fallbackLevel = 1;
@@ -573,12 +624,12 @@ export class FallbackManager {
    */
   private async applyMinimalMouseFallback(
     config: MouseProtocolConfig,
-    warnings: string[]
+    warnings: string[],
   ): Promise<MouseProtocolConfig> {
-    config.mode = 'urxvt';
+    config.mode = "urxvt";
     config.enableMotion = false;
     config.enableFocus = false;
-    warnings.push('Minimal mouse mode - basic clicks only');
+    warnings.push("Minimal mouse mode - basic clicks only");
     return config;
   }
 
@@ -587,13 +638,16 @@ export class FallbackManager {
    */
   private async applyPartialMouseFallback(
     config: MouseProtocolConfig,
-    warnings: string[]
+    warnings: string[],
   ): Promise<MouseProtocolConfig> {
-    if (config.mode === 'sgr' && !this.capabilities!.mouse.supportedProtocols.includes('sgr')) {
-      config.mode = 'utf8';
+    if (
+      config.mode === "sgr" &&
+      !this.capabilities!.mouse.supportedProtocols.includes("sgr")
+    ) {
+      config.mode = "utf8";
     }
     config.enableMotion = false;
-    warnings.push('Partial mouse mode - limited features');
+    warnings.push("Partial mouse mode - limited features");
     return config;
   }
 
@@ -602,11 +656,11 @@ export class FallbackManager {
    */
   private async applyWSLMouseFallback(
     config: MouseProtocolConfig,
-    warnings: string[]
+    warnings: string[],
   ): Promise<MouseProtocolConfig> {
     config.enableMotion = false;
     config.enableFocus = false;
-    warnings.push('WSL mouse adjustments applied');
+    warnings.push("WSL mouse adjustments applied");
     return config;
   }
 
@@ -615,10 +669,10 @@ export class FallbackManager {
    */
   private async applyContainerMouseFallback(
     config: MouseProtocolConfig,
-    warnings: string[]
+    warnings: string[],
   ): Promise<MouseProtocolConfig> {
     config.enableMotion = false;
-    warnings.push('Container mouse adjustments applied');
+    warnings.push("Container mouse adjustments applied");
     return config;
   }
 
@@ -627,22 +681,22 @@ export class FallbackManager {
    */
   private async applyProtocolFallback(
     config: MouseProtocolConfig,
-    capabilities: PlatformMouseCapabilities
+    capabilities: PlatformMouseCapabilities,
   ): Promise<{ newConfig: MouseProtocolConfig; level: number }> {
     const supportedProtocols = capabilities.supportedProtocols;
-    
-    if (supportedProtocols.includes('sgr')) {
-      config.mode = 'sgr';
+
+    if (supportedProtocols.includes("sgr")) {
+      config.mode = "sgr";
       return { newConfig: config, level: 0 };
     }
-    
-    if (supportedProtocols.includes('utf8')) {
-      config.mode = 'utf8';
+
+    if (supportedProtocols.includes("utf8")) {
+      config.mode = "utf8";
       config.enableMotion = false; // UTF-8 has limitations
       return { newConfig: config, level: 1 };
     }
-    
-    config.mode = 'urxvt';
+
+    config.mode = "urxvt";
     config.enableMotion = false;
     config.enableFocus = false;
     return { newConfig: config, level: 2 };
@@ -653,54 +707,54 @@ export class FallbackManager {
    */
   private async createMinimalMouseStrategy(): Promise<FallbackStrategy> {
     return {
-      name: 'mouse-minimal',
-      description: 'Minimal mouse support with basic click events only',
+      name: "mouse-minimal",
+      description: "Minimal mouse support with basic click events only",
       compatibility: 0.8,
       performanceImpact: 0.1,
       featureCompleteness: 0.3,
       implement: async () => {
         // Test basic mouse functionality
         return process.stdout.isTTY;
-      }
+      },
     };
   }
 
   private async createKeyboardOnlyStrategy(): Promise<FallbackStrategy> {
     return {
-      name: 'mouse-keyboard-only',
-      description: 'Disable mouse completely, keyboard navigation only',
+      name: "mouse-keyboard-only",
+      description: "Disable mouse completely, keyboard navigation only",
       compatibility: 1.0,
       performanceImpact: 0.0,
       featureCompleteness: 0.0,
       implement: async () => {
         return true; // Always works
-      }
+      },
     };
   }
 
   private async createBasicTerminalStrategy(): Promise<FallbackStrategy> {
     return {
-      name: 'terminal-basic',
-      description: 'Basic terminal with minimal colors and ASCII only',
+      name: "terminal-basic",
+      description: "Basic terminal with minimal colors and ASCII only",
       compatibility: 1.0,
       performanceImpact: 0.0,
       featureCompleteness: 0.5,
       implement: async () => {
         return true; // Always works
-      }
+      },
     };
   }
 
   private async createLowPerformanceStrategy(): Promise<FallbackStrategy> {
     return {
-      name: 'performance-low',
-      description: 'Low performance mode with minimal caching and processing',
+      name: "performance-low",
+      description: "Low performance mode with minimal caching and processing",
       compatibility: 1.0,
       performanceImpact: 0.0,
       featureCompleteness: 0.6,
       implement: async () => {
         return true; // Always works
-      }
+      },
     };
   }
 }

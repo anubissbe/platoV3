@@ -11,8 +11,8 @@ import {
   TerminalCoordinates,
   MouseModifiers,
   MouseProtocolError,
-  MouseEventTarget
-} from './mouse-types.js';
+  MouseEventTarget,
+} from "./mouse-types.js";
 
 /**
  * Button code mapping for different protocols
@@ -22,7 +22,7 @@ const BUTTON_CODES = {
   MIDDLE: 1,
   RIGHT: 2,
   SCROLL_UP: 64,
-  SCROLL_DOWN: 65
+  SCROLL_DOWN: 65,
 } as const;
 
 /**
@@ -33,7 +33,7 @@ const MODIFIER_FLAGS = {
   ALT: 8,
   CTRL: 16,
   MOTION: 32,
-  WHEEL: 64
+  WHEEL: 64,
 } as const;
 
 export class MouseProtocolParser {
@@ -65,14 +65,16 @@ export class MouseProtocolParser {
       if (legacyEvent) return legacyEvent;
 
       if (this.debugMode) {
-        console.debug(`[MouseParser] Unknown sequence: ${this.escapeSequence(sequence)}`);
+        console.debug(
+          `[MouseParser] Unknown sequence: ${this.escapeSequence(sequence)}`,
+        );
       }
 
       return null;
     } catch (error) {
       throw new MouseProtocolError(
-        `Failed to parse mouse sequence: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        sequence
+        `Failed to parse mouse sequence: ${error instanceof Error ? error.message : "Unknown error"}`,
+        sequence,
       );
     }
   }
@@ -92,7 +94,10 @@ export class MouseProtocolParser {
     const y = parseInt(yStr, 10);
 
     if (isNaN(buttonCode) || isNaN(x) || isNaN(y)) {
-      throw new MouseProtocolError(`Invalid SGR coordinates: ${buttonStr}, ${xStr}, ${yStr}`, sequence);
+      throw new MouseProtocolError(
+        `Invalid SGR coordinates: ${buttonStr}, ${xStr}, ${yStr}`,
+        sequence,
+      );
     }
 
     const coordinates = this.mapCoordinates({ x, y });
@@ -106,7 +111,7 @@ export class MouseProtocolParser {
       button,
       modifiers,
       timestamp: Date.now(),
-      rawSequence: sequence
+      rawSequence: sequence,
     };
   }
 
@@ -120,7 +125,7 @@ export class MouseProtocolParser {
     if (!match) return null;
 
     const [, buttonChar, xChar, yChar] = match;
-    
+
     const buttonCode = buttonChar.charCodeAt(0) - 32;
     const x = xChar.charCodeAt(0) - 32;
     const y = yChar.charCodeAt(0) - 32;
@@ -128,7 +133,9 @@ export class MouseProtocolParser {
     // Validate decoded values
     if (buttonCode < 0 || x < 1 || y < 1 || x > 223 || y > 223) {
       if (this.debugMode) {
-        console.debug(`[MouseParser] Invalid UTF-8 values: button=${buttonCode}, x=${x}, y=${y}`);
+        console.debug(
+          `[MouseParser] Invalid UTF-8 values: button=${buttonCode}, x=${x}, y=${y}`,
+        );
       }
       return null;
     }
@@ -136,7 +143,7 @@ export class MouseProtocolParser {
     const coordinates = this.mapCoordinates({ x, y });
     const button = this.parseButton(buttonCode);
     const modifiers = this.parseModifiers(buttonCode);
-    const type = this.detectEventType(buttonCode, 'M', sequence);
+    const type = this.detectEventType(buttonCode, "M", sequence);
 
     return {
       type,
@@ -144,7 +151,7 @@ export class MouseProtocolParser {
       button,
       modifiers,
       timestamp: Date.now(),
-      rawSequence: sequence
+      rawSequence: sequence,
     };
   }
 
@@ -163,13 +170,16 @@ export class MouseProtocolParser {
     const y = parseInt(yStr, 10);
 
     if (isNaN(buttonCode) || isNaN(x) || isNaN(y)) {
-      throw new MouseProtocolError(`Invalid urxvt coordinates: ${buttonStr}, ${xStr}, ${yStr}`, sequence);
+      throw new MouseProtocolError(
+        `Invalid urxvt coordinates: ${buttonStr}, ${xStr}, ${yStr}`,
+        sequence,
+      );
     }
 
     const coordinates = this.mapCoordinates({ x, y });
     const button = this.parseButton(buttonCode);
     const modifiers = this.parseModifiers(buttonCode);
-    const type = this.detectEventType(buttonCode, 'M', sequence);
+    const type = this.detectEventType(buttonCode, "M", sequence);
 
     return {
       type,
@@ -177,7 +187,7 @@ export class MouseProtocolParser {
       button,
       modifiers,
       timestamp: Date.now(),
-      rawSequence: sequence
+      rawSequence: sequence,
     };
   }
 
@@ -196,7 +206,7 @@ export class MouseProtocolParser {
   mapCoordinates(terminalCoords: TerminalCoordinates): MouseCoordinates {
     return {
       x: Math.max(0, terminalCoords.x - 1),
-      y: Math.max(0, terminalCoords.y - 1)
+      y: Math.max(0, terminalCoords.y - 1),
     };
   }
 
@@ -206,20 +216,20 @@ export class MouseProtocolParser {
   private parseButton(buttonCode: number): MouseButton {
     // Handle scroll wheel events (button codes 64-67)
     if (buttonCode & MODIFIER_FLAGS.WHEEL) {
-      return (buttonCode & 1) ? 'scroll_down' : 'scroll_up';
+      return buttonCode & 1 ? "scroll_down" : "scroll_up";
     }
 
     // Handle regular buttons (masked to get base button)
     const baseButton = buttonCode & 3;
     switch (baseButton) {
       case BUTTON_CODES.LEFT:
-        return 'left';
+        return "left";
       case BUTTON_CODES.MIDDLE:
-        return 'middle';
+        return "middle";
       case BUTTON_CODES.RIGHT:
-        return 'right';
+        return "right";
       default:
-        return 'left';
+        return "left";
     }
   }
 
@@ -231,31 +241,35 @@ export class MouseProtocolParser {
       shift: !!(buttonCode & MODIFIER_FLAGS.SHIFT),
       alt: !!(buttonCode & MODIFIER_FLAGS.ALT),
       ctrl: !!(buttonCode & MODIFIER_FLAGS.CTRL),
-      meta: false // Meta key not supported in most terminal mouse protocols
+      meta: false, // Meta key not supported in most terminal mouse protocols
     };
   }
 
   /**
    * Detect event type from button code and action
    */
-  private detectEventType(buttonCode: number, action: string, sequence: string): MouseEventType {
+  private detectEventType(
+    buttonCode: number,
+    action: string,
+    sequence: string,
+  ): MouseEventType {
     // Scroll wheel events
     if (buttonCode & MODIFIER_FLAGS.WHEEL) {
-      return 'scroll';
+      return "scroll";
     }
 
     // Motion events (button 3 or motion flag)
-    if ((buttonCode & 3) === 3 || (buttonCode & MODIFIER_FLAGS.MOTION)) {
-      return 'move';
+    if ((buttonCode & 3) === 3 || buttonCode & MODIFIER_FLAGS.MOTION) {
+      return "move";
     }
 
     // SGR format: 'M' = press, 'm' = release
-    if (sequence.includes('<')) {
-      return action === 'M' ? 'click' : 'drag_end';
+    if (sequence.includes("<")) {
+      return action === "M" ? "click" : "drag_end";
     }
 
     // For other formats, we primarily detect clicks
-    return 'click';
+    return "click";
   }
 
   /**
@@ -263,11 +277,12 @@ export class MouseProtocolParser {
    */
   private escapeSequence(sequence: string): string {
     return sequence
-      .replace(/\x1b/g, '\\x1b')
-      .replace(/\r/g, '\\r')
-      .replace(/\n/g, '\\n')
-      .replace(/[\x00-\x1f\x7f-\x9f]/g, (char) => 
-        `\\x${char.charCodeAt(0).toString(16).padStart(2, '0')}`
+      .replace(/\x1b/g, "\\x1b")
+      .replace(/\r/g, "\\r")
+      .replace(/\n/g, "\\n")
+      .replace(
+        /[\x00-\x1f\x7f-\x9f]/g,
+        (char) => `\\x${char.charCodeAt(0).toString(16).padStart(2, "0")}`,
       );
   }
 
@@ -277,16 +292,16 @@ export class MouseProtocolParser {
   isMouseSequence(sequence: string): boolean {
     // SGR format
     if (sequence.match(/\x1b\[<\d+;\d+;\d+[Mm]/)) return true;
-    
+
     // UTF-8/Legacy format
     if (sequence.match(/\x1b\[M[\s\S]{3}/)) return true;
-    
+
     // urxvt format
     if (sequence.match(/\x1b\[\d+;\d+;\d+M/)) return true;
-    
+
     // Focus events
     if (sequence.match(/\x1b\[\?1004[hl]/)) return true;
-    
+
     return false;
   }
 
@@ -308,14 +323,14 @@ export class MouseProtocolParser {
 
       // Find the earliest match
       const candidates = [
-        { match: sgrMatch, type: 'sgr' },
-        { match: utf8Match, type: 'utf8' },
-        { match: urxvtMatch, type: 'urxvt' }
-      ].filter(c => c.match && c.match.index !== undefined);
+        { match: sgrMatch, type: "sgr" },
+        { match: utf8Match, type: "utf8" },
+        { match: urxvtMatch, type: "urxvt" },
+      ].filter((c) => c.match && c.match.index !== undefined);
 
       if (candidates.length > 0) {
-        const earliest = candidates.reduce((prev, curr) => 
-          (curr.match!.index! < prev.match!.index!) ? curr : prev
+        const earliest = candidates.reduce((prev, curr) =>
+          curr.match!.index! < prev.match!.index! ? curr : prev,
         );
         match = earliest.match!;
         matchLength = match[0].length;

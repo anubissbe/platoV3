@@ -1,0 +1,37 @@
+hello
+╭──────────────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│ Do you trust the files in this folder?                                       │
+│                                                                              │
+│ /opt/projects/platoV3/parity-S2ife9/work                                     │
+│                                                                              │
+│ Claude Code may read, write, or execute files contained in this directory.   │
+│ This can pose security risks, so only use files from trusted sources.        │
+│                                                                              │
+│ Learn more ( https://docs.anthropic.com/s/claude-code-security )             │
+│                                                                              │
+│ ❯ 1. Yes, proceed                                                            │
+│   2. No, exit                                                                │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+   Enter to confirm · Esc to exit
+╭───────────────────────────────────────────────────╮
+│ ✻ Welcome to Claude Code!                         │
+│                                                   │
+│   /help for help, /status for your current setup  │
+│                                                   │
+│   cwd: /opt/projects/platoV3/parity-S2ife9/work   │
+╰───────────────────────────────────────────────────╯
+
+ Tips for getting started:
+
+  Run /init to create a CLAUDE.md file with instructions for Claude
+  Use Claude to help with file analysis, editing, bash commands and git
+  Be as specific as you would with another engineer for the best results
+
+────────────────────────────────────────────────────────────────────────────────
+ > 
+────────────────────────────────────────────────────────────────────────────────
+  ? for shortcuts
+
+

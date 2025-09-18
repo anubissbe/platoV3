@@ -3,16 +3,19 @@
  * Advanced platform detection with comprehensive capability analysis
  */
 
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import { existsSync, readFileSync } from 'fs';
-import { PlatformMouseCapabilities, MouseCoordinates } from '../tui/mouse-types.js';
+import { exec } from "child_process";
+import { promisify } from "util";
+import { existsSync, readFileSync } from "fs";
+import {
+  PlatformMouseCapabilities,
+  MouseCoordinates,
+} from "../tui/mouse-types.js";
 
 const execAsync = promisify(exec);
 
 export interface PlatformCapabilities {
   /** Operating system platform */
-  platform: 'windows' | 'darwin' | 'linux' | 'unknown';
+  platform: "windows" | "darwin" | "linux" | "unknown";
   /** Platform version/release */
   platformVersion: string;
   /** CPU architecture */
@@ -36,9 +39,9 @@ export interface PlatformEnvironment {
   isContainer: boolean;
   isCI: boolean;
   isRemote: boolean;
-  containerType?: 'docker' | 'podman' | 'kubernetes' | 'unknown';
-  wslVersion?: '1' | '2';
-  remoteType?: 'ssh' | 'vscode' | 'unknown';
+  containerType?: "docker" | "podman" | "kubernetes" | "unknown";
+  wslVersion?: "1" | "2";
+  remoteType?: "ssh" | "vscode" | "unknown";
 }
 
 export interface TerminalCapabilities {
@@ -73,7 +76,7 @@ export interface PerformanceCapabilities {
   /** Available memory (MB) */
   memoryMB: number;
   /** Platform performance tier */
-  tier: 'high' | 'medium' | 'low';
+  tier: "high" | "medium" | "low";
   /** I/O performance characteristics */
   io: {
     /** Filesystem type */
@@ -158,7 +161,7 @@ export class PlatformDetector {
   async quickPlatformCheck(): Promise<{
     platform: string;
     canRunMouse: boolean;
-    performanceTier: 'high' | 'medium' | 'low';
+    performanceTier: "high" | "medium" | "low";
     hasRestrictions: boolean;
   }> {
     const platform = process.platform;
@@ -169,8 +172,8 @@ export class PlatformDetector {
     return {
       platform,
       canRunMouse: !isCI && process.stdout.isTTY,
-      performanceTier: isContainer || isWSL ? 'medium' : 'high',
-      hasRestrictions: isContainer || isCI || isWSL
+      performanceTier: isContainer || isWSL ? "medium" : "high",
+      hasRestrictions: isContainer || isCI || isWSL,
     };
   }
 
@@ -180,23 +183,29 @@ export class PlatformDetector {
   async getOptimizationRecommendations(): Promise<{
     concurrency: number;
     memoryLimit: number;
-    ioStrategy: 'sync' | 'async' | 'buffered';
-    cachingStrategy: 'aggressive' | 'moderate' | 'minimal';
+    ioStrategy: "sync" | "async" | "buffered";
+    cachingStrategy: "aggressive" | "moderate" | "minimal";
   }> {
     const capabilities = await this.detectCapabilities();
 
     return {
-      concurrency: Math.max(1, Math.floor(capabilities.performance.cpuCores * 0.75)),
+      concurrency: Math.max(
+        1,
+        Math.floor(capabilities.performance.cpuCores * 0.75),
+      ),
       memoryLimit: Math.floor(capabilities.performance.memoryMB * 0.8),
-      ioStrategy: capabilities.environment.isContainer ? 'buffered' : 'async',
-      cachingStrategy: capabilities.performance.tier === 'high' ? 'aggressive' : 'moderate'
+      ioStrategy: capabilities.environment.isContainer ? "buffered" : "async",
+      cachingStrategy:
+        capabilities.performance.tier === "high" ? "aggressive" : "moderate",
     };
   }
 
   /**
    * Check if specific feature is supported
    */
-  async supportsFeature(feature: keyof FeatureAvailability['systemFeatures']): Promise<boolean> {
+  async supportsFeature(
+    feature: keyof FeatureAvailability["systemFeatures"],
+  ): Promise<boolean> {
     const capabilities = await this.detectCapabilities();
     return capabilities.features.systemFeatures[feature];
   }
@@ -211,15 +220,16 @@ export class PlatformDetector {
     verboseLogging: boolean;
   }> {
     const capabilities = await this.detectCapabilities();
-    const isRestricted = capabilities.environment.isContainer || 
-                        capabilities.environment.isCI ||
-                        capabilities.features.security.restricted;
+    const isRestricted =
+      capabilities.environment.isContainer ||
+      capabilities.environment.isCI ||
+      capabilities.features.security.restricted;
 
     return {
       retryCount: isRestricted ? 2 : 3,
-      retryDelay: capabilities.performance.tier === 'low' ? 1000 : 500,
+      retryDelay: capabilities.performance.tier === "low" ? 1000 : 500,
       gracefulDegradation: isRestricted,
-      verboseLogging: capabilities.environment.isCI
+      verboseLogging: capabilities.environment.isCI,
     };
   }
 
@@ -235,7 +245,7 @@ export class PlatformDetector {
       terminal,
       mouse,
       performance,
-      features
+      features,
     ] = await Promise.all([
       this.detectPlatform(),
       this.detectPlatformVersion(),
@@ -244,7 +254,7 @@ export class PlatformDetector {
       this.detectTerminalCapabilities(),
       this.detectMouseCapabilities(),
       this.detectPerformanceCapabilities(),
-      this.detectFeatureAvailability()
+      this.detectFeatureAvailability(),
     ]);
 
     return {
@@ -256,23 +266,23 @@ export class PlatformDetector {
       terminal,
       mouse,
       performance,
-      features
+      features,
     };
   }
 
   /**
    * Detect operating system platform
    */
-  private async detectPlatform(): Promise<PlatformCapabilities['platform']> {
+  private async detectPlatform(): Promise<PlatformCapabilities["platform"]> {
     switch (process.platform) {
-      case 'win32':
-        return 'windows';
-      case 'darwin':
-        return 'darwin';
-      case 'linux':
-        return 'linux';
+      case "win32":
+        return "windows";
+      case "darwin":
+        return "darwin";
+      case "linux":
+        return "linux";
       default:
-        return 'unknown';
+        return "unknown";
     }
   }
 
@@ -281,10 +291,12 @@ export class PlatformDetector {
    */
   private async detectPlatformVersion(): Promise<string> {
     try {
-      const { stdout } = await execAsync('uname -r 2>/dev/null || ver 2>/dev/null || echo "unknown"');
+      const { stdout } = await execAsync(
+        'uname -r 2>/dev/null || ver 2>/dev/null || echo "unknown"',
+      );
       return stdout.trim();
     } catch {
-      return 'unknown';
+      return "unknown";
     }
   }
 
@@ -303,14 +315,14 @@ export class PlatformDetector {
       this.detectWSL(),
       this.detectContainer(),
       Promise.resolve(this.detectCI()),
-      this.detectRemote()
+      this.detectRemote(),
     ]);
 
     const environment: PlatformEnvironment = {
       isWSL,
       isContainer,
       isCI,
-      isRemote
+      isRemote,
     };
 
     // Detect specific container type
@@ -342,10 +354,12 @@ export class PlatformDetector {
       }
 
       // Check /proc/version for WSL signature
-      if (process.platform === 'linux' && existsSync('/proc/version')) {
-        const version = readFileSync('/proc/version', 'utf8');
-        return version.toLowerCase().includes('microsoft') || 
-               version.toLowerCase().includes('wsl');
+      if (process.platform === "linux" && existsSync("/proc/version")) {
+        const version = readFileSync("/proc/version", "utf8");
+        return (
+          version.toLowerCase().includes("microsoft") ||
+          version.toLowerCase().includes("wsl")
+        );
       }
 
       return false;
@@ -357,12 +371,14 @@ export class PlatformDetector {
   /**
    * Detect WSL version
    */
-  private async detectWSLVersion(): Promise<'1' | '2'> {
+  private async detectWSLVersion(): Promise<"1" | "2"> {
     try {
-      const { stdout } = await execAsync('wsl.exe --status 2>/dev/null || echo ""');
-      return stdout.includes('WSL 2') ? '2' : '1';
+      const { stdout } = await execAsync(
+        'wsl.exe --status 2>/dev/null || echo ""',
+      );
+      return stdout.includes("WSL 2") ? "2" : "1";
     } catch {
-      return '2'; // Default to WSL2 assumption
+      return "2"; // Default to WSL2 assumption
     }
   }
 
@@ -372,23 +388,27 @@ export class PlatformDetector {
   private async detectContainer(): Promise<boolean> {
     try {
       // Check for container-specific files
-      if (existsSync('/.dockerenv') || existsSync('/run/.containerenv')) {
+      if (existsSync("/.dockerenv") || existsSync("/run/.containerenv")) {
         return true;
       }
 
       // Check environment variables
-      if (process.env.KUBERNETES_SERVICE_HOST || 
-          process.env.container || 
-          process.env.DOCKER_CONTAINER) {
+      if (
+        process.env.KUBERNETES_SERVICE_HOST ||
+        process.env.container ||
+        process.env.DOCKER_CONTAINER
+      ) {
         return true;
       }
 
       // Check cgroup for container indicators
-      if (existsSync('/proc/1/cgroup')) {
-        const cgroup = readFileSync('/proc/1/cgroup', 'utf8');
-        return cgroup.includes('docker') || 
-               cgroup.includes('containerd') || 
-               cgroup.includes('kubepods');
+      if (existsSync("/proc/1/cgroup")) {
+        const cgroup = readFileSync("/proc/1/cgroup", "utf8");
+        return (
+          cgroup.includes("docker") ||
+          cgroup.includes("containerd") ||
+          cgroup.includes("kubepods")
+        );
       }
 
       return false;
@@ -400,14 +420,16 @@ export class PlatformDetector {
   /**
    * Detect container type
    */
-  private async detectContainerType(): Promise<PlatformEnvironment['containerType']> {
+  private async detectContainerType(): Promise<
+    PlatformEnvironment["containerType"]
+  > {
     try {
-      if (existsSync('/.dockerenv')) return 'docker';
-      if (existsSync('/run/.containerenv')) return 'podman';
-      if (process.env.KUBERNETES_SERVICE_HOST) return 'kubernetes';
-      return 'unknown';
+      if (existsSync("/.dockerenv")) return "docker";
+      if (existsSync("/run/.containerenv")) return "podman";
+      if (process.env.KUBERNETES_SERVICE_HOST) return "kubernetes";
+      return "unknown";
     } catch {
-      return 'unknown';
+      return "unknown";
     }
   }
 
@@ -440,23 +462,24 @@ export class PlatformDetector {
   /**
    * Detect remote type
    */
-  private async detectRemoteType(): Promise<PlatformEnvironment['remoteType']> {
-    if (process.env.VSCODE_REMOTE || process.env.REMOTE_CONTAINERS) return 'vscode';
-    if (process.env.SSH_CLIENT || process.env.SSH_TTY) return 'ssh';
-    return 'unknown';
+  private async detectRemoteType(): Promise<PlatformEnvironment["remoteType"]> {
+    if (process.env.VSCODE_REMOTE || process.env.REMOTE_CONTAINERS)
+      return "vscode";
+    if (process.env.SSH_CLIENT || process.env.SSH_TTY) return "ssh";
+    return "unknown";
   }
 
   /**
    * Detect terminal capabilities
    */
   private async detectTerminalCapabilities(): Promise<TerminalCapabilities> {
-    const name = process.env.TERM_PROGRAM || 'unknown';
-    const type = process.env.TERM || 'unknown';
+    const name = process.env.TERM_PROGRAM || "unknown";
+    const type = process.env.TERM || "unknown";
     const colorDepth = this.detectColorDepth();
     const supportsUnicode = this.detectUnicodeSupport();
     const dimensions = {
       width: process.stdout.columns || 80,
-      height: process.stdout.rows || 24
+      height: process.stdout.rows || 24,
     };
 
     const features = {
@@ -464,7 +487,7 @@ export class PlatformDetector {
       trueColor: this.detectTrueColorSupport(),
       hyperlinks: this.detectHyperlinkSupport(),
       images: this.detectImageSupport(),
-      sixel: this.detectSixelSupport()
+      sixel: this.detectSixelSupport(),
     };
 
     return {
@@ -473,7 +496,7 @@ export class PlatformDetector {
       colorDepth,
       supportsUnicode,
       dimensions,
-      features
+      features,
     };
   }
 
@@ -482,11 +505,11 @@ export class PlatformDetector {
    */
   private detectColorDepth(): number {
     const colorterm = process.env.COLORTERM;
-    const term = process.env.TERM || '';
+    const term = process.env.TERM || "";
 
-    if (colorterm === 'truecolor' || colorterm === '24bit') return 24;
-    if (term.includes('256color')) return 8;
-    if (term.includes('color')) return 4;
+    if (colorterm === "truecolor" || colorterm === "24bit") return 24;
+    if (term.includes("256color")) return 8;
+    if (term.includes("color")) return 4;
     return 1;
   }
 
@@ -494,9 +517,11 @@ export class PlatformDetector {
    * Detect Unicode support
    */
   private detectUnicodeSupport(): boolean {
-    const lang = process.env.LANG || process.env.LC_ALL || '';
-    return lang.toLowerCase().includes('utf') || 
-           lang.toLowerCase().includes('unicode');
+    const lang = process.env.LANG || process.env.LC_ALL || "";
+    return (
+      lang.toLowerCase().includes("utf") ||
+      lang.toLowerCase().includes("unicode")
+    );
   }
 
   /**
@@ -504,52 +529,55 @@ export class PlatformDetector {
    */
   private async detectMouseSupport(): Promise<boolean> {
     if (!process.stdout.isTTY) return false;
-    
-    const term = process.env.TERM || '';
-    const termProgram = process.env.TERM_PROGRAM || '';
+
+    const term = process.env.TERM || "";
+    const termProgram = process.env.TERM_PROGRAM || "";
 
     // Known terminals with mouse support
-    return term.includes('xterm') ||
-           term.includes('screen') ||
-           termProgram.includes('vscode') ||
-           termProgram.includes('iterm') ||
-           termProgram.includes('terminal');
+    return (
+      term.includes("xterm") ||
+      term.includes("screen") ||
+      termProgram.includes("vscode") ||
+      termProgram.includes("iterm") ||
+      termProgram.includes("terminal")
+    );
   }
 
   /**
    * Detect true color support
    */
   private detectTrueColorSupport(): boolean {
-    return process.env.COLORTERM === 'truecolor' ||
-           process.env.COLORTERM === '24bit';
+    return (
+      process.env.COLORTERM === "truecolor" || process.env.COLORTERM === "24bit"
+    );
   }
 
   /**
    * Detect hyperlink support
    */
   private detectHyperlinkSupport(): boolean {
-    const termProgram = process.env.TERM_PROGRAM || '';
-    return termProgram.includes('vscode') ||
-           termProgram.includes('iterm2') ||
-           termProgram.includes('terminal');
+    const termProgram = process.env.TERM_PROGRAM || "";
+    return (
+      termProgram.includes("vscode") ||
+      termProgram.includes("iterm2") ||
+      termProgram.includes("terminal")
+    );
   }
 
   /**
    * Detect image support
    */
   private detectImageSupport(): boolean {
-    const termProgram = process.env.TERM_PROGRAM || '';
-    return termProgram.includes('iterm2') ||
-           termProgram.includes('kitty');
+    const termProgram = process.env.TERM_PROGRAM || "";
+    return termProgram.includes("iterm2") || termProgram.includes("kitty");
   }
 
   /**
    * Detect Sixel support
    */
   private detectSixelSupport(): boolean {
-    const term = process.env.TERM || '';
-    return term.includes('xterm') && 
-           !process.env.TERM_PROGRAM; // Native xterm
+    const term = process.env.TERM || "";
+    return term.includes("xterm") && !process.env.TERM_PROGRAM; // Native xterm
   }
 
   /**
@@ -557,7 +585,7 @@ export class PlatformDetector {
    */
   private async detectMouseCapabilities(): Promise<PlatformMouseCapabilities> {
     // Import here to avoid circular dependencies
-    const { MousePlatformDetector } = await import('../tui/mouse-platform.js');
+    const { MousePlatformDetector } = await import("../tui/mouse-platform.js");
     const mouseDetector = MousePlatformDetector.getInstance();
     return await mouseDetector.detectCapabilities();
   }
@@ -566,16 +594,16 @@ export class PlatformDetector {
    * Detect performance capabilities
    */
   private async detectPerformanceCapabilities(): Promise<PerformanceCapabilities> {
-    const cpuCores = require('os').cpus().length;
-    const memoryBytes = require('os').totalmem();
+    const cpuCores = require("os").cpus().length;
+    const memoryBytes = require("os").totalmem();
     const memoryMB = Math.floor(memoryBytes / (1024 * 1024));
 
     // Determine performance tier
-    let tier: PerformanceCapabilities['tier'] = 'medium';
+    let tier: PerformanceCapabilities["tier"] = "medium";
     if (cpuCores >= 8 && memoryMB >= 8192) {
-      tier = 'high';
+      tier = "high";
     } else if (cpuCores <= 2 || memoryMB <= 2048) {
-      tier = 'low';
+      tier = "low";
     }
 
     const io = await this.detectIOCapabilities();
@@ -584,41 +612,43 @@ export class PlatformDetector {
       cpuCores,
       memoryMB,
       tier,
-      io
+      io,
     };
   }
 
   /**
    * Detect I/O capabilities
    */
-  private async detectIOCapabilities(): Promise<PerformanceCapabilities['io']> {
+  private async detectIOCapabilities(): Promise<PerformanceCapabilities["io"]> {
     try {
       // Try to detect filesystem type
-      const { stdout } = await execAsync('df -T . 2>/dev/null | tail -1 | awk \'{print $2}\' || echo "unknown"');
+      const { stdout } = await execAsync(
+        "df -T . 2>/dev/null | tail -1 | awk '{print $2}' || echo \"unknown\"",
+      );
       const fsType = stdout.trim();
 
       // Estimate throughput based on filesystem type
       let throughputMBps = 100; // Default estimate
       switch (fsType) {
-        case 'ext4':
-        case 'xfs':
-        case 'btrfs':
+        case "ext4":
+        case "xfs":
+        case "btrfs":
           throughputMBps = 200;
           break;
-        case 'zfs':
+        case "zfs":
           throughputMBps = 150;
           break;
-        case 'tmpfs':
+        case "tmpfs":
           throughputMBps = 1000;
           break;
-        case 'nfs':
+        case "nfs":
           throughputMBps = 50;
           break;
       }
 
       return { fsType, throughputMBps };
     } catch {
-      return { fsType: 'unknown', throughputMBps: 100 };
+      return { fsType: "unknown", throughputMBps: 100 };
     }
   }
 
@@ -633,7 +663,7 @@ export class PlatformDetector {
     return {
       nativeBinaries,
       systemFeatures,
-      security
+      security,
     };
   }
 
@@ -641,7 +671,17 @@ export class PlatformDetector {
    * Detect available native binaries
    */
   private async detectNativeBinaries(): Promise<Record<string, boolean>> {
-    const binaries = ['git', 'curl', 'wget', 'grep', 'sed', 'awk', 'tar', 'zip', 'unzip'];
+    const binaries = [
+      "git",
+      "curl",
+      "wget",
+      "grep",
+      "sed",
+      "awk",
+      "tar",
+      "zip",
+      "unzip",
+    ];
     const results: Record<string, boolean> = {};
 
     await Promise.all(
@@ -652,7 +692,7 @@ export class PlatformDetector {
         } catch {
           results[binary] = false;
         }
-      })
+      }),
     );
 
     return results;
@@ -661,12 +701,14 @@ export class PlatformDetector {
   /**
    * Detect system features
    */
-  private async detectSystemFeatures(): Promise<FeatureAvailability['systemFeatures']> {
+  private async detectSystemFeatures(): Promise<
+    FeatureAvailability["systemFeatures"]
+  > {
     return {
       processSpawn: true, // Node.js always supports this
-      fileSystem: existsSync('/') || existsSync('C:\\'),
+      fileSystem: existsSync("/") || existsSync("C:\\"),
       network: !process.env.OFFLINE && !process.env.NO_NETWORK,
-      clipboard: await this.detectClipboardSupport()
+      clipboard: await this.detectClipboardSupport(),
     };
   }
 
@@ -676,13 +718,13 @@ export class PlatformDetector {
   private async detectClipboardSupport(): Promise<boolean> {
     try {
       const platform = process.platform;
-      if (platform === 'darwin') {
-        await execAsync('which pbcopy');
+      if (platform === "darwin") {
+        await execAsync("which pbcopy");
         return true;
-      } else if (platform === 'win32') {
+      } else if (platform === "win32") {
         return true; // Windows has built-in clipboard
       } else {
-        await execAsync('which xclip || which xsel');
+        await execAsync("which xclip || which xsel");
         return true;
       }
     } catch {
@@ -693,7 +735,9 @@ export class PlatformDetector {
   /**
    * Detect security constraints
    */
-  private async detectSecurityConstraints(): Promise<FeatureAvailability['security']> {
+  private async detectSecurityConstraints(): Promise<
+    FeatureAvailability["security"]
+  > {
     const selinux = await this.detectSELinux();
     const apparmor = await this.detectAppArmor();
     const restricted = await this.detectRestrictedEnvironment();
@@ -701,7 +745,7 @@ export class PlatformDetector {
     return {
       selinux,
       apparmor,
-      restricted
+      restricted,
     };
   }
 
@@ -710,8 +754,10 @@ export class PlatformDetector {
    */
   private async detectSELinux(): Promise<boolean> {
     try {
-      const { stdout } = await execAsync('getenforce 2>/dev/null || echo "Disabled"');
-      return !stdout.trim().toLowerCase().includes('disabled');
+      const { stdout } = await execAsync(
+        'getenforce 2>/dev/null || echo "Disabled"',
+      );
+      return !stdout.trim().toLowerCase().includes("disabled");
     } catch {
       return false;
     }
@@ -722,7 +768,7 @@ export class PlatformDetector {
    */
   private async detectAppArmor(): Promise<boolean> {
     try {
-      await execAsync('aa-status 2>/dev/null');
+      await execAsync("aa-status 2>/dev/null");
       return true;
     } catch {
       return false;
@@ -734,9 +780,11 @@ export class PlatformDetector {
    */
   private async detectRestrictedEnvironment(): Promise<boolean> {
     const environment = await this.detectEnvironment();
-    return environment.isContainer || 
-           environment.isCI || 
-           !process.stdout.isTTY ||
-           process.env.SANDBOXED === 'true';
+    return (
+      environment.isContainer ||
+      environment.isCI ||
+      !process.stdout.isTTY ||
+      process.env.SANDBOXED === "true"
+    );
   }
 }

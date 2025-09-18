@@ -3,13 +3,13 @@
  * Validates real-time metrics display including tokens, response time, and memory usage
  */
 
-import React from 'react';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { render } from 'ink-testing-library';
-import { StatusLine } from '../status-line.js';
-import { StatusMetrics } from '../status-manager.js';
+import React from "react";
+import { describe, it, expect, beforeEach, jest } from "@jest/globals";
+import { render } from "ink-testing-library";
+import { StatusLine } from "../status-line.js";
+import { StatusMetrics } from "../status-manager.js";
 
-describe('StatusLine Component', () => {
+describe("StatusLine Component", () => {
   const defaultMetrics: StatusMetrics = {
     inputTokens: 100,
     outputTokens: 50,
@@ -30,110 +30,118 @@ describe('StatusLine Component', () => {
     sessionCost: 0.045,
     todayCost: 0.123,
     costPerToken: 0.000006,
-    projectedCost: 0.050,
-    costThreshold: 1.00,
-    model: 'gpt-3.5-turbo',
-    provider: 'copilot'
+    projectedCost: 0.05,
+    costThreshold: 1.0,
+    model: "gpt-3.5-turbo",
+    provider: "copilot",
   };
 
-  describe('Rendering', () => {
-    it('should render basic status line with metrics', () => {
+  describe("Rendering", () => {
+    it("should render basic status line with metrics", () => {
       const { lastFrame } = render(<StatusLine metrics={defaultMetrics} />);
-      
-      expect(lastFrame()).toContain('100');  // input tokens
-      expect(lastFrame()).toContain('50');   // output tokens
-      expect(lastFrame()).toContain('150');  // total tokens
-      expect(lastFrame()).toContain('1.23s'); // response time
-      expect(lastFrame()).toContain('45.5MB'); // memory usage
+
+      expect(lastFrame()).toContain("100"); // input tokens
+      expect(lastFrame()).toContain("50"); // output tokens
+      expect(lastFrame()).toContain("150"); // total tokens
+      expect(lastFrame()).toContain("1.23s"); // response time
+      expect(lastFrame()).toContain("45.5MB"); // memory usage
     });
 
-    it('should display streaming progress when active', () => {
+    it("should display streaming progress when active", () => {
       const streamingMetrics = {
         ...defaultMetrics,
         streamProgress: 65,
-        charactersStreamed: 325
+        charactersStreamed: 325,
       };
-      
-      const { lastFrame } = render(<StatusLine metrics={streamingMetrics} state="streaming" />);
-      
-      expect(lastFrame()).toContain('65%');
-      expect(lastFrame()).toContain('325 chars');
-      expect(lastFrame()).toContain('Streaming');
+
+      const { lastFrame } = render(
+        <StatusLine metrics={streamingMetrics} state="streaming" />,
+      );
+
+      expect(lastFrame()).toContain("65%");
+      expect(lastFrame()).toContain("325 chars");
+      expect(lastFrame()).toContain("Streaming");
     });
 
-    it('should show active tool call indicator', () => {
+    it("should show active tool call indicator", () => {
       const toolMetrics = {
         ...defaultMetrics,
-        activeToolCall: 'fs_read'
+        activeToolCall: "fs_read",
       };
-      
-      const { lastFrame } = render(<StatusLine metrics={toolMetrics} state="processing" />);
-      
-      expect(lastFrame()).toContain('fs_read');
-      expect(lastFrame()).toContain('Processing');
+
+      const { lastFrame } = render(
+        <StatusLine metrics={toolMetrics} state="processing" />,
+      );
+
+      expect(lastFrame()).toContain("fs_read");
+      expect(lastFrame()).toContain("Processing");
     });
 
-    it('should display error state prominently', () => {
+    it("should display error state prominently", () => {
       const errorMetrics = {
         ...defaultMetrics,
-        lastError: 'Connection timeout'
+        lastError: "Connection timeout",
       };
-      
-      const { lastFrame } = render(<StatusLine metrics={errorMetrics} state="error" />);
-      
-      expect(lastFrame()).toContain('Error');
-      expect(lastFrame()).toContain('Connection timeout');
-    });
 
-    it('should handle compact mode for narrow terminals', () => {
       const { lastFrame } = render(
-        <StatusLine metrics={defaultMetrics} compact={true} />
+        <StatusLine metrics={errorMetrics} state="error" />,
       );
-      
-      // In compact mode, should show abbreviated labels
-      expect(lastFrame()).toContain('T:150'); // Total tokens abbreviated
-      expect(lastFrame()).toContain('M:45.5'); // Memory abbreviated
+
+      expect(lastFrame()).toContain("Error");
+      expect(lastFrame()).toContain("Connection timeout");
     });
 
-    it('should update dynamically when metrics change', () => {
-      const { lastFrame, rerender } = render(<StatusLine metrics={defaultMetrics} />);
-      
+    it("should handle compact mode for narrow terminals", () => {
+      const { lastFrame } = render(
+        <StatusLine metrics={defaultMetrics} compact={true} />,
+      );
+
+      // In compact mode, should show abbreviated labels
+      expect(lastFrame()).toContain("T:150"); // Total tokens abbreviated
+      expect(lastFrame()).toContain("M:45.5"); // Memory abbreviated
+    });
+
+    it("should update dynamically when metrics change", () => {
+      const { lastFrame, rerender } = render(
+        <StatusLine metrics={defaultMetrics} />,
+      );
+
       const initial = lastFrame();
-      expect(initial).toContain('100');
-      
+      expect(initial).toContain("100");
+
       const updatedMetrics = {
         ...defaultMetrics,
         inputTokens: 200,
-        totalTokens: 250
+        totalTokens: 250,
       };
-      
+
       rerender(<StatusLine metrics={updatedMetrics} />);
       const updated = lastFrame();
-      
-      expect(updated).toContain('200');
-      expect(updated).toContain('250');
+
+      expect(updated).toContain("200");
+      expect(updated).toContain("250");
     });
   });
 
-  describe('Formatting', () => {
-    it('should format large token counts with K suffix', () => {
+  describe("Formatting", () => {
+    it("should format large token counts with K suffix", () => {
       const largeMetrics = {
         ...defaultMetrics,
-        totalTokens: 15000
+        totalTokens: 15000,
       };
-      
+
       const { lastFrame } = render(<StatusLine metrics={largeMetrics} />);
-      expect(lastFrame()).toContain('15K');
+      expect(lastFrame()).toContain("15K");
     });
 
-    it('should format response time appropriately', () => {
+    it("should format response time appropriately", () => {
       const testCases = [
-        { time: 500, expected: '0.50s' },
-        { time: 1234, expected: '1.23s' },
-        { time: 10500, expected: '10.5s' },
-        { time: 60000, expected: '1:00' }
+        { time: 500, expected: "0.50s" },
+        { time: 1234, expected: "1.23s" },
+        { time: 10500, expected: "10.5s" },
+        { time: 60000, expected: "1:00" },
       ];
-      
+
       testCases.forEach(({ time, expected }) => {
         const metrics = { ...defaultMetrics, responseTime: time };
         const { lastFrame } = render(<StatusLine metrics={metrics} />);
@@ -141,13 +149,13 @@ describe('StatusLine Component', () => {
       });
     });
 
-    it('should show memory percentage with color coding', () => {
+    it("should show memory percentage with color coding", () => {
       const testCases = [
-        { percentage: 25, color: 'green' },
-        { percentage: 60, color: 'yellow' },
-        { percentage: 85, color: 'red' }
+        { percentage: 25, color: "green" },
+        { percentage: 60, color: "yellow" },
+        { percentage: 85, color: "red" },
       ];
-      
+
       testCases.forEach(({ percentage }) => {
         const metrics = { ...defaultMetrics, memoryPercentage: percentage };
         const { lastFrame } = render(<StatusLine metrics={metrics} />);
@@ -156,689 +164,636 @@ describe('StatusLine Component', () => {
     });
   });
 
-  describe('Customization', () => {
-    it('should allow custom metric selection', () => {
+  describe("Customization", () => {
+    it("should allow custom metric selection", () => {
       const { lastFrame } = render(
-        <StatusLine 
+        <StatusLine
           metrics={defaultMetrics}
-          visibleMetrics={['inputTokens', 'responseTime']}
-        />
+          visibleMetrics={["inputTokens", "responseTime"]}
+        />,
       );
-      
-      expect(lastFrame()).toContain('100'); // input tokens
-      expect(lastFrame()).toContain('1.23s'); // response time
-      expect(lastFrame()).not.toContain('45.5MB'); // memory not included
+
+      expect(lastFrame()).toContain("100"); // input tokens
+      expect(lastFrame()).toContain("1.23s"); // response time
+      expect(lastFrame()).not.toContain("45.5MB"); // memory not included
     });
 
-    it('should support custom formatters', () => {
+    it("should support custom formatters", () => {
       const customFormatters = {
         responseTime: (ms: number) => `${(ms / 1000).toFixed(1)} seconds`,
-        memoryUsageMB: (mb: number) => `${mb.toFixed(0)} megabytes`
+        memoryUsageMB: (mb: number) => `${mb.toFixed(0)} megabytes`,
       };
-      
+
       const { lastFrame } = render(
-        <StatusLine 
-          metrics={defaultMetrics}
-          formatters={customFormatters}
-        />
+        <StatusLine metrics={defaultMetrics} formatters={customFormatters} />,
       );
-      
-      expect(lastFrame()).toContain('1.2 seconds');
-      expect(lastFrame()).toContain('46 megabytes');
+
+      expect(lastFrame()).toContain("1.2 seconds");
+      expect(lastFrame()).toContain("46 megabytes");
     });
 
-    it('should allow custom separator characters', () => {
+    it("should allow custom separator characters", () => {
       const { lastFrame } = render(
-        <StatusLine 
-          metrics={defaultMetrics}
-          separator=" • "
-        />
+        <StatusLine metrics={defaultMetrics} separator=" • " />,
       );
-      
-      expect(lastFrame()).toContain(' • ');
+
+      expect(lastFrame()).toContain(" • ");
     });
 
-    it('should support position configuration', () => {
+    it("should support position configuration", () => {
       const { lastFrame } = render(
-        <StatusLine 
-          metrics={defaultMetrics}
-          position="bottom"
-        />
+        <StatusLine metrics={defaultMetrics} position="bottom" />,
       );
-      
+
       // Position affects wrapping Box component
       expect(lastFrame()).toBeDefined();
     });
   });
 
-  describe('Animation', () => {
-    it('should show spinner during streaming', () => {
+  describe("Animation", () => {
+    it("should show spinner during streaming", () => {
       const { lastFrame } = render(
-        <StatusLine 
+        <StatusLine
           metrics={defaultMetrics}
           state="streaming"
           showSpinner={true}
-        />
+        />,
       );
-      
+
       // Spinner characters: ⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏
       expect(lastFrame()).toMatch(/[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏]/);
     });
 
-    it('should pulse metrics during updates', () => {
+    it("should pulse metrics during updates", () => {
       const { lastFrame } = render(
-        <StatusLine 
-          metrics={defaultMetrics}
-          pulseOnUpdate={true}
-        />
+        <StatusLine metrics={defaultMetrics} pulseOnUpdate={true} />,
       );
-      
+
       // Pulse effect is applied through styling
       expect(lastFrame()).toBeDefined();
     });
 
-    it('should show progress animation for tool calls', () => {
+    it("should show progress animation for tool calls", () => {
       const toolMetrics = {
         ...defaultMetrics,
-        activeToolCall: 'fs_write',
-        indeterminateProgress: true
+        activeToolCall: "fs_write",
+        indeterminateProgress: true,
       };
-      
+
       const { lastFrame } = render(
-        <StatusLine 
-          metrics={toolMetrics}
-          state="processing"
-        />
+        <StatusLine metrics={toolMetrics} state="processing" />,
       );
-      
-      expect(lastFrame()).toContain('fs_write');
+
+      expect(lastFrame()).toContain("fs_write");
       // Indeterminate progress shows animated dots or bar
     });
   });
 
-  describe('Accessibility', () => {
-    it('should include screen reader text', () => {
+  describe("Accessibility", () => {
+    it("should include screen reader text", () => {
       const { lastFrame } = render(
-        <StatusLine 
-          metrics={defaultMetrics}
-          includeAccessibilityText={true}
-        />
+        <StatusLine metrics={defaultMetrics} includeAccessibilityText={true} />,
       );
-      
+
       // Screen reader text is hidden visually but present in output
       expect(lastFrame()).toBeDefined();
     });
 
-    it('should provide metric descriptions on hover/focus', () => {
+    it("should provide metric descriptions on hover/focus", () => {
       const { lastFrame } = render(
-        <StatusLine 
-          metrics={defaultMetrics}
-          showDescriptions={true}
-        />
+        <StatusLine metrics={defaultMetrics} showDescriptions={true} />,
       );
-      
+
       // Descriptions would be in tooltips or expanded view
       expect(lastFrame()).toBeDefined();
     });
   });
 
-  describe('Integration', () => {
-    it('should respond to theme changes', () => {
+  describe("Integration", () => {
+    it("should respond to theme changes", () => {
       const { lastFrame, rerender } = render(
-        <StatusLine 
-          metrics={defaultMetrics}
-          theme="light"
-        />
+        <StatusLine metrics={defaultMetrics} theme="light" />,
       );
-      
+
       const lightTheme = lastFrame();
-      
-      rerender(
-        <StatusLine 
-          metrics={defaultMetrics}
-          theme="dark"
-        />
-      );
-      
+
+      rerender(<StatusLine metrics={defaultMetrics} theme="dark" />);
+
       const darkTheme = lastFrame();
-      
+
       // Different themes should produce different output
       expect(lightTheme).toBeDefined();
       expect(darkTheme).toBeDefined();
     });
 
-    it('should handle missing metrics gracefully', () => {
+    it("should handle missing metrics gracefully", () => {
       const partialMetrics = {
         inputTokens: 100,
-        outputTokens: 50
+        outputTokens: 50,
       } as StatusMetrics;
-      
+
       const { lastFrame } = render(<StatusLine metrics={partialMetrics} />);
-      
-      expect(lastFrame()).toContain('100');
-      expect(lastFrame()).toContain('50');
+
+      expect(lastFrame()).toContain("100");
+      expect(lastFrame()).toContain("50");
       // Should not crash with missing fields
     });
 
-    it('should work with status manager events', () => {
+    it("should work with status manager events", () => {
       const mockOnMetricClick = jest.fn();
-      
+
       const { lastFrame } = render(
-        <StatusLine 
+        <StatusLine
           metrics={defaultMetrics}
           onMetricClick={mockOnMetricClick}
-        />
+        />,
       );
-      
+
       // Click handling would be tested with interaction
       expect(lastFrame()).toBeDefined();
     });
   });
 
-  describe('Cost Analytics Display', () => {
-    describe('Cost Formatting', () => {
-      it('should display current cost with proper formatting', () => {
+  describe("Cost Analytics Display", () => {
+    describe("Cost Formatting", () => {
+      it("should display current cost with proper formatting", () => {
         const costMetrics = {
           ...defaultMetrics,
-          currentCost: 0.001234
+          currentCost: 0.001234,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
-            metrics={costMetrics}
-            visibleMetrics={['currentCost']}
-          />
+          <StatusLine metrics={costMetrics} visibleMetrics={["currentCost"]} />,
         );
-        
-        expect(lastFrame()).toContain('$0.0012');
+
+        expect(lastFrame()).toContain("$0.0012");
       });
 
-      it('should format session cost for larger amounts', () => {
+      it("should format session cost for larger amounts", () => {
         const costMetrics = {
           ...defaultMetrics,
-          sessionCost: 1.234567
+          sessionCost: 1.234567,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
-            metrics={costMetrics}
-            visibleMetrics={['sessionCost']}
-          />
+          <StatusLine metrics={costMetrics} visibleMetrics={["sessionCost"]} />,
         );
-        
-        expect(lastFrame()).toContain('$1.23');
+
+        expect(lastFrame()).toContain("$1.23");
       });
 
-      it('should handle very small costs with scientific notation fallback', () => {
+      it("should handle very small costs with scientific notation fallback", () => {
         const costMetrics = {
           ...defaultMetrics,
-          currentCost: 0.0000012
+          currentCost: 0.0000012,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
-            metrics={costMetrics}
-            visibleMetrics={['currentCost']}
-          />
+          <StatusLine metrics={costMetrics} visibleMetrics={["currentCost"]} />,
         );
-        
-        expect(lastFrame()).toContain('$0.000001');
+
+        expect(lastFrame()).toContain("$0.000001");
       });
 
-      it('should format today total cost appropriately', () => {
+      it("should format today total cost appropriately", () => {
         const costMetrics = {
           ...defaultMetrics,
-          todayCost: 15.789
+          todayCost: 15.789,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
-            metrics={costMetrics}
-            visibleMetrics={['todayCost']}
-          />
+          <StatusLine metrics={costMetrics} visibleMetrics={["todayCost"]} />,
         );
-        
-        expect(lastFrame()).toContain('$15.79');
+
+        expect(lastFrame()).toContain("$15.79");
       });
     });
 
-    describe('Cost Color Coding', () => {
-      it('should use green for low costs (under 25% of threshold)', () => {
+    describe("Cost Color Coding", () => {
+      it("should use green for low costs (under 25% of threshold)", () => {
         const costMetrics = {
           ...defaultMetrics,
-          currentCost: 0.20,
-          costThreshold: 1.00
+          currentCost: 0.2,
+          costThreshold: 1.0,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
-            metrics={costMetrics}
-            visibleMetrics={['currentCost']}
-          />
+          <StatusLine metrics={costMetrics} visibleMetrics={["currentCost"]} />,
         );
-        
+
         // Green for costs under 25% of threshold
-        expect(lastFrame()).toContain('$0.20');
+        expect(lastFrame()).toContain("$0.20");
       });
 
-      it('should use yellow for medium costs (25-75% of threshold)', () => {
+      it("should use yellow for medium costs (25-75% of threshold)", () => {
         const costMetrics = {
           ...defaultMetrics,
-          sessionCost: 0.50,
-          costThreshold: 1.00
+          sessionCost: 0.5,
+          costThreshold: 1.0,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
-            metrics={costMetrics}
-            visibleMetrics={['sessionCost']}
-          />
+          <StatusLine metrics={costMetrics} visibleMetrics={["sessionCost"]} />,
         );
-        
+
         // Yellow for costs 25-75% of threshold
-        expect(lastFrame()).toContain('$0.50');
+        expect(lastFrame()).toContain("$0.50");
       });
 
-      it('should use red for high costs (over 75% of threshold)', () => {
+      it("should use red for high costs (over 75% of threshold)", () => {
         const costMetrics = {
           ...defaultMetrics,
-          sessionCost: 0.80,
-          costThreshold: 1.00
+          sessionCost: 0.8,
+          costThreshold: 1.0,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
-            metrics={costMetrics}
-            visibleMetrics={['sessionCost']}
-          />
+          <StatusLine metrics={costMetrics} visibleMetrics={["sessionCost"]} />,
         );
-        
+
         // Red for costs over 75% of threshold
-        expect(lastFrame()).toContain('$0.80');
+        expect(lastFrame()).toContain("$0.80");
       });
 
-      it('should use bright red for costs exceeding threshold', () => {
+      it("should use bright red for costs exceeding threshold", () => {
         const costMetrics = {
           ...defaultMetrics,
           todayCost: 1.25,
-          costThreshold: 1.00
+          costThreshold: 1.0,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
-            metrics={costMetrics}
-            visibleMetrics={['todayCost']}
-          />
+          <StatusLine metrics={costMetrics} visibleMetrics={["todayCost"]} />,
         );
-        
+
         // Bright red for costs exceeding threshold
-        expect(lastFrame()).toContain('$1.25');
+        expect(lastFrame()).toContain("$1.25");
       });
     });
 
-    describe('Cost Labels and Compact Mode', () => {
-      it('should show full labels in normal mode', () => {
+    describe("Cost Labels and Compact Mode", () => {
+      it("should show full labels in normal mode", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['currentCost', 'sessionCost', 'todayCost']}
+            visibleMetrics={["currentCost", "sessionCost", "todayCost"]}
             compact={false}
-          />
+          />,
         );
-        
-        expect(lastFrame()).toContain('Cost:');
-        expect(lastFrame()).toContain('Session:');
-        expect(lastFrame()).toContain('Today:');
+
+        expect(lastFrame()).toContain("Cost:");
+        expect(lastFrame()).toContain("Session:");
+        expect(lastFrame()).toContain("Today:");
       });
 
-      it('should show abbreviated labels in compact mode', () => {
+      it("should show abbreviated labels in compact mode", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['currentCost', 'sessionCost', 'todayCost']}
+            visibleMetrics={["currentCost", "sessionCost", "todayCost"]}
             compact={true}
-          />
+          />,
         );
-        
-        expect(lastFrame()).toContain('C:');
-        expect(lastFrame()).toContain('S:');
-        expect(lastFrame()).toContain('T:');
+
+        expect(lastFrame()).toContain("C:");
+        expect(lastFrame()).toContain("S:");
+        expect(lastFrame()).toContain("T:");
       });
 
-      it('should show cost symbols in ultra-compact mode', () => {
+      it("should show cost symbols in ultra-compact mode", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['currentCost', 'sessionCost']}
+            visibleMetrics={["currentCost", "sessionCost"]}
             compact={true}
             separator=" "
-          />
+          />,
         );
-        
+
         // Ultra-compact should use $ symbol with minimal spacing
         expect(lastFrame()).toMatch(/\$[\d.]+/);
       });
     });
 
-    describe('Cost Visibility Controls', () => {
-      it('should hide cost metrics when not in visibleMetrics', () => {
+    describe("Cost Visibility Controls", () => {
+      it("should hide cost metrics when not in visibleMetrics", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['inputTokens', 'outputTokens']}
-          />
+            visibleMetrics={["inputTokens", "outputTokens"]}
+          />,
         );
-        
-        expect(lastFrame()).not.toContain('$');
-        expect(lastFrame()).not.toContain('Cost:');
+
+        expect(lastFrame()).not.toContain("$");
+        expect(lastFrame()).not.toContain("Cost:");
       });
 
-      it('should show only specified cost metrics', () => {
+      it("should show only specified cost metrics", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['sessionCost']}
-          />
+            visibleMetrics={["sessionCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.045'); // sessionCost
-        expect(lastFrame()).not.toContain('$0.001'); // currentCost should be hidden
-        expect(lastFrame()).not.toContain('$0.123'); // todayCost should be hidden
+
+        expect(lastFrame()).toContain("$0.045"); // sessionCost
+        expect(lastFrame()).not.toContain("$0.001"); // currentCost should be hidden
+        expect(lastFrame()).not.toContain("$0.123"); // todayCost should be hidden
       });
 
-      it('should allow cost metrics to be toggled dynamically', () => {
+      it("should allow cost metrics to be toggled dynamically", () => {
         const { lastFrame, rerender } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['totalTokens']}
-          />
+            visibleMetrics={["totalTokens"]}
+          />,
         );
-        
-        expect(lastFrame()).not.toContain('$');
-        
+
+        expect(lastFrame()).not.toContain("$");
+
         rerender(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['totalTokens', 'currentCost']}
-          />
+            visibleMetrics={["totalTokens", "currentCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.001');
+
+        expect(lastFrame()).toContain("$0.001");
       });
     });
 
-    describe('Provider and Model Display', () => {
-      it('should show provider and model information when available', () => {
+    describe("Provider and Model Display", () => {
+      it("should show provider and model information when available", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['model', 'provider', 'currentCost']}
+            visibleMetrics={["model", "provider", "currentCost"]}
             compact={false}
-          />
+          />,
         );
-        
-        expect(lastFrame()).toContain('gpt-3.5-turbo');
-        expect(lastFrame()).toContain('copilot');
+
+        expect(lastFrame()).toContain("gpt-3.5-turbo");
+        expect(lastFrame()).toContain("copilot");
       });
 
-      it('should abbreviate provider/model in compact mode', () => {
+      it("should abbreviate provider/model in compact mode", () => {
         const longMetrics = {
           ...defaultMetrics,
-          model: 'gpt-4-32k-context-extended',
-          provider: 'azure-openai'
+          model: "gpt-4-32k-context-extended",
+          provider: "azure-openai",
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={longMetrics}
-            visibleMetrics={['model', 'provider']}
+            visibleMetrics={["model", "provider"]}
             compact={true}
-          />
+          />,
         );
-        
+
         // Should truncate long names in compact mode
         expect(lastFrame()).toMatch(/(gpt-4|azure)/);
       });
 
-      it('should handle missing provider/model gracefully', () => {
+      it("should handle missing provider/model gracefully", () => {
         const incompleteMetrics = {
           ...defaultMetrics,
           model: undefined,
-          provider: undefined
+          provider: undefined,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={incompleteMetrics}
-            visibleMetrics={['model', 'provider', 'currentCost']}
-          />
+            visibleMetrics={["model", "provider", "currentCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.001');
+
+        expect(lastFrame()).toContain("$0.001");
         // Should not crash with undefined model/provider
       });
     });
 
-    describe('Cost Projections and Warnings', () => {
-      it('should show projected cost when available', () => {
+    describe("Cost Projections and Warnings", () => {
+      it("should show projected cost when available", () => {
         const projectionMetrics = {
           ...defaultMetrics,
-          projectedCost: 0.075
+          projectedCost: 0.075,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={projectionMetrics}
-            visibleMetrics={['projectedCost']}
-          />
+            visibleMetrics={["projectedCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.075');
-        expect(lastFrame()).toContain('Proj:');
+
+        expect(lastFrame()).toContain("$0.075");
+        expect(lastFrame()).toContain("Proj:");
       });
 
-      it('should show warning icon for costs approaching threshold', () => {
+      it("should show warning icon for costs approaching threshold", () => {
         const warningMetrics = {
           ...defaultMetrics,
           sessionCost: 0.85,
-          costThreshold: 1.00
+          costThreshold: 1.0,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={warningMetrics}
-            visibleMetrics={['sessionCost', 'costThreshold']}
-          />
+            visibleMetrics={["sessionCost", "costThreshold"]}
+          />,
         );
-        
+
         // Should include warning indicator (⚠ or similar)
         expect(lastFrame()).toMatch(/[⚠️🚨]/);
       });
 
-      it('should show cost per token rate', () => {
+      it("should show cost per token rate", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['costPerToken']}
-          />
+            visibleMetrics={["costPerToken"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.000006');
-        expect(lastFrame()).toContain('/tok');
+
+        expect(lastFrame()).toContain("$0.000006");
+        expect(lastFrame()).toContain("/tok");
       });
     });
 
-    describe('Custom Cost Formatters', () => {
-      it('should support custom cost formatting', () => {
+    describe("Custom Cost Formatters", () => {
+      it("should support custom cost formatting", () => {
         const customFormatters = {
           currentCost: (cost: number) => `${(cost * 100).toFixed(2)}¢`,
-          sessionCost: (cost: number) => `$${cost.toFixed(3)}`
+          sessionCost: (cost: number) => `$${cost.toFixed(3)}`,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['currentCost', 'sessionCost']}
+            visibleMetrics={["currentCost", "sessionCost"]}
             formatters={customFormatters}
-          />
+          />,
         );
-        
-        expect(lastFrame()).toContain('0.10¢'); // currentCost as cents
-        expect(lastFrame()).toContain('$0.045'); // sessionCost with 3 decimals
+
+        expect(lastFrame()).toContain("0.10¢"); // currentCost as cents
+        expect(lastFrame()).toContain("$0.045"); // sessionCost with 3 decimals
       });
 
-      it('should handle zero costs appropriately', () => {
+      it("should handle zero costs appropriately", () => {
         const zeroMetrics = {
           ...defaultMetrics,
           currentCost: 0,
           sessionCost: 0,
-          todayCost: 0
+          todayCost: 0,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={zeroMetrics}
-            visibleMetrics={['currentCost', 'sessionCost', 'todayCost']}
-          />
+            visibleMetrics={["currentCost", "sessionCost", "todayCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.00');
+
+        expect(lastFrame()).toContain("$0.00");
       });
     });
 
-    describe('Real-time Cost Updates', () => {
-      it('should reflect cost changes immediately', () => {
+    describe("Real-time Cost Updates", () => {
+      it("should reflect cost changes immediately", () => {
         const { lastFrame, rerender } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['currentCost']}
-          />
+            visibleMetrics={["currentCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.001');
-        
+
+        expect(lastFrame()).toContain("$0.001");
+
         const updatedMetrics = {
           ...defaultMetrics,
-          currentCost: 0.0025
+          currentCost: 0.0025,
         };
-        
+
         rerender(
-          <StatusLine 
+          <StatusLine
             metrics={updatedMetrics}
-            visibleMetrics={['currentCost']}
-          />
+            visibleMetrics={["currentCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.0025');
+
+        expect(lastFrame()).toContain("$0.0025");
       });
 
-      it('should update session totals dynamically', () => {
+      it("should update session totals dynamically", () => {
         const { lastFrame, rerender } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['sessionCost']}
-          />
+            visibleMetrics={["sessionCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.045');
-        
+
+        expect(lastFrame()).toContain("$0.045");
+
         const increasedMetrics = {
           ...defaultMetrics,
-          sessionCost: 0.067
+          sessionCost: 0.067,
         };
-        
+
         rerender(
-          <StatusLine 
+          <StatusLine
             metrics={increasedMetrics}
-            visibleMetrics={['sessionCost']}
-          />
+            visibleMetrics={["sessionCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.067');
+
+        expect(lastFrame()).toContain("$0.067");
       });
 
-      it('should handle rapid cost updates without flickering', () => {
+      it("should handle rapid cost updates without flickering", () => {
         let currentCost = 0.001;
         const { lastFrame, rerender } = render(
-          <StatusLine 
+          <StatusLine
             metrics={{ ...defaultMetrics, currentCost }}
-            visibleMetrics={['currentCost']}
-          />
+            visibleMetrics={["currentCost"]}
+          />,
         );
-        
+
         // Simulate rapid updates
         for (let i = 0; i < 10; i++) {
           currentCost += 0.0001;
           rerender(
-            <StatusLine 
+            <StatusLine
               metrics={{ ...defaultMetrics, currentCost }}
-              visibleMetrics={['currentCost']}
-            />
+              visibleMetrics={["currentCost"]}
+            />,
           );
         }
-        
+
         // Should show final value
-        expect(lastFrame()).toContain('$0.002');
+        expect(lastFrame()).toContain("$0.002");
       });
     });
 
-    describe('Integration with Token Metrics', () => {
-      it('should show cost alongside token metrics', () => {
+    describe("Integration with Token Metrics", () => {
+      it("should show cost alongside token metrics", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['totalTokens', 'currentCost', 'costPerToken']}
+            visibleMetrics={["totalTokens", "currentCost", "costPerToken"]}
             compact={false}
-          />
+          />,
         );
-        
-        expect(lastFrame()).toContain('Total: 150'); // tokens
-        expect(lastFrame()).toContain('Cost: $0.001'); // current cost
-        expect(lastFrame()).toContain('$0.000006/tok'); // cost per token
+
+        expect(lastFrame()).toContain("Total: 150"); // tokens
+        expect(lastFrame()).toContain("Cost: $0.001"); // current cost
+        expect(lastFrame()).toContain("$0.000006/tok"); // cost per token
       });
 
-      it('should calculate cost efficiency metrics', () => {
+      it("should calculate cost efficiency metrics", () => {
         const efficientMetrics = {
           ...defaultMetrics,
           totalTokens: 1000,
-          currentCost: 0.002
+          currentCost: 0.002,
         };
-        
+
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={efficientMetrics}
-            visibleMetrics={['totalTokens', 'currentCost']}
-          />
+            visibleMetrics={["totalTokens", "currentCost"]}
+          />,
         );
-        
-        expect(lastFrame()).toContain('1K'); // 1000 tokens formatted
-        expect(lastFrame()).toContain('$0.002');
+
+        expect(lastFrame()).toContain("1K"); // 1000 tokens formatted
+        expect(lastFrame()).toContain("$0.002");
       });
     });
 
-    describe('Cost Display Themes', () => {
-      it('should adapt cost colors to light theme', () => {
+    describe("Cost Display Themes", () => {
+      it("should adapt cost colors to light theme", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['currentCost']}
+            visibleMetrics={["currentCost"]}
             theme="light"
-          />
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.001');
+
+        expect(lastFrame()).toContain("$0.001");
       });
 
-      it('should adapt cost colors to dark theme', () => {
+      it("should adapt cost colors to dark theme", () => {
         const { lastFrame } = render(
-          <StatusLine 
+          <StatusLine
             metrics={defaultMetrics}
-            visibleMetrics={['currentCost']}
+            visibleMetrics={["currentCost"]}
             theme="dark"
-          />
+          />,
         );
-        
-        expect(lastFrame()).toContain('$0.001');
+
+        expect(lastFrame()).toContain("$0.001");
       });
     });
   });

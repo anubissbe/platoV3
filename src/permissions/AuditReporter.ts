@@ -1,14 +1,14 @@
-import fs from 'fs/promises';
-import path from 'path';
-import { AuditLogger } from './AuditLogger';
-import { 
-  AuditEntry, 
-  AuditReport, 
-  AuditReportSummary, 
+import fs from "fs/promises";
+import path from "path";
+import { AuditLogger } from "./AuditLogger";
+import {
+  AuditEntry,
+  AuditReport,
+  AuditReportSummary,
   AuditAnomaly,
   AuditSearchCriteria,
-  PermissionAction 
-} from './types';
+  PermissionAction,
+} from "./types.js";
 
 /**
  * Comprehensive audit report generation system
@@ -24,7 +24,7 @@ export interface ReportOptions {
   };
   includeEntries?: boolean;
   maxEntries?: number;
-  format?: 'json' | 'html' | 'pdf' | 'csv';
+  format?: "json" | "html" | "pdf" | "csv";
   outputPath?: string;
   filters?: AuditSearchCriteria;
   anonymize?: boolean; // Remove sensitive data
@@ -66,22 +66,24 @@ export class AuditReporter {
       ...options.filters,
       startDate: options.timeRange.start,
       endDate: options.timeRange.end,
-      limit: options.maxEntries || 10000
+      limit: options.maxEntries || 10000,
     };
 
     const entries = await this.auditLogger.searchEntries(searchCriteria);
-    
+
     // Generate summary statistics
     const summary = await this.generateSummary(entries, options);
-    
+
     // Detect anomalies
     const anomalies = await this.detectAnomalies(entries);
 
     // Create the report
     const report: AuditReport = {
       id: reportId,
-      title: options.title || `Audit Report - ${new Date().toISOString().split('T')[0]}`,
-      description: options.description || 'Automated audit log analysis report',
+      title:
+        options.title ||
+        `Audit Report - ${new Date().toISOString().split("T")[0]}`,
+      description: options.description || "Automated audit log analysis report",
       generated_at: new Date(),
       time_range: options.timeRange,
       filters: searchCriteria,
@@ -91,8 +93,8 @@ export class AuditReporter {
         total_entries: entries.length,
         processed_entries: entries.length,
         generation_time_ms: Date.now() - startTime,
-        schema_version: '1.0.0'
-      }
+        schema_version: "1.0.0",
+      },
     };
 
     // Add anomalies to summary
@@ -106,12 +108,15 @@ export class AuditReporter {
    */
   async generateComplianceReport(
     standards: string[],
-    options: Omit<ReportOptions, 'complianceStandards'>
+    options: Omit<ReportOptions, "complianceStandards">,
   ): Promise<{ report: AuditReport; compliance: ComplianceResult[] }> {
-    const report = await this.generateReport({ ...options, complianceStandards: standards });
-    
+    const report = await this.generateReport({
+      ...options,
+      complianceStandards: standards,
+    });
+
     const complianceResults: ComplianceResult[] = [];
-    
+
     for (const standardName of standards) {
       const standard = this.complianceStandards.get(standardName);
       if (standard) {
@@ -129,54 +134,63 @@ export class AuditReporter {
   async generateSecurityReport(options: ReportOptions): Promise<AuditReport> {
     const securityFilters: AuditSearchCriteria = {
       ...options.filters,
-      category: 'security'
+      category: "security",
     };
 
     const securityOptions = {
       ...options,
-      title: 'Security Assessment Report',
-      description: 'Analysis of security-related permission decisions and potential threats',
-      filters: securityFilters
+      title: "Security Assessment Report",
+      description:
+        "Analysis of security-related permission decisions and potential threats",
+      filters: securityFilters,
     };
 
     const report = await this.generateReport(securityOptions);
-    
+
     // Enhanced security analysis
-    report.summary.risk_distribution = this.analyzeRiskDistribution(report.entries);
-    
+    report.summary.risk_distribution = this.analyzeRiskDistribution(
+      report.entries,
+    );
+
     return report;
   }
 
   /**
    * Export report to various formats
    */
-  async exportReport(report: AuditReport, format: 'json' | 'html' | 'csv' = 'json', outputPath?: string): Promise<string> {
+  async exportReport(
+    report: AuditReport,
+    format: "json" | "html" | "csv" = "json",
+    outputPath?: string,
+  ): Promise<string> {
     let content: string;
     let extension: string;
 
     switch (format) {
-      case 'json':
+      case "json":
         content = JSON.stringify(report, null, 2);
-        extension = 'json';
+        extension = "json";
         break;
-      
-      case 'html':
+
+      case "html":
         content = this.generateHtmlReport(report);
-        extension = 'html';
+        extension = "html";
         break;
-      
-      case 'csv':
+
+      case "csv":
         content = this.generateCsvReport(report);
-        extension = 'csv';
+        extension = "csv";
         break;
-      
+
       default:
         throw new Error(`Unsupported export format: ${format}`);
     }
 
     if (outputPath) {
-      const finalPath = outputPath.endsWith(`.${extension}`) ? outputPath : `${outputPath}.${extension}`;
-      await fs.writeFile(finalPath, content, 'utf8');
+      const finalPath = outputPath.endsWith(`.${extension}`)
+        ? outputPath
+        : `${outputPath}.${extension}`;
+      await fs.writeFile(finalPath, content, "utf8");
       return finalPath;
     }
 
@@ -187,7 +201,7 @@ export class AuditReporter {
    * Schedule automatic report generation
    */
   async scheduleReports(schedule: {
-    frequency: 'daily' | 'weekly' | 'monthly';
+    frequency: "daily" | "weekly" | "monthly";
     time: string; // HH:MM format
     options: ReportOptions;
     outputDirectory: string;
@@ -200,11 +214,14 @@ export class AuditReporter {
 
   // Private helper methods
 
-  private async generateSummary(entries: AuditEntry[], options: ReportOptions): Promise<AuditReportSummary> {
+  private async generateSummary(
+    entries: AuditEntry[],
+    options: ReportOptions,
+  ): Promise<AuditReportSummary> {
     const decisionBreakdown: Record<PermissionAction, number> = {
       allow: 0,
       deny: 0,
-      confirm: 0
+      confirm: 0,
     };
 
     const profileUsage: Record<string, number> = {};
@@ -239,7 +256,8 @@ export class AuditReporter {
       }
     }
 
-    const averageDecisionTime = entries.length > 0 ? totalDecisionTime / entries.length : 0;
+    const averageDecisionTime =
+      entries.length > 0 ? totalDecisionTime / entries.length : 0;
     const cacheHitRatio = entries.length > 0 ? cacheHits / entries.length : 0;
     const retryRate = entries.length > 0 ? retries / entries.length : 0;
 
@@ -249,22 +267,29 @@ export class AuditReporter {
       profile_usage: profileUsage,
       tool_usage: toolUsage,
       risk_distribution: this.analyzeRiskDistribution(entries),
-      compliance_status: await this.analyzeCompliance(entries, options.complianceStandards),
+      compliance_status: await this.analyzeCompliance(
+        entries,
+        options.complianceStandards,
+      ),
       performance_metrics: {
         average_decision_time_ms: averageDecisionTime,
         cache_hit_ratio: cacheHitRatio,
-        retry_rate: retryRate
+        retry_rate: retryRate,
       },
-      anomalies: [] // Will be populated by detectAnomalies
+      anomalies: [], // Will be populated by detectAnomalies
     };
   }
 
-  private analyzeRiskDistribution(entries: AuditEntry[]): { low: number; medium: number; high: number } {
+  private analyzeRiskDistribution(entries: AuditEntry[]): {
+    low: number;
+    medium: number;
+    high: number;
+  } {
     const distribution = { low: 0, medium: 0, high: 0 };
 
     for (const entry of entries) {
       const riskScore = entry.metadata?.risk_score || 0;
-      
+
       if (riskScore < 33) {
         distribution.low++;
       } else if (riskScore < 67) {
@@ -278,9 +303,13 @@ export class AuditReporter {
   }
 
   private async analyzeCompliance(
-    entries: AuditEntry[], 
-    standards?: string[]
-  ): Promise<{ compliant: number; non_compliant: number; pending_review: number }> {
+    entries: AuditEntry[],
+    standards?: string[],
+  ): Promise<{
+    compliant: number;
+    non_compliant: number;
+    pending_review: number;
+  }> {
     let compliant = 0;
     let nonCompliant = 0;
     let pendingReview = 0;
@@ -288,9 +317,9 @@ export class AuditReporter {
     for (const entry of entries) {
       // Simple compliance check based on metadata
       if (entry.metadata?.compliance_flags) {
-        if (entry.metadata.compliance_flags.includes('compliant')) {
+        if (entry.metadata.compliance_flags.includes("compliant")) {
           compliant++;
-        } else if (entry.metadata.compliance_flags.includes('non_compliant')) {
+        } else if (entry.metadata.compliance_flags.includes("non_compliant")) {
           nonCompliant++;
         } else {
           pendingReview++;
@@ -300,10 +329,16 @@ export class AuditReporter {
       }
     }
 
-    return { compliant, non_compliant: nonCompliant, pending_review: pendingReview };
+    return {
+      compliant,
+      non_compliant: nonCompliant,
+      pending_review: pendingReview,
+    };
   }
 
-  private async detectAnomalies(entries: AuditEntry[]): Promise<AuditAnomaly[]> {
+  private async detectAnomalies(
+    entries: AuditEntry[],
+  ): Promise<AuditAnomaly[]> {
     const anomalies: AuditAnomaly[] = [];
 
     // Detect unusual patterns
@@ -314,8 +349,14 @@ export class AuditReporter {
 
     for (const entry of entries) {
       // Count tools and actions
-      toolCounts.set(entry.query.tool, (toolCounts.get(entry.query.tool) || 0) + 1);
-      actionCounts.set(entry.result.action, (actionCounts.get(entry.result.action) || 0) + 1);
+      toolCounts.set(
+        entry.query.tool,
+        (toolCounts.get(entry.query.tool) || 0) + 1,
+      );
+      actionCounts.set(
+        entry.result.action,
+        (actionCounts.get(entry.result.action) || 0) + 1,
+      );
 
       // Check for high risk
       if (entry.metadata?.risk_score && entry.metadata.risk_score > 80) {
@@ -331,29 +372,32 @@ export class AuditReporter {
     // Detect unusual tool usage (tools used excessively)
     const avgToolUsage = entries.length / toolCounts.size;
     for (const [tool, count] of toolCounts) {
-      if (count > avgToolUsage * 3) { // More than 3x average
+      if (count > avgToolUsage * 3) {
+        // More than 3x average
         anomalies.push({
           id: `anomaly_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-          type: 'unusual_pattern',
-          severity: 'medium',
-          description: `Tool "${tool}" used ${count} times (${((count/entries.length)*100).toFixed(1)}% of all operations)`,
+          type: "unusual_pattern",
+          severity: "medium",
+          description: `Tool "${tool}" used ${count} times (${((count / entries.length) * 100).toFixed(1)}% of all operations)`,
           detected_at: new Date(),
           affected_entries: [],
-          suggested_action: `Review usage patterns for tool "${tool}" - may indicate automation or misuse`
+          suggested_action: `Review usage patterns for tool "${tool}" - may indicate automation or misuse`,
         });
       }
     }
 
     // Detect high risk concentration
-    if (highRiskEntries.length > entries.length * 0.1) { // More than 10% high risk
+    if (highRiskEntries.length > entries.length * 0.1) {
+      // More than 10% high risk
       anomalies.push({
         id: `anomaly_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-        type: 'high_risk',
-        severity: 'high',
-        description: `High concentration of high-risk operations: ${highRiskEntries.length} entries (${((highRiskEntries.length/entries.length)*100).toFixed(1)}%)`,
+        type: "high_risk",
+        severity: "high",
+        description: `High concentration of high-risk operations: ${highRiskEntries.length} entries (${((highRiskEntries.length / entries.length) * 100).toFixed(1)}%)`,
         detected_at: new Date(),
         affected_entries: highRiskEntries,
-        suggested_action: 'Review security policies and consider tightening permissions for high-risk operations'
+        suggested_action:
+          "Review security policies and consider tightening permissions for high-risk operations",
       });
     }
 
@@ -361,12 +405,13 @@ export class AuditReporter {
     if (performanceIssues.length > 0) {
       anomalies.push({
         id: `anomaly_${Date.now()}_${Math.random().toString(36).substring(2)}`,
-        type: 'performance_degradation',
-        severity: 'medium',
+        type: "performance_degradation",
+        severity: "medium",
         description: `Slow permission decisions detected: ${performanceIssues.length} entries took >1000ms`,
         detected_at: new Date(),
         affected_entries: performanceIssues,
-        suggested_action: 'Optimize permission evaluation logic or consider caching improvements'
+        suggested_action:
+          "Optimize permission evaluation logic or consider caching improvements",
       });
     }
 
@@ -418,18 +463,26 @@ export class AuditReporter {
         </div>
     </div>
 
-    ${report.summary.anomalies.length > 0 ? `
+    ${
+      report.summary.anomalies.length > 0
+        ? `
     <div class="anomalies">
         <h2>Detected Anomalies</h2>
-        ${report.summary.anomalies.map(anomaly => `
-            <div class="anomaly ${anomaly.severity === 'high' ? 'high-severity' : ''}">
-                <strong>${anomaly.type.replace(/_/g, ' ').toUpperCase()}</strong> (${anomaly.severity})
+        ${report.summary.anomalies
+          .map(
+            (anomaly) => `
+            <div class="anomaly ${anomaly.severity === "high" ? "high-severity" : ""}">
+                <strong>${anomaly.type.replace(/_/g, " ").toUpperCase()}</strong> (${anomaly.severity})
                 <p>${anomaly.description}</p>
-                ${anomaly.suggested_action ? `<p><em>Recommendation: ${anomaly.suggested_action}</em></p>` : ''}
+                ${anomaly.suggested_action ? `<p><em>Recommendation: ${anomaly.suggested_action}</em></p>` : ""}
             </div>
-        `).join('')}
+        `,
+          )
+          .join("")}
     </div>
-    ` : ''}
+    `
+        : ""
+    }
 
     <div class="metadata">
         <h2>Report Metadata</h2>
@@ -443,18 +496,26 @@ export class AuditReporter {
   }
 
   private generateCsvReport(report: AuditReport): string {
-    const headers = ['timestamp', 'tool', 'action', 'reason', 'profile', 'risk_score', 'duration_ms'];
-    const rows = report.entries.map(entry => [
+    const headers = [
+      "timestamp",
+      "tool",
+      "action",
+      "reason",
+      "profile",
+      "risk_score",
+      "duration_ms",
+    ];
+    const rows = report.entries.map((entry) => [
       entry.timestamp.toISOString(),
       entry.query.tool,
       entry.result.action,
       entry.result.reason,
-      entry.profile || '',
-      entry.metadata?.risk_score || '',
-      entry.metadata?.duration_ms || ''
+      entry.profile || "",
+      entry.metadata?.risk_score || "",
+      entry.metadata?.duration_ms || "",
     ]);
 
-    return [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+    return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
   }
 
   private generateReportId(): string {
@@ -463,27 +524,27 @@ export class AuditReporter {
 
   private initializeComplianceStandards(): void {
     // Initialize basic compliance standards
-    this.complianceStandards.set('SOX', {
-      name: 'Sarbanes-Oxley Act',
-      requirements: ['audit_trail', 'data_integrity', 'access_controls'],
+    this.complianceStandards.set("SOX", {
+      name: "Sarbanes-Oxley Act",
+      requirements: ["audit_trail", "data_integrity", "access_controls"],
       checkCompliance: (entries: AuditEntry[]): ComplianceResult => {
         const auditTrail = entries.length > 0;
         const issues: string[] = [];
         const recommendations: string[] = [];
 
         if (!auditTrail) {
-          issues.push('No audit trail found');
-          recommendations.push('Ensure all operations are logged');
+          issues.push("No audit trail found");
+          recommendations.push("Ensure all operations are logged");
         }
 
         return {
-          standard: 'SOX',
+          standard: "SOX",
           compliant: issues.length === 0,
           score: issues.length === 0 ? 100 : 50,
           issues,
-          recommendations
+          recommendations,
         };
-      }
+      },
     });
 
     // Add more standards as needed

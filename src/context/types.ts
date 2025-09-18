@@ -3,15 +3,15 @@
  */
 
 export enum SymbolType {
-  Class = 'class',
-  Function = 'function',
-  Variable = 'variable',
-  Interface = 'interface',
-  Type = 'type',
-  Enum = 'enum',
-  Namespace = 'namespace',
-  Method = 'method',
-  Property = 'property'
+  Class = "class",
+  Function = "function",
+  Variable = "variable",
+  Interface = "interface",
+  Type = "type",
+  Enum = "enum",
+  Namespace = "namespace",
+  Method = "method",
+  Property = "property",
 }
 
 export interface SymbolInfo {
@@ -60,12 +60,12 @@ export interface RelevanceScore {
   confidence: number;
 }
 
-export type RelevanceReason = 
-  | 'direct_reference'
-  | 'symbol_match' 
-  | 'import_chain'
-  | 'recent_access'
-  | 'user_pattern';
+export type RelevanceReason =
+  | "direct_reference"
+  | "symbol_match"
+  | "import_chain"
+  | "recent_access"
+  | "user_pattern";
 
 export interface ContentSample {
   file: string;

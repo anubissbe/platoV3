@@ -2,7 +2,7 @@
  * Input modes system for managing different input contexts
  */
 
-export type InputMode = 'normal' | 'command' | 'search' | 'visual' | 'insert';
+export type InputMode = "normal" | "command" | "search" | "visual" | "insert";
 
 export interface InputModeDefinition {
   name: InputMode;
@@ -17,11 +17,12 @@ export interface InputModeDefinition {
 }
 
 export class InputModeManager {
-  private currentMode: InputMode = 'normal';
+  private currentMode: InputMode = "normal";
   private modes: Map<InputMode, InputModeDefinition> = new Map();
   private modeHistory: InputMode[] = [];
-  private inputBuffer: string = '';
-  private listeners: Set<(mode: InputMode, prevMode: InputMode) => void> = new Set();
+  private inputBuffer: string = "";
+  private listeners: Set<(mode: InputMode, prevMode: InputMode) => void> =
+    new Set();
 
   constructor() {
     this.initializeModes();
@@ -33,28 +34,28 @@ export class InputModeManager {
   private initializeModes() {
     // Normal mode
     this.registerMode({
-      name: 'normal',
-      displayName: 'Normal',
-      indicator: '',
-      description: 'Normal input mode for typing messages',
+      name: "normal",
+      displayName: "Normal",
+      indicator: "",
+      description: "Normal input mode for typing messages",
       allowPassthrough: true,
       onEnter: () => {
-        this.inputBuffer = '';
+        this.inputBuffer = "";
       },
     });
 
     // Command mode
     this.registerMode({
-      name: 'command',
-      displayName: 'Command',
-      indicator: '⌘',
-      description: 'Command palette mode for executing commands',
+      name: "command",
+      displayName: "Command",
+      indicator: "⌘",
+      description: "Command palette mode for executing commands",
       allowPassthrough: false,
       onEnter: () => {
-        this.inputBuffer = '';
+        this.inputBuffer = "";
       },
       onExit: () => {
-        this.inputBuffer = '';
+        this.inputBuffer = "";
       },
       onInput: (input: string) => {
         // Filter commands based on input
@@ -64,16 +65,16 @@ export class InputModeManager {
 
     // Search mode
     this.registerMode({
-      name: 'search',
-      displayName: 'Search',
-      indicator: '🔍',
-      description: 'Search mode for finding text in conversation',
+      name: "search",
+      displayName: "Search",
+      indicator: "🔍",
+      description: "Search mode for finding text in conversation",
       allowPassthrough: false,
       onEnter: () => {
-        this.inputBuffer = '';
+        this.inputBuffer = "";
       },
       onExit: () => {
-        this.inputBuffer = '';
+        this.inputBuffer = "";
       },
       onInput: (input: string) => {
         // Perform search based on input
@@ -83,10 +84,10 @@ export class InputModeManager {
 
     // Visual mode (for text selection)
     this.registerMode({
-      name: 'visual',
-      displayName: 'Visual',
-      indicator: '▒',
-      description: 'Visual mode for selecting text',
+      name: "visual",
+      displayName: "Visual",
+      indicator: "▒",
+      description: "Visual mode for selecting text",
       allowPassthrough: false,
       onEnter: () => {
         // Start text selection
@@ -98,13 +99,13 @@ export class InputModeManager {
 
     // Insert mode (for multi-line input)
     this.registerMode({
-      name: 'insert',
-      displayName: 'Insert',
-      indicator: '✎',
-      description: 'Insert mode for multi-line text input',
+      name: "insert",
+      displayName: "Insert",
+      indicator: "✎",
+      description: "Insert mode for multi-line text input",
       allowPassthrough: true,
       onEnter: () => {
-        this.inputBuffer = '';
+        this.inputBuffer = "";
       },
     });
   }
@@ -177,7 +178,7 @@ export class InputModeManager {
    */
   getIndicator(): string {
     const mode = this.modes.get(this.currentMode);
-    return mode?.indicator || '';
+    return mode?.indicator || "";
   }
 
   /**
@@ -185,7 +186,7 @@ export class InputModeManager {
    */
   getDisplayName(): string {
     const mode = this.modes.get(this.currentMode);
-    return mode?.displayName || 'Unknown';
+    return mode?.displayName || "Unknown";
   }
 
   /**
@@ -193,7 +194,7 @@ export class InputModeManager {
    */
   handleInput(input: string): boolean {
     const mode = this.modes.get(this.currentMode);
-    
+
     if (!mode) {
       return false;
     }
@@ -212,7 +213,7 @@ export class InputModeManager {
    */
   handleSpecialKey(key: string): boolean {
     const mode = this.modes.get(this.currentMode);
-    
+
     if (!mode || !mode.keyBindings) {
       return false;
     }
@@ -231,7 +232,7 @@ export class InputModeManager {
    */
   switchToPrevious(): boolean {
     if (this.modeHistory.length === 0) {
-      return this.switchTo('normal');
+      return this.switchTo("normal");
     }
 
     const previousMode = this.modeHistory.pop()!;
@@ -242,9 +243,9 @@ export class InputModeManager {
    * Reset to normal mode
    */
   reset(): void {
-    this.switchTo('normal');
+    this.switchTo("normal");
     this.modeHistory = [];
-    this.inputBuffer = '';
+    this.inputBuffer = "";
   }
 
   /**
@@ -265,7 +266,7 @@ export class InputModeManager {
    * Clear input buffer
    */
   clearInputBuffer(): void {
-    this.inputBuffer = '';
+    this.inputBuffer = "";
   }
 
   /**
@@ -278,7 +279,9 @@ export class InputModeManager {
   /**
    * Remove mode change listener
    */
-  removeListener(listener: (mode: InputMode, prevMode: InputMode) => void): void {
+  removeListener(
+    listener: (mode: InputMode, prevMode: InputMode) => void,
+  ): void {
     this.listeners.delete(listener);
   }
 
@@ -290,7 +293,7 @@ export class InputModeManager {
       try {
         listener(mode, prevMode);
       } catch (error) {
-        console.error('Error in mode change listener:', error);
+        console.error("Error in mode change listener:", error);
       }
     }
   }

@@ -37,7 +37,7 @@ class NativeToolExecutor implements ToolExecutor {
   private readonly tools: Map<string, NativeTool>;
   private readonly fallback: MCPBridge;
   private readonly config: ToolConfig;
-  
+
   // Execution with automatic fallback
   async execute(call: ToolCall): Promise<ToolResponse> {
     const tool = this.tools.get(call.name);
@@ -62,30 +62,30 @@ class NativeToolExecutor implements ToolExecutor {
 
 ```typescript
 enum ErrorClass {
-  TRANSIENT = 'transient',    // Retryable
-  PERMANENT = 'permanent',    // Non-retryable
-  VALIDATION = 'validation',  // Input error
-  PERMISSION = 'permission',  // Access denied
-  TIMEOUT = 'timeout',        // Execution timeout
+  TRANSIENT = "transient", // Retryable
+  PERMANENT = "permanent", // Non-retryable
+  VALIDATION = "validation", // Input error
+  PERMISSION = "permission", // Access denied
+  TIMEOUT = "timeout", // Execution timeout
 }
 
 interface ToolError {
   class: ErrorClass;
-  code: string;              // e.g., 'ENOENT', 'EAGAIN'
-  message: string;           // Human-readable
-  details?: any;             // Tool-specific
+  code: string; // e.g., 'ENOENT', 'EAGAIN'
+  message: string; // Human-readable
+  details?: any; // Tool-specific
   retryable: boolean;
-  retryAfter?: number;       // Milliseconds
+  retryAfter?: number; // Milliseconds
 }
 
 // Retry policy matching Claude Code
 const RETRY_POLICY = {
   maxAttempts: 3,
-  backoff: 'exponential',
+  backoff: "exponential",
   initialDelay: 100,
   maxDelay: 5000,
   jitter: true,
-  retryableErrors: ['EAGAIN', 'ETIMEDOUT', 'ECONNRESET'],
+  retryableErrors: ["EAGAIN", "ETIMEDOUT", "ECONNRESET"],
 };
 ```
 
@@ -128,14 +128,14 @@ interface ToolTelemetry {
 
 ### Compatibility Matrix
 
-| Tool | Claude Code Version | Arguments | Response Fields | Streaming |
-|------|-------------------|-----------|-----------------|-----------|
-| Read | 1.0 | path, encoding, lines | content, encoding, size, truncated | No |
-| Write | 1.0 | path, content, encoding | success, bytes_written | No |
-| Edit | 1.0 | path, pattern, replacement | success, changes, diff | No |
-| Bash | 1.0 | command, cwd, env, timeout | stdout, stderr, exit_code | Yes |
-| List | 1.0 | path, recursive, glob | files, directories, stats | No |
-| Search | 1.0 | pattern, path, regex, context | matches, files, lines | Yes |
+| Tool   | Claude Code Version | Arguments                     | Response Fields                    | Streaming |
+| ------ | ------------------- | ----------------------------- | ---------------------------------- | --------- |
+| Read   | 1.0                 | path, encoding, lines         | content, encoding, size, truncated | No        |
+| Write  | 1.0                 | path, content, encoding       | success, bytes_written             | No        |
+| Edit   | 1.0                 | path, pattern, replacement    | success, changes, diff             | No        |
+| Bash   | 1.0                 | command, cwd, env, timeout    | stdout, stderr, exit_code          | Yes       |
+| List   | 1.0                 | path, recursive, glob         | files, directories, stats          | No        |
+| Search | 1.0                 | pattern, path, regex, context | matches, files, lines              | Yes       |
 
 ### Testing Requirements
 
