@@ -21,9 +21,7 @@ const mockWatcher = {
 };
 
 jest.mock('chokidar', () => ({
-  default: {
-    watch: jest.fn(() => mockWatcher),
-  },
+  watch: jest.fn(() => mockWatcher),
 }));
 
 describe('Enhanced File Watcher - Core Tests', () => {

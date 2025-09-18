@@ -11,7 +11,7 @@
 
 import React from "react";
 import { Box, Text, useInput } from "ink";
-import { cyan, yellow, green, gray, inverse, bold } from "picocolors";
+import pc from "picocolors";
 import type { AutocompleteResult } from "../../autocomplete/types.js";
 
 export interface AutocompleteDropdownProps {
@@ -79,7 +79,7 @@ export const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
       {/* Scroll up indicator */}
       {showScrollUp && (
         <Text color="gray">
-          {"↑ "}{gray(`${startIndex} more above`)}
+          {"↑ "}{pc.gray(`${startIndex} more above`)}
         </Text>
       )}
 
@@ -100,14 +100,14 @@ export const AutocompleteDropdown: React.FC<AutocompleteDropdownProps> = ({
       {/* Scroll down indicator */}
       {showScrollDown && (
         <Text color="gray">
-          {"↓ "}{gray(`${results.length - endIndex} more below`)}
+          {"↓ "}{pc.gray(`${results.length - endIndex} more below`)}
         </Text>
       )}
 
       {/* Footer with navigation hint */}
       <Box borderTop borderColor="gray" marginTop={1} paddingTop={1}>
         <Text color="gray">
-          {cyan("↑↓")} navigate • {green("Enter")} select • {yellow("Esc")} cancel
+          {pc.cyan("↑↓")} navigate • {pc.green("Enter")} select • {pc.yellow("Esc")} cancel
         </Text>
       </Box>
     </Box>
@@ -135,14 +135,14 @@ const AutocompleteItem: React.FC<AutocompleteItemProps> = ({
 
   // Style the entire item based on selection
   const ItemWrapper = isSelected ?
-    ({ children }: { children: React.ReactNode }) => <Text>{inverse(children as string)}</Text> :
+    ({ children }: { children: React.ReactNode }) => <Text>{pc.inverse(children as string)}</Text> :
     ({ children }: { children: React.ReactNode }) => <Text>{children}</Text>;
 
   return (
     <Box>
       <ItemWrapper>
         <Text color={typeColor}>
-          {bold(`[${typeIndicator}]`)} {highlightedText}
+          {pc.bold(`[${typeIndicator}]`)} {highlightedText}
         </Text>
       </ItemWrapper>
     </Box>
@@ -171,7 +171,7 @@ function applyHighlighting(text: string, highlights: Array<{ start: number; end:
 
     // Add highlighted text
     const highlightedPart = text.slice(highlight.start, highlight.end);
-    result += bold(yellow(highlightedPart));
+    result += pc.bold(pc.yellow(highlightedPart));
 
     lastIndex = highlight.end;
   }
