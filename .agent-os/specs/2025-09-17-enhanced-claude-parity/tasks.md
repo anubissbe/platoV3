@@ -102,37 +102,37 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 
 ### 4. Multi-File Edit Interface
 
-- [ ] 4.1 Implement Multi-File Editor Core
-  - [ ] 4.1.1 Create `src/tools/multi-file-editor.ts` with EditSession and FileEdit interfaces
-  - [ ] 4.1.2 Implement unified editing session with cross-file change tracking
-  - [ ] 4.1.3 Add file state management (originalContent, currentContent, isDirty flags)
-  - [ ] 4.1.4 Create EditOperation tracking for granular change history
-  - [ ] 4.1.5 Write unit tests for multi-file session management and state consistency
-  - **Acceptance Criteria**: Editor manages multiple files with unified session state
+- [x] 4.1 Implement Multi-File Editor Core
+  - [x] 4.1.1 Create `src/tools/multi-file-editor.ts` with EditSession and FileEdit interfaces
+  - [x] 4.1.2 Implement unified editing session with cross-file change tracking
+  - [x] 4.1.3 Add file state management (originalContent, currentContent, isDirty flags)
+  - [x] 4.1.4 Create EditOperation tracking for granular change history
+  - [x] 4.1.5 Write unit tests for multi-file session management and state consistency
+  - **Acceptance Criteria**: ✅ Editor manages multiple files with unified session state
 
-- [ ] 4.2 Build Diff Preview Component
-  - [ ] 4.2.1 Create `src/tui/components/diff-preview.tsx` for side-by-side diff visualization
-  - [ ] 4.2.2 Implement unified diff format with +/- indicators and color coding
-  - [ ] 4.2.3 Add file-by-file navigation with Tab/Shift+Tab keyboard shortcuts
-  - [ ] 4.2.4 Create diff rendering for additions, deletions, and modifications
-  - [ ] 4.2.5 Write React component tests for diff rendering and navigation
-  - **Acceptance Criteria**: Diff preview shows clear visual representation of changes across files
+- [x] 4.2 Build Diff Preview Component
+  - [x] 4.2.1 Create `src/tui/components/diff-preview.tsx` for side-by-side diff visualization
+  - [x] 4.2.2 Implement unified diff format with +/- indicators and color coding
+  - [x] 4.2.3 Add file-by-file navigation with Tab/Shift+Tab keyboard shortcuts
+  - [x] 4.2.4 Create diff rendering for additions, deletions, and modifications
+  - [x] 4.2.5 Write React component tests for diff rendering and navigation
+  - **Acceptance Criteria**: ✅ Diff preview shows clear visual representation of changes across files
 
-- [ ] 4.3 Implement Edit History and Undo/Redo
-  - [ ] 4.3.1 Create `src/tools/edit-history.ts` with Command pattern for undo/redo operations
-  - [ ] 4.3.2 Implement cross-file operation grouping and memory-efficient delta storage
-  - [ ] 4.3.3 Add session persistence for crash recovery with 50-operation limit
-  - [ ] 4.3.4 Create keyboard shortcuts (Ctrl+Z undo, Ctrl+Y redo) with visual indicators
-  - [ ] 4.3.5 Write tests for undo/redo functionality and operation history limits
-  - **Acceptance Criteria**: Undo/redo works across multiple files with persistent history
+- [x] 4.3 Implement Edit History and Undo/Redo
+  - [x] 4.3.1 Create `src/tools/edit-history.ts` with Command pattern for undo/redo operations
+  - [x] 4.3.2 Implement cross-file operation grouping and memory-efficient delta storage
+  - [x] 4.3.3 Add session persistence for crash recovery with 50-operation limit
+  - [x] 4.3.4 Create keyboard shortcuts (Ctrl+Z undo, Ctrl+Y redo) with visual indicators
+  - [x] 4.3.5 Write tests for undo/redo functionality and operation history limits
+  - **Acceptance Criteria**: ✅ Undo/redo works across multiple files with persistent history
 
-- [ ] 4.4 Enhance Edit Command for Multi-File Support
-  - [ ] 4.4.1 Update `/edit` command in `src/slash/commands.ts` to accept multiple file arguments
-  - [ ] 4.4.2 Integrate diff preview and confirmation prompt workflow
-  - [ ] 4.4.3 Add commit/rollback functionality for edit sessions
-  - [ ] 4.4.4 Implement edit session cleanup and resource management
-  - [ ] 4.4.5 Write end-to-end tests for multi-file edit workflow
-  - **Acceptance Criteria**: `/edit file1 file2 file3` creates unified editing session with preview
+- [x] 4.4 Enhance Edit Command for Multi-File Support
+  - [x] 4.4.1 Update `/edit` command in `src/slash/commands.ts` to accept multiple file arguments
+  - [x] 4.4.2 Integrate diff preview and confirmation prompt workflow
+  - [x] 4.4.3 Add commit/rollback functionality for edit sessions
+  - [x] 4.4.4 Implement edit session cleanup and resource management
+  - [x] 4.4.5 Write end-to-end tests for multi-file edit workflow
+  - **Acceptance Criteria**: ✅ `/edit file1 file2 file3` creates unified editing session with preview
 
 ### 5. Conflict Resolution System
 
