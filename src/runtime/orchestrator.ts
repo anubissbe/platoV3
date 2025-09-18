@@ -12,7 +12,7 @@ import { ProfileManager } from "../permissions/ProfileManager.js";
 import { AuditLogger } from "../permissions/AuditLogger.js";
 import { PermissionQuery } from "../permissions/types.js";
 import { FileSystemTool, fileSystem } from "../tools/filesystem.js";
-import { FileWatcher, fileWatcher } from "../tools/file-watcher.js";
+import { FileWatcher, fileWatcher, setFileWatcherConfig } from "../tools/file-watcher-compat.js";
 import {
   emitTurnStart,
   emitStreamStart,
@@ -101,6 +101,22 @@ class Orchestrator {
 
   constructor() {
     this.history = [];
+    // Initialize file watcher config asynchronously
+    this.initializeFileWatcher().catch(console.error);
+  }
+
+  /**
+   * Initialize file watcher configuration based on config
+   */
+  private async initializeFileWatcher(): Promise<void> {
+    const config = await loadConfig();
+    if (config.fileWatcher) {
+      setFileWatcherConfig({
+        useEnhanced: config.fileWatcher.useEnhanced || false,
+        enableFallback: config.fileWatcher.enableFallback !== false, // Default true
+        debugMigration: config.fileWatcher.debugMigration || false
+      });
+    }
   }
 
   /**

@@ -3,7 +3,7 @@
  * Provides chokidar-based file system monitoring with conflict detection and performance optimizations
  */
 
-import chokidar from "chokidar";
+import * as chokidar from "chokidar";
 import * as fs from "fs/promises";
 import { Stats } from "fs";
 import * as path from "path";

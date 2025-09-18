@@ -88,6 +88,11 @@ export type Config = {
     logFile?: string;
   };
   vimMode?: boolean;
+  fileWatcher?: {
+    useEnhanced?: boolean; // Use chokidar-based enhanced watcher
+    enableFallback?: boolean; // Fallback to fs.watch on error
+    debugMigration?: boolean; // Log migration events
+  };
 };
 
 const HOME = os.homedir();

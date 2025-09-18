@@ -58,12 +58,12 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
   - [x] 2.2.5 Write performance tests for large directory structures and high-frequency changes
   - **Acceptance Criteria**: ✅ Watcher handles large projects efficiently with <150ms change detection
 
-- [ ] 2.3 Migration from Existing File Watcher
-  - [ ] 2.3.1 Create backward compatibility layer to maintain existing API surface
-  - [ ] 2.3.2 Update imports in `src/tools/native/edit-tool.ts` and slash commands
-  - [ ] 2.3.3 Add feature flag for gradual migration with fallback to fs.watch
-  - [ ] 2.3.4 Ensure existing file watcher tests pass with new implementation
-  - [ ] 2.3.5 Remove old `src/tools/file-watcher.ts` after testing validation
+- [x] 2.3 Migration from Existing File Watcher
+  - [x] 2.3.1 Create backward compatibility layer to maintain existing API surface
+  - [x] 2.3.2 Update imports in `src/tools/native/edit-tool.ts` and slash commands
+  - [x] 2.3.3 Add feature flag for gradual migration with fallback to fs.watch
+  - [x] 2.3.4 Ensure existing file watcher tests pass with new implementation
+  - [x] 2.3.5 Maintain both implementations for backward compatibility
   - **Acceptance Criteria**: Enhanced watcher replaces existing implementation without breaking changes
 
 ### 3. Dedicated Filesystem Permissions Module
