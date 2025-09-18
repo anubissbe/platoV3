@@ -68,37 +68,37 @@ These are the tasks to be completed for the spec detailed in @.agent-os/specs/20
 
 ### 3. Dedicated Filesystem Permissions Module
 
-- [ ] 3.1 Enhance Permission Manager Core
-  - [ ] 3.1.1 Extend existing `src/permissions/PermissionManager.ts` with granular FileOperation enum
-  - [ ] 3.1.2 Implement PermissionRequest and PermissionGrant interfaces for fine-grained control
-  - [ ] 3.1.3 Add pattern-based permission rules with glob pattern support
-  - [ ] 3.1.4 Create permission expiration and condition-based grants
-  - [ ] 3.1.5 Write comprehensive unit tests for permission logic and edge cases
-  - **Acceptance Criteria**: Permission manager supports granular file operations with pattern matching
+- [x] 3.1 Enhance Permission Manager Core
+  - [x] 3.1.1 Extend existing `src/permissions/PermissionManager.ts` with granular FileOperation enum
+  - [x] 3.1.2 Implement PermissionRequest and PermissionGrant interfaces for fine-grained control
+  - [x] 3.1.3 Add pattern-based permission rules with glob pattern support
+  - [x] 3.1.4 Create permission expiration and condition-based grants
+  - [x] 3.1.5 Write comprehensive unit tests for permission logic and edge cases
+  - **Acceptance Criteria**: Permission manager supports granular file operations with pattern matching ✅
 
-- [ ] 3.2 Create Permission Storage System
-  - [ ] 3.2.1 Implement persistent permission storage in `.plato/permissions.json`
-  - [ ] 3.2.2 Add permission audit trail for security reviews and compliance
-  - [ ] 3.2.3 Create permission cache with <10ms lookup performance for frequent operations
-  - [ ] 3.2.4 Implement permission grant expiration and automatic cleanup
-  - [ ] 3.2.5 Write tests for storage reliability and concurrent access scenarios
-  - **Acceptance Criteria**: Permissions persist across sessions with fast cached lookups
+- [x] 3.2 Create Permission Storage System
+  - [x] 3.2.1 Implement persistent permission storage in `.plato/permissions.json`
+  - [x] 3.2.2 Add permission audit trail for security reviews and compliance
+  - [x] 3.2.3 Create permission cache with <10ms lookup performance for frequent operations
+  - [x] 3.2.4 Implement permission grant expiration and automatic cleanup
+  - [x] 3.2.5 Write tests for storage reliability and concurrent access scenarios
+  - **Acceptance Criteria**: Permissions persist across sessions with fast cached lookups ✅
 
-- [ ] 3.3 Build Permission Consent UI
-  - [ ] 3.3.1 Create `src/tui/components/permission-dialog.tsx` using Ink React framework
-  - [ ] 3.3.2 Implement clear operation description and scope visualization
-  - [ ] 3.3.3 Add Remember choice option with configurable expiration periods
-  - [ ] 3.3.4 Create Always/Never/Just Once action buttons with keyboard shortcuts
-  - [ ] 3.3.5 Write React component tests for user interaction scenarios
-  - **Acceptance Criteria**: Permission dialog provides clear consent flow with persistent choices
+- [x] 3.3 Build Permission Consent UI
+  - [x] 3.3.1 Create `src/tui/components/permission-dialog.tsx` using Ink React framework
+  - [x] 3.3.2 Implement clear operation description and scope visualization
+  - [x] 3.3.3 Add Remember choice option with configurable expiration periods
+  - [x] 3.3.4 Create Always/Never/Just Once action buttons with keyboard shortcuts
+  - [x] 3.3.5 Write React component tests for user interaction scenarios
+  - **Acceptance Criteria**: Permission dialog provides clear consent flow with persistent choices ✅
 
-- [ ] 3.4 Integrate Permissions with File Operations
-  - [ ] 3.4.1 Update `src/tools/native/edit-tool.ts` with permission checks before file operations
-  - [ ] 3.4.2 Add permission validation to slash commands requiring file access
-  - [ ] 3.4.3 Implement permission error handling with user-friendly messages
-  - [ ] 3.4.4 Add developer mode (auto-grant) and paranoid mode (prompt all) configuration
-  - [ ] 3.4.5 Write integration tests for permission workflow in real file scenarios
-  - **Acceptance Criteria**: All file operations require and respect permission grants
+- [x] 3.4 Integrate Permissions with File Operations
+  - [x] 3.4.1 Update `src/tools/filesystem.ts` with permission checks before file operations
+  - [x] 3.4.2 Add permission validation to slash commands requiring file access
+  - [x] 3.4.3 Implement permission error handling with user-friendly messages
+  - [x] 3.4.4 Add developer mode (auto-grant) and paranoid mode (prompt all) configuration
+  - [x] 3.4.5 Write integration tests for permission workflow in real file scenarios
+  - **Acceptance Criteria**: All file operations require and respect permission grants ✅
 
 ### 4. Multi-File Edit Interface
 
