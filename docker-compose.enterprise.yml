@@ -151,7 +151,7 @@ services:
 
   # ELK Stack - Logstash
   logstash:
-    image: docker.elastic.co/logstash/logstash:8.11.0
+    image: docker.elastic.co/logstash/logstash:8.19.18
     container_name: plato-logstash
     restart: unless-stopped
     volumes:
